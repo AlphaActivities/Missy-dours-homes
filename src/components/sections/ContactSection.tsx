@@ -212,12 +212,6 @@ export default function ContactSection() {
                     Your message has been sent successfully. We'll be in touch soon.
                   </div>
                 )}
-
-                {error && (
-                  <div className="mt-4 rounded-xl bg-red-600/20 border border-red-500/50 px-4 py-3.5 text-sm text-red-100 backdrop-blur-sm">
-                    {error}
-                  </div>
-                )}
               </div>
             </div>
           </LuxFadeIn>
