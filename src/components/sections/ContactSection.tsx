@@ -79,7 +79,7 @@ export default function ContactSection() {
                   </p>
                   <p>Dallas · Fort Worth · North Texas</p>
                   <p className="mt-1">Phone: 214-861-0665</p>
-                  <p>Email: missydourshomes@gmail.com</p>
+                  <p>Email: <a href="mailto:missydourshomes@gmail.com" className="hover:text-[#F5E6C8] transition-colors">info@missydourshomes.com</a></p>
                 </div>
 
                 <div className="pt-3 border-t border-white/10 max-w-md text-xs md:text-[13px] text-neutral-300/90">
