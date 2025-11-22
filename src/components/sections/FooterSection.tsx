@@ -62,7 +62,7 @@ export default function FooterSection() {
             </h4>
             <div className="space-y-3 text-base text-neutral-800/90 animate-[blindsDown_0.8s_ease-out]">
               <p className="font-medium">Phone: <span className="font-normal">214-861-0665</span></p>
-              <p className="font-medium">Email: <span className="font-normal">missydourshomes@gmail.com</span></p>
+              <p className="font-medium">Email: <a href="mailto:missydourshomes@gmail.com" className="font-normal hover:text-[#c29f63] transition-colors">info@missydourshomes.com</a></p>
               <p className="font-medium">Office:</p>
               <p className="font-normal leading-relaxed">
                 Beam Real Estate LLC<br />
