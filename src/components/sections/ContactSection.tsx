@@ -1,6 +1,51 @@
+import { useState, useEffect } from "react";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 
 export default function ContactSection() {
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const encode = (data: FormData) =>
+    new URLSearchParams(data as any).toString();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      formData.set("form-name", "contact");
+
+      const response = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: encode(formData),
+      });
+
+      if (response.ok) {
+        setSubmitted(true);
+        e.currentTarget.reset();
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!submitted) return;
+    const timer = setTimeout(() => {
+      setSubmitted(false);
+      setError(null);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [submitted]);
+
   return (
     <section
       id="contact"
@@ -80,6 +125,7 @@ export default function ContactSection() {
                   name="contact"
                   method="POST"
                   data-netlify="true"
+                  onSubmit={handleSubmit}
                   className="space-y-5"
                 >
                   <input type="hidden" name="form-name" value="contact" />
@@ -153,12 +199,25 @@ export default function ContactSection() {
                   <div className="pt-1">
                     <button
                       type="submit"
-                      className="w-full inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#F5E6C8] via-[#F2D9A3] to-[#E9C88A] px-6 py-3.5 text-sm md:text-[15px] font-semibold text-black shadow-[0_14px_35px_rgba(0,0,0,0.65)] hover:brightness-110 active:translate-y-px transition-transform transition-[filter]"
+                      disabled={submitting}
+                      className="w-full inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#F5E6C8] via-[#F2D9A3] to-[#E9C88A] px-6 py-3.5 text-sm md:text-[15px] font-semibold text-black shadow-[0_14px_35px_rgba(0,0,0,0.65)] hover:brightness-110 active:translate-y-px transition-transform transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Send Message Now
+                      {submitting ? "Sending..." : "Send Message Now"}
                     </button>
                   </div>
                 </form>
+
+                {submitted && (
+                  <div className="mt-4 rounded-xl bg-green-600/20 border border-green-500/50 px-4 py-3.5 text-sm text-green-100 backdrop-blur-sm">
+                    Your message has been sent successfully. We'll be in touch soon.
+                  </div>
+                )}
+
+                {error && (
+                  <div className="mt-4 rounded-xl bg-red-600/20 border border-red-500/50 px-4 py-3.5 text-sm text-red-100 backdrop-blur-sm">
+                    {error}
+                  </div>
+                )}
               </div>
             </div>
           </LuxFadeIn>
