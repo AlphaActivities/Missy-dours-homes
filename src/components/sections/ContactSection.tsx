@@ -1,6 +1,42 @@
+import { useState } from "react";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
+import { supabase } from "../../lib/supabase";
 
 export default function ContactSection() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const phone = formData.get('phone') as string;
+    const message = formData.get('message') as string;
+
+    try {
+      const { error } = await supabase
+        .from('contact_submissions')
+        .insert([{ name, email, phone, message }]);
+
+      if (error) throw error;
+
+      setSubmitStatus('success');
+      (e.target as HTMLFormElement).reset();
+
+      setTimeout(() => {
+        setSubmitStatus('idle');
+      }, 5000);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
     <section
       id="contact"
@@ -77,12 +113,9 @@ export default function ContactSection() {
                 </p>
 
                 <form
-                  name="contact"
-                  method="POST"
-                  data-netlify="true"
+                  onSubmit={handleSubmit}
                   className="space-y-5"
                 >
-                  <input type="hidden" name="form-name" value="contact" />
                   <div className="space-y-2">
                     <label
                       htmlFor="contact-name"
@@ -150,12 +183,25 @@ export default function ContactSection() {
                     />
                   </div>
 
+                  {submitStatus === 'success' && (
+                    <div className="rounded-xl bg-green-500/20 border border-green-500/40 px-4 py-3 text-sm text-green-100">
+                      Thank you! Your message has been sent successfully.
+                    </div>
+                  )}
+
+                  {submitStatus === 'error' && (
+                    <div className="rounded-xl bg-red-500/20 border border-red-500/40 px-4 py-3 text-sm text-red-100">
+                      Sorry, there was an error sending your message. Please try again or contact directly.
+                    </div>
+                  )}
+
                   <div className="pt-1">
                     <button
                       type="submit"
-                      className="w-full inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#F5E6C8] via-[#F2D9A3] to-[#E9C88A] px-6 py-3.5 text-sm md:text-[15px] font-semibold text-black shadow-[0_14px_35px_rgba(0,0,0,0.65)] hover:brightness-110 active:translate-y-px transition-transform transition-[filter]"
+                      disabled={isSubmitting}
+                      className="w-full inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#F5E6C8] via-[#F2D9A3] to-[#E9C88A] px-6 py-3.5 text-sm md:text-[15px] font-semibold text-black shadow-[0_14px_35px_rgba(0,0,0,0.65)] hover:brightness-110 active:translate-y-px transition-transform transition-[filter] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Send Message Now
+                      {isSubmitting ? 'Sending...' : 'Send Message Now'}
                     </button>
                   </div>
                 </form>
