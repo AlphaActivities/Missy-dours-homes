@@ -63,12 +63,12 @@ export default function FooterSection() {
             <div className="space-y-3 text-base text-neutral-800/90 animate-[blindsDown_0.8s_ease-out]">
               <p className="font-medium">Phone: <a href="tel:214-861-0665" className="font-normal text-black hover:text-[#c29f63] underline transition-colors">214-861-0665</a></p>
               <p className="font-medium">Email: <a href="mailto:missydourshomes@gmail.com" className="font-normal text-black hover:text-[#c29f63] underline transition-colors">info@missydourshomes.com</a></p>
-              <p className="font-medium mb-1.5">Office:</p>
+              <p className="font-medium mb-0.5">Office:</p>
               <a
                 href="https://www.google.com/maps/place/14455+Webb+Chapel+Rd,+Farmers+Branch,+TX+75234"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-normal leading-relaxed block text-black hover:text-[#c29f63] no-underline transition-colors -mt-1.5"
+                className="font-normal leading-relaxed block text-black hover:text-[#c29f63] no-underline transition-colors -mt-2"
               >
                 <strong>Beam Real Estate LLC</strong><br />
                 14455 Webb Chapel Road<br />
