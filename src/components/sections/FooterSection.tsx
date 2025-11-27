@@ -76,7 +76,7 @@ export default function FooterSection() {
                   Farmers Branch, Texas 75234
                 </a>
               </div>
-              <div className="mt-4 space-y-1 text-sm">
+              <div className="mt-4 space-y-2.5 text-sm">
                 <a
                   href="https://www.trec.texas.gov/sites/default/files/pdf-forms/IABS%201-0.pdf"
                   target="_blank"
