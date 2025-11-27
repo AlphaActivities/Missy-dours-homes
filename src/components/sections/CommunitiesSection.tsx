@@ -28,13 +28,13 @@ const communities = [
   {
     id: 5,
     name: "Brookhaven",
-    tagline: "Established neighborhood living near city conveniences.",
+    tagline: "Established neighborhood living near city conveniences, featuring mature trees, quiet streets, and a welcoming community atmosphere.",
     image: "/images/residencehouse.webp",
   },
   {
     id: 6,
     name: "Vista Point",
-    tagline: "Family-friendly living with parks and essential amenities.",
+    tagline: "Family-friendly living with parks and essential amenities, ideal for first-time buyers seeking comfort, connection, and everyday convenience.",
     image: "/images/hilltophouse.webp",
   },
 ];
