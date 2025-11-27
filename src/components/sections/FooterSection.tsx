@@ -68,7 +68,7 @@ export default function FooterSection() {
                 href="https://www.google.com/maps/place/14455+Webb+Chapel+Rd,+Farmers+Branch,+TX+75234"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-normal leading-relaxed block text-black hover:text-[#c29f63] underline transition-colors"
+                className="font-normal leading-relaxed block text-black hover:text-[#c29f63] no-underline transition-colors"
               >
                 <strong>Beam Real Estate LLC</strong><br />
                 14455 Webb Chapel Road<br />
