@@ -43,7 +43,7 @@ export default function AboutSection() {
               <div className="absolute left-6 bottom-6 rounded-full bg-black/65 px-4 py-1.5 text-[0.72rem] tracking-[0.18em] uppercase text-white/85 flex flex-wrap gap-x-2 gap-y-1">
                 <span>Missy Dours</span>
                 <span className="text-white/60">·</span>
-                <span>Dallas–Fort Worth Luxury Real Estate</span>
+                <span>Dallas–Fort Worth Real Estate Advisor</span>
               </div>
             </div>
           </LuxFadeIn>
@@ -65,7 +65,7 @@ export default function AboutSection() {
 
               {/* SUBHEADLINE */}
               <p className="text-sm sm:text-base tracking-[0.18em] uppercase text-[#9b8b6a] mt-1">
-                Dallas – Fort Worth Luxury Real Estate Specialist
+                Dallas–Fort Worth Real Estate Advisor
               </p>
 
               {/* BIO COPY */}
