@@ -74,7 +74,7 @@ export default function FooterSection() {
                   href="https://www.trec.texas.gov/sites/default/files/pdf-forms/IABS%201-0.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-[#c29f63] hover:underline"
+                  className="block text-black hover:underline"
                 >
                   Information About Brokerage Services
                 </a>
@@ -82,7 +82,7 @@ export default function FooterSection() {
                   href="https://www.trec.texas.gov/sites/default/files/pdf-forms/CN%201-3.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-[#c29f63] hover:underline"
+                  className="block text-black hover:underline"
                 >
                   Consumer Protection Notice
                 </a>
