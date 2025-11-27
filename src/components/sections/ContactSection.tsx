@@ -77,7 +77,7 @@ export default function ContactSection() {
                   <p className="text-neutral-300 text-xs uppercase tracking-[0.22em] mb-1">
                     Direct Contact
                   </p>
-                  <p>Dallas · Fort Worth · North Texas</p>
+                  <p>Dallas · Fort Worth · Carrollton · Farmers Branch · Addison · Coppell · North Dallas Metroplex</p>
                   <p className="mt-1">Phone: 214-861-0665</p>
                   <p>Email: <a href="mailto:missydourshomes@gmail.com" className="hover:text-[#F5E6C8] transition-colors">info@missydourshomes.com</a></p>
                 </div>
