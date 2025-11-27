@@ -48,8 +48,7 @@ export default function FeaturedListingsSection() {
             </div>
             <p className="max-w-xl text-sm md:text-base text-neutral-200">
               A selection of high-end residences handpicked for their architecture,
-              location, and lifestyle value. Final imagery and listings will be added
-              as Missy's portfolio is onboarded.
+              location, and lifestyle value.
             </p>
           </div>
         </LuxFadeIn>
