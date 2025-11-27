@@ -65,9 +65,9 @@ export default function NewToHomeownershipSection() {
                   <img
                     src={
                       listing.id === 1
-                        ? "/images/sunny-home.jpg"
+                        ? "/images/photo 1.jpg"
                         : listing.id === 2
-                        ? "/images/culdesac-home.jpg"
+                        ? "/images/photo 2.jpg"
                         : "/images/condo.jpg"
                     }
                     alt={listing.title}
