@@ -4,25 +4,25 @@ const communities = [
   {
     id: 1,
     name: "Preston Hollow",
-    tagline: "Tree-lined estates and timeless architecture.",
+    tagline: "Tree-lined estate living with timeless residential architecture, ideal for those seeking privacy and elegance.",
     image: "/images/prestonhollow.webp",
   },
   {
     id: 2,
     name: "Highland Park",
-    tagline: "Historic charm with premier park and lake access.",
+    tagline: "Historic charm paired with premier park and lake access, offering a refined and established community feel.",
     image: "/images/highlandpark.webp",
   },
   {
     id: 3,
     name: "Southlake",
-    tagline: "Family-focused luxury with top-rated schools.",
+    tagline: "Family-focused luxury complemented by nationally ranked schools, perfect for those seeking upscale suburban comfort.",
     image: "/images/southlake.webp",
   },
   {
     id: 4,
     name: "Uptown Dallas",
-    tagline: "Walkable city lifestyle with high-rise views.",
+    tagline: "A vibrant walkable lifestyle with modern high-rise views, blending urban energy with sophisticated amenities.",
     image: "/images/uptowndallas.webp",
   },
   {
