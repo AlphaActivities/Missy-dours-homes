@@ -31,7 +31,7 @@ export default function NewToHomeownershipSection() {
   return (
     <section
       id="new-to-homeownership"
-      className="lux-section bg-transparent text-white py-24 md:py-32 lg:py-36"
+      className="lux-section bg-transparent text-white pt-12 pb-24 md:pt-16 md:pb-32 lg:pt-20 lg:pb-36"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 space-y-10">
 
