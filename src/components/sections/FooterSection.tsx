@@ -61,20 +61,25 @@ export default function FooterSection() {
               Get in touch
             </h4>
             <div className="space-y-3 text-base text-neutral-800/90 animate-[blindsDown_0.8s_ease-out]">
-              <p className="font-medium">Phone: <span className="font-normal">214-861-0665</span></p>
-              <p className="font-medium">Email: <a href="mailto:missydourshomes@gmail.com" className="font-normal hover:text-[#c29f63] transition-colors">info@missydourshomes.com</a></p>
+              <p className="font-medium">Phone: <a href="tel:214-861-0665" className="font-normal text-black hover:text-[#c29f63] underline transition-colors">214-861-0665</a></p>
+              <p className="font-medium">Email: <a href="mailto:missydourshomes@gmail.com" className="font-normal text-black hover:text-[#c29f63] underline transition-colors">info@missydourshomes.com</a></p>
               <p className="font-medium">Office:</p>
-              <p className="font-normal leading-relaxed">
-                Beam Real Estate LLC<br />
+              <a
+                href="https://www.google.com/maps/place/14455+Webb+Chapel+Rd,+Farmers+Branch,+TX+75234"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-normal leading-relaxed block text-black hover:text-[#c29f63] underline transition-colors"
+              >
+                <strong>Beam Real Estate LLC</strong><br />
                 14455 Webb Chapel Road<br />
                 Farmers Branch, Texas 75234
-              </p>
+              </a>
               <div className="mt-4 space-y-1 text-sm">
                 <a
                   href="https://www.trec.texas.gov/sites/default/files/pdf-forms/IABS%201-0.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-black hover:underline"
+                  className="block text-black hover:text-[#c29f63] underline transition-colors"
                 >
                   Information About Brokerage Services
                 </a>
@@ -82,7 +87,7 @@ export default function FooterSection() {
                   href="https://www.trec.texas.gov/sites/default/files/pdf-forms/CN%201-3.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-black hover:underline"
+                  className="block text-black hover:text-[#c29f63] underline transition-colors"
                 >
                   Consumer Protection Notice
                 </a>
