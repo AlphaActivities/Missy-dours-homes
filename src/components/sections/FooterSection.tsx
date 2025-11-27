@@ -69,6 +69,24 @@ export default function FooterSection() {
                 14455 Webb Chapel Road<br />
                 Farmers Branch, Texas 75234
               </p>
+              <div className="mt-4 space-y-1 text-sm">
+                <a
+                  href="https://www.trec.texas.gov/sites/default/files/pdf-forms/IABS%201-0.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-[#c29f63] hover:underline"
+                >
+                  Information About Brokerage Services
+                </a>
+                <a
+                  href="https://www.trec.texas.gov/sites/default/files/pdf-forms/CN%201-3.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-[#c29f63] hover:underline"
+                >
+                  Consumer Protection Notice
+                </a>
+              </div>
             </div>
           </div>
         </div>
