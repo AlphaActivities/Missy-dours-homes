@@ -26,10 +26,10 @@ export default function FooterSection() {
             <h3 className="text-sm font-semibold tracking-[0.26em] uppercase text-black leading-tight text-center md:text-left">
               Missy Dours
             </h3>
-            <p className="text-xs text-black leading-relaxed mt-1.5 text-center md:text-left">
+            <p className="text-sm text-black leading-relaxed mt-1.5 text-center md:text-left">
               Dallas · Fort Worth · Carrollton · Farmers Branch · Addison · Coppell · North Dallas Metroplex · North Texas
             </p>
-            <p className="text-xs text-black leading-relaxed mt-2 text-center md:text-left">
+            <p className="text-sm text-black leading-relaxed mt-2 text-center md:text-left">
               Luxury real estate advisor curating exceptional properties for discerning buyers and sellers across North Texas.
             </p>
             <p className="mt-3 text-xs text-neutral-700 text-center md:text-left">
