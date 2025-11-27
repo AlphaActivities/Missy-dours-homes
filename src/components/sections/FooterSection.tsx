@@ -78,7 +78,7 @@ export default function FooterSection() {
               </div>
               <div className="mt-4 space-y-2.5 text-sm">
                 <a
-                  href="https://www.trec.texas.gov/sites/default/files/pdf-forms/IABS%201-0.pdf"
+                  href="/docs/IABS.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block text-black hover:text-[#c29f63] underline transition-colors"
@@ -86,7 +86,7 @@ export default function FooterSection() {
                   Information About Brokerage Services
                 </a>
                 <a
-                  href="https://www.trec.texas.gov/sites/default/files/pdf-forms/CN%201-3.pdf"
+                  href="/docs/ConsumerProtectionNotice.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block text-black hover:text-[#c29f63] underline transition-colors"
