@@ -35,25 +35,6 @@ export default function FooterSection() {
             <p className="mt-3 text-xs text-neutral-700 text-center md:text-left">
               License #0844012 · Brokered by Beam Real Estate LLC
             </p>
-            <div className="mt-3 flex flex-col sm:flex-row gap-1 sm:gap-3 text-xs text-neutral-700 text-center md:text-left">
-              <a
-                href="/docs/information-about-brokerage-services.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline underline-offset-2 hover:text-[#c29f63]"
-              >
-                Information About Brokerage Services
-              </a>
-              <span className="hidden sm:inline text-neutral-500">·</span>
-              <a
-                href="/docs/consumer-protection-notice.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline underline-offset-2 hover:text-[#c29f63] mt-1 sm:mt-0"
-              >
-                Consumer Protection Notice
-              </a>
-            </div>
           </div>
 
           <div className="flex flex-col">
