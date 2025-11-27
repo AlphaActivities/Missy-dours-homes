@@ -15,27 +15,27 @@ const communities = [
   },
   {
     id: 3,
-    name: "Westlake",
-    tagline: "Gated hilltop privacy and golf course living.",
-    image: "/images/westlakepark.webp",
-  },
-  {
-    id: 4,
     name: "Southlake",
     tagline: "Family-focused luxury with top-rated schools.",
     image: "/images/southlake.webp",
   },
   {
-    id: 5,
+    id: 4,
     name: "Uptown Dallas",
     tagline: "Walkable city lifestyle with high-rise views.",
     image: "/images/uptowndallas.webp",
   },
   {
+    id: 5,
+    name: "Brookhaven",
+    tagline: "Established neighborhood living with convenient city access.",
+    image: "/images/residencehouse.webp",
+  },
+  {
     id: 6,
-    name: "Trophy Club",
-    tagline: "Golf-forward community with serene surroundings.",
-    image: "/images/trophyclubgolf.webp",
+    name: "Vista Point",
+    tagline: "Family-friendly community with parks and everyday amenities.",
+    image: "/images/hilltophouse.webp",
   },
 ];
 
