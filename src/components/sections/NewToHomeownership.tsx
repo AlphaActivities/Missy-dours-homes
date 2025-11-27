@@ -63,13 +63,13 @@ export default function NewToHomeownershipSection() {
                 {/* IMAGE / PLACEHOLDER AREA */}
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
-                    src={`/images/${
+                    src={
                       listing.id === 1
-                        ? "southlake2.webp"
+                        ? "/images/sunny-home.jpg"
                         : listing.id === 2
-                        ? "prestonhollow.webp"
-                        : "uptowndallas.webp"
-                    }`}
+                        ? "/images/culdesac-home.jpg"
+                        : "/images/condo.jpg"
+                    }
                     alt={listing.title}
                     className="w-full h-full object-cover object-center transform group-hover:scale-[1.03] transition-transform duration-500"
                   />
