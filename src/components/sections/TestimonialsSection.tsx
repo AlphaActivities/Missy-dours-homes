@@ -58,11 +58,13 @@ export default function TestimonialsSection() {
 
                 {/* QUOTE CONTENT */}
                 <div>
-                  <div className="flex items-center gap-1 mb-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} size={16} fill="#F5E6C8" stroke="#F5E6C8" strokeWidth={1.5} />
-                    ))}
-                  </div>
+                  {testimonial.quote && (
+                    <div className="flex items-center gap-1 mb-4">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} size={16} fill="#F5E6C8" stroke="#F5E6C8" strokeWidth={1.5} />
+                      ))}
+                    </div>
+                  )}
                   {testimonial.quote && (
                     <p className="text-sm md:text-[15px] leading-relaxed text-white">
                       {testimonial.quote}
@@ -70,8 +72,8 @@ export default function TestimonialsSection() {
                   )}
                 </div>
 
-                {/* CLIENT INFO */}
-                {testimonial.name && (
+                {/* CLIENT INFO OR DECORATIVE LINE */}
+                {testimonial.name ? (
                   <div className="mt-6 pt-4 border-t border-white/20 flex flex-col">
                     <span className="text-sm font-semibold text-white">
                       {testimonial.name}
@@ -82,6 +84,8 @@ export default function TestimonialsSection() {
                       </span>
                     )}
                   </div>
+                ) : (
+                  <div className="mt-auto pt-4 border-t border-white/20"></div>
                 )}
               </article>
             </LuxFadeIn>
