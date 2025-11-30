@@ -4,24 +4,22 @@ import { Star } from 'lucide-react';
 const testimonials = [
   {
     id: 1,
-    name: "Alexandra W.",
-    detail: "Seller · Preston Hollow",
+    name: "Landon Haas",
+    detail: "First-Time Homebuyer",
     quote:
-      "Missy curated every detail of our sale with intention. From pricing strategy to presentation, her guidance helped us secure the right buyer at the right number without unnecessary stress.",
+      "Missy made my first-time home-buying experience seamless. She took the time to understand what I wanted and what fit my style and personality. My favorite part about working with Missy was her hands-on and proactive approach. She visited all types of properties before narrowing down the best one for me.",
   },
   {
     id: 2,
-    name: "Michael & Erin R.",
-    detail: "Buyers · Highland Park",
-    quote:
-      "We felt like her only clients. Missy protected our interests, anticipated challenges before they surfaced, and made a complex transaction feel calm and controlled.",
+    name: "",
+    detail: "",
+    quote: "",
   },
   {
     id: 3,
-    name: "Daniel K.",
-    detail: "Relocation · Westlake",
-    quote:
-      "Missy's market knowledge and network were invaluable. She paired us with a community that matched our lifestyle and handled the transition with true concierge-level service.",
+    name: "",
+    detail: "",
+    quote: "",
   },
 ];
 
@@ -65,20 +63,26 @@ export default function TestimonialsSection() {
                       <Star key={star} size={16} fill="#F5E6C8" stroke="#F5E6C8" strokeWidth={1.5} />
                     ))}
                   </div>
-                  <p className="text-sm md:text-[15px] leading-relaxed text-white">
-                    {testimonial.quote}
-                  </p>
+                  {testimonial.quote && (
+                    <p className="text-sm md:text-[15px] leading-relaxed text-white">
+                      {testimonial.quote}
+                    </p>
+                  )}
                 </div>
 
                 {/* CLIENT INFO */}
-                <div className="mt-6 pt-4 border-t border-white/20 flex flex-col">
-                  <span className="text-sm font-semibold text-white">
-                    {testimonial.name}
-                  </span>
-                  <span className="text-xs text-neutral-200">
-                    {testimonial.detail}
-                  </span>
-                </div>
+                {testimonial.name && (
+                  <div className="mt-6 pt-4 border-t border-white/20 flex flex-col">
+                    <span className="text-sm font-semibold text-white">
+                      {testimonial.name}
+                    </span>
+                    {testimonial.detail && (
+                      <span className="text-xs text-neutral-200">
+                        {testimonial.detail}
+                      </span>
+                    )}
+                  </div>
+                )}
               </article>
             </LuxFadeIn>
           ))}
