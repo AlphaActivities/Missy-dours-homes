@@ -85,7 +85,7 @@ export default function TestimonialsSection() {
                     )}
                   </div>
                 ) : (
-                  <div className="mt-auto pt-4 border-t border-white/20"></div>
+                  <div className="mt-6 pt-4 border-t border-white/20"></div>
                 )}
               </article>
             </LuxFadeIn>
