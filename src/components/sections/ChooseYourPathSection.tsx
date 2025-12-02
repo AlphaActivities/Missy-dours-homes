@@ -82,12 +82,17 @@ export default function ChooseYourPathSection({
                       {option.subtext}
                     </p>
                     <div className="pt-2">
-                      <span className={`inline-flex items-center text-sm font-medium transition-colors ${
-                        isSelected ? "text-[#F5E6C8]" : "text-white/90 group-hover:text-[#F5E6C8]"
-                      }`}>
-                        {isSelected ? "Selected" : "Explore"}
-                        <span className="ml-2 text-xs">→</span>
-                      </span>
+                      {isSelected ? (
+                        <span className="inline-flex items-center px-3 py-1.5 text-xs font-semibold tracking-wider uppercase bg-gradient-to-r from-[#C4A46A] to-[#8B6F47] text-white rounded-md shadow-lg">
+                          Selected
+                          <span className="ml-2">✓</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center text-sm font-medium text-white/90 group-hover:text-[#F5E6C8] transition-colors">
+                          Explore
+                          <span className="ml-2 text-xs">→</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>
