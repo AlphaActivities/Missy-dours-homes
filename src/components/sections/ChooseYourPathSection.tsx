@@ -33,9 +33,17 @@ export default function ChooseYourPathSection({
   return (
     <section
       id="choose-your-path"
-      className="lux-section bg-transparent text-white py-24 md:py-32 lg:py-36"
+      className="lux-section relative bg-transparent text-white py-24 md:py-32 lg:py-36"
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 space-y-10">
+      {/* Gold Radial Glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at center, rgba(196, 164, 106, 0.5) 0%, rgba(196, 164, 106, 0.25) 25%, rgba(196, 164, 106, 0) 50%)',
+        }}
+      />
+
+      <div className="relative max-w-7xl mx-auto px-6 md:px-10 lg:px-16 space-y-10">
         <LuxFadeIn delay={0.05}>
           <div className="flex flex-col items-center text-center gap-4 mb-8">
             <p className="text-xs md:text-sm tracking-[0.25em] uppercase text-neutral-300">
