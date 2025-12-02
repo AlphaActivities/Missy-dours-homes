@@ -1,4 +1,5 @@
 import { LuxFadeIn } from "../ui/LuxFadeIn";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 interface ChooseYourPathSectionProps {
   selectedPath: "luxury" | "mid-tier" | "first-time" | null;
@@ -69,6 +70,14 @@ export default function ChooseYourPathSection({
                       : "border-[#C4A46A] shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)]"
                   } hover:scale-[1.01] hover:-translate-y-[2px]`}
                 >
+                  {/* Selected Banner - Positioned at Top */}
+                  {isSelected && (
+                    <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 bg-gradient-to-r from-[#C4A46A] to-[#F5E6C8] text-black px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Selected
+                    </div>
+                  )}
+
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <img
                       src={option.image}
@@ -78,7 +87,7 @@ export default function ChooseYourPathSection({
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20" />
                   </div>
 
-                  <div className={`flex flex-col gap-3 px-5 pt-5 pb-6 transition-all duration-300 ${
+                  <div className={`flex flex-col gap-3 px-5 pt-5 pb-6 min-h-[200px] transition-all duration-300 ${
                     isSelected
                       ? "bg-gradient-to-br from-[#8B6F47]/50 to-[#6B5335]/40"
                       : "bg-black/40 group-hover:bg-gradient-to-br group-hover:from-[#8B6F47]/40 group-hover:to-[#6B5335]/30"
@@ -86,21 +95,18 @@ export default function ChooseYourPathSection({
                     <h3 className="text-lg md:text-xl font-semibold leading-snug">
                       {option.title}
                     </h3>
-                    <p className="text-sm text-neutral-200 leading-relaxed">
+                    <p className="text-sm text-neutral-200 leading-relaxed flex-grow">
                       {option.subtext}
                     </p>
-                    <div className="pt-2">
-                      {isSelected ? (
-                        <span className="inline-flex items-center text-sm font-medium bg-gradient-to-r from-[#C4A46A] to-[#F5E6C8] text-black px-4 py-2 rounded-md">
-                          Selected
-                          <span className="ml-2 text-xs">→</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center text-sm font-medium text-white/90 group-hover:text-[#F5E6C8] transition-colors">
-                          Explore
-                          <span className="ml-2 text-xs">→</span>
-                        </span>
-                      )}
+                    <div className="pt-2 mt-auto">
+                      <span className={`inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 ${
+                        isSelected
+                          ? "text-[#F5E6C8]"
+                          : "text-white/90 group-hover:text-[#F5E6C8]"
+                      }`}>
+                        {isSelected ? "Viewing Path" : "Explore Path"}
+                        <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
+                      </span>
                     </div>
                   </div>
                 </button>
