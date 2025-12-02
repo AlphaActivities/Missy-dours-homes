@@ -99,14 +99,17 @@ export default function ChooseYourPathSection({
                       {option.subtext}
                     </p>
                     <div className="pt-2 mt-auto">
-                      <span className={`inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 ${
-                        isSelected
-                          ? "text-[#F5E6C8]"
-                          : "text-white/90 group-hover:text-[#F5E6C8]"
-                      }`}>
-                        {isSelected ? "Viewing Path" : "Explore Path"}
-                        <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
-                      </span>
+                      {isSelected ? (
+                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-[#C4A46A] to-[#F5E6C8] text-black px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg w-fit">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Selected
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 text-sm font-medium text-white/90 group-hover:text-[#F5E6C8] transition-all duration-300">
+                          Explore Path
+                          <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>
