@@ -47,7 +47,7 @@ export default function MidTierHomesSection() {
               </h2>
             </div>
             <p className="max-w-xl text-sm md:text-base text-neutral-200">
-              These homes are ideal for buyers ready to move beyond their first property and into neighborhoods that offer more space, comfort, and long-term lifestyle value. Missy curates these mid-tier options for families and professionals who want a strong balance of price, location, and features.
+              Move-up homes that offer more space and comfort while keeping a smart balance of price and location.
             </p>
           </div>
         </LuxFadeIn>
