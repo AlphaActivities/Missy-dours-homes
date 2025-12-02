@@ -125,7 +125,7 @@ export default function ChooseYourPathSection({
             <img
               src="/images/md-logo.png"
               alt="Missy Duvall Logo"
-              className="h-14 md:h-16 w-auto opacity-90"
+              className="h-16 md:h-20 w-auto opacity-90"
             />
           </div>
         </LuxFadeIn>
