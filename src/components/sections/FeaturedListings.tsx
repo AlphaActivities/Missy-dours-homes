@@ -12,7 +12,7 @@ const listings = [
   {
     id: 2,
     label: "Coming Soon",
-    title: "Elevated Parkview Residence",
+    title: "Elegant Lakeside Residence",
     price: "$2,480,000",
     location: "Fort Worth, Texas",
     details: "4 Bed · 5 Bath · 4,300 sq ft",
