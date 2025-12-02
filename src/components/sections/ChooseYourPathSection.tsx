@@ -82,20 +82,12 @@ export default function ChooseYourPathSection({
                       {option.subtext}
                     </p>
                     <div className="pt-2">
-                      {isSelected ? (
-                        <div className="inline-flex flex-col gap-1">
-                          <div className="h-0.5 w-12 bg-gradient-to-r from-[#D4AF37] via-[#F5E6C8] to-[#D4AF37] rounded-full shadow-[0_0_8px_rgba(212,175,55,0.6)]" />
-                          <span className="inline-flex items-center text-sm font-medium text-[#F5E6C8]">
-                            Selected
-                            <span className="ml-2 text-xs">→</span>
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="inline-flex items-center text-sm font-medium text-white/90 group-hover:text-[#F5E6C8] transition-colors">
-                          Explore
-                          <span className="ml-2 text-xs">→</span>
-                        </span>
-                      )}
+                      <span className={`inline-flex items-center text-sm font-medium transition-colors ${
+                        isSelected ? "text-[#F5E6C8]" : "text-white/90 group-hover:text-[#F5E6C8]"
+                      }`}>
+                        {isSelected ? "Selected" : "Explore"}
+                        <span className="ml-2 text-xs">→</span>
+                      </span>
                     </div>
                   </div>
                 </button>
