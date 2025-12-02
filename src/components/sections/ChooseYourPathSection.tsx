@@ -34,7 +34,7 @@ export default function ChooseYourPathSection({
   return (
     <section
       id="choose-your-path"
-      className="lux-section relative bg-transparent text-white py-24 md:py-32 lg:py-36"
+      className="lux-section relative bg-transparent text-white pt-24 md:pt-32 lg:pt-36 pb-12 md:pb-16"
     >
       {/* Gold Radial Glow */}
       <div
@@ -121,11 +121,11 @@ export default function ChooseYourPathSection({
 
         {/* Footer Logo */}
         <LuxFadeIn delay={0.4}>
-          <div className="flex justify-center mt-12">
+          <div className="flex justify-center mt-6">
             <img
               src="/images/md-logo.png"
               alt="Missy Duvall Logo"
-              className="h-16 md:h-20 w-auto opacity-90"
+              className="h-14 md:h-16 w-auto opacity-90"
             />
           </div>
         </LuxFadeIn>
