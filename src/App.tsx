@@ -33,8 +33,10 @@ export default function App() {
 
   useEffect(() => {
     if (pendingScrollTarget) {
-      scrollToSection(pendingScrollTarget);
-      setPendingScrollTarget(null);
+      setTimeout(() => {
+        scrollToSection(pendingScrollTarget);
+        setPendingScrollTarget(null);
+      }, 100);
     }
   }, [pendingScrollTarget]);
 
