@@ -49,7 +49,7 @@ const Navbar: React.FC = () => {
     const header = document.querySelector('header') as HTMLElement | null;
     const headerHeight = header?.offsetHeight ?? 0;
 
-    const offsetPadding = -60;
+    const offsetPadding = 0;
     const targetPosition = Math.max(rect.top + scrollTop - headerHeight - offsetPadding, 0);
 
     window.scrollTo({
