@@ -103,6 +103,7 @@ export default function ChooseYourPathSection({
                         <div className="flex items-center gap-1.5 bg-gradient-to-r from-[#C4A46A] to-[#F5E6C8] text-black px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg w-fit">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           Selected
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </div>
                       ) : (
                         <span className="inline-flex items-center gap-2 text-sm font-medium text-white/90 group-hover:text-[#F5E6C8] transition-all duration-300">
