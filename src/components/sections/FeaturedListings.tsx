@@ -94,14 +94,6 @@ export default function FeaturedListingsSection() {
                     {listing.details}
                   </p>
 
-                  <div className="pt-3">
-                    <button
-                      className="inline-flex items-center text-sm font-medium text-white/90 group-hover:text-[#F5E6C8] transition-colors"
-                    >
-                      View Details
-                      <span className="ml-2 text-xs">↗</span>
-                    </button>
-                  </div>
                 </div>
               </article>
             </LuxFadeIn>
