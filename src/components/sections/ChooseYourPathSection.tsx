@@ -118,6 +118,17 @@ export default function ChooseYourPathSection({
             );
           })}
         </div>
+
+        {/* Footer Logo */}
+        <LuxFadeIn delay={0.4}>
+          <div className="flex justify-center mt-12">
+            <img
+              src="/images/md-logo.png"
+              alt="Missy Duvall Logo"
+              className="h-16 md:h-20 w-auto opacity-90"
+            />
+          </div>
+        </LuxFadeIn>
       </div>
     </section>
   );
