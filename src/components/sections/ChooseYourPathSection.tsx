@@ -23,7 +23,7 @@ const pathOptions = [
   },
   {
     id: "first-time" as const,
-    title: "First-Time Buyer Friendly Homes",
+    title: "First-Time Buyers Homes",
     icon: Heart,
     subtext: "Approachable, well-positioned homes that make your first purchase feel clear, supported, and achievable.",
     image: "/images/firsttime-home.webp",
