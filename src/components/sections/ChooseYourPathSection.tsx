@@ -1,5 +1,5 @@
 import { LuxFadeIn } from "../ui/LuxFadeIn";
-import { ArrowRight, ArrowDown, CheckCircle2 } from "lucide-react";
+import { ArrowRight, ArrowDown, CheckCircle2, Crown, TrendingUp, Heart } from "lucide-react";
 
 interface ChooseYourPathSectionProps {
   selectedPath: "luxury" | "mid-tier" | "first-time" | null;
@@ -10,18 +10,21 @@ const pathOptions = [
   {
     id: "luxury" as const,
     title: "Luxury Homes",
+    icon: Crown,
     subtext: "High-end residences with elevated finishes, prime locations, and a curated, white-glove experience.",
     image: "/images/luxury-home.webp",
   },
   {
     id: "mid-tier" as const,
     title: "Mid-Tier Move-Up Homes",
+    icon: TrendingUp,
     subtext: "Smart upgrades for buyers ready to move beyond their first home into more comfort and space.",
     image: "/images/midmarket-home.webp",
   },
   {
     id: "first-time" as const,
     title: "First-Time Buyer Friendly Homes",
+    icon: Heart,
     subtext: "Approachable, well-positioned homes that make your first purchase feel clear, supported, and achievable.",
     image: "/images/firsttime-home.webp",
   },
@@ -92,9 +95,12 @@ export default function ChooseYourPathSection({
                       ? "bg-gradient-to-br from-[#8B6F47]/50 to-[#6B5335]/40"
                       : "bg-black/40 group-hover:bg-gradient-to-br group-hover:from-[#8B6F47]/40 group-hover:to-[#6B5335]/30"
                   }`}>
-                    <h3 className="text-lg md:text-xl font-semibold leading-snug">
-                      {option.title}
-                    </h3>
+                    <div className="flex items-center gap-3">
+                      <option.icon className="w-5 h-5 md:w-6 md:h-6 text-[#D4AF37] group-hover:scale-110 transition-transform duration-300" />
+                      <h3 className="text-lg md:text-xl font-semibold leading-snug">
+                        {option.title}
+                      </h3>
+                    </div>
                     <p className="text-sm text-neutral-200 leading-relaxed flex-grow">
                       {option.subtext}
                     </p>
