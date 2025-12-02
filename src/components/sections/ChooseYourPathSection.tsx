@@ -63,11 +63,11 @@ export default function ChooseYourPathSection({
                 <button
                   type="button"
                   onClick={() => onSelectPath(option.id)}
-                  className={`group relative flex flex-col rounded-2xl overflow-hidden bg-black/55 border-2 backdrop-blur-md transition-all duration-300 w-full text-left hover:scale-[1.01] hover:-translate-y-[2px] ${
+                  className={`group relative flex flex-col rounded-2xl overflow-hidden bg-black/55 border-2 backdrop-blur-md transition-all duration-300 w-full text-left ${
                     isSelected
                       ? "border-[#F5E6C8] shadow-[0_0_35px_rgba(245,230,200,0.8)] ring-2 ring-[#F5E6C8]/50"
                       : "border-[#C4A46A] shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)]"
-                  }`}
+                  } hover:scale-[1.01] hover:-translate-y-[2px]`}
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <img
