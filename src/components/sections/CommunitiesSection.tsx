@@ -29,7 +29,7 @@ const communities = [
     id: 5,
     name: "Brookhaven",
     tagline: "Established neighborhood living near city conveniences, featuring mature trees, quiet streets, and a welcoming community atmosphere.",
-    image: "/images/residencehouse.webp",
+    image: "/images/brookhaven.jpg",
   },
   {
     id: 6,
