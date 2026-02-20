@@ -70,7 +70,7 @@ export default function CommunitiesSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {communities.map((community, index) => (
             <LuxFadeIn key={community.id} delay={0.1 + index * 0.06}>
-              <article className="group relative overflow-hidden rounded-2xl bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)] border-2 border-[#C4A46A] shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-shadow duration-300">
+              <article className="group relative overflow-hidden rounded-2xl bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)] border-2 border-[#C4A46A] shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-shadow duration-300 select-none">
 
                 {/* IMAGE / PLACEHOLDER */}
                 <div className="relative aspect-[4/3] overflow-hidden">

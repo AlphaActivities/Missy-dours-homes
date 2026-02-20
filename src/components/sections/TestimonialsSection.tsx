@@ -42,7 +42,7 @@ export default function TestimonialsSection() {
         <div className="grid grid-cols-1 max-w-2xl mx-auto gap-8">
           {testimonials.map((testimonial, index) => (
             <LuxFadeIn key={testimonial.id} delay={0.1 + index * 0.08}>
-              <article className="group relative h-full rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 flex flex-col justify-between shadow-[0_18px_45px_rgba(0,0,0,0.7)]">
+              <article className="group relative h-full rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 flex flex-col justify-between shadow-[0_18px_45px_rgba(0,0,0,0.7)] select-none">
 
                 {/* QUOTE CONTENT */}
                 <div>

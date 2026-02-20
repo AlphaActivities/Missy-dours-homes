@@ -57,7 +57,7 @@ export default function FeaturedListingsSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {listings.map((listing, index) => (
             <LuxFadeIn key={listing.id} delay={0.1 + index * 0.08}>
-              <article className="group relative flex flex-col rounded-2xl overflow-hidden bg-black/55 border-2 border-[#C4A46A] shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] backdrop-blur-md transition-shadow duration-300">
+              <article className="group relative flex flex-col rounded-2xl overflow-hidden bg-black/55 border-2 border-[#C4A46A] shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] backdrop-blur-md transition-shadow duration-300 select-none">
 
                 {/* IMAGE / PLACEHOLDER AREA */}
                 <div className="relative aspect-[4/3] overflow-hidden">
