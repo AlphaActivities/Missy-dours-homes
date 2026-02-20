@@ -20,7 +20,7 @@ export default function AboutSection() {
       className="bg-[#f7f3ea] py-20 md:py-28 lg:py-32"
     >
       <div className="max-w-6xl mx-auto px-6 sm:px-8 lg:px-10">
-        <div className="grid gap-12 lg:gap-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] items-center">
+        <div className="grid gap-12 lg:gap-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] items-start">
 
           {/* LEFT — PORTRAIT CARD */}
           <LuxFadeIn delay={0.1}>
