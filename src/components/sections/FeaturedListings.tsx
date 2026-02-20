@@ -66,7 +66,7 @@ export default function FeaturedListingsSection() {
                       listing.id === 1
                         ? "golfhouse.webp"
                         : listing.id === 2
-                        ? "Mansion.jpg"
+                        ? "luxury/Mansion.jpg"
                         : "hilltophouse.webp"
                     }`}
                     alt={listing.title}

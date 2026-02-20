@@ -12,21 +12,21 @@ const pathOptions = [
     title: "Luxury Homes",
     icon: Crown,
     subtext: "High-end residences with elevated finishes, prime locations, and a curated, white-glove experience.",
-    image: "/images/luxury-home.webp",
+    image: "/images/luxury/luxury-home.webp",
   },
   {
     id: "mid-tier" as const,
     title: "Mid-Tier Move-Up Homes",
     icon: TrendingUp,
     subtext: "Smart upgrades for buyers ready to move beyond their first home into more comfort and space.",
-    image: "/images/midmarket-home.webp",
+    image: "/images/mid-tier/midmarket-home.webp",
   },
   {
     id: "first-time" as const,
     title: "First-Time Buyer Homes",
     icon: Heart,
     subtext: "Approachable, well-positioned homes that make your first purchase feel clear, supported, and achievable.",
-    image: "/images/firsttime-home.webp",
+    image: "/images/first-time-buyer/firsttime-home.webp",
   },
 ];
 
