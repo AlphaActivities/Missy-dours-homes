@@ -41,9 +41,9 @@ export default function ChooseYourPathSection({
     >
       {/* Gold Radial Glow */}
       <div
-        className="absolute inset-0 pointer-events-none overflow-hidden"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at center, rgba(196, 164, 106, 0.5) 0%, rgba(196, 164, 106, 0.35) 20%, rgba(196, 164, 106, 0.2) 35%, rgba(196, 164, 106, 0.1) 50%, rgba(196, 164, 106, 0.05) 65%, rgba(196, 164, 106, 0) 80%)',
+          background: 'radial-gradient(circle at center, rgba(196, 164, 106, 0.5) 0%, rgba(196, 164, 106, 0.25) 25%, rgba(196, 164, 106, 0) 50%)',
         }}
       />
 
