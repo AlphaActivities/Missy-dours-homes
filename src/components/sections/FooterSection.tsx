@@ -16,13 +16,17 @@ export default function FooterSection() {
       <div className="max-w-6xl mx-auto px-6 md:px-10 lg:px-12 py-10 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
           <div className="flex flex-col">
-            <div className="flex justify-center md:justify-start mb-3">
+            <button
+              type="button"
+              onClick={() => scrollToSection('home')}
+              className="flex justify-center md:justify-start mb-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c29f63] rounded-lg transition-transform duration-200 hover:scale-105"
+            >
               <img
                 src="/images/md-logo.png"
                 alt="Missy Dours Logo"
                 className="h-20 w-auto object-contain"
               />
-            </div>
+            </button>
             <h3 className="text-sm font-semibold tracking-[0.26em] uppercase text-black leading-tight text-center md:text-left">
               Missy Dours
             </h3>
@@ -50,7 +54,7 @@ export default function FooterSection() {
                   className="group relative flex items-center text-sm font-medium text-neutral-800 hover:text-[#c29f63] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#c29f63] text-left md:flex-1"
                 >
                   <span>{link.label}</span>
-                  <span className="pointer-events-none absolute left-0 -bottom-0.5 h-[2px] w-full origin-left scale-x-0 bg-gradient-to-r from-[#e2c88d] via-[#f6e6bf] to-[#c79c4d] transition-transform duration-200 group-hover:scale-x-100" />
+                  <span className="pointer-events-none absolute left-0 -bottom-0.5 h-[2px] w-full origin-left scale-x-0 bg-gradient-to-r from-[#e2c88d] via-[#f6e6bf] to-[#c79c4d] transition-transform duration-300 group-hover:scale-x-100" />
                 </button>
               ))}
             </nav>
