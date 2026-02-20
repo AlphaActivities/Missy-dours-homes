@@ -94,7 +94,7 @@ export default function AboutSection() {
                     <span className="relative inline-block">
                       Schedule a Private Consultation
                       <span
-                        className="pointer-events-none absolute left-0 -bottom-1 h-[2px] w-full origin-left scale-x-0 bg-gradient-to-r from-[#e2c88d] via-[#f6e6bf] to-[#c79c4d] transition-transform duration-300 group-hover:scale-x-100"
+                        className="pointer-events-none absolute -left-2 -bottom-1 h-[2px] w-[calc(100%+1rem)] origin-left scale-x-0 bg-gradient-to-r from-[#e2c88d] via-[#f6e6bf] to-[#c79c4d] transition-transform duration-300 group-hover:scale-x-100"
                       />
                     </span>
                   </button>
