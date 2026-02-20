@@ -47,7 +47,7 @@ export default function FooterSection() {
                   key={link.label}
                   type="button"
                   onClick={() => scrollToSection(link.target)}
-                  className="group relative inline-flex w-fit text-sm font-medium text-neutral-800 hover:text-[#c29f63] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#c29f63] text-left"
+                  className="group relative flex text-sm font-medium text-neutral-800 hover:text-[#c29f63] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#c29f63] text-left"
                 >
                   <span>{link.label}</span>
                   <span className="pointer-events-none absolute left-0 -bottom-0.5 h-[1px] w-full origin-left scale-x-0 bg-gradient-to-r from-[#e2c88d] to-[#c79c4d] opacity-60 transition-transform duration-200 group-hover:scale-x-100" />
