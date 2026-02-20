@@ -39,11 +39,11 @@ export default function ChooseYourPathSection({
       id="choose-your-path"
       className="lux-section relative bg-transparent text-white pt-24 md:pt-32 lg:pt-36 pb-12 md:pb-16"
     >
-      {/* Gold Radial Glow */}
+      {/* Gold Radial Glow - Extended with smooth fadeout */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none overflow-hidden"
         style={{
-          background: 'radial-gradient(circle at center, rgba(196, 164, 106, 0.5) 0%, rgba(196, 164, 106, 0.25) 25%, rgba(196, 164, 106, 0) 50%)',
+          background: 'radial-gradient(ellipse 150% 120% at center 40%, rgba(196, 164, 106, 0.45) 0%, rgba(196, 164, 106, 0.35) 15%, rgba(196, 164, 106, 0.22) 30%, rgba(196, 164, 106, 0.12) 45%, rgba(196, 164, 106, 0.05) 60%, rgba(196, 164, 106, 0.02) 75%, rgba(196, 164, 106, 0) 90%)',
         }}
       />
 
