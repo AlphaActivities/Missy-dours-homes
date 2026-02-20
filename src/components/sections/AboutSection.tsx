@@ -53,7 +53,7 @@ export default function AboutSection() {
             <div className="flex flex-col justify-center gap-6 lg:gap-7 text-center lg:text-left">
 
               {/* GOLD ACCENT RULE */}
-              <div className="h-[1px] w-14 bg-gradient-to-r from-[#f3d7a0] via-[#f9e9c6] to-transparent mb-2 mx-auto lg:mx-0"></div>
+              <div className="h-[1px] w-32 sm:w-40 lg:w-48 bg-gradient-to-r from-[#f3d7a0] via-[#f9e9c6] to-transparent mb-2 mx-auto lg:mx-0"></div>
 
               {/* HEADING */}
               <h2 className="text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold tracking-tight text-[#111111]">
