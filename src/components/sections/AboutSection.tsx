@@ -84,7 +84,7 @@ export default function AboutSection() {
               </div>
 
               {/* CTA BUTTON */}
-              <div className="mt-4 sm:mt-6 mb-0.5">
+              <div className="mt-4 sm:mt-6 pb-16">
                 <div className="flex flex-wrap gap-3 sm:gap-4 justify-center lg:justify-start">
                   <button
                     type="button"
