@@ -43,7 +43,7 @@ export default function ChooseYourPathSection({
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at center, rgba(196, 164, 106, 0.5) 0%, rgba(196, 164, 106, 0.35) 15%, rgba(196, 164, 106, 0.15) 35%, rgba(196, 164, 106, 0.02) 60%, rgba(196, 164, 106, 0) 75%)',
+          background: 'radial-gradient(circle at center, rgba(196, 164, 106, 0.5) 0%, rgba(196, 164, 106, 0.25) 25%, rgba(196, 164, 106, 0) 50%)',
         }}
       />
 
