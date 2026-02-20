@@ -89,9 +89,12 @@ export default function AboutSection() {
                   <button
                     type="button"
                     onClick={() => scrollToSection('contact')}
-                    className="inline-flex items-center rounded-full bg-[#111111] px-7 sm:px-9 py-3 text-sm sm:text-[0.95rem] font-medium tracking-[0.16em] uppercase text-white shadow-[0_18px_45px_rgba(15,23,42,0.55)] transition-all duration-300 hover:shadow-[0_24px_60px_rgba(15,23,42,0.7)] hover:bg-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f1d598]"
+                    className="group relative inline-flex items-center rounded-full bg-[#111111] px-7 sm:px-9 py-3 text-sm sm:text-[0.95rem] font-medium tracking-[0.16em] uppercase text-white shadow-[0_18px_45px_rgba(15,23,42,0.55)] transition-all duration-300 hover:shadow-[0_24px_60px_rgba(15,23,42,0.7)] hover:bg-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f1d598] overflow-hidden"
                   >
-                    Schedule a Private Consultation
+                    <span className="relative z-10">Schedule a Private Consultation</span>
+                    <span
+                      className="pointer-events-none absolute left-0 bottom-2 h-[2px] w-full origin-left scale-x-0 bg-gradient-to-r from-[#e2c88d] via-[#f6e6bf] to-[#c79c4d] transition-transform duration-300 group-hover:scale-x-100"
+                    />
                   </button>
                 </div>
               </div>
