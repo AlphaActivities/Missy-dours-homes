@@ -41,13 +41,13 @@ export default function FooterSection() {
             <h4 className="text-xs tracking-[0.26em] uppercase text-[#c29f63] mb-3 font-medium">
               Navigate
             </h4>
-            <nav className="flex flex-col space-y-3 md:space-y-0 md:justify-between md:flex-1">
+            <nav className="flex flex-col space-y-3 md:space-y-0 md:flex-1">
               {navLinks.map((link) => (
                 <button
                   key={link.label}
                   type="button"
                   onClick={() => scrollToSection(link.target)}
-                  className="group relative flex text-sm font-medium text-neutral-800 hover:text-[#c29f63] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#c29f63] text-left"
+                  className="group relative flex items-center text-sm font-medium text-neutral-800 hover:text-[#c29f63] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#c29f63] text-left md:flex-1"
                 >
                   <span>{link.label}</span>
                   <span className="pointer-events-none absolute left-0 -bottom-0.5 h-[1px] w-full origin-left scale-x-0 bg-gradient-to-r from-[#e2c88d] to-[#c79c4d] opacity-60 transition-transform duration-200 group-hover:scale-x-100" />
