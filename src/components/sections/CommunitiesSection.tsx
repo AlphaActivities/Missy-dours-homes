@@ -5,37 +5,37 @@ const communities = [
     id: 1,
     name: "Preston Hollow",
     tagline: "Tree-lined estate living with timeless residential architecture, ideal for those seeking privacy and elegance.",
-    image: "/images/prestonhollow.webp",
+    image: "/images/communities/prestonhollow.webp",
   },
   {
     id: 2,
     name: "Highland Park",
     tagline: "Historic charm paired with premier park and lake access, offering a refined and established community feel.",
-    image: "/images/highlandpark.webp",
+    image: "/images/communities/highlandpark.webp",
   },
   {
     id: 3,
     name: "Southlake",
     tagline: "Family-focused luxury complemented by nationally ranked schools, perfect for those seeking upscale suburban comfort.",
-    image: "/images/southlake.webp",
+    image: "/images/communities/southlake.webp",
   },
   {
     id: 4,
     name: "Uptown Dallas",
     tagline: "A vibrant walkable lifestyle with modern high-rise views, blending urban energy with sophisticated amenities.",
-    image: "/images/uptowndallas.webp",
+    image: "/images/communities/uptowndallas.webp",
   },
   {
     id: 5,
     name: "Brookhaven",
     tagline: "Established neighborhood living near city conveniences, featuring mature trees, quiet streets, and a welcoming community atmosphere.",
-    image: "/images/brookhaven.jpg",
+    image: "/images/communities/brookhaven.jpg",
   },
   {
     id: 6,
     name: "Vista Point",
     tagline: "Family-friendly living with parks and essential amenities, ideal for first-time buyers seeking comfort, connection, and everyday convenience.",
-    image: "/images/hilltophouse.webp",
+    image: "/images/communities/hilltophouse.webp",
   },
 ];
 

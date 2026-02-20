@@ -64,10 +64,10 @@ export default function FeaturedListingsSection() {
                   <img
                     src={`/images/${
                       listing.id === 1
-                        ? "golfhouse.webp"
+                        ? "communities/golfhouse.webp"
                         : listing.id === 2
                         ? "luxury/Mansion.jpg"
-                        : "hilltophouse.webp"
+                        : "communities/hilltophouse.webp"
                     }`}
                     alt={listing.title}
                     className="w-full h-full object-cover object-center transform group-hover:scale-[1.03] transition-transform duration-500"

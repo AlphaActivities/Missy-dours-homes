@@ -4,7 +4,7 @@ import { scrollToSection } from "../../utils/scrollToSection";
 
 export default function AboutSection() {
   const [currentImage, setCurrentImage] = useState(0);
-  const images = ["/images/pfp1.jpg", "/images/pfp2.jpg"];
+  const images = ["/images/profile-photos/pfp1.jpg", "/images/profile-photos/pfp2.jpg"];
 
   useEffect(() => {
     const interval = setInterval(() => {
