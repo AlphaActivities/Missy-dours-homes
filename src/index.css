@@ -46,6 +46,18 @@
     0% {
       transform: translateX(-100%) skewX(-20deg);
     }
+    33.33% {
+      transform: translateX(calc(100% + 100vw)) skewX(-20deg);
+    }
+    33.34% {
+      transform: translateX(-100%) skewX(-20deg);
+    }
+    66.66% {
+      transform: translateX(calc(100% + 100vw)) skewX(-20deg);
+    }
+    66.67% {
+      transform: translateX(-100%) skewX(-20deg);
+    }
     100% {
       transform: translateX(calc(100% + 100vw)) skewX(-20deg);
     }
