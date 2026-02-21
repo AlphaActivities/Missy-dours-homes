@@ -42,23 +42,26 @@
     }
   }
 
-  @keyframes crystalSweep {
+  @keyframes liquidGoldPour {
     0% {
-      transform: translateX(-200%) skewX(-20deg);
+      transform: translateX(-150%) skewX(-25deg);
       opacity: 0;
     }
-    10% {
-      opacity: 1;
+    5% {
+      opacity: 0.3;
     }
-    30% {
-      opacity: 1;
+    15% {
+      opacity: 0.9;
     }
     40% {
-      transform: translateX(400%) skewX(-20deg);
+      opacity: 0.9;
+    }
+    50% {
+      transform: translateX(350%) skewX(-25deg);
       opacity: 0;
     }
     100% {
-      transform: translateX(400%) skewX(-20deg);
+      transform: translateX(350%) skewX(-25deg);
       opacity: 0;
     }
   }
