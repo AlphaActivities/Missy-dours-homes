@@ -42,12 +42,31 @@
     }
   }
 
-  @keyframes shimmer {
+  @keyframes diagonal-gold-sweep {
     0% {
-      transform: translateX(-100%);
+      left: -100%;
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 0.9;
+    }
+    90% {
+      opacity: 0.7;
     }
     100% {
-      transform: translateX(600%);
+      left: 200%;
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    @keyframes diagonal-gold-sweep {
+      0%, 100% {
+        opacity: 0;
+      }
     }
   }
 
