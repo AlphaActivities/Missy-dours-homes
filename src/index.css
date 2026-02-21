@@ -42,4 +42,25 @@
     }
   }
 
+  @keyframes crystalSweep {
+    0% {
+      transform: translateX(-200%) skewX(-20deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    30% {
+      opacity: 1;
+    }
+    40% {
+      transform: translateX(400%) skewX(-20deg);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(400%) skewX(-20deg);
+      opacity: 0;
+    }
+  }
+
 }
