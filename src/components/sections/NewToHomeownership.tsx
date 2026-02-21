@@ -65,10 +65,10 @@ export default function NewToHomeownershipSection() {
                   <img
                     src={
                       listing.id === 1
-                        ? "/images/first-time-buyer/photo_1.jpg"
+                        ? "/images/3-first-time-buyer/photo_1.jpg"
                         : listing.id === 2
-                        ? "/images/first-time-buyer/photo_2.jpg"
-                        : "/images/first-time-buyer/condo.jpg"
+                        ? "/images/3-first-time-buyer/photo_2.jpg"
+                        : "/images/3-first-time-buyer/condo.jpg"
                     }
                     alt={listing.title}
                     className="w-full h-full object-cover object-center transform group-hover:scale-[1.03] transition-transform duration-500"
