@@ -35,20 +35,20 @@ export default function ListingDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50/30">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         {/* Back Link */}
         <Link
           to="/listings"
-          className="inline-flex items-center gap-2 text-gray-700 hover:text-amber-700 mb-8 transition-colors"
+          className="inline-flex items-center gap-2 text-gray-700 hover:text-amber-700 mb-6 sm:mb-8 transition-colors text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Listings</span>
         </Link>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12 sm:mb-16">
           {/* Left: Gallery */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Main Image */}
             <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg">
               <img
@@ -57,7 +57,7 @@ export default function ListingDetailPage() {
                 className="w-full h-full object-cover"
               />
               {listing.status === 'active' && (
-                <div className="absolute top-4 right-4 bg-amber-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-lg">
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-amber-600 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-lg">
                   ACTIVE LISTING
                 </div>
               )}
@@ -65,12 +65,12 @@ export default function ListingDetailPage() {
 
             {/* Thumbnail Grid */}
             {listing.galleryImages.length > 1 && (
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                 {listing.galleryImages.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`aspect-square rounded-lg overflow-hidden transition-all ${
+                    className={`aspect-square rounded-md sm:rounded-lg overflow-hidden transition-all ${
                       selectedImage === index
                         ? 'ring-2 ring-amber-600 opacity-100'
                         : 'opacity-60 hover:opacity-100'
@@ -88,29 +88,29 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Right: Details Card */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-md p-8">
-              <h1 className="text-4xl font-light text-gray-900 mb-2">{listing.title}</h1>
-              <p className="text-lg text-gray-600 mb-6">{listing.locationText}</p>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-900 mb-2">{listing.title}</h1>
+              <p className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6">{listing.locationText}</p>
 
-              <p className="text-5xl font-light text-amber-700 mb-8">{listing.price}</p>
+              <p className="text-3xl sm:text-4xl lg:text-5xl font-light text-amber-700 mb-6 sm:mb-8">{listing.price}</p>
 
               {/* Property Stats */}
-              <div className="flex items-center gap-6 mb-8 pb-8 border-b border-gray-200">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Bed className="w-5 h-5" />
-                  <span className="text-lg font-medium">{listing.beds}</span>
-                  <span className="text-sm text-gray-600">Beds</span>
+                  <Bed className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-base sm:text-lg font-medium">{listing.beds}</span>
+                  <span className="text-xs sm:text-sm text-gray-600">Beds</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Bath className="w-5 h-5" />
-                  <span className="text-lg font-medium">{listing.baths}</span>
-                  <span className="text-sm text-gray-600">Baths</span>
+                  <Bath className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-base sm:text-lg font-medium">{listing.baths}</span>
+                  <span className="text-xs sm:text-sm text-gray-600">Baths</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Maximize className="w-5 h-5" />
-                  <span className="text-lg font-medium">{listing.sqft.toLocaleString()}</span>
-                  <span className="text-sm text-gray-600">Sqft</span>
+                  <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-base sm:text-lg font-medium">{listing.sqft.toLocaleString()}</span>
+                  <span className="text-xs sm:text-sm text-gray-600">Sqft</span>
                 </div>
               </div>
 
@@ -118,22 +118,22 @@ export default function ListingDetailPage() {
               <div className="space-y-3">
                 <button
                   onClick={handleContactClick}
-                  className="w-full px-8 py-4 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-all text-lg font-medium shadow-lg shadow-amber-600/30 hover:shadow-xl"
+                  className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-all text-base sm:text-lg font-medium shadow-lg shadow-amber-600/30 hover:shadow-xl"
                 >
                   Contact Missy
                 </button>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <a
                     href="tel:+14693006565"
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all"
+                    className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all text-sm sm:text-base"
                   >
                     <Phone className="w-4 h-4" />
                     <span>Call</span>
                   </a>
                   <a
                     href="mailto:info@missydourshomes.com"
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all"
+                    className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all text-sm sm:text-base"
                   >
                     <Mail className="w-4 h-4" />
                     <span>Email</span>
@@ -145,17 +145,17 @@ export default function ListingDetailPage() {
         </div>
 
         {/* Description Section */}
-        <div className="mb-16">
-          <div className="bg-white rounded-xl shadow-md p-8">
-            <h2 className="text-3xl font-light text-gray-900 mb-6">About This Property</h2>
-            <p className="text-lg text-gray-700 leading-relaxed">{listing.description}</p>
+        <div className="mb-10 sm:mb-12 lg:mb-16">
+          <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+            <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">About This Property</h2>
+            <p className="text-base sm:text-lg text-gray-700 leading-relaxed">{listing.description}</p>
           </div>
         </div>
 
         {/* Map Section */}
-        <div className="mb-16">
-          <div className="bg-white rounded-xl shadow-md p-8">
-            <h2 className="text-3xl font-light text-gray-900 mb-6">Location</h2>
+        <div className="mb-10 sm:mb-12 lg:mb-16">
+          <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+            <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Location</h2>
             <div className="aspect-video rounded-lg overflow-hidden">
               <iframe
                 src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`}
