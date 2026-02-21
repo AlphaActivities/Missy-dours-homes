@@ -2,7 +2,11 @@
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
-    extend: {},
+    extend: {
+      animation: {
+        shimmer: 'shimmer 4s ease-in-out infinite',
+      },
+    },
   },
   plugins: [],
 };
