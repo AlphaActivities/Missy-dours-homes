@@ -13,14 +13,9 @@ export function ShimmerButton({ children, className = '', onClick }: ShimmerButt
       onClick={onClick}
       className={`relative overflow-hidden ${className}`}
     >
-      <div className="absolute inset-0 -translate-x-full animate-shimmer">
-        <div
-          className="h-full w-8 rotate-12 bg-gradient-to-r from-transparent via-[#FFD700] to-transparent opacity-70"
-          style={{
-            boxShadow: '0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4)'
-          }}
-        />
-      </div>
+      <span className="shimmer-effect absolute inset-0 pointer-events-none">
+        <span className="shimmer-line" />
+      </span>
       {children}
     </button>
   );
