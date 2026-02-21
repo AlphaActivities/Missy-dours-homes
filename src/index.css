@@ -42,4 +42,21 @@
     }
   }
 
+  @keyframes luxGoldSweep {
+    0% {
+      transform: translateX(-150px) rotate(20deg);
+      opacity: 0;
+    }
+    5% {
+      opacity: 1;
+    }
+    95% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(calc(100% + 150px)) rotate(20deg);
+      opacity: 0;
+    }
+  }
+
 }

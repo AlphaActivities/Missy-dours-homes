@@ -11,8 +11,29 @@ export function ShimmerButton({ children, className = '', onClick }: ShimmerButt
     <button
       type="button"
       onClick={onClick}
-      className={`relative ${className}`}
+      className={`relative overflow-hidden ${className}`}
+      style={{
+        isolation: 'isolate',
+      }}
     >
+      <span
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0.3) 15%, rgba(226,200,141,0.6) 35%, rgba(246,230,191,1) 45%, rgba(231,212,168,1) 50%, rgba(246,230,191,1) 55%, rgba(226,200,141,0.6) 65%, rgba(196,164,106,0.3) 85%, rgba(196,164,106,0) 100%)',
+          width: '80px',
+          height: '200%',
+          top: '-50%',
+          left: '-150px',
+          transform: 'rotate(20deg)',
+          animation: 'luxGoldSweep 4s linear infinite',
+          filter: 'blur(2px)',
+          boxShadow: `
+            0 0 20px rgba(246,230,191,0.8),
+            0 0 40px rgba(226,200,141,0.5),
+            0 0 60px rgba(196,164,106,0.3)
+          `,
+        }}
+      />
       {children}
     </button>
   );
