@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
+import { scrollToSection } from '../utils/scrollToSection';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -28,35 +29,6 @@ const Navbar: React.FC = () => {
   const shellClasses = 'bg-[#f9f7f3]/95 shadow-[0_0_40px_rgba(234,200,108,0.45)] backdrop-blur-2xl';
 
   const textTone = 'text-slate-900';
-
-  const scrollToSection = useCallback((targetId: string) => {
-    if (typeof window === 'undefined') return;
-
-    if (targetId === 'home') {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-      return;
-    }
-
-    const section = document.getElementById(targetId);
-    if (!section) return;
-
-    const rect = section.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-
-    const header = document.querySelector('header') as HTMLElement | null;
-    const headerHeight = header?.offsetHeight ?? 0;
-
-    const offsetPadding = 0;
-    const targetPosition = Math.max(rect.top + scrollTop - headerHeight - offsetPadding, 0);
-
-    window.scrollTo({
-      top: targetPosition,
-      behavior: 'smooth',
-    });
-  }, []);
 
   const navItems = [
     { label: 'Home', target: 'home' },
