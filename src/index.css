@@ -59,37 +59,23 @@
     }
   }
 
-  @keyframes luxGoldSweepSecondary {
-    0% {
-      transform: translateX(-180px) rotate(20deg);
-      opacity: 0;
+  @keyframes luxGoldPulse {
+    0%, 100% {
+      opacity: 0.3;
+      filter: blur(3px);
     }
-    8% {
-      opacity: 0.6;
-    }
-    95% {
-      opacity: 0.6;
-    }
-    100% {
-      transform: translateX(calc(100% + 180px)) rotate(20deg);
-      opacity: 0;
+    50% {
+      opacity: 0.8;
+      filter: blur(2px);
     }
   }
 
-  @keyframes luxGoldSweepTertiary {
+  @keyframes luxGoldShimmer {
     0% {
-      transform: translateX(-210px) rotate(20deg);
-      opacity: 0;
-    }
-    11% {
-      opacity: 0.4;
-    }
-    95% {
-      opacity: 0.4;
+      transform: translateX(-200%) skew(-15deg);
     }
     100% {
-      transform: translateX(calc(100% + 210px)) rotate(20deg);
-      opacity: 0;
+      transform: translateX(200%) skew(-15deg);
     }
   }
 
