@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { LuxFadeIn } from '../ui/LuxFadeIn';
-import { ShimmerButton } from '../ui/ShimmerButton';
 import { scrollToSection } from '../../utils/scrollToSection';
 import { Home } from 'lucide-react';
 
@@ -38,17 +37,18 @@ export default function HeroSection() {
                 <button
                   type="button"
                   onClick={() => scrollToSection('contact')}
-                  className="inline-block bg-[#C4A46A] text-black font-medium px-7 py-3 rounded-full shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-all duration-300 cursor-pointer transform hover:scale-110"
+                  className="inline-block bg-[#C4A46A] text-black font-medium px-7 py-3 rounded-full shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-all cursor-pointer"
                 >
                   Schedule a Consultation
                 </button>
-                <ShimmerButton
+                <button
+                  type="button"
                   onClick={() => navigate('/listings')}
-                  className="inline-flex items-center gap-2 border-2 border-[#C4A46A] text-white hover:bg-gradient-to-br hover:from-[#8B6F47]/40 hover:to-[#6B5335]/30 rounded-full px-7 py-3 shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-all duration-300 cursor-pointer transform hover:scale-110"
+                  className="inline-flex items-center gap-2 border-2 border-[#C4A46A] text-white hover:bg-gradient-to-br hover:from-[#8B6F47]/40 hover:to-[#6B5335]/30 rounded-full px-7 py-3 shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-all duration-300 cursor-pointer"
                 >
                   <Home className="w-4 h-4" />
                   Active Listings
-                </ShimmerButton>
+                </button>
               </div>
             </LuxFadeIn>
           </div>
