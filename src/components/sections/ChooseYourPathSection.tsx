@@ -19,14 +19,14 @@ const pathOptions = [
     title: "Mid-Tier Move-Up Homes",
     icon: TrendingUp,
     subtext: "Smart upgrades for buyers ready to move beyond their first home into more comfort and space.",
-    image: "/images/2-mid-tier/midmarket-home.webp",
+    image: "/images/2-mid-tier/Mid-tier-1.jpg",
   },
   {
     id: "first-time" as const,
     title: "First-Time Buyer Homes",
     icon: Heart,
     subtext: "Approachable, well-positioned homes that make your first purchase feel clear, supported, and achievable.",
-    image: "/images/3-first-time-buyer/firsttime-home.webp",
+    image: "/images/3-first-time-buyer/condo.jpg",
   },
 ];
 
