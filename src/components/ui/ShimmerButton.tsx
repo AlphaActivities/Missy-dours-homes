@@ -11,8 +11,11 @@ export function ShimmerButton({ children, className = '', onClick }: ShimmerButt
     <button
       type="button"
       onClick={onClick}
-      className={`relative ${className}`}
+      className={`relative overflow-hidden ${className}`}
     >
+      <span className="shimmer-effect absolute inset-0 pointer-events-none">
+        <span className="shimmer-line" />
+      </span>
       {children}
     </button>
   );

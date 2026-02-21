@@ -42,4 +42,37 @@
     }
   }
 
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%) skewX(-20deg);
+    }
+    100% {
+      transform: translateX(calc(100% + 100vw)) skewX(-20deg);
+    }
+  }
+
+  .shimmer-effect {
+    z-index: 1;
+  }
+
+  .shimmer-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60px;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 215, 0, 0.1) 20%,
+      rgba(253, 185, 49, 0.4) 40%,
+      rgba(255, 255, 255, 0.6) 50%,
+      rgba(253, 185, 49, 0.4) 60%,
+      rgba(255, 215, 0, 0.1) 80%,
+      transparent 100%
+    );
+    filter: blur(2px);
+    animation: shimmer 3s infinite linear;
+    pointer-events: none;
+  }
 }
