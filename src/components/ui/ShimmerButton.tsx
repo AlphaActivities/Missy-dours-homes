@@ -15,10 +15,10 @@ export function ShimmerButton({ children, className = '', onClick }: ShimmerButt
     >
       <span className="relative z-10">{children}</span>
       <span
-        className="absolute inset-0 -translate-x-full animate-metallic-sweep opacity-0"
+        className="absolute inset-0 opacity-0"
         style={{
-          background: 'linear-gradient(135deg, transparent 0%, transparent 35%, #8B6F47 45%, #D4AF37 50%, #F5E6C8 55%, #D4AF37 60%, #8B6F47 65%, transparent 75%, transparent 100%)',
-          animation: 'metallic-sweep 4s ease-in-out infinite',
+          background: 'radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.4) 0%, rgba(139, 111, 71, 0.2) 30%, transparent 70%)',
+          animation: 'gold-pulse 3s ease-in-out infinite',
         }}
       />
     </button>
