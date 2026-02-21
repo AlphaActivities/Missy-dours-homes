@@ -63,10 +63,10 @@ export default function MidTierHomesSection() {
                   <img
                     src={
                       listing.id === 1
-                        ? "/images/mid-tier/Mid-tier-1.jpg"
+                        ? "/images/2-mid-tier/Mid-tier-1.jpg"
                         : listing.id === 2
-                        ? "/images/mid-tier/Mid-tier-2.jpg"
-                        : "/images/mid-tier/Mid-tier-3.jpg"
+                        ? "/images/2-mid-tier/Mid-tier-2.jpg"
+                        : "/images/2-mid-tier/Mid-tier-3.jpg"
                     }
                     alt={listing.title}
                     className="w-full h-full object-cover object-center transform group-hover:scale-[1.03] transition-transform duration-500"
