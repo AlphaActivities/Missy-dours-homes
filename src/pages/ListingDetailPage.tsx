@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { listings } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail } from 'lucide-react';
+import { CONTACT_INFO } from '../config/contact';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -125,14 +126,14 @@ export default function ListingDetailPage() {
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <a
-                    href="tel:+14693006565"
+                    href={CONTACT_INFO.phone.tel}
                     className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all text-sm sm:text-base"
                   >
                     <Phone className="w-4 h-4" />
                     <span>Call</span>
                   </a>
                   <a
-                    href="mailto:info@missydourshomes.com"
+                    href={CONTACT_INFO.email.mailto}
                     className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all text-sm sm:text-base"
                   >
                     <Mail className="w-4 h-4" />

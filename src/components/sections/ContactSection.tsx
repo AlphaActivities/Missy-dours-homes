@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
+import { CONTACT_INFO } from "../../config/contact";
 
 export default function ContactSection() {
   const [submitting, setSubmitting] = useState(false);
@@ -78,8 +79,8 @@ export default function ContactSection() {
                     Direct Contact
                   </p>
                   <p>Dallas · Fort Worth · Carrollton · Farmers Branch · Addison · Coppell · North Dallas Metroplex</p>
-                  <p className="mt-1">Phone: 214-861-0665</p>
-                  <p>Email: <a href="mailto:missydourshomes@gmail.com" className="hover:text-[#F5E6C8] transition-colors">info@missydourshomes.com</a></p>
+                  <p className="mt-1">Phone: {CONTACT_INFO.phone.display}</p>
+                  <p>Email: <a href={CONTACT_INFO.email.mailto} className="hover:text-[#F5E6C8] transition-colors">{CONTACT_INFO.email.display}</a></p>
                 </div>
 
                 <div className="pt-3 border-t border-white/10 max-w-md text-xs md:text-[13px] text-neutral-300/90">

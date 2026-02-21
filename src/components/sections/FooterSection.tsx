@@ -1,4 +1,5 @@
 import { scrollToSection } from '../../utils/scrollToSection';
+import { CONTACT_INFO } from '../../config/contact';
 
 export default function FooterSection() {
   const navLinks = [
@@ -65,8 +66,8 @@ export default function FooterSection() {
               Get in touch
             </h4>
             <div className="space-y-3 text-base text-neutral-800/90 animate-[blindsDown_0.8s_ease-out]">
-              <p className="font-medium">Phone: <a href="tel:214-861-0665" className="font-normal text-black hover:text-[#c29f63] underline transition-colors">214-861-0665</a></p>
-              <p className="font-medium">Email: <a href="mailto:missydourshomes@gmail.com" className="font-normal text-black hover:text-[#c29f63] underline transition-colors">info@missydourshomes.com</a></p>
+              <p className="font-medium">Phone: <a href={CONTACT_INFO.phone.tel} className="font-normal text-black hover:text-[#c29f63] underline transition-colors">{CONTACT_INFO.phone.display}</a></p>
+              <p className="font-medium">Email: <a href={CONTACT_INFO.email.mailto} className="font-normal text-black hover:text-[#c29f63] underline transition-colors">{CONTACT_INFO.email.display}</a></p>
               <div>
                 <p className="font-medium mb-1">Office:</p>
                 <a
