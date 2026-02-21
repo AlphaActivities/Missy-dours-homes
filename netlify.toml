@@ -1,0 +1,10 @@
+[[redirects]]
+  from = "/listings/3105-palmdale-cir"
+  to = "/listings/3105-palmdale-cir.html"
+  status = 200
+  force = false
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
