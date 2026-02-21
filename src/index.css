@@ -47,7 +47,7 @@
       transform: translateX(-100%) skewX(-20deg);
     }
     100% {
-      transform: translateX(200%) skewX(-20deg);
+      transform: translateX(calc(100% + 100vw)) skewX(-20deg);
     }
   }
 
@@ -72,7 +72,7 @@
       transparent 100%
     );
     filter: blur(2px);
-    animation: shimmer 3s infinite ease-in-out;
+    animation: shimmer 3s infinite linear;
     pointer-events: none;
   }
 }
