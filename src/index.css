@@ -84,7 +84,7 @@
       transparent 100%
     );
     filter: blur(2px);
-    animation: shimmer 9s infinite linear;
+    animation: shimmer 18s infinite linear;
     pointer-events: none;
   }
 }
