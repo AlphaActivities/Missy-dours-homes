@@ -89,13 +89,13 @@ export default function ListingsPage() {
               <span className="relative z-10">LUXURY</span>
               {activeFilter === 'luxury' && (
                 <>
-                  <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
+                  <span className="absolute inset-0 rounded-full border-2 border-white/50 animate-pulse" />
                   <span
                     className="absolute inset-0 pointer-events-none"
                     style={{
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
                       width: '50%',
-                      animation: 'subtleShimmer 3s ease-in-out infinite',
+                      animation: 'subtleShimmer 2s ease-in-out infinite',
                     }}
                   />
                 </>
@@ -112,13 +112,13 @@ export default function ListingsPage() {
               <span className="relative z-10">MID-TIER</span>
               {activeFilter === 'mid' && (
                 <>
-                  <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
+                  <span className="absolute inset-0 rounded-full border-2 border-white/50 animate-pulse" />
                   <span
                     className="absolute inset-0 pointer-events-none"
                     style={{
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
                       width: '50%',
-                      animation: 'subtleShimmer 3s ease-in-out infinite',
+                      animation: 'subtleShimmer 2s ease-in-out infinite',
                     }}
                   />
                 </>
@@ -135,13 +135,13 @@ export default function ListingsPage() {
               <span className="relative z-10">FIRST-TIME</span>
               {activeFilter === 'first' && (
                 <>
-                  <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
+                  <span className="absolute inset-0 rounded-full border-2 border-white/50 animate-pulse" />
                   <span
                     className="absolute inset-0 pointer-events-none"
                     style={{
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
                       width: '50%',
-                      animation: 'subtleShimmer 3s ease-in-out infinite',
+                      animation: 'subtleShimmer 2s ease-in-out infinite',
                     }}
                   />
                 </>
