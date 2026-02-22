@@ -80,7 +80,7 @@ export default function ListingsPage() {
           <div className="flex justify-center gap-2 sm:gap-4 bg-white/60 backdrop-blur-sm p-3 rounded-full shadow-[0_4px_24px_rgba(196,164,106,0.15)] border-2 border-[#C4A46A]/30">
             <button
               onClick={() => setActiveFilter('luxury')}
-              className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap ${
+              className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap overflow-hidden ${
                 activeFilter === 'luxury'
                   ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
@@ -88,12 +88,22 @@ export default function ListingsPage() {
             >
               <span className="relative z-10">LUXURY</span>
               {activeFilter === 'luxury' && (
-                <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
+                <>
+                  <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
+                  <span
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                      width: '50%',
+                      animation: 'subtleShimmer 3s ease-in-out infinite',
+                    }}
+                  />
+                </>
               )}
             </button>
             <button
               onClick={() => setActiveFilter('mid')}
-              className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap ${
+              className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap overflow-hidden ${
                 activeFilter === 'mid'
                   ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
@@ -101,12 +111,22 @@ export default function ListingsPage() {
             >
               <span className="relative z-10">MID-TIER</span>
               {activeFilter === 'mid' && (
-                <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
+                <>
+                  <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
+                  <span
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                      width: '50%',
+                      animation: 'subtleShimmer 3s ease-in-out infinite',
+                    }}
+                  />
+                </>
               )}
             </button>
             <button
               onClick={() => setActiveFilter('first')}
-              className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap ${
+              className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap overflow-hidden ${
                 activeFilter === 'first'
                   ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
@@ -114,7 +134,17 @@ export default function ListingsPage() {
             >
               <span className="relative z-10">FIRST-TIME</span>
               {activeFilter === 'first' && (
-                <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
+                <>
+                  <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
+                  <span
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)',
+                      width: '50%',
+                      animation: 'subtleShimmer 3s ease-in-out infinite',
+                    }}
+                  />
+                </>
               )}
             </button>
           </div>
