@@ -12,8 +12,6 @@ export default function FooterSection() {
 
   return (
     <footer id="footer" className="bg-[#f9f7f3] relative z-10">
-      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-[#e6c98e]/70 via-[#f5e7c4]/40 to-[#e6c98e]/70"></div>
-
       <div className="max-w-6xl mx-auto px-6 md:px-10 lg:px-12 py-10 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
           <div className="flex flex-col">
