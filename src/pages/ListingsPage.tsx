@@ -27,15 +27,6 @@ export default function ListingsPage() {
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50/30">
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
-        <div className="mb-6">
-          <button
-            onClick={() => navigate('/')}
-            className="bg-gradient-to-r from-[#c29f63] to-[#a8843e] text-white px-5 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300"
-          >
-            ← Back to Home
-          </button>
-        </div>
-
         <div className="text-center mb-10 sm:mb-12">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-light text-gray-900 mb-4 sm:mb-6 tracking-tight">
             Active Listings

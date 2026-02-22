@@ -14,10 +14,6 @@ function Layout() {
     <>
       {isHomePage && <GlobalVideoBackground />}
       <Navbar />
-
-      {/* Global Navbar Spacer */}
-      <div className="h-20 md:h-24" />
-
       <Outlet />
       <FloatingCallButton />
     </>
