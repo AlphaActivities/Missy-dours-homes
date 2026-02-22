@@ -41,10 +41,10 @@ export default function ListingsPage() {
         {/* Filter Pills */}
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 sm:gap-6 mb-10 sm:mb-12 px-4">
           {/* All & Active Buttons Container */}
-          <div className="flex justify-center gap-3 sm:gap-4 bg-gradient-to-br from-[#2d2d2d] to-[#1a1a1a] p-3 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-[#C4A46A]/20">
+          <div className="flex justify-center gap-3 sm:gap-4 bg-gradient-to-br from-[#2d2d2d] to-[#1a1a1a] p-3 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-[#C4A46A]/20">
             <button
               onClick={() => setActiveFilter('all')}
-              className={`relative px-6 sm:px-8 py-3 rounded-xl text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden ${
+              className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden ${
                 activeFilter === 'all'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_20px_rgba(196,164,106,0.6)]'
                   : 'bg-[#3a3a3a] text-[#C4A46A] hover:bg-[#4a4a4a] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)]'
@@ -57,7 +57,7 @@ export default function ListingsPage() {
             </button>
             <button
               onClick={() => setActiveFilter('active')}
-              className={`relative px-6 sm:px-8 py-3 rounded-xl text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden ${
+              className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden ${
                 activeFilter === 'active'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_20px_rgba(196,164,106,0.6)]'
                   : 'bg-[#3a3a3a] text-[#C4A46A] hover:bg-[#4a4a4a] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)]'
@@ -71,10 +71,10 @@ export default function ListingsPage() {
           </div>
 
           {/* Category Buttons Container */}
-          <div className="flex justify-center gap-3 sm:gap-4 bg-white/60 backdrop-blur-sm p-3 rounded-2xl shadow-[0_4px_24px_rgba(196,164,106,0.15)] border-2 border-[#C4A46A]/30">
+          <div className="flex justify-center gap-3 sm:gap-4 bg-white/60 backdrop-blur-sm p-3 rounded-full shadow-[0_4px_24px_rgba(196,164,106,0.15)] border-2 border-[#C4A46A]/30">
             <button
               onClick={() => setActiveFilter('luxury')}
-              className={`relative px-5 sm:px-7 py-3 rounded-xl text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
+              className={`relative px-5 sm:px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
                 activeFilter === 'luxury'
                   ? 'bg-gradient-to-br from-[#8B6F47] to-[#6B5335] text-white shadow-[0_4px_16px_rgba(139,111,71,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
@@ -82,12 +82,12 @@ export default function ListingsPage() {
             >
               <span className="relative z-10">LUXURY</span>
               {activeFilter === 'luxury' && (
-                <span className="absolute inset-0 rounded-xl border-2 border-white/30 animate-pulse" />
+                <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
               )}
             </button>
             <button
               onClick={() => setActiveFilter('mid')}
-              className={`relative px-5 sm:px-7 py-3 rounded-xl text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
+              className={`relative px-5 sm:px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
                 activeFilter === 'mid'
                   ? 'bg-gradient-to-br from-[#8B6F47] to-[#6B5335] text-white shadow-[0_4px_16px_rgba(139,111,71,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
@@ -95,12 +95,12 @@ export default function ListingsPage() {
             >
               <span className="relative z-10">MID-TIER</span>
               {activeFilter === 'mid' && (
-                <span className="absolute inset-0 rounded-xl border-2 border-white/30 animate-pulse" />
+                <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
               )}
             </button>
             <button
               onClick={() => setActiveFilter('first')}
-              className={`relative px-5 sm:px-7 py-3 rounded-xl text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
+              className={`relative px-5 sm:px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
                 activeFilter === 'first'
                   ? 'bg-gradient-to-br from-[#8B6F47] to-[#6B5335] text-white shadow-[0_4px_16px_rgba(139,111,71,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
@@ -108,7 +108,7 @@ export default function ListingsPage() {
             >
               <span className="relative z-10">FIRST-TIME</span>
               {activeFilter === 'first' && (
-                <span className="absolute inset-0 rounded-xl border-2 border-white/30 animate-pulse" />
+                <span className="absolute inset-0 rounded-full border-2 border-white/30 animate-pulse" />
               )}
             </button>
           </div>
