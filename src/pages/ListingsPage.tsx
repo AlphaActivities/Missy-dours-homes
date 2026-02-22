@@ -71,10 +71,10 @@ export default function ListingsPage() {
           </div>
 
           {/* Category Buttons Container */}
-          <div className="flex justify-center gap-3 sm:gap-4 bg-white/60 backdrop-blur-sm p-3 rounded-full shadow-[0_4px_24px_rgba(196,164,106,0.15)] border-2 border-[#C4A46A]/30">
+          <div className="flex justify-center gap-2 sm:gap-4 bg-white/60 backdrop-blur-sm p-3 rounded-full shadow-[0_4px_24px_rgba(196,164,106,0.15)] border-2 border-[#C4A46A]/30">
             <button
               onClick={() => setActiveFilter('luxury')}
-              className={`relative px-5 sm:px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
+              className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap ${
                 activeFilter === 'luxury'
                   ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
@@ -87,7 +87,7 @@ export default function ListingsPage() {
             </button>
             <button
               onClick={() => setActiveFilter('mid')}
-              className={`relative px-5 sm:px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
+              className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap ${
                 activeFilter === 'mid'
                   ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
@@ -100,7 +100,7 @@ export default function ListingsPage() {
             </button>
             <button
               onClick={() => setActiveFilter('first')}
-              className={`relative px-5 sm:px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
+              className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap ${
                 activeFilter === 'first'
                   ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
