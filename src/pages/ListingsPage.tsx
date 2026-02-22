@@ -41,7 +41,7 @@ export default function ListingsPage() {
         {/* Filter Pills */}
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 sm:gap-6 mb-10 sm:mb-12 px-4">
           {/* All & Active Buttons Container */}
-          <div className="flex justify-center gap-3 sm:gap-4 bg-gradient-to-br from-[#2d2d2d] to-[#1a1a1a] p-3 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-[#C4A46A]/20">
+          <div className="flex justify-center gap-3 sm:gap-4 bg-gradient-to-br from-[#1a3a52] to-[#0d2333] p-3 rounded-full shadow-[0_8px_32px_rgba(26,58,82,0.4)] border border-[#C4A46A]/20">
             <button
               onClick={() => setActiveFilter('all')}
               className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden ${
