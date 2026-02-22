@@ -57,28 +57,35 @@ export default function ListingDetailPage() {
           {/* Left: Gallery */}
           <div className="space-y-3 sm:space-y-4">
             {/* Main Image */}
-            <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg group cursor-pointer">
+            <div
+              className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg group cursor-pointer"
+              onClick={() => setIsLightboxOpen(true)}
+            >
               <img
                 src={listing.galleryImages[selectedImage]}
                 alt={`${listing.title} - Image ${selectedImage + 1}`}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                onClick={() => setIsLightboxOpen(true)}
               />
               {listing.status === 'active' && (
-                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-amber-600 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-lg z-10">
+                <div
+                  className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-amber-600 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-lg z-10 pointer-events-none"
+                >
                   ACTIVE LISTING
                 </div>
               )}
               {/* Fullscreen Button */}
               <button
-                onClick={() => setIsLightboxOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLightboxOpen(true);
+                }}
                 className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 p-2 sm:p-3 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 z-10"
                 aria-label="View fullscreen"
               >
                 <Expand className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               {/* Click to Expand Hint */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px]">
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px] pointer-events-none">
                 <div className="px-4 py-2 rounded-full bg-black/60 text-white text-sm font-medium backdrop-blur-md">
                   Click to view fullscreen
                 </div>
