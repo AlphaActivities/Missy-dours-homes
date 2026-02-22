@@ -76,7 +76,7 @@ export default function ListingsPage() {
               onClick={() => setActiveFilter('luxury')}
               className={`relative px-5 sm:px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
                 activeFilter === 'luxury'
-                  ? 'bg-gradient-to-br from-[#8B6F47] to-[#6B5335] text-white shadow-[0_4px_16px_rgba(139,111,71,0.4)] scale-105'
+                  ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
               }`}
             >
@@ -89,7 +89,7 @@ export default function ListingsPage() {
               onClick={() => setActiveFilter('mid')}
               className={`relative px-5 sm:px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
                 activeFilter === 'mid'
-                  ? 'bg-gradient-to-br from-[#8B6F47] to-[#6B5335] text-white shadow-[0_4px_16px_rgba(139,111,71,0.4)] scale-105'
+                  ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
               }`}
             >
@@ -102,7 +102,7 @@ export default function ListingsPage() {
               onClick={() => setActiveFilter('first')}
               className={`relative px-5 sm:px-7 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 ${
                 activeFilter === 'first'
-                  ? 'bg-gradient-to-br from-[#8B6F47] to-[#6B5335] text-white shadow-[0_4px_16px_rgba(139,111,71,0.4)] scale-105'
+                  ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
               }`}
             >
