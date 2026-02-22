@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { listings } from '../data/listings';
-import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail } from 'lucide-react';
+import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
+import ImageLightbox from '../components/ui/ImageLightbox';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -11,6 +12,7 @@ export default function ListingDetailPage() {
   const listing = listings.find((l) => l.slug === slug);
 
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   if (!listing) {
     return (
@@ -55,17 +57,32 @@ export default function ListingDetailPage() {
           {/* Left: Gallery */}
           <div className="space-y-3 sm:space-y-4">
             {/* Main Image */}
-            <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg">
+            <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg group cursor-pointer">
               <img
                 src={listing.galleryImages[selectedImage]}
                 alt={`${listing.title} - Image ${selectedImage + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                onClick={() => setIsLightboxOpen(true)}
               />
               {listing.status === 'active' && (
-                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-amber-600 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-lg">
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-amber-600 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-lg z-10">
                   ACTIVE LISTING
                 </div>
               )}
+              {/* Fullscreen Button */}
+              <button
+                onClick={() => setIsLightboxOpen(true)}
+                className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 p-2 sm:p-3 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 z-10"
+                aria-label="View fullscreen"
+              >
+                <Expand className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+              {/* Click to Expand Hint */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px]">
+                <div className="px-4 py-2 rounded-full bg-black/60 text-white text-sm font-medium backdrop-blur-md">
+                  Click to view fullscreen
+                </div>
+              </div>
             </div>
 
             {/* Thumbnail Grid */}
@@ -75,7 +92,7 @@ export default function ListingDetailPage() {
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`aspect-square rounded-md sm:rounded-lg overflow-hidden transition-all ${
+                    className={`aspect-square rounded-md sm:rounded-lg overflow-hidden transition-all group/thumb ${
                       selectedImage === index
                         ? 'ring-2 ring-amber-600 opacity-100'
                         : 'opacity-60 hover:opacity-100'
@@ -84,7 +101,7 @@ export default function ListingDetailPage() {
                     <img
                       src={image}
                       alt={`Thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
                     />
                   </button>
                 ))}
@@ -177,6 +194,16 @@ export default function ListingDetailPage() {
         </div>
       </div>
       <FooterSection />
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={listing.galleryImages}
+        currentIndex={selectedImage}
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        onNavigate={(index) => setSelectedImage(index)}
+        title={listing.title}
+      />
     </div>
   );
 }
