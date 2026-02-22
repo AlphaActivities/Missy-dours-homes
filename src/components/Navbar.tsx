@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { scrollToSection } from '../utils/scrollToSection';
 
 const Navbar: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -38,6 +41,14 @@ const Navbar: React.FC = () => {
     { label: 'Contact', target: 'contact' },
   ];
 
+  const handleNavClick = (target: string) => {
+    if (location.pathname === '/') {
+      scrollToSection(target);
+    } else {
+      navigate('/', { state: { scrollTo: target } });
+    }
+  };
+
   return (
     <header
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${shellClasses}`}
@@ -46,7 +57,7 @@ const Navbar: React.FC = () => {
         {/* Logo + Wordmark */}
         <button
           type="button"
-          onClick={() => scrollToSection('home')}
+          onClick={() => handleNavClick('home')}
           className="flex items-center gap-3 rounded-full bg-[#C4A46A]/70 px-3 py-1.5 shadow-[0_10px_30px_rgba(15,23,42,0.18)] ring-1 ring-[#C4A46A]/60 backdrop-blur-md transition-transform duration-200 hover:-translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5c98f]/80"
         >
           <img
@@ -91,7 +102,7 @@ const Navbar: React.FC = () => {
               <li key={item.label} className="group">
                 <button
                   type="button"
-                  onClick={() => scrollToSection(item.target)}
+                  onClick={() => handleNavClick(item.target)}
                   className="relative px-2 py-1 transition-colors duration-300 hover:text-black text-black/80 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#e5c98f]/80"
                 >
                   <span>{item.label}</span>
@@ -127,7 +138,7 @@ const Navbar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    scrollToSection(item.target);
+                    handleNavClick(item.target);
                     setIsMobileMenuOpen(false);
                   }}
                   className="w-full text-left rounded-2xl px-4 py-3 text-[0.8rem] tracking-[0.24em] uppercase text-white/85 hover:text-[#f5e3b6] transition flex items-center justify-between bg-white/5 hover:bg-white/10"
@@ -142,7 +153,7 @@ const Navbar: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              scrollToSection('contact');
+              handleNavClick('contact');
               setIsMobileMenuOpen(false);
             }}
             className="mt-3 w-full rounded-2xl bg-gradient-to-r from-[#f5e3b6] via-[#e7c78a] to-[#c89c4f] px-4 py-3 text-[0.78rem] tracking-[0.26em] uppercase text-[#1b1b1b] text-center shadow-[0_14px_40px_rgba(0,0,0,0.75)] hover:brightness-105 transition"

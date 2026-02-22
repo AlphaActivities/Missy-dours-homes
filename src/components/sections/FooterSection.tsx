@@ -1,7 +1,11 @@
+import { useNavigate, useLocation } from 'react-router-dom';
 import { scrollToSection } from '../../utils/scrollToSection';
 import { CONTACT_INFO } from '../../config/contact';
 
 export default function FooterSection() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const navLinks = [
     { label: 'Home', target: 'home' },
     { label: 'About', target: 'about' },
@@ -9,6 +13,22 @@ export default function FooterSection() {
     { label: 'Testimonials', target: 'testimonials' },
     { label: 'Contact', target: 'contact' },
   ];
+
+  const handleFooterHome = () => {
+    if (location.pathname === '/') {
+      scrollToSection('home');
+    } else {
+      navigate('/', { state: { scrollTo: 'home' } });
+    }
+  };
+
+  const handleFooterNavClick = (target: string) => {
+    if (location.pathname === '/') {
+      scrollToSection(target);
+    } else {
+      navigate('/', { state: { scrollTo: target } });
+    }
+  };
 
   return (
     <footer id="footer" className="bg-[#f9f7f3] relative z-10">
@@ -19,7 +39,7 @@ export default function FooterSection() {
           <div className="flex flex-col">
             <button
               type="button"
-              onClick={() => scrollToSection('home')}
+              onClick={handleFooterHome}
               className="flex justify-center md:justify-start mb-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c29f63] rounded-lg transition-transform duration-200 hover:scale-105"
             >
               <img
@@ -51,7 +71,7 @@ export default function FooterSection() {
                 <button
                   key={link.label}
                   type="button"
-                  onClick={() => scrollToSection(link.target)}
+                  onClick={() => handleFooterNavClick(link.target)}
                   className="group relative flex items-center text-sm font-medium text-neutral-800 hover:text-[#c29f63] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#c29f63] text-left md:flex-1"
                 >
                   <span>{link.label}</span>
