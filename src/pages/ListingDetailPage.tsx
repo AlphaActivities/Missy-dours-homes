@@ -39,7 +39,7 @@ export default function ListingDetailPage() {
     <div className="min-h-screen bg-[#f7f3ea]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-8 sm:pb-12 lg:pb-16">
         {/* Back Link */}
-        <div className="-mt-5 mb-6 sm:mb-8">
+        <div className="-mt-5 mb-[6.75rem] sm:mb-[7.75rem] lg:mb-[8.75rem]">
           <Link
             to="/listings"
             className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#C4A46A]/70 text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.18)] ring-1 ring-[#C4A46A]/60 backdrop-blur-md transition-all duration-300 hover:-translate-y-[1px] hover:shadow-[0_12px_35px_rgba(15,23,42,0.25)] overflow-hidden text-sm sm:text-base font-medium"
