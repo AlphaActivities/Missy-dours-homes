@@ -47,7 +47,7 @@ export default function ListingsPage() {
               className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden ${
                 activeFilter === 'all'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)]'
-                  : 'bg-gradient-to-br from-[#2d5571] to-[#1f4059] text-[#C4A46A] hover:bg-gradient-to-br hover:from-[#375d7a] hover:to-[#274a62] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)]'
+                  : 'bg-gradient-to-br from-[#2d5571] to-[#1f4059] text-[#C4A46A] hover:bg-gradient-to-br hover:from-[#375d7a] hover:to-[#274a62] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)] border-2 border-[#C4A46A]'
               }`}
             >
               <span className="relative z-10">ALL</span>
@@ -63,7 +63,7 @@ export default function ListingsPage() {
               className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden ${
                 activeFilter === 'active'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)]'
-                  : 'bg-gradient-to-br from-[#2d5571] to-[#1f4059] text-[#C4A46A] hover:bg-gradient-to-br hover:from-[#375d7a] hover:to-[#274a62] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)]'
+                  : 'bg-gradient-to-br from-[#2d5571] to-[#1f4059] text-[#C4A46A] hover:bg-gradient-to-br hover:from-[#375d7a] hover:to-[#274a62] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)] border-2 border-[#C4A46A]'
               }`}
             >
               <span className="relative z-10">ACTIVE</span>
