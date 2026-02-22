@@ -39,13 +39,15 @@ export default function ListingDetailPage() {
     <div className="min-h-screen bg-[#f7f3ea]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-8 sm:pb-12 lg:pb-16">
         {/* Back Link */}
-        <Link
-          to="/listings"
-          className="inline-flex items-center gap-2 text-gray-700 hover:text-amber-700 mb-6 sm:mb-8 transition-colors text-sm sm:text-base"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Listings</span>
-        </Link>
+        <div className="-mt-5">
+          <Link
+            to="/listings"
+            className="inline-flex items-center gap-2 text-gray-700 hover:text-amber-700 mb-6 sm:mb-8 transition-colors text-sm sm:text-base"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Listings</span>
+          </Link>
+        </div>
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12 sm:mb-16">
