@@ -5,7 +5,6 @@ import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand } from 'lucide-reac
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
-import ListingMap from '../components/ListingMap';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -186,12 +185,18 @@ export default function ListingDetailPage() {
         <div className="mb-10 sm:mb-12 lg:mb-16">
           <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
             <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Location</h2>
-            <ListingMap
-              lat={listing?.lat}
-              lng={listing?.lng}
-              title={listing?.title}
-              address={listing?.address}
-            />
+            <div className="aspect-video rounded-lg overflow-hidden">
+              <iframe
+                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Property Location Map"
+              />
+            </div>
           </div>
         </div>
       </div>
