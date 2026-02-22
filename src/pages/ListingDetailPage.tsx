@@ -36,7 +36,7 @@ export default function ListingDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-12 lg:pb-16">
         {/* Back Link */}
         <Link
           to="/listings"
