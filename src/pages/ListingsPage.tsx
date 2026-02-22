@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listings, ListingCategory, ListingStatus } from '../data/listings';
 import { Bed, Bath, Maximize } from 'lucide-react';
+import FooterSection from '../components/sections/FooterSection';
 
 type FilterType = 'all' | 'active' | ListingCategory;
 
@@ -116,6 +117,7 @@ export default function ListingsPage() {
           </div>
         )}
       </div>
+      <FooterSection />
     </div>
   );
 }

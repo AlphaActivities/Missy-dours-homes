@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { listings } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
+import FooterSection from '../components/sections/FooterSection';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -172,6 +173,7 @@ export default function ListingDetailPage() {
           </div>
         </div>
       </div>
+      <FooterSection />
     </div>
   );
 }
