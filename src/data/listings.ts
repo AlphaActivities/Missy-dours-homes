@@ -46,9 +46,9 @@ export const listings: Listing[] = [
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir10.webp"
     ],
     description: "An exceptional Highland Park residence offering timeless elegance and modern luxury. This meticulously maintained home features soaring ceilings, custom millwork, and designer finishes throughout. The chef's kitchen opens to a spacious family room with fireplace, perfect for entertaining. The primary suite offers a private retreat with spa-inspired bath and generous closet space. Expansive outdoor living areas include a covered patio and mature landscaping. Located in one of Dallas's most prestigious neighborhoods, this home provides the perfect blend of sophistication and comfort.",
-    address: "3105 Palmdale Circle, Highland Park, Dallas, TX",
-    lat: 32.8349,
-    lng: -96.7966
+    address: "3105 Palmdale Cir, Dallas, TX 75205",
+    lat: 32.8341,
+    lng: -96.7969
   },
   {
     id: "2",
