@@ -41,13 +41,13 @@ export default function ListingsPage() {
         {/* Filter Pills */}
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 sm:gap-6 mb-10 sm:mb-12 px-4">
           {/* All & Active Buttons Container */}
-          <div className="flex justify-center gap-3 sm:gap-4 bg-gradient-to-br from-[#1a3a52] to-[#0d2333] p-3 rounded-full shadow-[0_8px_32px_rgba(26,58,82,0.4)] border border-[#C4A46A]/20">
+          <div className="flex justify-center gap-3 sm:gap-4 bg-gradient-to-br from-[#1a3a52] to-[#0d2333] p-3 rounded-full shadow-[0_8px_32px_rgba(26,58,82,0.4)]">
             <button
               onClick={() => setActiveFilter('all')}
               className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden ${
                 activeFilter === 'all'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_20px_rgba(196,164,106,0.6)]'
-                  : 'bg-[#3a3a3a] text-[#C4A46A] hover:bg-[#4a4a4a] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)]'
+                  : 'bg-gradient-to-br from-[#2d5571] to-[#1f4059] text-[#C4A46A] hover:bg-gradient-to-br hover:from-[#375d7a] hover:to-[#274a62] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)]'
               }`}
             >
               <span className="relative z-10">ALL</span>
@@ -60,7 +60,7 @@ export default function ListingsPage() {
               className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden ${
                 activeFilter === 'active'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_20px_rgba(196,164,106,0.6)]'
-                  : 'bg-[#3a3a3a] text-[#C4A46A] hover:bg-[#4a4a4a] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)]'
+                  : 'bg-gradient-to-br from-[#2d5571] to-[#1f4059] text-[#C4A46A] hover:bg-gradient-to-br hover:from-[#375d7a] hover:to-[#274a62] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)]'
               }`}
             >
               <span className="relative z-10">ACTIVE</span>
