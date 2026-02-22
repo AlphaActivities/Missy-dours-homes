@@ -14,7 +14,7 @@ export default function ListingDetailPage() {
 
   if (!listing) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-[#1a2b4a] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-[#f7f3ea] flex items-center justify-center px-6">
         <div className="text-center">
           <h1 className="text-4xl font-light text-gray-900 mb-4">Listing Not Found</h1>
           <p className="text-gray-600 mb-8">The property you're looking for doesn't exist or has been removed.</p>
@@ -36,7 +36,7 @@ export default function ListingDetailPage() {
   const encodedAddress = encodeURIComponent(listing.address);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-[#1a2b4a]">
+    <div className="min-h-screen bg-[#f7f3ea]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-8 sm:pb-12 lg:pb-16">
         {/* Back Link */}
         <Link
