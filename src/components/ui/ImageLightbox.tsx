@@ -21,9 +21,12 @@ export default function ImageLightbox({
 }: ImageLightboxProps) {
   const [showControls, setShowControls] = useState(true);
   const [isSwiping, setIsSwiping] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
   const touchCurrentRef = useRef({ x: 0, y: 0 });
+  const mouseStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const isDraggingRef = useRef(false);
 
   const resetHideControlsTimer = () => {
     setShowControls(true);
@@ -67,12 +70,14 @@ export default function ImageLightbox({
   }, [isOpen, currentIndex]);
 
   const handlePrevious = () => {
+    setSlideDirection('right');
     const newIndex = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
     onNavigate(newIndex);
     resetHideControlsTimer();
   };
 
   const handleNext = () => {
+    setSlideDirection('left');
     const newIndex = currentIndex === images.length - 1 ? 0 : currentIndex + 1;
     onNavigate(newIndex);
     resetHideControlsTimer();
@@ -126,8 +131,56 @@ export default function ImageLightbox({
     resetHideControlsTimer();
   };
 
-  const handleMouseMove = () => {
-    if (!isSwiping) {
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    isDraggingRef.current = true;
+    mouseStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      time: Date.now(),
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDraggingRef.current) {
+      const deltaX = Math.abs(e.clientX - mouseStartRef.current.x);
+      const deltaY = Math.abs(e.clientY - mouseStartRef.current.y);
+
+      if (deltaX > 10 || deltaY > 10) {
+        setIsSwiping(true);
+        setShowControls(false);
+      }
+    } else if (!isSwiping) {
+      resetHideControlsTimer();
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+
+    const deltaX = e.clientX - mouseStartRef.current.x;
+    const deltaY = Math.abs(e.clientY - mouseStartRef.current.y);
+    const deltaTime = Date.now() - mouseStartRef.current.time;
+
+    const isSwipe = Math.abs(deltaX) > 50 && deltaY < 100 && deltaTime < 500;
+
+    if (isSwipe) {
+      if (deltaX > 0) {
+        handlePrevious();
+      } else {
+        handleNext();
+      }
+    }
+
+    setIsSwiping(false);
+    resetHideControlsTimer();
+  };
+
+  const handleMouseLeave = () => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      setIsSwiping(false);
       resetHideControlsTimer();
     }
   };
@@ -149,10 +202,13 @@ export default function ImageLightbox({
         transition={{ duration: 0.3 }}
         className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm"
         onClick={handleBackdropClick}
-        onMouseMove={handleMouseMove}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
       >
         {/* Close Button */}
         <AnimatePresence>
@@ -201,36 +257,64 @@ export default function ImageLightbox({
           )}
         </AnimatePresence>
 
-        {/* Navigation Buttons */}
+        {/* Navigation Buttons - Desktop/Tablet (centered vertically) */}
         <AnimatePresence>
           {images.length > 1 && showControls && !isSwiping && (
             <>
-              {/* Previous Button */}
+              {/* Previous Button - Desktop/Tablet */}
               <motion.button
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
                 onClick={handlePrevious}
-                className="absolute left-2 sm:left-4 lg:left-8 z-50 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 group"
+                className="hidden sm:block absolute left-2 sm:left-4 lg:left-8 top-1/2 -translate-y-1/2 z-50 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 group"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8 transition-transform duration-300 group-hover:-translate-x-1" />
               </motion.button>
 
-              {/* Next Button */}
+              {/* Next Button - Desktop/Tablet */}
               <motion.button
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
                 onClick={handleNext}
-                className="absolute right-2 sm:right-4 lg:right-8 z-50 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 group"
+                className="hidden sm:block absolute right-2 sm:right-4 lg:right-8 top-1/2 -translate-y-1/2 z-50 p-3 sm:p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all duration-300 hover:scale-110 group"
                 aria-label="Next image"
               >
                 <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 transition-transform duration-300 group-hover:translate-x-1" />
               </motion.button>
             </>
+          )}
+        </AnimatePresence>
+
+        {/* Navigation Buttons - Mobile (below image) */}
+        <AnimatePresence>
+          {images.length > 1 && showControls && !isSwiping && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3 }}
+              className="sm:hidden absolute bottom-32 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4"
+            >
+              <button
+                onClick={handlePrevious}
+                className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={handleNext}
+                className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
+                aria-label="Next image"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -242,17 +326,28 @@ export default function ImageLightbox({
           className="relative w-full h-full flex items-center justify-center px-4 sm:px-16 lg:px-24 py-20 sm:py-24"
           onClick={handleImageClick}
         >
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" custom={slideDirection}>
             <motion.img
               key={currentIndex}
               src={images[currentIndex]}
               alt={`${title} - Image ${currentIndex + 1}`}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
+              custom={slideDirection}
+              initial={(direction) => ({
+                opacity: 0,
+                x: direction === 'left' ? 300 : direction === 'right' ? -300 : 0,
+              })}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
+              exit={(direction) => ({
+                opacity: 0,
+                x: direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
+              })}
+              transition={{ duration: 0.4, ease: 'easeInOut' }}
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none"
               draggable={false}
+              onAnimationComplete={() => setSlideDirection(null)}
             />
           </AnimatePresence>
         </motion.div>
