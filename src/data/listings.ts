@@ -30,13 +30,13 @@ export const listings: Listing[] = [
   {
     id: "1",
     title: "3105 Palmdale Circle",
-    price: "$2,495,000",
+    price: "$565,000",
     locationText: "Highland Park, Dallas",
     beds: 5,
     baths: 4,
     sqft: 4850,
     slug: "3105-palmdale-cir",
-    category: "luxury",
+    category: "mid",
     status: "active",
     heroImage: "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir01.webp",
     galleryImages: [
