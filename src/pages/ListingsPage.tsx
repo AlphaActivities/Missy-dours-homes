@@ -118,22 +118,8 @@ export default function ListingsPage() {
               <span className="relative z-10">ALL</span>
               {activeFilter === 'all' && (
                 <>
-                  <span
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      width: '160%',
-                      height: '160%',
-                      top: '-30%',
-                      left: '-30%',
-                      transform: 'rotate(-45deg)',
-                      background:
-                        'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0) 38%, rgba(246,230,191,0.85) 50%, rgba(196,164,106,0) 62%, rgba(196,164,106,0) 100%)',
-                      animation: 'shimmer 1.6s ease-in-out infinite',
-                      filter: 'blur(1.5px)',
-                      opacity: 0.9,
-                    }}
-                  />
-                  <span className="absolute inset-0 rounded-full border-2 border-[#C4A46A]/40 animate-pulse" />
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[shimmer_1.5s_infinite]" />
+                  <span className="absolute inset-0 rounded-full border-2 border-white/40 animate-pulse" />
                 </>
               )}
             </button>
@@ -149,22 +135,8 @@ export default function ListingsPage() {
               <span className="relative z-10">ACTIVE</span>
               {activeFilter === 'active' && (
                 <>
-                  <span
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      width: '160%',
-                      height: '160%',
-                      top: '-30%',
-                      left: '-30%',
-                      transform: 'rotate(-45deg)',
-                      background:
-                        'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0) 38%, rgba(246,230,191,0.85) 50%, rgba(196,164,106,0) 62%, rgba(196,164,106,0) 100%)',
-                      animation: 'shimmer 1.6s ease-in-out infinite',
-                      filter: 'blur(1.5px)',
-                      opacity: 0.9,
-                    }}
-                  />
-                  <span className="absolute inset-0 rounded-full border-2 border-[#C4A46A]/40 animate-pulse" />
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[shimmer_1.5s_infinite]" />
+                  <span className="absolute inset-0 rounded-full border-2 border-white/40 animate-pulse" />
                 </>
               )}
             </button>
