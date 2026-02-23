@@ -290,7 +290,7 @@ export default function ImageLightbox({
           )}
         </AnimatePresence>
 
-        {/* Navigation Buttons - Mobile (below image, left and right edges) */}
+        {/* Navigation Buttons - Mobile (centered between photo and bottom) */}
         <AnimatePresence>
           {images.length > 1 && showControls && !isSwiping && (
             <>
@@ -301,7 +301,7 @@ export default function ImageLightbox({
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
                 onClick={handlePrevious}
-                className="sm:hidden absolute bottom-24 left-4 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
+                className="sm:hidden absolute top-[calc(50vh+20vh)] left-6 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="w-7 h-7" />
@@ -314,7 +314,7 @@ export default function ImageLightbox({
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
                 onClick={handleNext}
-                className="sm:hidden absolute bottom-24 right-4 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
+                className="sm:hidden absolute top-[calc(50vh+20vh)] right-6 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
                 aria-label="Next image"
               >
                 <ChevronRight className="w-7 h-7" />
@@ -392,7 +392,7 @@ export default function ImageLightbox({
           )}
         </AnimatePresence>
 
-        {/* Swipe Indicators (Mobile & Tablet) */}
+        {/* Swipe Indicators (Mobile & Tablet) - Right below photo */}
         <AnimatePresence>
           {images.length > 1 && showControls && (
             <motion.div
@@ -400,7 +400,7 @@ export default function ImageLightbox({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1.5 z-50"
+              className="lg:hidden absolute top-[calc(50vh+13vh)] left-1/2 -translate-x-1/2 flex gap-1.5 z-50"
             >
               {images.map((_, index) => (
                 <button
@@ -421,7 +421,7 @@ export default function ImageLightbox({
           )}
         </AnimatePresence>
 
-        {/* Title - Mobile Only (bottom of screen) */}
+        {/* Title - Mobile Only (centered at bottom of screen) */}
         <AnimatePresence>
           {showControls && (
             <motion.div
@@ -429,7 +429,7 @@ export default function ImageLightbox({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
-              className="sm:hidden absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-6 py-2.5 rounded-full bg-white/10 backdrop-blur-md text-white text-sm font-light max-w-[90%] text-center"
+              className="sm:hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-2.5 rounded-full bg-white/10 backdrop-blur-md text-white text-sm font-light max-w-[85%] text-center"
             >
               {title}
             </motion.div>
