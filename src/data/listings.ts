@@ -16,27 +16,19 @@ export interface Listing {
   galleryImages: string[];
   description: string;
   address: string;
-  propertyType?: string;
-  yearBuilt?: number;
-  lotSize?: string;
-  mlsNumber?: string;
-  lastUpdated?: string;
-  daysOnline?: number;
-  highlights?: string[];
-  features?: Record<string, string[]>;
 }
 
 export const listings: Listing[] = [
   {
     id: "1",
     title: "3105 Palmdale Circle",
-    price: "$565,000",
+    price: "$2,495,000",
     locationText: "Highland Park, Dallas",
     beds: 5,
     baths: 4,
     sqft: 4850,
     slug: "3105-palmdale-cir",
-    category: "mid",
+    category: "luxury",
     status: "active",
     heroImage: "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir01.webp",
     galleryImages: [
@@ -52,69 +44,10 @@ export const listings: Listing[] = [
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir10.webp"
     ],
     description: "An exceptional Highland Park residence offering timeless elegance and modern luxury. This meticulously maintained home features soaring ceilings, custom millwork, and designer finishes throughout. The chef's kitchen opens to a spacious family room with fireplace, perfect for entertaining. The primary suite offers a private retreat with spa-inspired bath and generous closet space. Expansive outdoor living areas include a covered patio and mature landscaping. Located in one of Dallas's most prestigious neighborhoods, this home provides the perfect blend of sophistication and comfort.",
-    address: "3105 Palmdale Circle, Highland Park, Dallas, TX",
-    propertyType: "Single Family Residence",
-    yearBuilt: 2008,
-    lotSize: "0.32 acres",
-    mlsNumber: "20745891",
-    lastUpdated: "February 18, 2026",
-    daysOnline: 12,
-    highlights: [
-      "Soaring ceilings with custom millwork and architectural details",
-      "Chef's kitchen with high-end appliances and center island",
-      "Primary suite with spa-inspired bath and walk-in closets",
-      "Covered outdoor patio with mature landscaping",
-      "Premium location in prestigious Highland Park",
-      "Smart home technology and security system"
-    ],
-    features: {
-      Interior: [
-        "Hardwood floors throughout main living areas",
-        "Custom built-ins and designer lighting",
-        "Gourmet kitchen with premium appliances",
-        "Formal dining room with tray ceiling",
-        "Primary suite with sitting area",
-        "Walk-in closets with custom organization"
-      ],
-      Exterior: [
-        "Covered patio with ceiling fans",
-        "Professionally landscaped grounds",
-        "Sprinkler system",
-        "Two-car attached garage",
-        "Brick and stone exterior"
-      ],
-      Utilities: [
-        "Central heating and air conditioning",
-        "High-efficiency HVAC system",
-        "Tankless water heater",
-        "Energy-efficient windows"
-      ],
-      Community: [
-        "Highland Park Independent School District",
-        "Walking distance to parks and shopping",
-        "Low-traffic residential street",
-        "Award-winning schools"
-      ]
-    }
+    address: "3105 Palmdale Circle, Highland Park, Dallas, TX"
   },
   {
     id: "2",
-    title: "Modern Golf Course Retreat",
-    price: "$3,250,000",
-    locationText: "Dallas",
-    beds: 5,
-    baths: 6,
-    sqft: 6200,
-    slug: "modern-golf-course-retreat",
-    category: "luxury",
-    status: "placeholder",
-    heroImage: "/images/communities/golfhouse.webp",
-    galleryImages: ["/images/communities/golfhouse.webp"],
-    description: "A stunning modern retreat overlooking pristine golf course views. This exceptional property combines contemporary architecture with luxury finishes, offering an unparalleled living experience in one of Dallas's most prestigious locations. Features include expansive living areas, a chef's kitchen, spa-like primary suite, and resort-style outdoor spaces perfect for entertaining.",
-    address: "Dallas, TX"
-  },
-  {
-    id: "10",
     title: "Luxury Estate Collection",
     price: "$3,500,000+",
     locationText: "Preston Hollow",
