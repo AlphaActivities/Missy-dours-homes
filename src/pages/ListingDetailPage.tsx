@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { listings } from '../data/listings';
-import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home } from 'lucide-react';
+import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
@@ -15,6 +15,7 @@ export default function ListingDetailPage() {
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [openFeatureSections, setOpenFeatureSections] = useState<string[]>([]);
 
   if (!listing) {
     return (
@@ -35,6 +36,14 @@ export default function ListingDetailPage() {
 
   const handleContactClick = () => {
     navigate('/', { state: { scrollTo: 'contact' } });
+  };
+
+  const toggleFeatureSection = (sectionName: string) => {
+    setOpenFeatureSections((prev) =>
+      prev.includes(sectionName)
+        ? prev.filter((name) => name !== sectionName)
+        : [...prev, sectionName]
+    );
   };
 
   const encodedAddress = encodeURIComponent(listing.address);
@@ -131,7 +140,7 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Right: Details Card */}
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-6 lg:sticky lg:top-24">
             <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-light text-gray-900 mb-2">{listing.title}</h1>
               <p className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6">{listing.locationText}</p>
@@ -156,6 +165,51 @@ export default function ListingDetailPage() {
                   <span className="text-xs sm:text-sm text-gray-600">Sqft</span>
                 </div>
               </div>
+
+              {/* Listing Snapshot */}
+              {(listing.propertyType || listing.yearBuilt || listing.lotSize || listing.mlsNumber || listing.lastUpdated || listing.daysOnline) && (
+                <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
+                  <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-4">Property Details</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    {listing.propertyType && (
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">Property Type</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.propertyType}</p>
+                      </div>
+                    )}
+                    {listing.yearBuilt && (
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">Year Built</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.yearBuilt}</p>
+                      </div>
+                    )}
+                    {listing.lotSize && (
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">Lot Size</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.lotSize}</p>
+                      </div>
+                    )}
+                    {listing.mlsNumber && (
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">MLS #</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.mlsNumber}</p>
+                      </div>
+                    )}
+                    {listing.lastUpdated && (
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">Last Updated</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.lastUpdated}</p>
+                      </div>
+                    )}
+                    {listing.daysOnline !== undefined && (
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">Days Online</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.daysOnline}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* CTA Buttons */}
               <div className="space-y-3">
@@ -195,11 +249,73 @@ export default function ListingDetailPage() {
           </div>
         </div>
 
+        {/* Highlights Section */}
+        {listing.highlights && listing.highlights.length > 0 && (
+          <div className="mb-10 sm:mb-12 lg:mb-16">
+            <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+              <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Property Highlights</h2>
+              <ul className="space-y-3">
+                {listing.highlights.map((highlight, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-600 flex-shrink-0" />
+                    <span className="text-base sm:text-lg text-gray-700 leading-relaxed">{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Features Accordion */}
+        {listing.features && Object.keys(listing.features).length > 0 && (
+          <div className="mb-10 sm:mb-12 lg:mb-16">
+            <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+              <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Features & Details</h2>
+              <div className="space-y-3">
+                {Object.entries(listing.features).map(([category, items]) => {
+                  const isOpen = openFeatureSections.includes(category);
+                  return (
+                    <div key={category} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleFeatureSection(category)}
+                        className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <span className="text-base sm:text-lg font-medium text-gray-900">{category}</span>
+                        <ChevronDown
+                          className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${
+                            isOpen ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
+                      <div
+                        className={`overflow-hidden transition-all duration-300 ${
+                          isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                        }`}
+                      >
+                        <div className="p-4 pt-0 border-t border-gray-100">
+                          <ul className="space-y-2">
+                            {items.map((item, index) => (
+                              <li key={index} className="flex items-start gap-3">
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-600 flex-shrink-0" />
+                                <span className="text-sm sm:text-base text-gray-700">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Map Section */}
         <div className="mb-10 sm:mb-12 lg:mb-16">
           <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
             <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Location</h2>
-            <div className="aspect-video rounded-lg overflow-hidden">
+            <div className="aspect-video lg:aspect-auto lg:h-[500px] rounded-lg overflow-hidden">
               <iframe
                 src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`}
                 width="100%"
