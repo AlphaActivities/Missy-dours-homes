@@ -2,7 +2,6 @@ import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
 import Navbar from './components/Navbar';
 import FloatingCallButton from './components/ui/FloatingCallButton';
-import ScrollToTop from './components/ScrollToTop';
 import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
@@ -13,7 +12,6 @@ function Layout() {
 
   return (
     <>
-      <ScrollToTop />
       {isHomePage && <GlobalVideoBackground />}
       <Navbar />
       <Outlet />
