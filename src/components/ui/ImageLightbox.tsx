@@ -355,8 +355,8 @@ export default function ImageLightbox({
               custom={slideDirection}
               initial={(direction) => ({
                 opacity: 0,
-                x: direction === 'left' ? -400 : direction === 'right' ? 400 : 0,
-                scale: 0.95,
+                x: direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
+                scale: 0.96,
               })}
               animate={{
                 opacity: 1,
@@ -365,14 +365,22 @@ export default function ImageLightbox({
               }}
               exit={(direction) => ({
                 opacity: 0,
-                x: direction === 'left' ? 400 : direction === 'right' ? -400 : 0,
-                scale: 0.95,
+                x: direction === 'left' ? 300 : direction === 'right' ? -300 : 0,
+                scale: 0.96,
                 position: 'absolute',
               })}
               transition={{
-                duration: 0.35,
-                ease: [0.22, 1, 0.36, 1],
-                opacity: { duration: 0.25 },
+                duration: 0.5,
+                ease: [0.25, 0.46, 0.45, 0.94],
+                opacity: { duration: 0.35, ease: 'easeInOut' },
+                scale: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
+              }}
+              style={{
+                willChange: 'transform, opacity',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                perspective: 1000,
+                WebkitPerspective: 1000,
               }}
               className="max-w-full max-h-full object-contain rounded-lg lg:shadow-2xl select-none"
               draggable={false}
