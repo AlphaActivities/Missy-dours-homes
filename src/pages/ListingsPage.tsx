@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { listings, ListingCategory, ListingStatus } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft } from 'lucide-react';
 import FooterSection from '../components/sections/FooterSection';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type FilterType = 'all' | 'active' | ListingCategory;
 
@@ -10,6 +11,8 @@ export default function ListingsPage() {
   const [searchParams] = useSearchParams();
   const filterParam = searchParams.get('filter') as FilterType | null;
   const [activeFilter, setActiveFilter] = useState<FilterType>(filterParam || 'all');
+  const [isLoading, setIsLoading] = useState(false);
+  const [displayedListings, setDisplayedListings] = useState(listings);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,11 +21,27 @@ export default function ListingsPage() {
     }
   }, [filterParam]);
 
-  const filteredListings = listings.filter((listing) => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'active') return listing.status === 'active';
-    return listing.category === activeFilter;
-  });
+  useEffect(() => {
+    const filtered = listings.filter((listing) => {
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'active') return listing.status === 'active';
+      return listing.category === activeFilter;
+    });
+    setDisplayedListings(filtered);
+  }, [activeFilter]);
+
+  const handleFilterChange = (newFilter: FilterType) => {
+    if (newFilter === activeFilter) return;
+
+    setIsLoading(true);
+    setActiveFilter(newFilter);
+
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+  };
+
+  const filteredListings = displayedListings;
 
   const filters: { label: string; value: FilterType }[] = [
     { label: 'All', value: 'all' },
@@ -88,12 +107,13 @@ export default function ListingsPage() {
           {/* All & Active Buttons Container */}
           <div className="flex justify-center gap-3 sm:gap-4 bg-gradient-to-br from-[#1a3a52] to-[#0d2333] p-3 rounded-full shadow-[0_8px_32px_rgba(26,58,82,0.4)]">
             <button
-              onClick={() => setActiveFilter('all')}
+              onClick={() => handleFilterChange('all')}
+              disabled={isLoading}
               className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden border-2 ${
                 activeFilter === 'all'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)] border-transparent scale-105'
                   : 'bg-gradient-to-br from-[#2d5571] to-[#1f4059] text-[#C4A46A] hover:bg-gradient-to-br hover:from-[#375d7a] hover:to-[#274a62] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)] hover:scale-105 border-[#C4A46A]'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="relative z-10">ALL</span>
               {activeFilter === 'all' && (
@@ -104,12 +124,13 @@ export default function ListingsPage() {
               )}
             </button>
             <button
-              onClick={() => setActiveFilter('active')}
+              onClick={() => handleFilterChange('active')}
+              disabled={isLoading}
               className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden border-2 ${
                 activeFilter === 'active'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)] border-transparent scale-105'
                   : 'bg-gradient-to-br from-[#2d5571] to-[#1f4059] text-[#C4A46A] hover:bg-gradient-to-br hover:from-[#375d7a] hover:to-[#274a62] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)] hover:scale-105 border-[#C4A46A]'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="relative z-10">ACTIVE</span>
               {activeFilter === 'active' && (
@@ -124,12 +145,13 @@ export default function ListingsPage() {
           {/* Category Buttons Container */}
           <div className="flex justify-center gap-2 sm:gap-4 bg-white/60 backdrop-blur-sm p-3 rounded-full shadow-[0_4px_24px_rgba(196,164,106,0.15)] border-2 border-[#C4A46A]/30">
             <button
-              onClick={() => setActiveFilter('luxury')}
+              onClick={() => handleFilterChange('luxury')}
+              disabled={isLoading}
               className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap overflow-hidden ${
                 activeFilter === 'luxury'
                   ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="relative z-10">LUXURY</span>
               {activeFilter === 'luxury' && (
@@ -147,12 +169,13 @@ export default function ListingsPage() {
               )}
             </button>
             <button
-              onClick={() => setActiveFilter('mid')}
+              onClick={() => handleFilterChange('mid')}
+              disabled={isLoading}
               className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap overflow-hidden ${
                 activeFilter === 'mid'
                   ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="relative z-10">MID-TIER</span>
               {activeFilter === 'mid' && (
@@ -170,12 +193,13 @@ export default function ListingsPage() {
               )}
             </button>
             <button
-              onClick={() => setActiveFilter('first')}
+              onClick={() => handleFilterChange('first')}
+              disabled={isLoading}
               className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap overflow-hidden ${
                 activeFilter === 'first'
                   ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
-              }`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="relative z-10">FIRST-TIME</span>
               {activeFilter === 'first' && (
@@ -196,66 +220,112 @@ export default function ListingsPage() {
         </div>
 
         {/* Listings Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {filteredListings.map((listing) => (
-            <div
-              key={listing.id}
-              onClick={() => navigate(`/listings/${listing.slug}`)}
-              className="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-1"
-            >
-              {/* Image Container */}
-              <div className="relative h-56 sm:h-64 overflow-hidden">
-                <img
-                  src={listing.heroImage}
-                  alt={listing.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                />
-                {listing.status === 'active' && (
-                  <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-amber-600 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-lg">
-                    ACTIVE
+        <div className="relative min-h-[400px]">
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {[...Array(6)].map((_, index) => (
+                <motion.div
+                  key={`skeleton-${index}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="bg-white rounded-xl overflow-hidden shadow-md"
+                >
+                  <div className="relative h-56 sm:h-64 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer bg-[length:200%_100%]" />
+                  <div className="p-5 sm:p-6 space-y-4">
+                    <div className="h-6 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded animate-shimmer bg-[length:200%_100%]" />
+                    <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-3/4 animate-shimmer bg-[length:200%_100%]" />
+                    <div className="h-7 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-1/2 animate-shimmer bg-[length:200%_100%]" />
+                    <div className="flex gap-3 sm:gap-5">
+                      <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-16 animate-shimmer bg-[length:200%_100%]" />
+                      <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-16 animate-shimmer bg-[length:200%_100%]" />
+                      <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-16 animate-shimmer bg-[length:200%_100%]" />
+                    </div>
                   </div>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="p-5 sm:p-6">
-                <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2 group-hover:text-amber-700 transition-colors">
-                  {listing.title}
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">{listing.locationText}</p>
-
-                <p className="text-xl sm:text-2xl font-light text-amber-700 mb-3 sm:mb-4">
-                  {listing.price}
-                </p>
-
-                {/* Stats */}
-                <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-xs sm:text-sm text-gray-600">
-                  <div className="flex items-center gap-1.5">
-                    <Bed className="w-4 h-4" />
-                    <span>{listing.beds} Beds</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Bath className="w-4 h-4" />
-                    <span>{listing.baths} Baths</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Maximize className="w-4 h-4" />
-                    <span>{listing.sqft.toLocaleString()} sqft</span>
-                  </div>
-                </div>
-              </div>
+                </motion.div>
+              ))}
             </div>
-          ))}
-        </div>
+          ) : (
+            <motion.div
+              key={activeFilter}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredListings.map((listing, index) => (
+                  <motion.div
+                    key={listing.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{
+                      duration: 0.4,
+                      delay: index * 0.05,
+                      ease: [0.25, 0.46, 0.45, 0.94],
+                    }}
+                    onClick={() => navigate(`/listings/${listing.slug}`)}
+                    className="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-1"
+                  >
+                    <div className="relative h-56 sm:h-64 overflow-hidden">
+                      <img
+                        src={listing.heroImage}
+                        alt={listing.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                      {listing.status === 'active' && (
+                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-amber-600 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-lg">
+                          ACTIVE
+                        </div>
+                      )}
+                    </div>
 
-        {/* Empty State */}
-        {filteredListings.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-xl text-gray-600">
-              No listings match your current filter.
-            </p>
-          </div>
-        )}
+                    <div className="p-5 sm:p-6">
+                      <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-2 group-hover:text-amber-700 transition-colors">
+                        {listing.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">{listing.locationText}</p>
+
+                      <p className="text-xl sm:text-2xl font-light text-amber-700 mb-3 sm:mb-4">
+                        {listing.price}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-xs sm:text-sm text-gray-600">
+                        <div className="flex items-center gap-1.5">
+                          <Bed className="w-4 h-4" />
+                          <span>{listing.beds} Beds</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Bath className="w-4 h-4" />
+                          <span>{listing.baths} Baths</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Maximize className="w-4 h-4" />
+                          <span>{listing.sqft.toLocaleString()} sqft</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {!isLoading && filteredListings.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="text-center py-20"
+            >
+              <p className="text-xl text-gray-600">
+                No listings match your current filter.
+              </p>
+            </motion.div>
+          )}
+        </div>
       </div>
       <FooterSection />
     </div>
