@@ -107,7 +107,7 @@ export const listings: Listing[] = [
     sqft: 6200,
     slug: "modern-golf-course-retreat",
     category: "luxury",
-    status: "active",
+    status: "placeholder",
     heroImage: "/images/communities/golfhouse.webp",
     galleryImages: ["/images/communities/golfhouse.webp"],
     description: "A stunning modern retreat overlooking pristine golf course views. This exceptional property combines contemporary architecture with luxury finishes, offering an unparalleled living experience in one of Dallas's most prestigious locations. Features include expansive living areas, a chef's kitchen, spa-like primary suite, and resort-style outdoor spaces perfect for entertaining.",
