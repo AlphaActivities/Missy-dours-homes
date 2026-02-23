@@ -400,23 +400,25 @@ export default function ImageLightbox({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden absolute bottom-[34vh] left-1/2 -translate-x-1/2 flex gap-1.5 z-50"
+              className="lg:hidden absolute bottom-[34vh] left-0 right-0 z-50 flex justify-center"
             >
-              {images.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    onNavigate(index);
-                    resetHideControlsTimer();
-                  }}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    currentIndex === index
-                      ? 'bg-white w-6'
-                      : 'bg-white/40 hover:bg-white/60'
-                  }`}
-                  aria-label={`Go to image ${index + 1}`}
-                />
-              ))}
+              <div className="flex gap-1.5">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      onNavigate(index);
+                      resetHideControlsTimer();
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      currentIndex === index
+                        ? 'bg-white w-6'
+                        : 'bg-white/40 hover:bg-white/60'
+                    }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
