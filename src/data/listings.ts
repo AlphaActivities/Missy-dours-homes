@@ -99,6 +99,22 @@ export const listings: Listing[] = [
   },
   {
     id: "2",
+    title: "Modern Golf Course Retreat",
+    price: "$3,250,000",
+    locationText: "Dallas",
+    beds: 5,
+    baths: 6,
+    sqft: 6200,
+    slug: "modern-golf-course-retreat",
+    category: "luxury",
+    status: "active",
+    heroImage: "/images/communities/golfhouse.webp",
+    galleryImages: ["/images/communities/golfhouse.webp"],
+    description: "A stunning modern retreat overlooking pristine golf course views. This exceptional property combines contemporary architecture with luxury finishes, offering an unparalleled living experience in one of Dallas's most prestigious locations. Features include expansive living areas, a chef's kitchen, spa-like primary suite, and resort-style outdoor spaces perfect for entertaining.",
+    address: "Dallas, TX"
+  },
+  {
+    id: "10",
     title: "Luxury Estate Collection",
     price: "$3,500,000+",
     locationText: "Preston Hollow",
