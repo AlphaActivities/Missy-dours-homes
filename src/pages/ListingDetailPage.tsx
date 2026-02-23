@@ -1,16 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { listings } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
-import { PageTransition } from '../components/ui/PageTransition';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
   const fromFilter = searchParams.get('from') || 'all';
   const listing = listings.find((l) => l.slug === slug);
@@ -19,31 +17,20 @@ export default function ListingDetailPage() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [openFeatureSections, setOpenFeatureSections] = useState<string[]>([]);
 
-  useEffect(() => {
-    setTimeout(() => {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-    }, 50);
-  }, [location.pathname]);
-
   if (!listing) {
     return (
-      <PageTransition>
-        <div className="min-h-screen bg-[#f7f3ea] flex items-center justify-center px-6">
-          <div className="text-center">
-            <h1 className="text-4xl font-light text-gray-900 mb-4">Listing Not Found</h1>
-            <p className="text-gray-600 mb-8">The property you're looking for doesn't exist or has been removed.</p>
-            <button
-              onClick={() => navigate('/listings')}
-              className="px-8 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-            >
-              Back to Listings
-            </button>
-          </div>
+      <div className="min-h-screen bg-[#f7f3ea] flex items-center justify-center px-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-light text-gray-900 mb-4">Listing Not Found</h1>
+          <p className="text-gray-600 mb-8">The property you're looking for doesn't exist or has been removed.</p>
+          <button
+            onClick={() => navigate('/listings')}
+            className="px-8 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+          >
+            Back to Listings
+          </button>
         </div>
-      </PageTransition>
+      </div>
     );
   }
 
@@ -62,8 +49,7 @@ export default function ListingDetailPage() {
   const encodedAddress = encodeURIComponent(listing.address);
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-[#f7f3ea]">
+    <div className="min-h-screen bg-[#f7f3ea]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-8 sm:pb-12 lg:pb-16">
         {/* Back Link */}
         <div className="-mt-5 mb-6 sm:mb-8 lg:mb-12">
@@ -355,7 +341,6 @@ export default function ListingDetailPage() {
         onNavigate={(index) => setSelectedImage(index)}
         title={listing.title}
       />
-      </div>
-    </PageTransition>
+    </div>
   );
 }

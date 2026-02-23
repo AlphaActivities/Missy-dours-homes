@@ -1,30 +1,19 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { listings, ListingCategory, ListingStatus } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Home } from 'lucide-react';
 import FooterSection from '../components/sections/FooterSection';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PageTransition } from '../components/ui/PageTransition';
 
 type FilterType = 'all' | 'active' | ListingCategory;
 
 export default function ListingsPage() {
   const [searchParams] = useSearchParams();
-  const location = useLocation();
   const filterParam = searchParams.get('filter') as FilterType | null;
   const [activeFilter, setActiveFilter] = useState<FilterType>(filterParam || 'all');
   const [isLoading, setIsLoading] = useState(false);
   const [displayedListings, setDisplayedListings] = useState(listings);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setTimeout(() => {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-    }, 50);
-  }, [location.pathname]);
 
   useEffect(() => {
     if (filterParam && ['all', 'active', 'luxury', 'mid', 'first'].includes(filterParam)) {
@@ -63,8 +52,7 @@ export default function ListingsPage() {
   ];
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-[#f7f3ea]">
+    <div className="min-h-screen bg-[#f7f3ea]">
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-16 sm:pb-20 lg:pb-24">
         {/* Back to Home Button */}
@@ -354,7 +342,6 @@ export default function ListingsPage() {
         </div>
       </div>
       <FooterSection />
-      </div>
-    </PageTransition>
+    </div>
   );
 }
