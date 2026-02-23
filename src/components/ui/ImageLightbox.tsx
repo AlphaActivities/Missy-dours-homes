@@ -350,7 +350,7 @@ export default function ImageLightbox({
                 x: direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
               })}
               transition={{ duration: 0.4, ease: 'easeInOut' }}
-              className="max-w-full max-h-full object-contain lg:rounded-lg lg:shadow-2xl select-none"
+              className="max-w-full max-h-full object-contain rounded-lg lg:shadow-2xl select-none"
               draggable={false}
               onAnimationComplete={() => setSlideDirection(null)}
             />
