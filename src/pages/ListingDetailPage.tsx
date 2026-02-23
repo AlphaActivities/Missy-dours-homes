@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { listings } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
@@ -9,6 +9,7 @@ import ImageLightbox from '../components/ui/ImageLightbox';
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const fromFilter = searchParams.get('from') || 'all';
   const listing = listings.find((l) => l.slug === slug);
@@ -22,7 +23,7 @@ export default function ListingDetailPage() {
       top: 0,
       behavior: 'smooth',
     });
-  }, [slug]);
+  }, [location.pathname]);
 
   if (!listing) {
     return (

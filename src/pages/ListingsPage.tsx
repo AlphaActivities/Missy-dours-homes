@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { listings, ListingCategory, ListingStatus } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Home } from 'lucide-react';
 import FooterSection from '../components/sections/FooterSection';
@@ -9,6 +9,7 @@ type FilterType = 'all' | 'active' | ListingCategory;
 
 export default function ListingsPage() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const filterParam = searchParams.get('filter') as FilterType | null;
   const [activeFilter, setActiveFilter] = useState<FilterType>(filterParam || 'all');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +21,7 @@ export default function ListingsPage() {
       top: 0,
       behavior: 'smooth',
     });
-  }, []);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (filterParam && ['all', 'active', 'luxury', 'mid', 'first'].includes(filterParam)) {
