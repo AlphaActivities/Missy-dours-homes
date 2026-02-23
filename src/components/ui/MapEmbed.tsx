@@ -53,7 +53,7 @@ export default function MapEmbed({ address, className = "" }: MapEmbedProps) {
     );
   }
 
-  const apiKey = "AIzaSyAbdS3vxczrB0SAVeyyunYs8RSsEZPK06g";
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const src = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedAddress}`;
 
   return (
