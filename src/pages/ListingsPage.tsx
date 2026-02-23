@@ -109,7 +109,6 @@ export default function ListingsPage() {
             <button
               onClick={() => handleFilterChange('all')}
               disabled={isLoading}
-              style={{ isolation: 'isolate' }}
               className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden border-2 ${
                 activeFilter === 'all'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)] border-transparent scale-105'
@@ -117,47 +116,6 @@ export default function ListingsPage() {
               } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="relative z-10">ALL</span>
-              <span
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse at center, rgba(246,230,191,0.22) 0%, rgba(226,200,141,0.14) 40%, rgba(196,164,106,0.06) 70%, rgba(196,164,106,0) 100%)',
-                  animation: 'luxGoldPulse 3.2s ease-in-out infinite',
-                  boxShadow: `
-                    inset 0 0 30px rgba(246,230,191,0.18),
-                    inset 0 0 50px rgba(226,200,141,0.10)
-                  `,
-                }}
-              />
-              <span
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(246,230,191,0.45) 50%, transparent 100%)',
-                  width: '35%',
-                  height: '100%',
-                  animation: 'luxGoldShimmer 3.2s ease-in-out infinite',
-                  filter: 'blur(10px)',
-                  opacity: 0.35,
-                }}
-              />
-              <span
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0.25) 15%, rgba(226,200,141,0.5) 35%, rgba(246,230,191,0.85) 45%, rgba(231,212,168,0.85) 50%, rgba(246,230,191,0.85) 55%, rgba(226,200,141,0.5) 65%, rgba(196,164,106,0.25) 85%, rgba(196,164,106,0) 100%)',
-                  width: '100px',
-                  height: '200%',
-                  top: '-50%',
-                  left: '-150px',
-                  transform: 'rotate(20deg)',
-                  animation: 'luxGoldSweep 4s ease-in-out infinite',
-                  filter: 'blur(3px)',
-                  boxShadow: `
-                    0 0 25px rgba(246,230,191,0.45),
-                    0 0 45px rgba(226,200,141,0.25),
-                    0 0 65px rgba(196,164,106,0.12)
-                  `,
-                  opacity: 0.9,
-                }}
-              />
               {activeFilter === 'all' && (
                 <>
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[shimmer_1.5s_infinite]" />
@@ -168,7 +126,6 @@ export default function ListingsPage() {
             <button
               onClick={() => handleFilterChange('active')}
               disabled={isLoading}
-              style={{ isolation: 'isolate' }}
               className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden border-2 ${
                 activeFilter === 'active'
                   ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)] border-transparent scale-105'
@@ -176,47 +133,6 @@ export default function ListingsPage() {
               } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="relative z-10">ACTIVE</span>
-              <span
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse at center, rgba(246,230,191,0.22) 0%, rgba(226,200,141,0.14) 40%, rgba(196,164,106,0.06) 70%, rgba(196,164,106,0) 100%)',
-                  animation: 'luxGoldPulse 3.2s ease-in-out infinite',
-                  boxShadow: `
-                    inset 0 0 30px rgba(246,230,191,0.18),
-                    inset 0 0 50px rgba(226,200,141,0.10)
-                  `,
-                }}
-              />
-              <span
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(246,230,191,0.45) 50%, transparent 100%)',
-                  width: '35%',
-                  height: '100%',
-                  animation: 'luxGoldShimmer 3.2s ease-in-out infinite',
-                  filter: 'blur(10px)',
-                  opacity: 0.35,
-                }}
-              />
-              <span
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0.25) 15%, rgba(226,200,141,0.5) 35%, rgba(246,230,191,0.85) 45%, rgba(231,212,168,0.85) 50%, rgba(246,230,191,0.85) 55%, rgba(226,200,141,0.5) 65%, rgba(196,164,106,0.25) 85%, rgba(196,164,106,0) 100%)',
-                  width: '100px',
-                  height: '200%',
-                  top: '-50%',
-                  left: '-150px',
-                  transform: 'rotate(20deg)',
-                  animation: 'luxGoldSweep 4s ease-in-out infinite',
-                  filter: 'blur(3px)',
-                  boxShadow: `
-                    0 0 25px rgba(246,230,191,0.45),
-                    0 0 45px rgba(226,200,141,0.25),
-                    0 0 65px rgba(196,164,106,0.12)
-                  `,
-                  opacity: 0.9,
-                }}
-              />
               {activeFilter === 'active' && (
                 <>
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[shimmer_1.5s_infinite]" />
