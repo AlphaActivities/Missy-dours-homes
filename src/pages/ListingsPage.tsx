@@ -125,9 +125,10 @@ export default function ListingsPage() {
                       height: '160%',
                       top: '-30%',
                       left: '-30%',
+                      transform: 'rotate(-45deg)',
                       background:
                         'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0) 38%, rgba(246,230,191,0.85) 50%, rgba(196,164,106,0) 62%, rgba(196,164,106,0) 100%)',
-                      animation: 'diagonalSweep 1.6s ease-in-out infinite',
+                      animation: 'shimmer 1.6s ease-in-out infinite',
                       filter: 'blur(1.5px)',
                       opacity: 0.9,
                     }}
@@ -155,9 +156,10 @@ export default function ListingsPage() {
                       height: '160%',
                       top: '-30%',
                       left: '-30%',
+                      transform: 'rotate(-45deg)',
                       background:
                         'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0) 38%, rgba(246,230,191,0.85) 50%, rgba(196,164,106,0) 62%, rgba(196,164,106,0) 100%)',
-                      animation: 'diagonalSweep 1.6s ease-in-out infinite',
+                      animation: 'shimmer 1.6s ease-in-out infinite',
                       filter: 'blur(1.5px)',
                       opacity: 0.9,
                     }}

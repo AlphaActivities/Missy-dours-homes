@@ -96,15 +96,6 @@
     }
   }
 
-  @keyframes diagonalSweep {
-    0% {
-      transform: translate(-100%, 100%) rotate(-45deg);
-    }
-    100% {
-      transform: translate(100%, -100%) rotate(-45deg);
-    }
-  }
-
   @keyframes subtleShimmer {
     0% {
       transform: translateX(-100%);
