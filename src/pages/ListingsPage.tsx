@@ -16,6 +16,13 @@ export default function ListingsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  }, []);
+
+  useEffect(() => {
     if (filterParam && ['all', 'active', 'luxury', 'mid', 'first'].includes(filterParam)) {
       setActiveFilter(filterParam);
     }

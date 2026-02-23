@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { listings } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown } from 'lucide-react';
@@ -16,6 +16,13 @@ export default function ListingDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [openFeatureSections, setOpenFeatureSections] = useState<string[]>([]);
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  }, [slug]);
 
   if (!listing) {
     return (
