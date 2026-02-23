@@ -11,6 +11,7 @@ import CommunitiesSection from '../components/sections/CommunitiesSection';
 import TestimonialsSection from '../components/sections/TestimonialsSection';
 import ContactSection from '../components/sections/ContactSection';
 import FooterSection from '../components/sections/FooterSection';
+import { PageTransition } from '../components/ui/PageTransition';
 
 export default function HomePage() {
   const location = useLocation();
@@ -44,20 +45,22 @@ export default function HomePage() {
   }, [pendingScrollTarget]);
 
   return (
-    <>
-      <HeroSection />
-      <ChooseYourPathSection
-        selectedPath={selectedPath}
-        onSelectPath={handleSelectPath}
-      />
-      {selectedPath === "luxury" && <FeaturedListings />}
-      {selectedPath === "mid-tier" && <MidTierHomesSection />}
-      {selectedPath === "first-time" && <NewToHomeownershipSection />}
-      <AboutSection />
-      <CommunitiesSection />
-      <TestimonialsSection />
-      <ContactSection />
-      <FooterSection />
-    </>
+    <PageTransition>
+      <>
+        <HeroSection />
+        <ChooseYourPathSection
+          selectedPath={selectedPath}
+          onSelectPath={handleSelectPath}
+        />
+        {selectedPath === "luxury" && <FeaturedListings />}
+        {selectedPath === "mid-tier" && <MidTierHomesSection />}
+        {selectedPath === "first-time" && <NewToHomeownershipSection />}
+        <AboutSection />
+        <CommunitiesSection />
+        <TestimonialsSection />
+        <ContactSection />
+        <FooterSection />
+      </>
+    </PageTransition>
   );
 }

@@ -1,4 +1,5 @@
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
 import Navbar from './components/Navbar';
 import FloatingCallButton from './components/ui/FloatingCallButton';
@@ -14,7 +15,9 @@ function Layout() {
     <>
       {isHomePage && <GlobalVideoBackground />}
       <Navbar />
-      <Outlet />
+      <AnimatePresence mode="wait">
+        <Outlet key={location.pathname} />
+      </AnimatePresence>
       <FloatingCallButton />
     </>
   );
