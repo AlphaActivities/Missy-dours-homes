@@ -18,10 +18,12 @@ export default function ListingsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'instant',
-    });
+    setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }, 50);
   }, [location.pathname]);
 
   useEffect(() => {
