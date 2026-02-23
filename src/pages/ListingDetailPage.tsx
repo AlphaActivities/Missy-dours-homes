@@ -19,10 +19,12 @@ export default function ListingDetailPage() {
   const [openFeatureSections, setOpenFeatureSections] = useState<string[]>([]);
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+    setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }, 100);
   }, [location.pathname]);
 
   if (!listing) {
