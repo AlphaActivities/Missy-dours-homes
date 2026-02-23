@@ -70,14 +70,14 @@ export default function ImageLightbox({
   }, [isOpen, currentIndex]);
 
   const handlePrevious = () => {
-    setSlideDirection('right');
+    setSlideDirection('left');
     const newIndex = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
     onNavigate(newIndex);
     resetHideControlsTimer();
   };
 
   const handleNext = () => {
-    setSlideDirection('left');
+    setSlideDirection('right');
     const newIndex = currentIndex === images.length - 1 ? 0 : currentIndex + 1;
     onNavigate(newIndex);
     resetHideControlsTimer();
@@ -331,7 +331,7 @@ export default function ImageLightbox({
           className="relative w-full h-full flex items-center justify-center lg:px-24 lg:py-24"
           onClick={handleImageClick}
         >
-          <AnimatePresence mode="wait" custom={slideDirection}>
+          <AnimatePresence initial={false} custom={slideDirection}>
             <motion.img
               key={currentIndex}
               src={images[currentIndex]}
@@ -339,7 +339,7 @@ export default function ImageLightbox({
               custom={slideDirection}
               initial={(direction) => ({
                 opacity: 0,
-                x: direction === 'left' ? 300 : direction === 'right' ? -300 : 0,
+                x: direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
               })}
               animate={{
                 opacity: 1,
@@ -349,7 +349,7 @@ export default function ImageLightbox({
                 opacity: 0,
                 x: direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
               })}
-              transition={{ duration: 0.4, ease: 'easeInOut' }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
               className="max-w-full max-h-full object-contain rounded-lg lg:shadow-2xl select-none"
               draggable={false}
               onAnimationComplete={() => setSlideDirection(null)}
@@ -371,6 +371,7 @@ export default function ImageLightbox({
                 <button
                   key={index}
                   onClick={() => {
+                    setSlideDirection(index > currentIndex ? 'right' : 'left');
                     onNavigate(index);
                     resetHideControlsTimer();
                   }}
@@ -407,6 +408,7 @@ export default function ImageLightbox({
                   <button
                     key={index}
                     onClick={() => {
+                      setSlideDirection(index > currentIndex ? 'right' : 'left');
                       onNavigate(index);
                       resetHideControlsTimer();
                     }}
