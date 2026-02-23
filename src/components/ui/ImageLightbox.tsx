@@ -328,7 +328,7 @@ export default function ImageLightbox({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.4, ease: 'easeOut' }}
-          className="relative w-full h-full flex items-center justify-center px-4 sm:px-16 lg:px-24 py-20 sm:py-24"
+          className="relative w-full h-full flex items-center justify-center lg:px-24 lg:py-24"
           onClick={handleImageClick}
         >
           <AnimatePresence mode="wait" custom={slideDirection}>
@@ -350,7 +350,7 @@ export default function ImageLightbox({
                 x: direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
               })}
               transition={{ duration: 0.4, ease: 'easeInOut' }}
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl select-none"
+              className="max-w-full max-h-full object-contain lg:rounded-lg lg:shadow-2xl select-none"
               draggable={false}
               onAnimationComplete={() => setSlideDirection(null)}
             />
