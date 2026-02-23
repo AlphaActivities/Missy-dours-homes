@@ -5,7 +5,6 @@ import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand } from 'lucide-reac
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
-import MapEmbed from '../components/ui/MapEmbed';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -35,6 +34,8 @@ export default function ListingDetailPage() {
   const handleContactClick = () => {
     navigate('/', { state: { scrollTo: 'contact' } });
   };
+
+  const encodedAddress = encodeURIComponent(listing.address);
 
   return (
     <div className="min-h-screen bg-[#f7f3ea]">
@@ -185,7 +186,16 @@ export default function ListingDetailPage() {
           <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
             <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Location</h2>
             <div className="aspect-video rounded-lg overflow-hidden">
-              <MapEmbed address={listing.address} />
+              <iframe
+                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Property Location Map"
+              />
             </div>
           </div>
         </div>
