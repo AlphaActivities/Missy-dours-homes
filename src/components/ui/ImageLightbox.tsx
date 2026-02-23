@@ -400,7 +400,7 @@ export default function ImageLightbox({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden absolute bottom-[34vh] left-0 right-0 z-50 flex justify-center"
+              className="lg:hidden absolute bottom-20 left-0 right-0 z-50 flex justify-center"
             >
               <div className="flex gap-1.5">
                 {images.map((_, index) => (
