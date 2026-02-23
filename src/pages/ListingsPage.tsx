@@ -119,20 +119,26 @@ export default function ListingsPage() {
               {activeFilter === 'all' && (
                 <>
                   <span
-                    className="absolute pointer-events-none"
+                    className="absolute pointer-events-none overflow-hidden inset-0"
                     style={{
-                      width: '200%',
-                      height: '200%',
-                      top: '-50%',
-                      left: '-50%',
                       transform: 'rotate(-45deg)',
-                      background:
-                        'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0) 35%, rgba(246,230,191,0.95) 50%, rgba(196,164,106,0) 65%, rgba(196,164,106,0) 100%)',
-                      animation: 'shimmer 1.6s ease-in-out infinite',
-                      filter: 'blur(1.2px)',
-                      opacity: 0.85,
                     }}
-                  />
+                  >
+                    <span
+                      className="absolute"
+                      style={{
+                        width: '200%',
+                        height: '200%',
+                        top: '-50%',
+                        left: '-50%',
+                        background:
+                          'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0) 35%, rgba(246,230,191,0.95) 50%, rgba(196,164,106,0) 65%, rgba(196,164,106,0) 100%)',
+                        animation: 'shimmer 1.6s ease-in-out infinite',
+                        filter: 'blur(1.2px)',
+                        opacity: 0.85,
+                      }}
+                    />
+                  </span>
                   <span className="absolute inset-0 rounded-full border-2 border-[#F6E6BF]/35 animate-pulse" />
                 </>
               )}
@@ -150,20 +156,26 @@ export default function ListingsPage() {
               {activeFilter === 'active' && (
                 <>
                   <span
-                    className="absolute pointer-events-none"
+                    className="absolute pointer-events-none overflow-hidden inset-0"
                     style={{
-                      width: '200%',
-                      height: '200%',
-                      top: '-50%',
-                      left: '-50%',
                       transform: 'rotate(-45deg)',
-                      background:
-                        'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0) 35%, rgba(246,230,191,0.95) 50%, rgba(196,164,106,0) 65%, rgba(196,164,106,0) 100%)',
-                      animation: 'shimmer 1.6s ease-in-out infinite',
-                      filter: 'blur(1.2px)',
-                      opacity: 0.85,
                     }}
-                  />
+                  >
+                    <span
+                      className="absolute"
+                      style={{
+                        width: '200%',
+                        height: '200%',
+                        top: '-50%',
+                        left: '-50%',
+                        background:
+                          'linear-gradient(90deg, rgba(196,164,106,0) 0%, rgba(196,164,106,0) 35%, rgba(246,230,191,0.95) 50%, rgba(196,164,106,0) 65%, rgba(196,164,106,0) 100%)',
+                        animation: 'shimmer 1.6s ease-in-out infinite',
+                        filter: 'blur(1.2px)',
+                        opacity: 0.85,
+                      }}
+                    />
+                  </span>
                   <span className="absolute inset-0 rounded-full border-2 border-[#F6E6BF]/35 animate-pulse" />
                 </>
               )}
