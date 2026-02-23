@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { listings } from '../data/listings';
-import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand } from 'lucide-react';
+import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
@@ -9,6 +9,8 @@ import ImageLightbox from '../components/ui/ImageLightbox';
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromFilter = searchParams.get('from') || 'all';
   const listing = listings.find((l) => l.slug === slug);
 
   const [selectedImage, setSelectedImage] = useState(0);
@@ -43,7 +45,7 @@ export default function ListingDetailPage() {
         {/* Back Link */}
         <div className="-mt-5 mb-6 sm:mb-8 lg:mb-12">
           <Link
-            to="/listings"
+            to={`/listings?filter=${fromFilter}`}
             className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#C4A46A]/70 text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.18)] ring-1 ring-[#C4A46A]/60 backdrop-blur-md transition-all duration-300 hover:-translate-y-[1px] hover:shadow-[0_12px_35px_rgba(15,23,42,0.25)] overflow-hidden text-sm sm:text-base font-medium"
           >
             <span className="absolute inset-0 bg-gradient-to-r from-white/40 via-transparent to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
@@ -67,10 +69,22 @@ export default function ListingDetailPage() {
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               {listing.status === 'active' && (
-                <div
-                  className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-amber-600 text-white px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-lg z-10 pointer-events-none"
-                >
-                  ACTIVE LISTING
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 group/badge pointer-events-none z-10">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-orange-600 rounded-full blur-md opacity-75 animate-pulse" />
+                    <div className="relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 rounded-full shadow-[0_4px_20px_rgba(217,119,6,0.5)] border border-amber-400/50 backdrop-blur-sm">
+                      <div className="relative">
+                        <Home className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" strokeWidth={2.5} />
+                        <div className="absolute inset-0 animate-ping opacity-30">
+                          <Home className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" strokeWidth={2.5} />
+                        </div>
+                      </div>
+                      <span className="text-[0.7rem] sm:text-xs font-bold tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] uppercase">
+                        Active
+                      </span>
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-hover/badge:opacity-100 transition-opacity duration-300" />
+                    </div>
+                  </div>
                 </div>
               )}
               {/* Fullscreen Button */}
