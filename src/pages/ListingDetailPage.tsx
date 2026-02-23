@@ -187,7 +187,7 @@ export default function ListingDetailPage() {
             <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Location</h2>
             <div className="aspect-video rounded-lg overflow-hidden">
               <iframe
-                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`}
+                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyAbdS3vxczrB0SAVeyyunYs8RSsEZPK06g&q=${encodedAddress}`}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
