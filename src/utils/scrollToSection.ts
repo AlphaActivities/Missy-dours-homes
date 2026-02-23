@@ -26,3 +26,17 @@ export const scrollToSection = (targetId: string) => {
     behavior: 'smooth',
   });
 };
+
+export const navigateToSection = (targetId: string, navigate: (path: string, options?: { state?: { scrollTo: string } }) => void, currentPath: string) => {
+  const isHomePage = currentPath === '/';
+
+  if (isHomePage) {
+    scrollToSection(targetId);
+  } else {
+    if (targetId === 'home') {
+      navigate('/');
+    } else {
+      navigate('/', { state: { scrollTo: targetId } });
+    }
+  }
+};
