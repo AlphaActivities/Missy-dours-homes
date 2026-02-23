@@ -429,9 +429,11 @@ export default function ImageLightbox({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
-              className="sm:hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-2.5 rounded-full bg-white/10 backdrop-blur-md text-white text-sm font-light max-w-[85%] text-center"
+              className="sm:hidden absolute bottom-6 left-0 right-0 z-50 flex justify-center"
             >
-              {title}
+              <div className="px-6 py-2.5 rounded-full bg-white/10 backdrop-blur-md text-white text-sm font-light max-w-[85%] text-center">
+                {title}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
