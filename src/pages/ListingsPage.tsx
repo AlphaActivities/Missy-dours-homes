@@ -41,10 +41,32 @@ export default function ListingsPage() {
         </div>
 
         <div className="text-center mb-10 sm:mb-12">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-light text-gray-900 mb-4 sm:mb-6 tracking-tight">
-            Active Listings
+          <h1
+            className="text-5xl sm:text-6xl lg:text-7xl mb-4 sm:mb-6 px-4"
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontWeight: 500,
+              letterSpacing: '0.02em',
+              background: 'linear-gradient(135deg, #8B7355 0%, #C4A46A 40%, #D4B57A 60%, #8B7355 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              textShadow: '0 2px 4px rgba(139, 115, 85, 0.1)',
+              filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05))',
+            }}
+          >
+            ACTIVE LISTINGS
           </h1>
-          <p className="text-base sm:text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed px-4">
+          <div className="h-px w-32 mx-auto bg-gradient-to-r from-transparent via-[#C4A46A] to-transparent mb-6 sm:mb-8" />
+          <p
+            className="text-base sm:text-lg max-w-3xl mx-auto leading-relaxed px-4"
+            style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontWeight: 400,
+              color: '#4A4A4A',
+              letterSpacing: '0.015em',
+            }}
+          >
             A curated selection of exceptional properties across North Texas. Each home represents
             an opportunity to find the perfect setting for your next chapter.
           </p>
