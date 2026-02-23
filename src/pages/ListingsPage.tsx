@@ -40,6 +40,9 @@ export default function ListingsPage() {
           </Link>
         </div>
 
+        {/* Add 20px spacing */}
+        <div className="h-5" />
+
         <div className="text-center mb-10 sm:mb-12">
           <h1
             className="text-5xl sm:text-6xl lg:text-7xl mb-4 sm:mb-6 px-4"
