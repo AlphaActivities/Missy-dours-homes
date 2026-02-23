@@ -43,7 +43,7 @@ export default function HeroSection() {
                   Schedule a Consultation
                 </button>
                 <ShimmerButton
-                  onClick={() => navigate('/listings?filter=active')}
+                  onClick={() => navigate('/listings')}
                   className="inline-flex items-center gap-2 border-2 border-[#C4A46A] text-white hover:bg-gradient-to-br hover:from-[#8B6F47]/40 hover:to-[#6B5335]/30 rounded-full px-7 py-3 shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-all duration-300 cursor-pointer transform hover:scale-110"
                 >
                   <Home className="w-4 h-4" />
