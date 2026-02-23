@@ -301,7 +301,7 @@ export default function ImageLightbox({
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
                 onClick={handlePrevious}
-                className="sm:hidden absolute bottom-[30vh] left-6 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
+                className="sm:hidden absolute bottom-[18vh] left-6 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="w-7 h-7" />
@@ -314,7 +314,7 @@ export default function ImageLightbox({
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
                 onClick={handleNext}
-                className="sm:hidden absolute bottom-[30vh] right-6 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
+                className="sm:hidden absolute bottom-[18vh] right-6 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
                 aria-label="Next image"
               >
                 <ChevronRight className="w-7 h-7" />
@@ -400,7 +400,7 @@ export default function ImageLightbox({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
-              className="lg:hidden absolute bottom-[40vh] left-1/2 -translate-x-1/2 flex gap-1.5 z-50"
+              className="lg:hidden absolute bottom-[34vh] left-1/2 -translate-x-1/2 flex gap-1.5 z-50"
             >
               {images.map((_, index) => (
                 <button
