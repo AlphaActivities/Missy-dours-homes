@@ -324,10 +324,7 @@ export default function ImageLightbox({
         </AnimatePresence>
 
         {/* Image Container */}
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.4, ease: 'easeOut' }}
+        <div
           className="relative w-full h-full flex items-center justify-center lg:px-24 lg:py-24"
           onClick={handleImageClick}
         >
@@ -355,7 +352,7 @@ export default function ImageLightbox({
               onAnimationComplete={() => setSlideDirection(null)}
             />
           </AnimatePresence>
-        </motion.div>
+        </div>
 
         {/* Thumbnail Strip (Desktop Only) */}
         <AnimatePresence>
