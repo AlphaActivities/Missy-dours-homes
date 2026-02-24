@@ -4,6 +4,7 @@ import { listings, ListingCategory, ListingStatus } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Home } from 'lucide-react';
 import FooterSection from '../components/sections/FooterSection';
 import { motion, AnimatePresence } from 'framer-motion';
+import { luxuryScrollToTop } from '../utils/luxuryScroll';
 
 type FilterType = 'all' | 'active' | ListingCategory;
 
@@ -16,10 +17,7 @@ export default function ListingsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.scrollTo({ top: window.innerHeight * 0.2, behavior: 'instant' });
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 50);
+    luxuryScrollToTop(1400);
   }, []);
 
   useEffect(() => {

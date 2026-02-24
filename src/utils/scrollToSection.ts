@@ -1,11 +1,10 @@
+import { luxuryScrollTo } from './luxuryScroll';
+
 export const scrollToSection = (targetId: string) => {
   if (typeof window === 'undefined') return;
 
   if (targetId === 'home') {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+    luxuryScrollTo(0, 1200);
     return;
   }
 
@@ -21,10 +20,7 @@ export const scrollToSection = (targetId: string) => {
   const offsetPadding = -30;
   const targetPosition = Math.max(rect.top + scrollTop - headerHeight - offsetPadding, 0);
 
-  window.scrollTo({
-    top: targetPosition,
-    behavior: 'smooth',
-  });
+  luxuryScrollTo(targetPosition, 1200);
 };
 
 export const navigateToSection = (targetId: string, navigate: (path: string, options?: { state?: { scrollTo: string } }) => void, currentPath: string) => {
