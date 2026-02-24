@@ -19,7 +19,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (location.state?.scrollTo) {
-      requestAnimationFrame(() => scrollToSection(location.state.scrollTo));
+      setTimeout(() => scrollToSection(location.state.scrollTo), 100);
     }
   }, [location]);
 
