@@ -154,7 +154,7 @@ export default function ListingsPage() {
               disabled={isLoading}
               className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap overflow-hidden ${
                 activeFilter === 'luxury'
-                  ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
+                  ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
               } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
@@ -178,7 +178,7 @@ export default function ListingsPage() {
               disabled={isLoading}
               className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap overflow-hidden ${
                 activeFilter === 'mid'
-                  ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
+                  ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
               } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
@@ -202,7 +202,7 @@ export default function ListingsPage() {
               disabled={isLoading}
               className={`relative px-3 sm:px-7 py-3 rounded-full text-[0.65rem] sm:text-sm font-semibold tracking-wide transition-all duration-300 whitespace-nowrap overflow-hidden ${
                 activeFilter === 'first'
-                  ? 'bg-[#C4A46A]/70 text-black shadow-[0_4px_16px_rgba(196,164,106,0.4)] scale-105'
+                  ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)] scale-105'
                   : 'bg-gradient-to-br from-[#F5E6C8] to-[#E8D5B5] text-[#6B5335] hover:shadow-[0_4px_12px_rgba(139,111,71,0.25)] hover:scale-105'
               } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
