@@ -5,6 +5,7 @@ import { Bed, Bath, Maximize, ArrowLeft, Home } from 'lucide-react';
 import FooterSection from '../components/sections/FooterSection';
 import { motion, AnimatePresence } from 'framer-motion';
 import { luxuryScrollToTop } from '../utils/luxuryScroll';
+import { useRefreshDetection } from '../utils/refreshDetection';
 
 type FilterType = 'all' | 'active' | ListingCategory;
 
@@ -15,10 +16,15 @@ export default function ListingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [displayedListings, setDisplayedListings] = useState(listings);
   const navigate = useNavigate();
+  const isRefreshed = useRefreshDetection();
 
   useEffect(() => {
-    luxuryScrollToTop(1400);
-  }, []);
+    if (isRefreshed) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } else {
+      luxuryScrollToTop(1400);
+    }
+  }, [isRefreshed]);
 
   useEffect(() => {
     if (filterParam && ['all', 'active', 'luxury', 'mid', 'first'].includes(filterParam)) {

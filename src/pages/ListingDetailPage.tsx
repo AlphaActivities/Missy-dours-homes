@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { listings } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
+import { useRefreshDetection } from '../utils/refreshDetection';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -12,10 +13,19 @@ export default function ListingDetailPage() {
   const [searchParams] = useSearchParams();
   const fromFilter = searchParams.get('from') || 'all';
   const listing = listings.find((l) => l.slug === slug);
+  const isRefreshed = useRefreshDetection();
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [openFeatureSections, setOpenFeatureSections] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isRefreshed) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isRefreshed]);
 
   if (!listing) {
     return (
