@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
 import Navbar from './components/Navbar';
@@ -10,6 +11,10 @@ function Layout() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
+  useEffect(() => {
+    console.log('[Route] Navigation to:', location.pathname);
+  }, [location.pathname]);
+
   return (
     <>
       {isHomePage && <GlobalVideoBackground />}
@@ -21,6 +26,8 @@ function Layout() {
 }
 
 export default function App() {
+  console.log('[App] App component mounting');
+
   return (
     <Routes>
       <Route element={<Layout />}>
