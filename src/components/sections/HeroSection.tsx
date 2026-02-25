@@ -23,7 +23,7 @@ export default function HeroSection() {
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1.1]">
                 <span className="block text-white">CURATING EXCEPTIONAL</span>
                 <span className="block text-[#F5E6C8]">LUXURY REAL ESTATE</span>
-                <span className="block text-white">FOR DISCERNING BUYERS & SELLERS</span>
+                <span className="block text-white">FOR BUYERS & SELLERS</span>
               </h1>
             </LuxFadeIn>
 
