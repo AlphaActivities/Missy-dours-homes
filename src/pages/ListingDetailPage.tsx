@@ -17,10 +17,7 @@ export default function ListingDetailPage() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [openFeatureSections, setOpenFeatureSections] = useState<string[]>([]);
 
-  console.log('[ListingDetail] Component mounting, slug:', slug, 'listing found:', !!listing);
-
   useEffect(() => {
-    console.log('[ListingDetail] Component mounted for slug:', slug);
     window.scrollTo(0, 0);
   }, [slug]);
 
