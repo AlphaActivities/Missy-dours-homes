@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { scrollToSection } from '../utils/scrollToSection';
+import { useRefreshDetection } from '../utils/refreshDetection';
 import HeroSection from '../components/sections/HeroSection';
 import ChooseYourPathSection from '../components/sections/ChooseYourPathSection';
 import FeaturedListings from '../components/sections/FeaturedListings';
@@ -14,8 +15,15 @@ import FooterSection from '../components/sections/FooterSection';
 
 export default function HomePage() {
   const location = useLocation();
+  const isRefreshed = useRefreshDetection();
   const [selectedPath, setSelectedPath] = useState<"luxury" | "mid-tier" | "first-time" | null>(null);
   const [pendingScrollTarget, setPendingScrollTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isRefreshed) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [isRefreshed]);
 
   useEffect(() => {
     if (location.state?.scrollTo) {
