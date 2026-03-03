@@ -106,7 +106,7 @@ export default function FooterSection() {
 
         <div className="border-t border-neutral-300/40 mt-10 pt-6">
           <p className="text-center text-neutral-500 text-xs leading-relaxed">
-            © 2025 Missy Dours Real Estate. All Rights Reserved.
+            © 2026 Missy Dours Real Estate. All Rights Reserved.
           </p>
         </div>
       </div>
