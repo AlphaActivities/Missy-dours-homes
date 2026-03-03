@@ -62,17 +62,46 @@ export default function ChooseYourPathSection({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {pathOptions.map((option, index) => {
             const isSelected = selectedPath === option.id;
+            const delay = 0.1 + index * 0.08;
+
+            const glowIntensity =
+              option.id === "luxury" ? { opacity: 0.9, size: "500px 350px" } :
+              option.id === "mid-tier" ? { opacity: 0.7, size: "450px 300px" } :
+              { opacity: 0.5, size: "400px 250px" };
+
             return (
-              <LuxFadeIn key={option.id} delay={0.1 + index * 0.08}>
-                <button
-                  type="button"
-                  onClick={() => onSelectPath(option.id)}
-                  className={`group relative flex flex-col rounded-2xl overflow-hidden bg-black/55 border-2 backdrop-blur-md transition-all duration-300 w-full text-left ${
-                    isSelected
-                      ? "border-[#F5E6C8] shadow-[0_0_35px_rgba(245,230,200,0.8)] ring-2 ring-[#F5E6C8]/50"
-                      : "border-[#C4A46A] shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)]"
-                  } hover:scale-[1.01] hover:-translate-y-[2px]`}
-                >
+              <LuxFadeIn key={option.id} delay={delay}>
+                <div className="relative">
+                  {/* Individual elliptical glow behind each tile */}
+                  <LuxFadeIn delay={delay}>
+                    <div
+                      className="absolute inset-0 pointer-events-none -z-10 hidden md:block"
+                      style={{
+                        background: `radial-gradient(ellipse ${glowIntensity.size} at center, rgba(196, 164, 106, ${glowIntensity.opacity}) 0%, rgba(196, 164, 106, ${glowIntensity.opacity * 0.4}) 35%, transparent 70%)`,
+                        filter: 'blur(40px)',
+                        transform: 'scale(1.1)',
+                      }}
+                    />
+                    {/* Mobile: Wider, shorter elliptical glow optimized for stacked layout */}
+                    <div
+                      className="absolute inset-0 pointer-events-none -z-10 md:hidden"
+                      style={{
+                        background: `radial-gradient(ellipse 90% 60% at center, rgba(196, 164, 106, ${glowIntensity.opacity}) 0%, rgba(196, 164, 106, ${glowIntensity.opacity * 0.3}) 40%, transparent 75%)`,
+                        filter: 'blur(50px)',
+                        transform: 'scale(1.2)',
+                      }}
+                    />
+                  </LuxFadeIn>
+
+                  <button
+                    type="button"
+                    onClick={() => onSelectPath(option.id)}
+                    className={`group relative flex flex-col rounded-2xl overflow-hidden bg-black/55 border-2 backdrop-blur-md transition-all duration-300 w-full text-left ${
+                      isSelected
+                        ? "border-[#F5E6C8] shadow-[0_0_35px_rgba(245,230,200,0.8)] ring-2 ring-[#F5E6C8]/50"
+                        : "border-[#C4A46A] shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)]"
+                    } hover:scale-[1.01] hover:-translate-y-[2px]`}
+                  >
                   {/* Selected Banner - Positioned at Top */}
                   {isSelected && (
                     <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 bg-gradient-to-r from-[#C4A46A] to-[#F5E6C8] text-black px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
@@ -120,6 +149,7 @@ export default function ChooseYourPathSection({
                     </div>
                   </div>
                 </button>
+                </div>
               </LuxFadeIn>
             );
           })}
