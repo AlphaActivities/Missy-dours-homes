@@ -47,7 +47,7 @@ export default function FooterSection() {
             <h4 className="text-xs tracking-[0.26em] uppercase text-[#c29f63] mb-3 font-medium">
               Navigate
             </h4>
-            <nav className="flex flex-col space-y-2 md:space-y-0 md:flex-1">
+            <nav className="flex flex-col space-y-1.5 md:space-y-0 md:flex-1">
               {navLinks.map((link) => (
                 <button
                   key={link.label}
