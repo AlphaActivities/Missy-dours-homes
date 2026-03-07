@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { navigateToSection } from '../../utils/scrollToSection';
 import { CONTACT_INFO } from '../../config/contact';
-import { Instagram, Linkedin, Globe, Facebook } from 'lucide-react';
+import { Instagram, Linkedin, Home, Facebook } from 'lucide-react';
 
 export default function FooterSection() {
   const navigate = useNavigate();
@@ -74,7 +74,7 @@ export default function FooterSection() {
                 aria-label="Realtor.com"
                 className="text-black hover:text-[#c29f63] hover:scale-110 transition-all duration-200"
               >
-                <Globe className="w-7 h-7" strokeWidth={1.5} />
+                <Home className="w-7 h-7" strokeWidth={1.5} />
               </a>
             </div>
           </div>
