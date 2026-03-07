@@ -20,10 +20,10 @@ export default function HeroSection() {
             </LuxFadeIn>
 
             <LuxFadeIn delay={0.1}>
-              <h1 className="font-bold mb-6 leading-[1.1]">
-                <span className="block text-white text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] whitespace-nowrap">CURATING EXCEPTIONAL</span>
-                <span className="block text-[#F5E6C8] luxury-headline-glow text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] whitespace-nowrap">LUXURY REAL ESTATE</span>
-                <span className="block text-white text-4xl md:text-5xl lg:text-[3.5rem] xl:text-[4rem] whitespace-nowrap">FOR BUYERS &amp; SELLERS IN TX</span>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1.1]">
+                <span className="block text-white">CURATING EXCEPTIONAL</span>
+                <span className="block text-[#F5E6C8] luxury-headline-glow">LUXURY REAL ESTATE</span>
+                <span className="block text-white">FOR BUYERS & SELLERS IN TX</span>
               </h1>
             </LuxFadeIn>
 
