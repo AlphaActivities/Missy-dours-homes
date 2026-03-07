@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { navigateToSection } from '../../utils/scrollToSection';
 import { CONTACT_INFO } from '../../config/contact';
-import { Instagram, Linkedin, Globe } from 'lucide-react';
+import { Instagram, Linkedin, Globe, Facebook } from 'lucide-react';
 
 export default function FooterSection() {
   const navigate = useNavigate();
@@ -39,38 +39,44 @@ export default function FooterSection() {
             <p className="text-sm text-black leading-relaxed mt-1.5 text-center md:text-left">
               Luxury real estate advisor curating exceptional properties for discerning buyers and sellers across North Texas.
             </p>
-            <div className="flex items-center justify-center md:justify-start gap-3 mt-2.5">
+            <div className="flex items-center justify-center md:justify-start gap-4 mt-2.5">
+              <a
+                href="https://www.facebook.com/people/Missy-Dours/61585389652547/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="text-black hover:text-[#c29f63] hover:scale-110 transition-all duration-200"
+              >
+                <Facebook className="w-7 h-7" strokeWidth={1.5} />
+              </a>
               <a
                 href="https://www.instagram.com/werdours/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="text-black hover:text-[#c29f63] transition-colors duration-200"
+                className="text-black hover:text-[#c29f63] hover:scale-110 transition-all duration-200"
               >
-                <Instagram className="w-5 h-5" strokeWidth={1.5} />
+                <Instagram className="w-7 h-7" strokeWidth={1.5} />
               </a>
               <a
                 href="https://www.linkedin.com/in/missy-dours-749b30191"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
-                className="text-black hover:text-[#c29f63] transition-colors duration-200"
+                className="text-black hover:text-[#c29f63] hover:scale-110 transition-all duration-200"
               >
-                <Linkedin className="w-5 h-5" strokeWidth={1.5} />
+                <Linkedin className="w-7 h-7" strokeWidth={1.5} />
               </a>
               <a
                 href="https://www.realtor.com/realestateagents/690d57de7abd2208461fc50b"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Realtor.com"
-                className="text-black hover:text-[#c29f63] transition-colors duration-200"
+                className="text-black hover:text-[#c29f63] hover:scale-110 transition-all duration-200"
               >
-                <Globe className="w-5 h-5" strokeWidth={1.5} />
+                <Globe className="w-7 h-7" strokeWidth={1.5} />
               </a>
             </div>
-            <p className="mt-2.5 text-xs text-neutral-700 text-center md:text-left">
-              License #0844012 · Brokered by Beam Real Estate LLC
-            </p>
           </div>
 
           <div className="flex flex-col">
@@ -137,6 +143,9 @@ export default function FooterSection() {
         <div className="border-t border-neutral-300/40 mt-8 pt-5">
           <p className="text-center text-neutral-500 text-xs leading-relaxed">
             © 2026 Missy Dours Real Estate. All Rights Reserved.
+          </p>
+          <p className="text-center text-neutral-500 text-xs leading-relaxed mt-1">
+            License #0844012 · Brokered by Beam Real Estate LLC
           </p>
         </div>
       </div>
