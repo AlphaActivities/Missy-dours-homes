@@ -41,6 +41,15 @@ export default function FooterSection() {
             </p>
             <div className="flex items-center justify-center md:justify-start gap-4 mt-2.5">
               <a
+                href="https://www.realtor.com/realestateagents/690d57de7abd2208461fc50b"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Realtor.com"
+                className="text-black hover:text-[#c29f63] hover:scale-110 transition-all duration-200"
+              >
+                <Home className="w-7 h-7" strokeWidth={1.5} />
+              </a>
+              <a
                 href="https://www.facebook.com/people/Missy-Dours/61585389652547/"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -66,15 +75,6 @@ export default function FooterSection() {
                 className="text-black hover:text-[#c29f63] hover:scale-110 transition-all duration-200"
               >
                 <Linkedin className="w-7 h-7" strokeWidth={1.5} />
-              </a>
-              <a
-                href="https://www.realtor.com/realestateagents/690d57de7abd2208461fc50b"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Realtor.com"
-                className="text-black hover:text-[#c29f63] hover:scale-110 transition-all duration-200"
-              >
-                <Home className="w-7 h-7" strokeWidth={1.5} />
               </a>
             </div>
           </div>
