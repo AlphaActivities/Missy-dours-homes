@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { navigateToSection } from '../../utils/scrollToSection';
 import { CONTACT_INFO } from '../../config/contact';
+import { Instagram, Linkedin, Globe } from 'lucide-react';
 
 export default function FooterSection() {
   const navigate = useNavigate();
@@ -15,13 +16,13 @@ export default function FooterSection() {
 
   return (
     <footer id="footer" className="bg-[#f9f7f3] relative z-10">
-      <div className="max-w-6xl mx-auto px-6 md:px-10 lg:px-12 py-10 md:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
+      <div className="max-w-6xl mx-auto px-6 md:px-10 lg:px-12 py-8 md:py-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-8">
           <div className="flex flex-col">
             <button
               type="button"
               onClick={() => navigateToSection('home', navigate, location.pathname)}
-              className="flex justify-center md:justify-start mb-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c29f63] rounded-lg transition-transform duration-200 hover:scale-105"
+              className="flex justify-center md:justify-start mb-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c29f63] rounded-lg transition-transform duration-200 hover:scale-105"
             >
               <img
                 src="/images/md-logo.png"
@@ -35,10 +36,39 @@ export default function FooterSection() {
             <p className="text-sm text-black leading-relaxed mt-1.5 text-center md:text-left">
               Dallas · Fort Worth · Carrollton · Farmers Branch · Addison · Coppell · North Dallas Metroplex · North Texas
             </p>
-            <p className="text-sm text-black leading-relaxed mt-2 text-center md:text-left">
+            <p className="text-sm text-black leading-relaxed mt-1.5 text-center md:text-left">
               Luxury real estate advisor curating exceptional properties for discerning buyers and sellers across North Texas.
             </p>
-            <p className="mt-3 text-xs text-neutral-700 text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-3 mt-2.5">
+              <a
+                href="https://www.instagram.com/werdours/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="text-black hover:text-[#c29f63] transition-colors duration-200"
+              >
+                <Instagram className="w-5 h-5" strokeWidth={1.5} />
+              </a>
+              <a
+                href="https://www.linkedin.com/in/missy-dours-749b30191"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                className="text-black hover:text-[#c29f63] transition-colors duration-200"
+              >
+                <Linkedin className="w-5 h-5" strokeWidth={1.5} />
+              </a>
+              <a
+                href="https://www.realtor.com/realestateagents/690d57de7abd2208461fc50b"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Realtor.com"
+                className="text-black hover:text-[#c29f63] transition-colors duration-200"
+              >
+                <Globe className="w-5 h-5" strokeWidth={1.5} />
+              </a>
+            </div>
+            <p className="mt-2.5 text-xs text-neutral-700 text-center md:text-left">
               License #0844012 · Brokered by Beam Real Estate LLC
             </p>
           </div>
@@ -104,7 +134,7 @@ export default function FooterSection() {
           </div>
         </div>
 
-        <div className="border-t border-neutral-300/40 mt-10 pt-6">
+        <div className="border-t border-neutral-300/40 mt-8 pt-5">
           <p className="text-center text-neutral-500 text-xs leading-relaxed">
             © 2026 Missy Dours Real Estate. All Rights Reserved.
           </p>
