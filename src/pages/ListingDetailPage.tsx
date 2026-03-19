@@ -81,19 +81,29 @@ export default function ListingDetailPage() {
                 alt={`${listing.title} - Image ${selectedImage + 1}`}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-              {listing.status === 'active' && (
+              {(listing.status === 'active' || listing.status === 'pending' || listing.status === 'sold') && (
                 <div className="absolute top-3 right-3 sm:top-4 sm:right-4 group/badge pointer-events-none z-10">
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-orange-600 rounded-full blur-md opacity-75 animate-pulse" />
-                    <div className="relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 rounded-full shadow-[0_4px_20px_rgba(217,119,6,0.5)] border border-amber-400/50 backdrop-blur-sm">
+                    <div className={`absolute inset-0 rounded-full blur-md opacity-75 ${
+                      listing.status === 'active' ? 'bg-gradient-to-r from-amber-600 to-orange-600 animate-pulse' :
+                      listing.status === 'pending' ? 'bg-gradient-to-r from-blue-600 to-cyan-600 animate-pulse' :
+                      'bg-gradient-to-r from-emerald-600 to-green-600'
+                    }`} />
+                    <div className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-[0_4px_20px_rgba(217,119,6,0.5)] backdrop-blur-sm ${
+                      listing.status === 'active' ? 'bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 border border-amber-400/50' :
+                      listing.status === 'pending' ? 'bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-700 border border-blue-400/50' :
+                      'bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 border border-emerald-400/50'
+                    }`}>
                       <div className="relative">
                         <Home className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" strokeWidth={2.5} />
-                        <div className="absolute inset-0 animate-ping opacity-30">
-                          <Home className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" strokeWidth={2.5} />
-                        </div>
+                        {listing.status !== 'sold' && (
+                          <div className="absolute inset-0 animate-ping opacity-30">
+                            <Home className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" strokeWidth={2.5} />
+                          </div>
+                        )}
                       </div>
                       <span className="text-[0.7rem] sm:text-xs font-bold tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)] uppercase">
-                        Active
+                        {listing.status === 'active' ? 'Active' : listing.status === 'pending' ? 'Pending' : 'Sold'}
                       </span>
                       <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-hover/badge:opacity-100 transition-opacity duration-300" />
                     </div>

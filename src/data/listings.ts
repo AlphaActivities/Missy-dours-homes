@@ -1,5 +1,5 @@
 export type ListingCategory = "luxury" | "mid" | "first";
-export type ListingStatus = "active" | "placeholder";
+export type ListingStatus = "active" | "pending" | "sold" | "placeholder";
 
 export interface Listing {
   id: string;
@@ -37,7 +37,7 @@ export const listings: Listing[] = [
     sqft: 4850,
     slug: "3105-palmdale-cir",
     category: "mid",
-    status: "active",
+    status: "pending",
     heroImage: "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir01.webp",
     galleryImages: [
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir01.webp",
@@ -94,6 +94,90 @@ export const listings: Listing[] = [
         "Walking distance to parks and shopping",
         "Low-traffic residential street",
         "Award-winning schools"
+      ]
+    }
+  },
+  {
+    id: "11",
+    title: "1722 Barclay Dr",
+    price: "$365,000",
+    locationText: "Richardson, TX",
+    beds: 3,
+    baths: 2,
+    sqft: 1873,
+    slug: "1722-barclay-dr",
+    category: "mid",
+    status: "sold",
+    heroImage: "/images/listings/1722-barclay-Dr/1722_Barclay_Dr01.webp",
+    galleryImages: [
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr01.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr02.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr03.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr04.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr05.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr06.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr07.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr08.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr09.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr10.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr11.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr12.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr13.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr14.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr15.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr16.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr17.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr18.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr19.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr20.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr21.webp",
+      "/images/listings/1722-barclay-Dr/1722_Barclay_Dr22.webp"
+    ],
+    description: "A beautifully maintained single-family home in Richardson's highly desirable Yale Park neighborhood. This 3-bedroom, 2-bath residence offers 1,873 square feet of comfortable living space on a generous lot. The home features vaulted ceilings that create an open and airy atmosphere, along with a wet bar perfect for entertaining. The well-appointed kitchen showcases granite countertops and built-in features in a functional galley layout. Additional highlights include a cozy wood-burning fireplace, spacious walk-in closets, and a 2-car garage. Located in the award-winning Richardson ISD with access to Yale Elementary, Apollo Junior High, and Berkner High School. This home generated strong buyer interest and sold successfully in a competitive multiple-offer situation.",
+    address: "1722 Barclay Dr, Richardson, TX 75081",
+    propertyType: "Single Family Residence",
+    yearBuilt: 1980,
+    lotSize: "9,017 sq ft",
+    mlsNumber: "21156282",
+    lastUpdated: "March 6, 2026",
+    daysOnline: 14,
+    highlights: [
+      "Vaulted ceilings creating spacious, open living areas",
+      "Wet bar ideal for entertaining guests",
+      "Granite countertops and built-in kitchen features",
+      "Wood-burning fireplace for cozy ambiance",
+      "Generous walk-in closets for ample storage",
+      "Award-winning Richardson ISD schools",
+      "Yale Park neighborhood with curbs and sidewalks",
+      "Successfully sold in competitive multiple-offer situation"
+    ],
+    features: {
+      Interior: [
+        "Vaulted ceilings throughout main areas",
+        "Wet bar for entertaining",
+        "Galley kitchen with granite counters",
+        "Built-in kitchen features",
+        "Wood-burning fireplace",
+        "Walk-in closets",
+        "1,873 square feet of living space"
+      ],
+      Exterior: [
+        "Two-car garage",
+        "Generous 9,017 sq ft lot",
+        "Curbs and sidewalks",
+        "Yale Park neighborhood setting"
+      ],
+      Utilities: [
+        "Public water service",
+        "Public sewer service",
+        "Central heating and air"
+      ],
+      Community: [
+        "Richardson Independent School District",
+        "Yale Elementary School",
+        "Apollo Junior High School",
+        "Berkner High School",
+        "Established Yale Park neighborhood"
       ]
     }
   },
