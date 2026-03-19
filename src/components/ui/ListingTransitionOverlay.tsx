@@ -150,8 +150,6 @@ export default function ListingTransitionOverlay({
                         background: 'conic-gradient(from 0deg, #C4A46A 0%, #D4B57A 25%, rgba(196, 164, 106, 0.15) 50%, transparent 75%, #C4A46A 100%)',
                         WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 2px))',
                         mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 2px))',
-                        willChange: 'transform',
-                        transform: 'translateZ(0)',
                       }}
                     />
                   </motion.div>
