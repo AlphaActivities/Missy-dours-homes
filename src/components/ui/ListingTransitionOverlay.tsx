@@ -63,7 +63,7 @@ export default function ListingTransitionOverlay({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
+          transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="fixed inset-0 z-[9999] flex items-center justify-center"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-slate-800/50 to-slate-900/40 backdrop-blur-xl" />
@@ -82,6 +82,8 @@ export default function ListingTransitionOverlay({
                   <img
                     src="/images/md-logo.png"
                     alt="Missy Davis"
+                    loading="eager"
+                    decoding="sync"
                     className="h-16 sm:h-20 lg:h-28 drop-shadow-[0_4px_12px_rgba(196,164,106,0.4)]"
                   />
                 </div>
@@ -91,6 +93,8 @@ export default function ListingTransitionOverlay({
                     <img
                       src={heroImage}
                       alt={title || 'Property preview'}
+                      loading="eager"
+                      decoding="sync"
                       className="w-full h-48 sm:h-56 lg:h-80 object-cover"
                       onLoad={() => {
                         const elapsed = Date.now() - mountTime;
@@ -141,6 +145,7 @@ export default function ListingTransitionOverlay({
                   {[0, 1, 2].map((i) => (
                     <motion.div
                       key={i}
+                      initial={{ opacity: 0 }}
                       animate={{
                         opacity: [0.3, 1, 0.3],
                       }}
