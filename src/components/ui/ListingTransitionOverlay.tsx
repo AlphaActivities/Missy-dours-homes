@@ -18,6 +18,7 @@ export default function ListingTransitionOverlay({
 }: ListingTransitionOverlayProps) {
   const [shouldDismiss, setShouldDismiss] = useState(false);
   const [mountTime, setMountTime] = useState<number>(0);
+  const [introComplete, setIntroComplete] = useState(false);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -25,19 +26,9 @@ export default function ListingTransitionOverlay({
     const mountTimestamp = Date.now();
     setMountTime(mountTimestamp);
 
-    const checkMinimumDuration = (callback: () => void) => {
-      const elapsed = Date.now() - mountTimestamp;
-      const remaining = Math.max(0, 3200 - elapsed);
-      setTimeout(callback, remaining);
-    };
-
-    const handleHeroLoaded = () => {
-      checkMinimumDuration(() => {
-        setShouldDismiss(true);
-      });
-    };
-
-    window.addEventListener('listingHeroLoaded', handleHeroLoaded);
+    const introCompleteTimer = setTimeout(() => {
+      setIntroComplete(true);
+    }, 250);
 
     const maxDurationTimer = setTimeout(() => {
       setShouldDismiss(true);
@@ -45,8 +36,9 @@ export default function ListingTransitionOverlay({
     }, 4200);
 
     return () => {
-      window.removeEventListener('listingHeroLoaded', handleHeroLoaded);
+      clearTimeout(introCompleteTimer);
       clearTimeout(maxDurationTimer);
+      setIntroComplete(false);
     };
   }, [isVisible, onDismiss]);
 
@@ -97,7 +89,8 @@ export default function ListingTransitionOverlay({
                       decoding="sync"
                       className="w-full h-48 sm:h-56 lg:h-80 object-cover"
                       onLoad={() => {
-                        const elapsed = Date.now() - mountTime;
+                        if (!introComplete) return;
+                        const elapsed = Date.now() - (mountTime + 250);
                         const remaining = Math.max(0, 3200 - elapsed);
                         setTimeout(() => {
                           setShouldDismiss(true);
