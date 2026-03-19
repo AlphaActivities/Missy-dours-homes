@@ -27,7 +27,7 @@ export default function ListingTransitionOverlay({
 
     const checkMinimumDuration = (callback: () => void) => {
       const elapsed = Date.now() - mountTimestamp;
-      const remaining = Math.max(0, 1200 - elapsed);
+      const remaining = Math.max(0, 3200 - elapsed);
       setTimeout(callback, remaining);
     };
 
@@ -42,7 +42,7 @@ export default function ListingTransitionOverlay({
     const maxDurationTimer = setTimeout(() => {
       setShouldDismiss(true);
       onDismiss();
-    }, 2200);
+    }, 4200);
 
     return () => {
       window.removeEventListener('listingHeroLoaded', handleHeroLoaded);
@@ -63,64 +63,48 @@ export default function ListingTransitionOverlay({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
           className="fixed inset-0 z-[9999] flex items-center justify-center"
-          style={{ willChange: 'opacity' }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-slate-800/50 to-slate-900/40 backdrop-blur-xl" />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ scale: 0.96 }}
+            animate={{ scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="relative z-10 max-w-md lg:max-w-2xl w-[90%] sm:w-full"
-            style={{ willChange: 'opacity, transform' }}
+            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="relative z-10 max-w-md lg:max-w-3xl w-[90%] sm:w-full"
+            style={{ willChange: 'transform' }}
           >
             <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-white/40 overflow-hidden">
-              <div className="p-8 sm:p-10 lg:p-12 text-center space-y-6">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex justify-center"
-                >
+              <div className="p-8 sm:p-10 lg:p-14 text-center space-y-6">
+                <div className="flex justify-center">
                   <img
                     src="/images/md-logo.png"
                     alt="Missy Davis"
-                    className="h-16 sm:h-20 lg:h-24 drop-shadow-[0_4px_12px_rgba(196,164,106,0.4)]"
+                    className="h-16 sm:h-20 lg:h-28 drop-shadow-[0_4px_12px_rgba(196,164,106,0.4)]"
                   />
-                </motion.div>
+                </div>
 
                 {heroImage && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="relative rounded-lg overflow-hidden shadow-lg ring-2 ring-[#C4A46A]/30"
-                  >
+                  <div className="relative rounded-lg overflow-hidden shadow-lg ring-2 ring-[#C4A46A]/30">
                     <img
                       src={heroImage}
                       alt={title || 'Property preview'}
-                      className="w-full h-48 sm:h-56 lg:h-72 object-cover"
+                      className="w-full h-48 sm:h-56 lg:h-80 object-cover"
                       onLoad={() => {
                         const elapsed = Date.now() - mountTime;
-                        const remaining = Math.max(0, 1200 - elapsed);
+                        const remaining = Math.max(0, 3200 - elapsed);
                         setTimeout(() => {
                           setShouldDismiss(true);
                         }, remaining);
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                  </motion.div>
+                  </div>
                 )}
 
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-3"
-                >
+                <div className="space-y-4">
                   <h2
                     className="text-xl sm:text-2xl lg:text-3xl font-light tracking-wide"
                     style={{
@@ -133,15 +117,6 @@ export default function ListingTransitionOverlay({
                   >
                     Preparing Property Preview
                   </h2>
-                  <p
-                    className="text-sm sm:text-base lg:text-lg text-slate-600"
-                    style={{
-                      fontFamily: "'Cormorant Garamond', serif",
-                      letterSpacing: '0.02em',
-                    }}
-                  >
-                    Curating your next look inside.
-                  </p>
 
                   {title && (
                     <div className="pt-2 border-t border-[#C4A46A]/20">
@@ -160,30 +135,25 @@ export default function ListingTransitionOverlay({
                       )}
                     </div>
                   )}
-                </motion.div>
+                </div>
 
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex justify-center gap-1.5 pt-2"
-                >
+                <div className="flex justify-center gap-1.5 pt-2">
                   {[0, 1, 2].map((i) => (
                     <motion.div
                       key={i}
                       animate={{
-                        scale: [1, 1.3, 1],
-                        opacity: [0.4, 1, 0.4],
+                        opacity: [0.3, 1, 0.3],
                       }}
                       transition={{
-                        duration: 1.2,
+                        duration: 1.5,
                         repeat: Infinity,
                         delay: i * 0.2,
+                        ease: 'easeInOut',
                       }}
-                      className="w-2 h-2 rounded-full bg-gradient-to-r from-[#C4A46A] to-[#D4B57A]"
+                      className="w-3 h-3 rounded-full bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] shadow-[0_0_8px_rgba(196,164,106,0.4)]"
                     />
                   ))}
-                </motion.div>
+                </div>
               </div>
             </div>
           </motion.div>
