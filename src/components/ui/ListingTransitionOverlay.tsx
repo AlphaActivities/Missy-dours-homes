@@ -56,9 +56,9 @@ export default function ListingTransitionOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[80px] md:top-[88px] lg:top-[92px] z-[9999] flex items-center justify-center"
+          className="fixed inset-x-0 bottom-0 top-[68px] sm:top-[76px] md:top-[84px] lg:top-[88px] z-[9999] flex items-center justify-center"
         >
-          <div className="absolute inset-0 bg-[#f7f3ea]" style={{ marginTop: '-4px' }} />
+          <div className="absolute inset-0 bg-[#f7f3ea]" />
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -146,6 +146,14 @@ export default function ListingTransitionOverlay({
                         background: 'conic-gradient(from 0deg, #C4A46A 0%, #D4B57A 25%, rgba(196, 164, 106, 0.15) 50%, transparent 75%, #C4A46A 100%)',
                         WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
                         mask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
+                        willChange: 'transform',
+                        transform: 'translateZ(0)',
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
+                        WebkitFontSmoothing: 'antialiased',
+                        MozOsxFontSmoothing: 'grayscale',
+                        imageRendering: '-webkit-optimize-contrast',
+                        filter: 'blur(0.3px)',
                       }}
                     />
                   </motion.div>
