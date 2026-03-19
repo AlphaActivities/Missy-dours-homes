@@ -56,15 +56,9 @@ export default function ListingTransitionOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="fixed inset-x-0 bottom-0 top-[88px] sm:top-[96px] md:top-[100px] lg:top-[104px] z-[9999] flex items-center justify-center"
+          className="fixed inset-x-0 bottom-0 top-[64px] sm:top-[72px] md:top-[80px] lg:top-[84px] z-[9999] flex items-center justify-center"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#FFF9F0] via-[#F5EFE6] to-[#F0E8D8]" />
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{
-              background: 'radial-gradient(ellipse 800px 600px at center, rgba(196, 164, 106, 0.15) 0%, transparent 70%)'
-            }}
-          />
+          <div className="absolute inset-0 bg-[#f7f3ea]" />
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -146,13 +140,13 @@ export default function ListingTransitionOverlay({
                     transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                     className="relative w-12 h-12"
                   >
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 2, ease: "linear", repeat: Infinity }}
-                      className="w-full h-full rounded-full border-[3px] border-[#C4A46A]/20"
+                    <div
+                      className="w-full h-full rounded-full border-[3px] border-transparent animate-spin"
                       style={{
                         borderTopColor: '#C4A46A',
                         borderRightColor: '#D4B57A',
+                        borderBottomColor: 'rgba(196, 164, 106, 0.2)',
+                        borderLeftColor: 'rgba(196, 164, 106, 0.2)',
                       }}
                     />
                   </motion.div>
