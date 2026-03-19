@@ -58,11 +58,11 @@ export default function ListingTransitionOverlay({
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="fixed inset-0 z-[9999] flex items-center justify-center"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-black to-slate-950" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#FFFBF5] via-[#FFF9F0] to-[#F8F5F0]" />
           <div
             className="absolute inset-0 flex items-center justify-center"
             style={{
-              background: 'radial-gradient(ellipse 800px 600px at center, rgba(248, 245, 240, 0.4) 0%, transparent 70%)'
+              background: 'radial-gradient(ellipse 800px 600px at center, rgba(228, 218, 200, 0.3) 0%, transparent 70%)'
             }}
           />
 
