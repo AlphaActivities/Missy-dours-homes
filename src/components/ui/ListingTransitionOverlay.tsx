@@ -147,7 +147,7 @@ export default function ListingTransitionOverlay({
                     <div
                       className="w-12 h-12 rounded-full animate-spin"
                       style={{
-                        background: 'conic-gradient(from 0deg, #C4A46A 0%, #D4B57A 25%, rgba(196, 164, 106, 0.15) 50%, transparent 75%, #C4A46A 100%)',
+                        background: 'conic-gradient(from 0deg, transparent 0%, rgba(196, 164, 106, 0.1) 5%, rgba(196, 164, 106, 0.3) 10%, rgba(196, 164, 106, 0.5) 15%, rgba(196, 164, 106, 0.7) 20%, #C4A46A 25%, #D4B57A 37.5%, #C4A46A 50%, rgba(196, 164, 106, 0.7) 55%, rgba(196, 164, 106, 0.5) 60%, rgba(196, 164, 106, 0.3) 65%, rgba(196, 164, 106, 0.1) 70%, transparent 75%, transparent 100%)',
                         WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 2px))',
                         mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 2px))',
                       }}
