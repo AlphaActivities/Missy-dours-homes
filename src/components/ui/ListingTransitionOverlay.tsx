@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { useNavbarHeight } from '../../hooks/useNavbarHeight';
 
 interface ListingTransitionOverlayProps {
   isVisible: boolean;
@@ -19,6 +20,7 @@ export default function ListingTransitionOverlay({
   const [shouldDismiss, setShouldDismiss] = useState(false);
   const [mountTime, setMountTime] = useState<number>(0);
   const [introComplete, setIntroComplete] = useState(false);
+  const { navbarHeight, isReady } = useNavbarHeight();
 
   useEffect(() => {
     if (!isVisible) return;
@@ -48,6 +50,8 @@ export default function ListingTransitionOverlay({
     }
   }, [shouldDismiss, onDismiss]);
 
+  const paddingTop = isReady ? navbarHeight + 8 : 128;
+
   return (
     <AnimatePresence mode="wait">
       {isVisible && (
@@ -56,17 +60,17 @@ export default function ListingTransitionOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[80px] md:top-[88px] lg:top-[92px] z-[9999] flex items-center justify-center"
+          className="fixed inset-0 z-40 bg-[#f7f3ea]"
+          style={{ paddingTop: `${paddingTop}px` }}
         >
-          <div className="absolute inset-0 bg-[#f7f3ea]" style={{ marginTop: '-4px' }} />
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="relative z-10 max-w-md lg:max-w-3xl w-[90%] sm:w-full"
-          >
+          <div className="min-h-full flex items-center justify-center px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="w-full max-w-md lg:max-w-3xl"
+            >
             <div className="bg-gradient-to-br from-[#FFFBF5] to-[#FFF9F0] rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.6)] border border-[#C4A46A]/20 overflow-hidden">
               <div className="p-8 sm:p-10 lg:p-14 text-center space-y-6">
                 <div className="flex justify-center">
@@ -152,7 +156,8 @@ export default function ListingTransitionOverlay({
                 </div>
               </div>
             </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
