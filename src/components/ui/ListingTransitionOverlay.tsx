@@ -56,7 +56,7 @@ export default function ListingTransitionOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          className="fixed inset-x-0 bottom-0 top-[64px] md:top-[80px] z-[9999] flex items-center justify-center"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#FFFBF5] via-[#FFF9F0] to-[#F8F5F0]" />
           <div
@@ -71,7 +71,7 @@ export default function ListingTransitionOverlay({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="relative z-10 max-w-md lg:max-w-3xl w-[90%] sm:w-full"
+            className="relative z-10 max-w-md lg:max-w-3xl w-[90%] sm:w-full md:-mt-[3vh]"
           >
             <div className="bg-gradient-to-br from-[#FFFBF5] to-[#FFF9F0] rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.6)] border border-[#C4A46A]/20 overflow-hidden">
               <div className="p-8 sm:p-10 lg:p-14 text-center space-y-6">
@@ -123,9 +123,9 @@ export default function ListingTransitionOverlay({
                   {title && (
                     <div className="pt-2 border-t border-[#C4A46A]/20">
                       <p
-                        className="text-base sm:text-lg lg:text-xl font-medium text-slate-800"
+                        className="text-base sm:text-lg lg:text-xl font-semibold text-slate-800"
                         style={{
-                          fontFamily: "'Cormorant Garamond', serif",
+                          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
                         }}
                       >
                         {title}
@@ -139,23 +139,15 @@ export default function ListingTransitionOverlay({
                   )}
                 </div>
 
-                <div className="flex justify-center gap-1.5 pt-2">
-                  {[0, 1, 2].map((i) => (
+                <div className="flex justify-center pt-2">
+                  <div className="w-48 h-[2px] bg-[#C4A46A]/20 rounded-full overflow-hidden">
                     <motion.div
-                      key={i}
-                      initial={{ opacity: 0 }}
-                      animate={{
-                        opacity: [0.3, 1, 0.3],
-                      }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        delay: i * 0.2,
-                        ease: 'easeInOut',
-                      }}
-                      className="w-3 h-3 rounded-full bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] shadow-[0_0_8px_rgba(196,164,106,0.4)]"
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 2.5, ease: "easeInOut" }}
+                      className="h-full bg-gradient-to-r from-[#C4A46A] via-[#D4B57A] to-[#C4A46A]"
                     />
-                  ))}
+                  </div>
                 </div>
               </div>
             </div>
