@@ -176,14 +176,14 @@ export default function ListingDetailPage() {
             {/* Thumbnail Grid with Pagination */}
             {listing.galleryImages.length > 1 && renderThumbnails && (
               <div className="relative">
-                {/* Navigation Arrows */}
+                {/* Navigation Arrows - Fixed Position Container */}
                 {totalPages > 1 && (
-                  <>
+                  <div className="hidden sm:block absolute inset-0 pointer-events-none z-10">
                     {/* Left Arrow */}
                     {currentPage > 0 && (
                       <button
                         onClick={() => setCurrentPage(currentPage - 1)}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 sm:-translate-x-4 z-10 group hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 sm:-translate-x-4 group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50 pointer-events-auto"
                         aria-label="Previous page"
                       >
                         <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
@@ -195,18 +195,18 @@ export default function ListingDetailPage() {
                     {currentPage < totalPages - 1 && (
                       <button
                         onClick={() => setCurrentPage(currentPage + 1)}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 sm:translate-x-4 z-10 group hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 sm:translate-x-4 group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50 pointer-events-auto"
                         aria-label="Next page"
                       >
                         <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
                         <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </button>
                     )}
-                  </>
+                  </div>
                 )}
 
-                {/* Thumbnail Grid */}
-                <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                {/* Thumbnail Grid - Always Full Width */}
+                <div className="grid grid-cols-5 gap-1.5 sm:gap-2 min-h-[80px]">
                   {visibleImages.map((image, visualIndex) => {
                     const actualIndex = startIndex + visualIndex;
                     return (
@@ -229,10 +229,10 @@ export default function ListingDetailPage() {
                   })}
                 </div>
 
-                {/* Mobile Navigation Arrows - Below Grid */}
+                {/* Mobile Navigation Arrows - Below Grid - Fixed Height Container */}
                 {totalPages > 1 && (
-                  <div className="flex sm:hidden items-center justify-center gap-4 mt-3">
-                    {currentPage > 0 && (
+                  <div className="flex sm:hidden items-center justify-center gap-4 mt-3 min-h-[48px]">
+                    {currentPage > 0 ? (
                       <button
                         onClick={() => setCurrentPage(currentPage - 1)}
                         className="group flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg active:scale-95 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
@@ -241,14 +241,16 @@ export default function ListingDetailPage() {
                         <ChevronLeft className="w-6 h-6" strokeWidth={2.5} />
                         <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-active:opacity-100 transition-opacity duration-300" />
                       </button>
+                    ) : (
+                      <div className="w-12 h-12" />
                     )}
 
                     {/* Page Indicator */}
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-sm font-medium text-gray-600 min-w-[80px] text-center">
                       Page {currentPage + 1} of {totalPages}
                     </span>
 
-                    {currentPage < totalPages - 1 && (
+                    {currentPage < totalPages - 1 ? (
                       <button
                         onClick={() => setCurrentPage(currentPage + 1)}
                         className="group flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg active:scale-95 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
@@ -257,13 +259,15 @@ export default function ListingDetailPage() {
                         <ChevronRight className="w-6 h-6" strokeWidth={2.5} />
                         <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-active:opacity-100 transition-opacity duration-300" />
                       </button>
+                    ) : (
+                      <div className="w-12 h-12" />
                     )}
                   </div>
                 )}
 
-                {/* Page Indicator - Desktop (Dots) */}
+                {/* Page Indicator - Desktop (Dots) - Fixed Height Container */}
                 {totalPages > 1 && (
-                  <div className="hidden sm:flex items-center justify-center gap-2 mt-3">
+                  <div className="hidden sm:flex items-center justify-center gap-2 mt-3 min-h-[16px]">
                     {Array.from({ length: totalPages }).map((_, index) => (
                       <button
                         key={index}
