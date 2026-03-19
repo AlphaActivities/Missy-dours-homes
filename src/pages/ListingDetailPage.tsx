@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { listings } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
@@ -9,6 +9,7 @@ import ImageLightbox from '../components/ui/ImageLightbox';
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const fromFilter = searchParams.get('from') || 'all';
   const listing = listings.find((l) => l.slug === slug);
@@ -16,10 +17,24 @@ export default function ListingDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [openFeatureSections, setOpenFeatureSections] = useState<string[]>([]);
+  const [overlayActive, setOverlayActive] = useState(!!location.state?.transitionPreview);
+  const [renderHeavyContent, setRenderHeavyContent] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
+
+  useEffect(() => {
+    if (overlayActive) {
+      const timer = setTimeout(() => {
+        setOverlayActive(false);
+        setRenderHeavyContent(true);
+      }, 3800);
+      return () => clearTimeout(timer);
+    } else {
+      setRenderHeavyContent(true);
+    }
+  }, [overlayActive]);
 
   if (!listing) {
     return (
@@ -130,7 +145,7 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Thumbnail Grid */}
-            {listing.galleryImages.length > 1 && (
+            {listing.galleryImages.length > 1 && renderHeavyContent && (
               <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                 {listing.galleryImages.map((image, index) => (
                   <button
@@ -326,23 +341,25 @@ export default function ListingDetailPage() {
         )}
 
         {/* Map Section */}
-        <div className="mb-10 sm:mb-12 lg:mb-16">
-          <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
-            <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Location</h2>
-            <div className="aspect-video lg:aspect-auto lg:h-[500px] rounded-lg overflow-hidden">
-              <iframe
-                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`}
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Property Location Map"
-              />
+        {renderHeavyContent && (
+          <div className="mb-10 sm:mb-12 lg:mb-16">
+            <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+              <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Location</h2>
+              <div className="aspect-video lg:aspect-auto lg:h-[500px] rounded-lg overflow-hidden">
+                <iframe
+                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Property Location Map"
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
       <FooterSection />
 

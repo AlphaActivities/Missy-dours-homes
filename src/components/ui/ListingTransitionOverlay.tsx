@@ -33,7 +33,7 @@ export default function ListingTransitionOverlay({
     const maxDurationTimer = setTimeout(() => {
       setShouldDismiss(true);
       onDismiss();
-    }, 4200);
+    }, 3700);
 
     return () => {
       clearTimeout(introCompleteTimer);
@@ -67,12 +67,11 @@ export default function ListingTransitionOverlay({
           />
 
           <motion.div
-            initial={{ scale: 0.96 }}
-            animate={{ scale: 1 }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="relative z-10 max-w-md lg:max-w-3xl w-[90%] sm:w-full"
-            style={{ willChange: 'transform' }}
           >
             <div className="bg-gradient-to-br from-[#FFFBF5] to-[#FFF9F0] rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.6)] border border-[#C4A46A]/20 overflow-hidden">
               <div className="p-8 sm:p-10 lg:p-14 text-center space-y-6">
@@ -97,7 +96,7 @@ export default function ListingTransitionOverlay({
                       onLoad={() => {
                         if (!introComplete) return;
                         const elapsed = Date.now() - (mountTime + 250);
-                        const remaining = Math.max(0, 3200 - elapsed);
+                        const remaining = Math.max(0, 2700 - elapsed);
                         setTimeout(() => {
                           setShouldDismiss(true);
                         }, remaining);
