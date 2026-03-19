@@ -347,11 +347,22 @@ export default function ListingsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="text-center py-20"
+              className="text-center py-20 px-4"
             >
-              <p className="text-xl text-gray-600">
-                No listings match your current filter.
-              </p>
+              {activeFilter === 'active' ? (
+                <div className="max-w-2xl mx-auto space-y-4">
+                  <p className="text-xl text-gray-800 font-medium">
+                    There are no active listings at the moment.
+                  </p>
+                  <p className="text-base text-gray-600 leading-relaxed">
+                    Missy's newest opportunities move quickly, and additional listings will be added here soon. In the meantime, you can still explore the full collection using the filters above.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xl text-gray-600">
+                  No listings match your current filter.
+                </p>
+              )}
             </motion.div>
           )}
         </div>
