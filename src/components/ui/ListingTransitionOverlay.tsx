@@ -56,9 +56,9 @@ export default function ListingTransitionOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="fixed inset-x-0 bottom-0 top-[64px] md:top-[72px] z-[9999] flex items-center justify-center"
+          className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[80px] md:top-[88px] lg:top-[92px] z-[9999] flex items-center justify-center"
         >
-          <div className="absolute inset-0 bg-[#f7f3ea]" />
+          <div className="absolute inset-0 bg-[#f7f3ea]" style={{ marginTop: '-4px' }} />
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -138,14 +138,14 @@ export default function ListingTransitionOverlay({
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                    className="relative w-16 h-16"
+                    className="relative w-12 h-12"
                   >
                     <div
-                      className="w-16 h-16 rounded-full animate-spin"
+                      className="w-12 h-12 rounded-full animate-spin"
                       style={{
-                        background: 'conic-gradient(from 0deg, #C4A46A 0%, #D4B57A 30%, transparent 70%)',
-                        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 4px))',
-                        mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 4px))',
+                        background: 'conic-gradient(from 0deg, #C4A46A 0%, #D4B57A 25%, rgba(196, 164, 106, 0.15) 50%, transparent 75%, #C4A46A 100%)',
+                        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
+                        mask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
                       }}
                     />
                   </motion.div>
