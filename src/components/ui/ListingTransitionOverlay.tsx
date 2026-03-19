@@ -56,13 +56,13 @@ export default function ListingTransitionOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          className="fixed inset-x-0 top-[72px] bottom-0 z-[9999] flex items-center justify-center"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#FFFBF5] via-[#FFF9F0] to-[#F8F5F0]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#F9F7F3] via-[#F7F3EA] to-[#F5F0E8]" />
           <div
             className="absolute inset-0 flex items-center justify-center"
             style={{
-              background: 'radial-gradient(ellipse 800px 600px at center, rgba(228, 218, 200, 0.3) 0%, transparent 70%)'
+              background: 'radial-gradient(ellipse 800px 600px at center, rgba(196, 164, 106, 0.12) 0%, transparent 70%)'
             }}
           />
 
@@ -73,7 +73,7 @@ export default function ListingTransitionOverlay({
             transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="relative z-10 max-w-md lg:max-w-3xl w-[90%] sm:w-full"
           >
-            <div className="bg-gradient-to-br from-[#FFFBF5] to-[#FFF9F0] rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.6)] border border-[#C4A46A]/20 overflow-hidden">
+            <div className="bg-gradient-to-br from-[#FFFBF8] to-[#F9F7F3] rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.5)] border border-[#C4A46A]/20 overflow-hidden">
               <div className="p-8 sm:p-10 lg:p-14 text-center space-y-6">
                 <div className="flex justify-center">
                   <img
@@ -123,9 +123,9 @@ export default function ListingTransitionOverlay({
                   {title && (
                     <div className="pt-2 border-t border-[#C4A46A]/20">
                       <p
-                        className="text-base sm:text-lg lg:text-xl font-medium text-slate-800"
+                        className="text-base sm:text-lg lg:text-xl font-medium text-slate-800 tracking-[0.02em]"
                         style={{
-                          fontFamily: "'Cormorant Garamond', serif",
+                          fontFamily: "'Playfair Display', serif",
                         }}
                       >
                         {title}
@@ -139,23 +139,21 @@ export default function ListingTransitionOverlay({
                   )}
                 </div>
 
-                <div className="flex justify-center gap-1.5 pt-2">
-                  {[0, 1, 2].map((i) => (
+                <div className="flex justify-center pt-2">
+                  <div className="relative w-40 sm:w-48 h-0.5 bg-[#C4A46A]/20 rounded-full overflow-hidden">
                     <motion.div
-                      key={i}
-                      initial={{ opacity: 0 }}
+                      initial={{ x: '-100%' }}
                       animate={{
-                        opacity: [0.3, 1, 0.3],
+                        x: ['100%', '-100%'],
                       }}
                       transition={{
                         duration: 1.5,
                         repeat: Infinity,
-                        delay: i * 0.2,
                         ease: 'easeInOut',
                       }}
-                      className="w-3 h-3 rounded-full bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] shadow-[0_0_8px_rgba(196,164,106,0.4)]"
+                      className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-[#C4A46A] to-transparent shadow-[0_0_12px_rgba(196,164,106,0.6)]"
                     />
-                  ))}
+                  </div>
                 </div>
               </div>
             </div>
