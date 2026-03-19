@@ -147,7 +147,7 @@ export default function ListingTransitionOverlay({
                     <div
                       className="w-12 h-12 rounded-full animate-spin"
                       style={{
-                        background: 'conic-gradient(from 0deg, transparent 0%, rgba(196, 164, 106, 0.1) 5%, rgba(196, 164, 106, 0.3) 10%, rgba(196, 164, 106, 0.5) 15%, rgba(196, 164, 106, 0.7) 20%, #C4A46A 25%, #D4B57A 37.5%, #C4A46A 50%, rgba(196, 164, 106, 0.7) 55%, rgba(196, 164, 106, 0.5) 60%, rgba(196, 164, 106, 0.3) 65%, rgba(196, 164, 106, 0.1) 70%, transparent 75%, transparent 100%)',
+                        background: 'conic-gradient(from 0deg, transparent 0%, rgba(196, 164, 106, 0.05) 3%, rgba(196, 164, 106, 0.15) 6%, rgba(196, 164, 106, 0.25) 9%, rgba(196, 164, 106, 0.4) 12%, rgba(196, 164, 106, 0.55) 15%, rgba(196, 164, 106, 0.7) 18%, rgba(196, 164, 106, 0.85) 21%, #C4A46A 24%, rgba(205, 176, 112, 1) 30%, rgba(212, 181, 122, 1) 36%, rgba(212, 181, 122, 1) 42%, rgba(205, 176, 112, 1) 48%, #C4A46A 54%, rgba(196, 164, 106, 0.85) 57%, rgba(196, 164, 106, 0.7) 60%, rgba(196, 164, 106, 0.55) 63%, rgba(196, 164, 106, 0.4) 66%, rgba(196, 164, 106, 0.25) 69%, rgba(196, 164, 106, 0.15) 72%, rgba(196, 164, 106, 0.05) 75%, transparent 78%, transparent 100%)',
                         WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 2px))',
                         mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 2px))',
                       }}
