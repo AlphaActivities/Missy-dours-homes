@@ -1,7 +1,9 @@
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
 import Navbar from './components/Navbar';
 import FloatingCallButton from './components/ui/FloatingCallButton';
+import ListingTransitionOverlay from './components/ui/ListingTransitionOverlay';
 import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
@@ -9,6 +11,29 @@ import ListingDetailPage from './pages/ListingDetailPage';
 function Layout() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const [showTransition, setShowTransition] = useState(false);
+  const [transitionData, setTransitionData] = useState<{
+    heroImage?: string;
+    title?: string;
+    price?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const state = location.state as any;
+    const isListingDetailPage = location.pathname.startsWith('/listings/') && location.pathname !== '/listings';
+
+    if (isListingDetailPage && state?.transitionPreview) {
+      setTransitionData(state.transitionPreview);
+      setShowTransition(true);
+    } else {
+      setShowTransition(false);
+      setTransitionData(null);
+    }
+  }, [location]);
+
+  const handleDismiss = useCallback(() => {
+    setShowTransition(false);
+  }, []);
 
   return (
     <>
@@ -16,6 +41,13 @@ function Layout() {
       <Navbar />
       <Outlet />
       <FloatingCallButton />
+      <ListingTransitionOverlay
+        isVisible={showTransition}
+        heroImage={transitionData?.heroImage}
+        title={transitionData?.title}
+        price={transitionData?.price}
+        onDismiss={handleDismiss}
+      />
     </>
   );
 }

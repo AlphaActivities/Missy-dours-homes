@@ -19,7 +19,15 @@ export default function ListingDetailPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [slug]);
+
+    if (listing?.galleryImages?.[0]) {
+      const img = new Image();
+      img.src = listing.galleryImages[0];
+      img.onload = () => {
+        window.dispatchEvent(new CustomEvent('listingHeroLoaded'));
+      };
+    }
+  }, [slug, listing]);
 
   if (!listing) {
     return (

@@ -271,7 +271,17 @@ export default function ListingsPage() {
                       delay: index * 0.05,
                       ease: [0.25, 0.46, 0.45, 0.94],
                     }}
-                    onClick={() => navigate(`/listings/${listing.slug}?from=${activeFilter}`)}
+                    onClick={() =>
+                      navigate(`/listings/${listing.slug}?from=${activeFilter}`, {
+                        state: {
+                          transitionPreview: {
+                            heroImage: listing.heroImage,
+                            title: listing.title,
+                            price: listing.price,
+                          },
+                        },
+                      })
+                    }
                     className="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-1"
                   >
                     <div className="relative h-56 sm:h-64 overflow-hidden">
