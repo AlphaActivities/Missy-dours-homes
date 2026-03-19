@@ -56,9 +56,9 @@ export default function ListingTransitionOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="fixed inset-x-0 bottom-0 top-[64px] sm:top-[72px] md:top-[80px] lg:top-[84px] z-[9999] flex items-center justify-center"
+          className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[80px] md:top-[88px] lg:top-[92px] z-[9999] flex items-center justify-center"
         >
-          <div className="absolute inset-0 bg-[#f7f3ea]" />
+          <div className="absolute inset-0 bg-[#f7f3ea]" style={{ marginTop: '-4px' }} />
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -141,12 +141,11 @@ export default function ListingTransitionOverlay({
                     className="relative w-12 h-12"
                   >
                     <div
-                      className="w-full h-full rounded-full border-[3px] border-transparent animate-spin"
+                      className="w-12 h-12 rounded-full animate-spin"
                       style={{
-                        borderTopColor: '#C4A46A',
-                        borderRightColor: '#D4B57A',
-                        borderBottomColor: 'rgba(196, 164, 106, 0.2)',
-                        borderLeftColor: 'rgba(196, 164, 106, 0.2)',
+                        background: 'conic-gradient(from 0deg, #C4A46A 0%, #D4B57A 25%, rgba(196, 164, 106, 0.15) 50%, transparent 75%, #C4A46A 100%)',
+                        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
+                        mask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
                       }}
                     />
                   </motion.div>
