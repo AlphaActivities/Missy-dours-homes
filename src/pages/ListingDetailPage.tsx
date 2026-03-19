@@ -18,7 +18,8 @@ export default function ListingDetailPage() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [openFeatureSections, setOpenFeatureSections] = useState<string[]>([]);
   const [overlayActive, setOverlayActive] = useState(!!location.state?.transitionPreview);
-  const [renderHeavyContent, setRenderHeavyContent] = useState(false);
+  const [renderThumbnails, setRenderThumbnails] = useState(false);
+  const [renderMap, setRenderMap] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -26,13 +27,26 @@ export default function ListingDetailPage() {
 
   useEffect(() => {
     if (overlayActive) {
-      const timer = setTimeout(() => {
+      const thumbnailTimer = setTimeout(() => {
+        setRenderThumbnails(true);
+      }, 500);
+
+      const mapTimer = setTimeout(() => {
+        setRenderMap(true);
+      }, 1000);
+
+      const overlayTimer = setTimeout(() => {
         setOverlayActive(false);
-        setRenderHeavyContent(true);
-      }, 3800);
-      return () => clearTimeout(timer);
+      }, 3200);
+
+      return () => {
+        clearTimeout(thumbnailTimer);
+        clearTimeout(mapTimer);
+        clearTimeout(overlayTimer);
+      };
     } else {
-      setRenderHeavyContent(true);
+      setRenderThumbnails(true);
+      setRenderMap(true);
     }
   }, [overlayActive]);
 
@@ -145,7 +159,7 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Thumbnail Grid */}
-            {listing.galleryImages.length > 1 && renderHeavyContent && (
+            {listing.galleryImages.length > 1 && renderThumbnails && (
               <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                 {listing.galleryImages.map((image, index) => (
                   <button
@@ -341,7 +355,7 @@ export default function ListingDetailPage() {
         )}
 
         {/* Map Section */}
-        {renderHeavyContent && (
+        {renderMap && (
           <div className="mb-10 sm:mb-12 lg:mb-16">
             <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
               <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-4 sm:mb-6">Location</h2>

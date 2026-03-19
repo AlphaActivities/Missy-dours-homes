@@ -33,7 +33,7 @@ export default function ListingTransitionOverlay({
     const maxDurationTimer = setTimeout(() => {
       setShouldDismiss(true);
       onDismiss();
-    }, 3700);
+    }, 3200);
 
     return () => {
       clearTimeout(introCompleteTimer);
@@ -96,7 +96,7 @@ export default function ListingTransitionOverlay({
                       onLoad={() => {
                         if (!introComplete) return;
                         const elapsed = Date.now() - (mountTime + 250);
-                        const remaining = Math.max(0, 2700 - elapsed);
+                        const remaining = Math.max(0, 2200 - elapsed);
                         setTimeout(() => {
                           setShouldDismiss(true);
                         }, remaining);
