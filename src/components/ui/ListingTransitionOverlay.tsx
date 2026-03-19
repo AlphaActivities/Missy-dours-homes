@@ -55,20 +55,20 @@ export default function ListingTransitionOverlay({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="fixed inset-0 z-[9999] flex items-center justify-center"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-slate-800/50 to-slate-900/40 backdrop-blur-xl" />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/92 via-slate-900/95 to-black/90" />
 
           <motion.div
             initial={{ scale: 0.96 }}
             animate={{ scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="relative z-10 max-w-md lg:max-w-3xl w-[90%] sm:w-full"
             style={{ willChange: 'transform' }}
           >
-            <div className="bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-white/40 overflow-hidden">
+            <div className="bg-gradient-to-br from-[#FFFBF5] via-white to-[#FFF9F0] rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.5),0_0_1px_rgba(196,164,106,0.3)] border border-[#C4A46A]/20 overflow-hidden">
               <div className="p-8 sm:p-10 lg:p-14 text-center space-y-6">
                 <div className="flex justify-center">
                   <img
