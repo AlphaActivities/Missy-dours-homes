@@ -206,27 +206,29 @@ export default function ListingDetailPage() {
                 )}
 
                 {/* Thumbnail Grid */}
-                <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                  {visibleImages.map((image, visualIndex) => {
-                    const actualIndex = startIndex + visualIndex;
-                    return (
-                      <button
-                        key={actualIndex}
-                        onClick={() => setSelectedImage(actualIndex)}
-                        className={`aspect-square rounded-md sm:rounded-lg overflow-hidden transition-all group/thumb ${
-                          selectedImage === actualIndex
-                            ? 'ring-2 ring-amber-600 opacity-100'
-                            : 'opacity-60 hover:opacity-100'
-                        }`}
-                      >
-                        <img
-                          src={image}
-                          alt={`Thumbnail ${actualIndex + 1}`}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
-                        />
-                      </button>
-                    );
-                  })}
+                <div className="min-h-[200px] sm:min-h-[240px]">
+                  <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                    {visibleImages.map((image, visualIndex) => {
+                      const actualIndex = startIndex + visualIndex;
+                      return (
+                        <button
+                          key={actualIndex}
+                          onClick={() => setSelectedImage(actualIndex)}
+                          className={`aspect-square rounded-md sm:rounded-lg overflow-hidden transition-all group/thumb ${
+                            selectedImage === actualIndex
+                              ? 'ring-2 ring-amber-600 opacity-100'
+                              : 'opacity-60 hover:opacity-100'
+                          }`}
+                        >
+                          <img
+                            src={image}
+                            alt={`Thumbnail ${actualIndex + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Mobile Navigation Arrows - Below Grid */}
