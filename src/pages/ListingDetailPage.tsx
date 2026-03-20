@@ -184,7 +184,11 @@ export default function ListingDetailPage() {
                       {/* Left Arrow */}
                       {currentPage > 0 && (
                         <button
-                          onClick={() => setCurrentPage(currentPage - 1)}
+                          onClick={() => {
+                            const newPage = currentPage - 1;
+                            setCurrentPage(newPage);
+                            setSelectedImage(newPage * ITEMS_PER_PAGE);
+                          }}
                           className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-3 md:-translate-x-4 z-10 group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
                           aria-label="Previous page"
                         >
@@ -196,7 +200,11 @@ export default function ListingDetailPage() {
                       {/* Right Arrow */}
                       {currentPage < totalPages - 1 && (
                         <button
-                          onClick={() => setCurrentPage(currentPage + 1)}
+                          onClick={() => {
+                            const newPage = currentPage + 1;
+                            setCurrentPage(newPage);
+                            setSelectedImage(newPage * ITEMS_PER_PAGE);
+                          }}
                           className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-3 md:translate-x-4 z-10 group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
                           aria-label="Next page"
                         >
@@ -237,7 +245,10 @@ export default function ListingDetailPage() {
                     {Array.from({ length: totalPages }).map((_, index) => (
                       <button
                         key={index}
-                        onClick={() => setCurrentPage(index)}
+                        onClick={() => {
+                          setCurrentPage(index);
+                          setSelectedImage(index * ITEMS_PER_PAGE);
+                        }}
                         className={`transition-all duration-300 rounded-full ${
                           currentPage === index
                             ? 'w-8 h-2 bg-amber-600'
