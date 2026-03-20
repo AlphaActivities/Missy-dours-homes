@@ -309,7 +309,7 @@ export default function ImageLightbox({
           )}
         </AnimatePresence>
 
-        {/* Navigation Buttons - Mobile (centered between photo and bottom) */}
+        {/* Navigation Buttons - Mobile (vertically centered on image) */}
         <AnimatePresence>
           {images.length > 1 && showControls && !isSwiping && (
             <>
@@ -320,7 +320,7 @@ export default function ImageLightbox({
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
                 onClick={handlePrevious}
-                className="sm:hidden absolute bottom-[18vh] left-6 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
+                className="sm:hidden absolute left-4 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="w-7 h-7" />
@@ -333,7 +333,7 @@ export default function ImageLightbox({
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.3 }}
                 onClick={handleNext}
-                className="sm:hidden absolute bottom-[18vh] right-6 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
+                className="sm:hidden absolute right-4 top-1/2 -translate-y-1/2 z-50 p-4 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white backdrop-blur-md transition-all duration-300 active:scale-95"
                 aria-label="Next image"
               >
                 <ChevronRight className="w-7 h-7" />
