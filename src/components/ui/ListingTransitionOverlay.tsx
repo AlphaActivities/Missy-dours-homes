@@ -50,7 +50,9 @@ export default function ListingTransitionOverlay({
     }
   }, [shouldDismiss, onDismiss]);
 
-  const paddingTop = isReady ? navbarHeight + 8 : 128;
+  const paddingTop = isReady
+    ? navbarHeight + (window.innerWidth < 640 ? 16 : 8)
+    : 128;
 
   return (
     <AnimatePresence mode="wait">
