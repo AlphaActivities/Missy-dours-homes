@@ -63,7 +63,7 @@ export default function ListingTransitionOverlay({
           className="fixed inset-0 z-40 bg-[#f7f3ea]"
           style={{ paddingTop: `${paddingTop}px` }}
         >
-          <div className="min-h-full flex items-center justify-center px-4">
+          <div className="min-h-full flex items-start sm:items-center justify-center px-4 pt-8 sm:pt-0">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
