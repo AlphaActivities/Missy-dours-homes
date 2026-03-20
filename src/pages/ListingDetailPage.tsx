@@ -175,7 +175,7 @@ export default function ListingDetailPage() {
 
             {/* Thumbnail Grid with Pagination */}
             {listing.galleryImages.length > 1 && renderThumbnails && (
-              <div className="relative">
+              <div className="relative sm:min-h-[11rem] sm:pb-8">
                 {/* Navigation Arrows */}
                 {totalPages > 1 && (
                   <>
@@ -183,7 +183,7 @@ export default function ListingDetailPage() {
                     {currentPage > 0 && (
                       <button
                         onClick={() => setCurrentPage(currentPage - 1)}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 sm:-translate-x-4 z-10 group hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
+                        className="absolute left-0 sm:top-16 top-1/2 -translate-y-1/2 -translate-x-3 sm:-translate-x-4 z-10 group hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
                         aria-label="Previous page"
                       >
                         <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
@@ -195,7 +195,7 @@ export default function ListingDetailPage() {
                     {currentPage < totalPages - 1 && (
                       <button
                         onClick={() => setCurrentPage(currentPage + 1)}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 sm:translate-x-4 z-10 group hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
+                        className="absolute right-0 sm:top-16 top-1/2 -translate-y-1/2 translate-x-3 sm:translate-x-4 z-10 group hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
                         aria-label="Next page"
                       >
                         <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
@@ -263,7 +263,7 @@ export default function ListingDetailPage() {
 
                 {/* Page Indicator - Desktop (Dots) */}
                 {totalPages > 1 && (
-                  <div className="hidden sm:flex items-center justify-center gap-2 mt-3">
+                  <div className="hidden sm:flex sm:absolute sm:bottom-0 sm:left-0 sm:right-0 items-center justify-center gap-2 mt-3 sm:mt-0">
                     {Array.from({ length: totalPages }).map((_, index) => (
                       <button
                         key={index}
