@@ -177,7 +177,7 @@ export default function ListingDetailPage() {
             {listing.galleryImages.length > 1 && renderThumbnails && (
               <div>
                 {/* Thumbnail Grid */}
-                <div className="relative min-h-[138px] sm:min-h-[180px] md:min-h-[240px]">
+                <div className="relative h-[138px] sm:h-[180px] md:h-[240px]">
                   {/* Unified Navigation Arrows - All Platforms */}
                   {totalPages > 1 && (
                     <>
