@@ -177,15 +177,15 @@ export default function ListingDetailPage() {
             {listing.galleryImages.length > 1 && renderThumbnails && (
               <div>
                 {/* Thumbnail Grid */}
-                <div className="relative md:min-h-[240px]">
-                  {/* Desktop Navigation Arrows */}
+                <div className="relative min-h-[138px] sm:min-h-[180px] md:min-h-[240px]">
+                  {/* Unified Navigation Arrows - All Platforms */}
                   {totalPages > 1 && (
                     <>
                       {/* Left Arrow */}
                       {currentPage > 0 && (
                         <button
                           onClick={() => setCurrentPage(currentPage - 1)}
-                          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 sm:-translate-x-4 z-10 group hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
+                          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-3 md:-translate-x-4 z-10 group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
                           aria-label="Previous page"
                         >
                           <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
@@ -197,7 +197,7 @@ export default function ListingDetailPage() {
                       {currentPage < totalPages - 1 && (
                         <button
                           onClick={() => setCurrentPage(currentPage + 1)}
-                          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 sm:translate-x-4 z-10 group hidden sm:flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
+                          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-3 md:translate-x-4 z-10 group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
                           aria-label="Next page"
                         >
                           <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
@@ -231,53 +231,9 @@ export default function ListingDetailPage() {
                   </div>
                 </div>
 
-                {/* Mobile Navigation Arrows - Below Grid */}
+                {/* Page Indicator Dots - All Platforms */}
                 {totalPages > 1 && (
-                  <div className="grid grid-cols-3 sm:hidden items-center mt-3">
-                    {/* Left Arrow Slot */}
-                    <div className="flex justify-start">
-                      {currentPage > 0 ? (
-                        <button
-                          onClick={() => setCurrentPage(currentPage - 1)}
-                          className="group flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg active:scale-95 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
-                          aria-label="Previous page"
-                        >
-                          <ChevronLeft className="w-6 h-6" strokeWidth={2.5} />
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                        </button>
-                      ) : (
-                        <div className="w-12 h-12" />
-                      )}
-                    </div>
-
-                    {/* Page Indicator Slot */}
-                    <div className="flex justify-center">
-                      <span className="text-sm font-medium text-gray-600">
-                        Page {currentPage + 1} of {totalPages}
-                      </span>
-                    </div>
-
-                    {/* Right Arrow Slot */}
-                    <div className="flex justify-end">
-                      {currentPage < totalPages - 1 ? (
-                        <button
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                          className="group flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg active:scale-95 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
-                          aria-label="Next page"
-                        >
-                          <ChevronRight className="w-6 h-6" strokeWidth={2.5} />
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                        </button>
-                      ) : (
-                        <div className="w-12 h-12" />
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Page Indicator - Desktop (Dots) */}
-                {totalPages > 1 && (
-                  <div className="hidden sm:flex items-center justify-center gap-2 mt-3">
+                  <div className="flex items-center justify-center gap-2 mt-3">
                     {Array.from({ length: totalPages }).map((_, index) => (
                       <button
                         key={index}
