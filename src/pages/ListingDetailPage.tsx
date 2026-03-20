@@ -175,7 +175,7 @@ export default function ListingDetailPage() {
 
             {/* Thumbnail Grid with Pagination */}
             {listing.galleryImages.length > 1 && renderThumbnails && (
-              <div className="relative">
+              <div className="relative h-[200px] sm:h-[220px]">
                 {/* Navigation Arrows */}
                 {totalPages > 1 && (
                   <>
@@ -205,8 +205,10 @@ export default function ListingDetailPage() {
                   </>
                 )}
 
-                {/* Thumbnail Grid */}
-                <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                {/* Inner Container with Vertical Centering */}
+                <div className="h-full flex flex-col justify-center">
+                  {/* Thumbnail Grid */}
+                  <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                   {visibleImages.map((image, visualIndex) => {
                     const actualIndex = startIndex + visualIndex;
                     return (
@@ -261,23 +263,24 @@ export default function ListingDetailPage() {
                   </div>
                 )}
 
-                {/* Page Indicator - Desktop (Dots) */}
-                {totalPages > 1 && (
-                  <div className="hidden sm:flex items-center justify-center gap-2 mt-3">
-                    {Array.from({ length: totalPages }).map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentPage(index)}
-                        className={`transition-all duration-300 rounded-full ${
-                          currentPage === index
-                            ? 'w-8 h-2 bg-amber-600'
-                            : 'w-2 h-2 bg-gray-300 hover:bg-amber-400'
-                        }`}
-                        aria-label={`Go to page ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                )}
+                  {/* Page Indicator - Desktop (Dots) */}
+                  {totalPages > 1 && (
+                    <div className="hidden sm:flex items-center justify-center gap-2 mt-3">
+                      {Array.from({ length: totalPages }).map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentPage(index)}
+                          className={`transition-all duration-300 rounded-full ${
+                            currentPage === index
+                              ? 'w-8 h-2 bg-amber-600'
+                              : 'w-2 h-2 bg-gray-300 hover:bg-amber-400'
+                          }`}
+                          aria-label={`Go to page ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
