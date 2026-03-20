@@ -50,9 +50,7 @@ export default function ListingTransitionOverlay({
     }
   }, [shouldDismiss, onDismiss]);
 
-  const paddingTop = isReady
-    ? navbarHeight + (window.innerWidth < 640 ? 16 : 8)
-    : 128;
+  const paddingTop = isReady ? navbarHeight + 8 : 128;
 
   return (
     <AnimatePresence mode="wait">
@@ -65,7 +63,7 @@ export default function ListingTransitionOverlay({
           className="fixed inset-0 z-40 bg-[#f7f3ea]"
           style={{ paddingTop: `${paddingTop}px` }}
         >
-          <div className="min-h-full flex items-start sm:items-center justify-center px-4">
+          <div className="min-h-full flex items-center justify-center px-4">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
