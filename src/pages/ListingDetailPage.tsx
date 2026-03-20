@@ -206,7 +206,7 @@ export default function ListingDetailPage() {
                 )}
 
                 {/* Inner Container - Grid and Indicators */}
-                <div>
+                <div className="h-full flex flex-col justify-center">
                   {/* Thumbnail Grid */}
                   <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                     {visibleImages.map((image, visualIndex) => {
