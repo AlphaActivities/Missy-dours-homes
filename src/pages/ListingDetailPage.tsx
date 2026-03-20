@@ -175,8 +175,8 @@ export default function ListingDetailPage() {
 
             {/* Thumbnail Grid with Pagination */}
             {listing.galleryImages.length > 1 && renderThumbnails && (
-              <div className="relative h-[160px] sm:h-[180px]">
-                {/* Navigation Arrows - Fixed to outer container */}
+              <div className="relative">
+                {/* Navigation Arrows */}
                 {totalPages > 1 && (
                   <>
                     {/* Left Arrow */}
@@ -205,82 +205,79 @@ export default function ListingDetailPage() {
                   </>
                 )}
 
-                {/* Inner Container - Grid and Indicators */}
-                <div className="h-full flex flex-col justify-center">
-                  {/* Thumbnail Grid */}
-                  <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                    {visibleImages.map((image, visualIndex) => {
-                      const actualIndex = startIndex + visualIndex;
-                      return (
-                        <button
-                          key={actualIndex}
-                          onClick={() => setSelectedImage(actualIndex)}
-                          className={`aspect-square rounded-md sm:rounded-lg overflow-hidden transition-all group/thumb ${
-                            selectedImage === actualIndex
-                              ? 'ring-2 ring-amber-600 opacity-100'
-                              : 'opacity-60 hover:opacity-100'
-                          }`}
-                        >
-                          <img
-                            src={image}
-                            alt={`Thumbnail ${actualIndex + 1}`}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
-                          />
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Mobile Navigation Arrows - Below Grid */}
-                  {totalPages > 1 && (
-                    <div className="flex sm:hidden items-center justify-center gap-4 mt-3">
-                      {currentPage > 0 && (
-                        <button
-                          onClick={() => setCurrentPage(currentPage - 1)}
-                          className="group flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg active:scale-95 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
-                          aria-label="Previous page"
-                        >
-                          <ChevronLeft className="w-6 h-6" strokeWidth={2.5} />
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                        </button>
-                      )}
-
-                      {/* Page Indicator */}
-                      <span className="text-sm font-medium text-gray-600">
-                        Page {currentPage + 1} of {totalPages}
-                      </span>
-
-                      {currentPage < totalPages - 1 && (
-                        <button
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                          className="group flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg active:scale-95 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
-                          aria-label="Next page"
-                        >
-                          <ChevronRight className="w-6 h-6" strokeWidth={2.5} />
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-active:opacity-100 transition-opacity duration-300" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Page Indicator - Desktop (Dots) */}
-                  {totalPages > 1 && (
-                    <div className="hidden sm:flex items-center justify-center gap-2 mt-3">
-                      {Array.from({ length: totalPages }).map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentPage(index)}
-                          className={`transition-all duration-300 rounded-full ${
-                            currentPage === index
-                              ? 'w-8 h-2 bg-amber-600'
-                              : 'w-2 h-2 bg-gray-300 hover:bg-amber-400'
-                          }`}
-                          aria-label={`Go to page ${index + 1}`}
+                {/* Thumbnail Grid */}
+                <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+                  {visibleImages.map((image, visualIndex) => {
+                    const actualIndex = startIndex + visualIndex;
+                    return (
+                      <button
+                        key={actualIndex}
+                        onClick={() => setSelectedImage(actualIndex)}
+                        className={`aspect-square rounded-md sm:rounded-lg overflow-hidden transition-all group/thumb ${
+                          selectedImage === actualIndex
+                            ? 'ring-2 ring-amber-600 opacity-100'
+                            : 'opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img
+                          src={image}
+                          alt={`Thumbnail ${actualIndex + 1}`}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
                         />
-                      ))}
-                    </div>
-                  )}
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Mobile Navigation Arrows - Below Grid */}
+                {totalPages > 1 && (
+                  <div className="flex sm:hidden items-center justify-center gap-4 mt-3">
+                    {currentPage > 0 && (
+                      <button
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        className="group flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg active:scale-95 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
+                        aria-label="Previous page"
+                      >
+                        <ChevronLeft className="w-6 h-6" strokeWidth={2.5} />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-active:opacity-100 transition-opacity duration-300" />
+                      </button>
+                    )}
+
+                    {/* Page Indicator */}
+                    <span className="text-sm font-medium text-gray-600">
+                      Page {currentPage + 1} of {totalPages}
+                    </span>
+
+                    {currentPage < totalPages - 1 && (
+                      <button
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        className="group flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white shadow-lg active:scale-95 transition-all duration-300 backdrop-blur-sm border border-amber-400/50"
+                        aria-label="Next page"
+                      >
+                        <ChevronRight className="w-6 h-6" strokeWidth={2.5} />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-transparent opacity-0 group-active:opacity-100 transition-opacity duration-300" />
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Page Indicator - Desktop (Dots) */}
+                {totalPages > 1 && (
+                  <div className="hidden sm:flex items-center justify-center gap-2 mt-3">
+                    {Array.from({ length: totalPages }).map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentPage(index)}
+                        className={`transition-all duration-300 rounded-full ${
+                          currentPage === index
+                            ? 'w-8 h-2 bg-amber-600'
+                            : 'w-2 h-2 bg-gray-300 hover:bg-amber-400'
+                        }`}
+                        aria-label={`Go to page ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
