@@ -106,7 +106,7 @@ export const listings: Listing[] = [
     baths: 2,
     sqft: 1873,
     slug: "1722-barclay-dr",
-    category: "mid",
+    category: "first",
     status: "sold",
     heroImage: "/images/listings/1722-barclay-Dr/1722_Barclay_Dr01.webp",
     galleryImages: [
