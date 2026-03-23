@@ -110,6 +110,34 @@
     }
   }
 
+  @keyframes luxGoldSheen {
+    0%, 100% {
+      opacity: 0.6;
+      filter: blur(8px);
+    }
+    50% {
+      opacity: 0.8;
+      filter: blur(6px);
+    }
+  }
+
+  @keyframes luxGoldBorderTravel {
+    0% {
+      transform: translateX(-150px) rotate(20deg);
+      opacity: 0;
+    }
+    15% {
+      opacity: 0.4;
+    }
+    85% {
+      opacity: 0.4;
+    }
+    100% {
+      transform: translateX(calc(100% + 150px)) rotate(20deg);
+      opacity: 0;
+    }
+  }
+
   @keyframes luxuryGlow {
     0%, 100% {
       text-shadow:

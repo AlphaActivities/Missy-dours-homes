@@ -1,4 +1,5 @@
 import { LuxFadeIn } from "../ui/LuxFadeIn";
+import SecondaryActiveListingsCTA from "../ui/SecondaryActiveListingsCTA";
 
 const midTierListings = [
   {
@@ -98,6 +99,11 @@ export default function MidTierHomesSection() {
             </LuxFadeIn>
           ))}
         </div>
+
+        {/* SECONDARY CTA */}
+        <LuxFadeIn delay={0.35}>
+          <SecondaryActiveListingsCTA tier="mid" />
+        </LuxFadeIn>
       </div>
     </section>
   );

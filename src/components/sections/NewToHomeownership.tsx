@@ -1,4 +1,5 @@
 import { LuxFadeIn } from "../ui/LuxFadeIn";
+import SecondaryActiveListingsCTA from "../ui/SecondaryActiveListingsCTA";
 
 const starterListings = [
   {
@@ -100,6 +101,11 @@ export default function NewToHomeownershipSection() {
             </LuxFadeIn>
           ))}
         </div>
+
+        {/* SECONDARY CTA */}
+        <LuxFadeIn delay={0.35}>
+          <SecondaryActiveListingsCTA tier="first" />
+        </LuxFadeIn>
       </div>
     </section>
   );
