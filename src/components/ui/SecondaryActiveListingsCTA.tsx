@@ -22,7 +22,7 @@ export default function SecondaryActiveListingsCTA({ tier }: SecondaryActiveList
   };
 
   return (
-    <div className="flex justify-center mt-12">
+    <div className="flex justify-center mt-16 md:mt-20 lg:mt-24 xl:mt-28">
       <button
         type="button"
         onClick={handleClick}
