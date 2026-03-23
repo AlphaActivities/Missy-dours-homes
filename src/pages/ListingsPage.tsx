@@ -6,7 +6,7 @@ import FooterSection from '../components/sections/FooterSection';
 import { motion, AnimatePresence } from 'framer-motion';
 import { luxuryScrollToTop } from '../utils/luxuryScroll';
 
-type FilterType = 'all' | 'active' | ListingCategory;
+type FilterType = 'all' | 'active' | 'sold' | ListingCategory;
 
 export default function ListingsPage() {
   const [searchParams] = useSearchParams();
@@ -21,7 +21,7 @@ export default function ListingsPage() {
   }, []);
 
   useEffect(() => {
-    if (filterParam && ['all', 'active', 'luxury', 'mid', 'first'].includes(filterParam)) {
+    if (filterParam && ['all', 'active', 'sold', 'luxury', 'mid', 'first'].includes(filterParam)) {
       setActiveFilter(filterParam);
     }
   }, [filterParam]);
@@ -30,6 +30,7 @@ export default function ListingsPage() {
     const filtered = listings.filter((listing) => {
       if (activeFilter === 'all') return true;
       if (activeFilter === 'active') return listing.status === 'active';
+      if (activeFilter === 'sold') return listing.status === 'sold';
       return listing.category === activeFilter;
     });
     setDisplayedListings(filtered);
@@ -139,6 +140,23 @@ export default function ListingsPage() {
             >
               <span className="relative z-10">ACTIVE</span>
               {activeFilter === 'active' && (
+                <>
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[shimmer_1.5s_infinite]" />
+                  <span className="absolute inset-0 rounded-full border-2 border-white/40 animate-pulse" />
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => handleFilterChange('sold')}
+              disabled={isLoading}
+              className={`relative px-6 sm:px-8 py-3 rounded-full text-xs sm:text-sm font-semibold tracking-wide transition-all duration-500 overflow-hidden border-2 ${
+                activeFilter === 'sold'
+                  ? 'bg-gradient-to-r from-[#C4A46A] to-[#D4B57A] text-black shadow-[0_0_30px_rgba(196,164,106,0.8)] border-transparent scale-105'
+                  : 'bg-gradient-to-br from-[#2d5571] to-[#1f4059] text-[#C4A46A] hover:bg-gradient-to-br hover:from-[#375d7a] hover:to-[#274a62] hover:shadow-[0_0_15px_rgba(196,164,106,0.3)] hover:scale-105 border-[#C4A46A]'
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <span className="relative z-10">SOLD</span>
+              {activeFilter === 'sold' && (
                 <>
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[shimmer_1.5s_infinite]" />
                   <span className="absolute inset-0 rounded-full border-2 border-white/40 animate-pulse" />
@@ -359,7 +377,13 @@ export default function ListingsPage() {
               transition={{ duration: 0.4 }}
               className="text-center py-20 px-4"
             >
-              {activeFilter === 'active' ? (
+              {activeFilter === 'sold' ? (
+                <div className="max-w-2xl mx-auto space-y-4">
+                  <p className="text-xl text-gray-800 font-medium">
+                    There are no sold listings to display at the moment.
+                  </p>
+                </div>
+              ) : activeFilter === 'active' ? (
                 <div className="max-w-2xl mx-auto space-y-4">
                   <p className="text-xl text-gray-800 font-medium">
                     There are no active listings at the moment.
