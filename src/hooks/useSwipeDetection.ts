@@ -51,14 +51,14 @@ export function useSwipeDetection({
     const element = elementRef.current;
     if (!element || !touchOnly) return;
 
-    element.addEventListener('touchstart', onTouchStart);
-    element.addEventListener('touchmove', onTouchMove);
-    element.addEventListener('touchend', onTouchEnd);
+    element.addEventListener('touchstart', onTouchStart, { capture: true });
+    element.addEventListener('touchmove', onTouchMove, { capture: true });
+    element.addEventListener('touchend', onTouchEnd, { capture: true });
 
     return () => {
-      element.removeEventListener('touchstart', onTouchStart);
-      element.removeEventListener('touchmove', onTouchMove);
-      element.removeEventListener('touchend', onTouchEnd);
+      element.removeEventListener('touchstart', onTouchStart, { capture: true });
+      element.removeEventListener('touchmove', onTouchMove, { capture: true });
+      element.removeEventListener('touchend', onTouchEnd, { capture: true });
     };
   }, [touchStart, touchEnd, onSwipeLeft, onSwipeRight]);
 

@@ -172,4 +172,8 @@
   .animate-shimmer {
     animation: shimmer 2s ease-in-out infinite;
   }
+
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
 }
