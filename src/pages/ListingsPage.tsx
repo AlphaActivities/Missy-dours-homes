@@ -109,7 +109,7 @@ export default function ListingsPage() {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 sm:gap-6 mb-10 sm:mb-12 px-4">
+        <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 sm:gap-6 mb-5 sm:mb-12 px-4">
           {/* All & Active Buttons Container */}
           <div className="flex justify-center gap-3 sm:gap-4 bg-gradient-to-br from-[#1a3a52] to-[#0d2333] p-3 rounded-full shadow-[0_8px_32px_rgba(26,58,82,0.4)]">
             <button
@@ -375,7 +375,7 @@ export default function ListingsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="text-center py-20 px-4"
+              className="text-center py-10 sm:py-20 px-4"
             >
               {activeFilter === 'sold' ? (
                 <div className="max-w-2xl mx-auto space-y-4">
