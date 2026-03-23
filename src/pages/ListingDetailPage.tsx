@@ -5,6 +5,7 @@ import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown,
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
+import { useSwipeDetection } from '../hooks/useSwipeDetection';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -28,6 +29,29 @@ export default function ListingDetailPage() {
   const startIndex = currentPage * ITEMS_PER_PAGE;
   const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalImages);
   const visibleImages = listing?.galleryImages.slice(startIndex, endIndex) || [];
+
+  const handleSwipeLeft = () => {
+    if (currentPage < totalPages - 1) {
+      const newPage = currentPage + 1;
+      setCurrentPage(newPage);
+      setSelectedImage(newPage * ITEMS_PER_PAGE);
+    }
+  };
+
+  const handleSwipeRight = () => {
+    if (currentPage > 0) {
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      setSelectedImage(newPage * ITEMS_PER_PAGE);
+    }
+  };
+
+  const swipeRef = useSwipeDetection({
+    onSwipeLeft: handleSwipeLeft,
+    onSwipeRight: handleSwipeRight,
+    threshold: 80,
+    touchOnly: true,
+  });
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -177,7 +201,7 @@ export default function ListingDetailPage() {
             {listing.galleryImages.length > 1 && renderThumbnails && (
               <div>
                 {/* Thumbnail Grid */}
-                <div className="relative h-[138px] sm:h-[180px] md:h-[240px]">
+                <div ref={swipeRef} className="relative h-[138px] sm:h-[180px] md:h-[240px]">
                   {/* Unified Navigation Arrows - All Platforms */}
                   {totalPages > 1 && (
                     <>
