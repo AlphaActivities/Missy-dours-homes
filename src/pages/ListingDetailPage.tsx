@@ -355,6 +355,21 @@ export default function ListingDetailPage() {
                         <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.daysOnline}</p>
                       </div>
                     )}
+                    {listing.openHouses && listing.openHouses.length > 0 && (
+                      <div className="col-span-2">
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">Open Houses</p>
+                        <div className="space-y-1">
+                          {listing.openHouses.map((oh, idx) => (
+                            <p key={idx} className="text-sm sm:text-base text-gray-900 font-medium">
+                              {oh.type === "broker" ? "Broker Preview: " : "Public: "}
+                              {oh.date}
+                              {oh.startTime && ` ${oh.startTime}`}
+                              {oh.endTime && `-${oh.endTime}`}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

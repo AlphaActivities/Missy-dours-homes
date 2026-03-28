@@ -1,6 +1,14 @@
 export type ListingCategory = "luxury" | "mid" | "first";
 export type ListingStatus = "active" | "pending" | "sold" | "placeholder";
 
+export interface OpenHouse {
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  type: "public" | "broker" | "private";
+  notes?: string;
+}
+
 export interface Listing {
   id: string;
   title: string;
@@ -24,6 +32,7 @@ export interface Listing {
   daysOnline?: number;
   highlights?: string[];
   features?: Record<string, string[]>;
+  openHouses?: OpenHouse[];
 }
 
 export const listings: Listing[] = [
@@ -180,6 +189,124 @@ export const listings: Listing[] = [
         "Established Yale Park neighborhood"
       ]
     }
+  },
+  {
+    id: "12",
+    title: "14636 Southern Pines Dr",
+    price: "$2,500,000",
+    locationText: "Farmers Branch, TX",
+    beds: 5,
+    baths: 5,
+    sqft: 5342,
+    slug: "14636-southern-pines-dr",
+    category: "luxury",
+    status: "active",
+    heroImage: "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr01.webp",
+    galleryImages: [
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr01.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr02.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr03.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr04.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr05.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr06.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr07.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr08.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr09.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr10.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr11.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr12.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr13.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr14.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr15.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr16.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr17.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr18.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr19.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr20.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr21.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr22.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr23.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr24.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr25.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr26.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr27.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr28.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr29.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr30.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr31.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr32.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr33.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr34.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr35.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr36.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr37.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr38.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr39.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr40.webp"
+    ],
+    description: "A magnificent luxury estate situated on over half an acre in the prestigious Bent Tree neighborhood of Farmers Branch. This exceptional 5-bedroom, 5-bath residence spans 5,342 square feet and offers an unparalleled combination of sophisticated elegance and modern comfort. The property showcases meticulous attention to detail with designer finishes throughout, expansive living areas perfect for both intimate gatherings and grand-scale entertaining, and resort-style outdoor spaces. The chef's kitchen features premium appliances and custom cabinetry, while the primary suite provides a private sanctuary with spa-inspired bath and generous closet space. With its prime location offering convenient access to Dallas's premier shopping, dining, and entertainment districts while maintaining the serenity of a private estate, this home represents the pinnacle of North Texas luxury living.",
+    address: "14636 Southern Pines Dr, Farmers Branch, TX 75234",
+    propertyType: "Single Family Residential",
+    yearBuilt: 1996,
+    lotSize: "0.55 Acres (23,958 Sq Ft)",
+    mlsNumber: "12168921",
+    lastUpdated: "March 28, 2026",
+    daysOnline: 2,
+    highlights: [
+      "Expansive 5,342 square feet of luxury living space",
+      "Situated on 0.55 acres in prestigious Bent Tree",
+      "5 bedrooms and 5 bathrooms with premium finishes",
+      "Chef's kitchen with high-end appliances and custom cabinetry",
+      "Primary suite with spa-inspired bath and walk-in closets",
+      "Multiple living and entertaining areas",
+      "Resort-style outdoor spaces with mature landscaping",
+      "Convenient access to Dallas premier districts"
+    ],
+    features: {
+      Interior: [
+        "5,342 square feet of living space",
+        "5 bedrooms and 5 full bathrooms",
+        "Chef's kitchen with premium appliances",
+        "Custom cabinetry and designer finishes",
+        "Multiple living and entertaining areas",
+        "Primary suite with sitting area",
+        "Spa-inspired primary bath",
+        "Walk-in closets with custom organization"
+      ],
+      Exterior: [
+        "0.55-acre lot (23,958 sq ft)",
+        "Mature landscaping and professional grounds",
+        "Private estate setting",
+        "Multiple outdoor living areas",
+        "Attached garage"
+      ],
+      Location: [
+        "Prestigious Bent Tree neighborhood",
+        "Farmers Branch, TX 75234",
+        "Convenient to Dallas premier shopping",
+        "Close to dining and entertainment districts",
+        "Easy access to major thoroughfares"
+      ],
+      Community: [
+        "Carrollton-Farmers Branch ISD",
+        "Established luxury neighborhood",
+        "Private and secure setting",
+        "Access to area amenities"
+      ]
+    },
+    openHouses: [
+      {
+        date: "March 31, 2026",
+        type: "broker",
+        notes: "Broker and agent preview"
+      },
+      {
+        date: "April 4, 2026",
+        startTime: "2:00 PM",
+        endTime: "4:00 PM",
+        type: "public"
+      }
+    ]
   },
   {
     id: "2",
