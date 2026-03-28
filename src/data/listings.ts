@@ -244,7 +244,7 @@ export const listings: Listing[] = [
       "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr39.webp",
       "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr40.webp"
     ],
-    description: "An exceptional luxury estate offering over 6,000 square feet of refined living space on a prestigious half-acre lot in Farmers Branch. This stunning 2019-built residence combines contemporary design with timeless elegance, featuring soaring ceilings, expansive windows, and premium finishes throughout. The home's sophisticated floor plan includes three spacious bedrooms and three and a half baths, with meticulous attention to detail evident in every room. The gourmet kitchen features top-tier appliances and custom cabinetry, while the primary suite offers a private retreat with spa-inspired amenities. Positioned near championship golf courses and Brookhaven Country Club, this property delivers the ultimate luxury lifestyle with easy access to Dallas's finest dining, shopping, and entertainment destinations.",
+    description: "An exceptional luxury estate offering over 6,000 square feet of refined living space on a prestigious half-acre lot in Farmers Branch. This stunning 2019-built residence combines contemporary design with timeless elegance, featuring soaring ceilings, expansive windows, and premium finishes throughout. The home's sophisticated floor plan includes three spacious bedrooms and three and a half baths, with meticulous attention to detail evident in every room. The gourmet kitchen features top-tier appliances and custom cabinetry, while the primary suite offers a private retreat featuring a spa-inspired bathroom with a soaking tub, walk-in shower, and premium designer finishes. Positioned near championship golf courses and Brookhaven Country Club, this property delivers the ultimate luxury lifestyle with easy access to Dallas's finest dining, shopping, and entertainment destinations.",
     address: "14636 Southern Pines Dr, Farmers Branch, TX 75234",
     propertyType: "Single Family Residential",
     yearBuilt: 2019,
@@ -260,6 +260,7 @@ export const listings: Listing[] = [
       "Near championship golf courses and Brookhaven Country Club",
       "Soaring ceilings and expansive windows throughout",
       "Gourmet kitchen with top-tier appliances and custom cabinetry",
+      "Spa-inspired primary bathroom with premium finishes",
       "Primary suite with spa-inspired amenities and luxury finishes"
     ],
     features: {
@@ -270,7 +271,7 @@ export const listings: Listing[] = [
         "Expansive windows for natural light",
         "Gourmet kitchen with top-tier appliances",
         "Custom cabinetry and premium finishes",
-        "Primary suite with spa-inspired bath",
+        "Spa-inspired primary bathroom with soaking tub, walk-in shower, and designer finishes",
         "Open floor plan for entertaining"
       ],
       Exterior: [
