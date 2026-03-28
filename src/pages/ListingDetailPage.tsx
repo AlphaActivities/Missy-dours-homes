@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { listings } from '../data/listings';
-import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown, ChevronLeft, ChevronRight, LayoutTemplate } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
@@ -433,7 +433,14 @@ export default function ListingDetailPage() {
         {listing.floorplan && (
           <div className="mb-10 sm:mb-12 lg:mb-16">
             <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
-              <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-3 sm:mb-4">Floor Plan</h2>
+              <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className="flex-shrink-0 mt-1">
+                  <LayoutTemplate className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600" strokeWidth={1.5} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl sm:text-3xl font-light text-gray-900">Floor Plan</h2>
+                </div>
+              </div>
               <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
                 View the home layout and room flow for this property.
               </p>
@@ -441,7 +448,7 @@ export default function ListingDetailPage() {
                 href={listing.floorplan}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white rounded-lg font-medium text-base sm:text-lg shadow-lg shadow-amber-600/30 hover:shadow-xl hover:shadow-amber-600/40 transition-all duration-300 hover:-translate-y-0.5 border border-amber-400/50"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white rounded-lg font-medium text-base sm:text-lg shadow-lg shadow-amber-600/30 hover:shadow-xl hover:shadow-amber-600/40 transition-all duration-300 hover:-translate-y-0.5 border border-amber-400/50"
               >
                 View Floor Plan & Layout
               </a>
