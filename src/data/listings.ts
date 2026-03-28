@@ -34,6 +34,14 @@ export interface Listing {
   features?: Record<string, string[]>;
   openHouses?: OpenHouse[];
   floorplan?: string;
+  specialFeatures?: {
+    title: string;
+    description?: string;
+    categories: Array<{
+      name: string;
+      items: string[];
+    }>;
+  };
 }
 
 export const listings: Listing[] = [
@@ -309,7 +317,51 @@ export const listings: Listing[] = [
         type: "public"
       }
     ],
-    floorplan: "/images/listings/14636-Southern-Pines-Dr/14636-Southern-Pines-Dr-floorplan.pdf"
+    floorplan: "/images/listings/14636-Southern-Pines-Dr/14636-Southern-Pines-Dr-floorplan.pdf",
+    specialFeatures: {
+      title: "Special Features",
+      description: "This exceptional estate offers a rare blend of refined design, advanced construction quality, and luxury lifestyle features that set it apart from standard listings.",
+      categories: [
+        {
+          name: "Construction & Structural Quality",
+          items: [
+            "CMU and stucco exterior construction for durability and long-term strength",
+            "True pier-and-beam foundation supported by 61 concrete piers",
+            "Steel I-beam structural support system",
+            "Encapsulated spray-foam insulation for energy efficiency and performance",
+            "Thoughtful build quality with premium materials throughout"
+          ]
+        },
+        {
+          name: "Smart Home & Technology",
+          items: [
+            "Integrated smart home features designed for convenience and control",
+            "Whole-home audio and entertainment infrastructure",
+            "Cat6 wiring and advanced media connectivity",
+            "App-connected systems for streamlined day-to-day living",
+            "High-end AV planning and installation for a premium experience"
+          ]
+        },
+        {
+          name: "Lighting, Comfort & Atmosphere",
+          items: [
+            "Layered interior and exterior lighting designed for luxury ambiance",
+            "Landscape and accent lighting features that enhance evening presentation",
+            "Thoughtful lighting controls for both everyday living and entertaining",
+            "Designer finishes that elevate the feel of the entire home"
+          ]
+        },
+        {
+          name: "Lifestyle & Utility Features",
+          items: [
+            "Resort-style setting with strong indoor-outdoor flow",
+            "Golf-course-area luxury positioning near Brookhaven Country Club",
+            "Well-planned utility and support spaces for high-function living",
+            "Premium layout decisions that support both comfort and entertaining"
+          ]
+        }
+      ]
+    }
   },
   {
     id: "2",

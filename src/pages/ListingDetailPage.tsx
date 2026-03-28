@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { listings } from '../data/listings';
-import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown, ChevronLeft, ChevronRight, LayoutTemplate } from 'lucide-react';
+import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown, ChevronLeft, ChevronRight, LayoutTemplate, Sparkles } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
@@ -452,6 +452,44 @@ export default function ListingDetailPage() {
               >
                 View Floor Plan & Layout
               </a>
+            </div>
+          </div>
+        )}
+
+        {/* Special Features Section */}
+        {listing.specialFeatures && (
+          <div className="mb-10 sm:mb-12 lg:mb-16">
+            <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+              <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className="flex-shrink-0 mt-1">
+                  <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600" strokeWidth={1.5} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl sm:text-3xl font-light text-gray-900">{listing.specialFeatures.title}</h2>
+                </div>
+              </div>
+              {listing.specialFeatures.description && (
+                <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
+                  {listing.specialFeatures.description}
+                </p>
+              )}
+              <div className="space-y-6 sm:space-y-8">
+                {listing.specialFeatures.categories.map((category) => (
+                  <div key={category.name}>
+                    <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-3 sm:mb-4">
+                      {category.name}
+                    </h3>
+                    <ul className="space-y-3">
+                      {category.items.map((item, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-600 flex-shrink-0" />
+                          <span className="text-base sm:text-lg text-gray-700 leading-relaxed">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
