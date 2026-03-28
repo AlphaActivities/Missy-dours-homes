@@ -33,6 +33,7 @@ export interface Listing {
   highlights?: string[];
   features?: Record<string, string[]>;
   openHouses?: OpenHouse[];
+  floorplan?: string;
 }
 
 export const listings: Listing[] = [
@@ -307,7 +308,8 @@ export const listings: Listing[] = [
         endTime: "4:00 PM",
         type: "public"
       }
-    ]
+    ],
+    floorplan: "/images/listings/14636-Southern-Pines-Dr/14636-Southern-Pines-Dr-floorplan.pdf"
   },
   {
     id: "2",

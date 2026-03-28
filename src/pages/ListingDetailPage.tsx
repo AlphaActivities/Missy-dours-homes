@@ -429,6 +429,26 @@ export default function ListingDetailPage() {
           </div>
         )}
 
+        {/* Floor Plan Section */}
+        {listing.floorplan && (
+          <div className="mb-10 sm:mb-12 lg:mb-16">
+            <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+              <h2 className="text-2xl sm:text-3xl font-light text-gray-900 mb-3 sm:mb-4">Floor Plan</h2>
+              <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
+                View the home layout and room flow for this property.
+              </p>
+              <a
+                href={listing.floorplan}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white rounded-lg font-medium text-base sm:text-lg shadow-lg shadow-amber-600/30 hover:shadow-xl hover:shadow-amber-600/40 transition-all duration-300 hover:-translate-y-0.5 border border-amber-400/50"
+              >
+                View Floor Plan & Layout
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Features Accordion */}
         {listing.features && Object.keys(listing.features).length > 0 && (
           <div className="mb-10 sm:mb-12 lg:mb-16">
