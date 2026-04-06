@@ -28,6 +28,7 @@ export interface Listing {
   yearBuilt?: number;
   lotSize?: string;
   mlsNumber?: string;
+  createdDate?: string;
   lastUpdated?: string;
   daysOnline?: number;
   highlights?: string[];
@@ -75,6 +76,7 @@ export const listings: Listing[] = [
     yearBuilt: 2008,
     lotSize: "0.32 acres",
     mlsNumber: "20745891",
+    createdDate: "March 25, 2026",
     lastUpdated: "April 6, 2026",
     daysOnline: 12,
     highlights: [
@@ -158,6 +160,7 @@ export const listings: Listing[] = [
     yearBuilt: 1980,
     lotSize: "9,017 sq ft",
     mlsNumber: "21156282",
+    createdDate: "February 21, 2026",
     lastUpdated: "March 6, 2026",
     daysOnline: 14,
     highlights: [
@@ -260,6 +263,7 @@ export const listings: Listing[] = [
     yearBuilt: 2019,
     lotSize: "0.55 Acres (23,958 Sq Ft)",
     mlsNumber: "21216921",
+    createdDate: "March 26, 2026",
     lastUpdated: "April 6, 2026",
     daysOnline: 11,
     highlights: [

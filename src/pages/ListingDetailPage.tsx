@@ -6,6 +6,7 @@ import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
 import { useSwipeDetection } from '../hooks/useSwipeDetection';
+import { calculateDaysOnline } from '../utils/calculateDaysOnline';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -349,10 +350,10 @@ export default function ListingDetailPage() {
                         <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.lastUpdated}</p>
                       </div>
                     )}
-                    {listing.daysOnline !== undefined && (
+                    {listing.createdDate && (
                       <div>
                         <p className="text-xs sm:text-sm text-gray-500 mb-1">Days Online</p>
-                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.daysOnline}</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{calculateDaysOnline(listing.createdDate)}</p>
                       </div>
                     )}
                   </div>
