@@ -261,7 +261,7 @@ export const listings: Listing[] = [
     lotSize: "0.55 Acres (23,958 Sq Ft)",
     mlsNumber: "21216921",
     lastUpdated: "April 6, 2026",
-    daysOnline: 2,
+    daysOnline: 11,
     highlights: [
       "Expansive 6,005 square feet of luxury living space",
       "Recently built in 2019 with modern design and finishes",
