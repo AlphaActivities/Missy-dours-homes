@@ -360,7 +360,7 @@ export default function ListingDetailPage() {
               )}
 
               {/* Open House Premium Card */}
-              {listing.openHouses && listing.openHouses.length > 0 && (
+              {listing.openHouses && listing.openHouses.filter(oh => oh.type === 'public').length > 0 && (
                 <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
                   <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 border-2 border-amber-200/60 p-5 sm:p-6 shadow-lg shadow-amber-600/10 hover:shadow-xl hover:shadow-amber-600/20 transition-all duration-300 group">
                     {/* Shimmer overlay */}
@@ -379,29 +379,16 @@ export default function ListingDetailPage() {
 
                     {/* Date cards */}
                     <div className="relative space-y-3 sm:space-y-4">
-                      {listing.openHouses.map((oh, idx) => (
-                        <div key={idx} className="group/card relative bg-white rounded-lg border-2 border-amber-300/50 p-3 sm:p-4 hover:border-amber-400 hover:shadow-md transition-all duration-300">
-                          {/* Type badge */}
-                          <div className="absolute top-3 right-3 sm:static sm:mb-2">
-                            <span className={`inline-block px-2.5 sm:px-3 py-1 rounded-full text-[0.65rem] sm:text-xs font-bold uppercase tracking-wider shadow-md ${
-                              oh.type === 'broker'
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/30'
-                                : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-amber-500/30'
-                            }`}>
-                              {oh.type === 'broker' ? 'Broker Preview' : 'Public Open House'}
-                            </span>
-                          </div>
-
+                      {listing.openHouses.filter(oh => oh.type === 'public').map((oh, idx) => (
+                        <div key={idx} className="group/card bg-white rounded-lg border-2 border-amber-300/50 p-4 sm:p-5 hover:border-amber-400 hover:shadow-md transition-all duration-300">
                           {/* Date & Time */}
-                          <div className="pr-0 sm:pr-0">
-                            <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">{oh.date}</p>
-                            {oh.startTime && (
-                              <div className="flex items-center gap-2 text-gray-700">
-                                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 flex-shrink-0" />
-                                <span className="text-base sm:text-lg font-medium">{oh.startTime} - {oh.endTime}</span>
-                              </div>
-                            )}
-                          </div>
+                          <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">{oh.date}</p>
+                          {oh.startTime && (
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 flex-shrink-0" />
+                              <span className="text-base sm:text-lg font-medium">{oh.startTime} - {oh.endTime}</span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
