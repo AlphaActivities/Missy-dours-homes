@@ -55,7 +55,7 @@ export const listings: Listing[] = [
     sqft: 4850,
     slug: "3105-palmdale-cir",
     category: "mid",
-    status: "pending",
+    status: "sold",
     heroImage: "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir01.webp",
     galleryImages: [
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir01.webp",
@@ -69,13 +69,13 @@ export const listings: Listing[] = [
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir09.webp",
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir10.webp"
     ],
-    description: "An exceptional Highland Park residence offering timeless elegance and modern luxury. This meticulously maintained home features soaring ceilings, custom millwork, and designer finishes throughout. The chef's kitchen opens to a spacious family room with fireplace, perfect for entertaining. The primary suite offers a private retreat with spa-inspired bath and generous closet space. Expansive outdoor living areas include a covered patio and mature landscaping. Located in one of Dallas's most prestigious neighborhoods, this home provides the perfect blend of sophistication and comfort.",
+    description: "An exceptional Highland Park residence offering timeless elegance and modern luxury. This meticulously maintained home featured soaring ceilings, custom millwork, and designer finishes throughout. The chef's kitchen opened to a spacious family room with fireplace, perfect for entertaining. The primary suite offered a private retreat with spa-inspired bath and generous closet space. Expansive outdoor living areas included a covered patio and mature landscaping. Located in one of Dallas's most prestigious neighborhoods, this home provided the perfect blend of sophistication and comfort. This property generated exceptional buyer interest and sold successfully in Highland Park's competitive luxury market.",
     address: "3105 Palmdale Circle, Highland Park, Dallas, TX",
     propertyType: "Single Family Residence",
     yearBuilt: 2008,
     lotSize: "0.32 acres",
     mlsNumber: "20745891",
-    lastUpdated: "February 18, 2026",
+    lastUpdated: "April 6, 2026",
     daysOnline: 12,
     highlights: [
       "Soaring ceilings with custom millwork and architectural details",
@@ -83,7 +83,8 @@ export const listings: Listing[] = [
       "Primary suite with spa-inspired bath and walk-in closets",
       "Covered outdoor patio with mature landscaping",
       "Premium location in prestigious Highland Park",
-      "Smart home technology and security system"
+      "Smart home technology and security system",
+      "Successfully sold in Highland Park's competitive luxury market"
     ],
     features: {
       Interior: [
