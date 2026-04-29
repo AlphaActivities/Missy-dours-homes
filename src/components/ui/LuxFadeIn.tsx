@@ -16,7 +16,7 @@ export const LuxFadeIn = ({ children, delay = 0 }: LuxFadeInProps) => {
         ease: "easeOut",
         delay: delay,
       }}
-      viewport={{ once: true, margin: "-20% 0px" }}
+      viewport={{ once: true, margin: "-10% 0px" }}
     >
       {children}
     </motion.div>

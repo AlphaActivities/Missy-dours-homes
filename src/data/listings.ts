@@ -1,6 +1,14 @@
 export type ListingCategory = "luxury" | "mid" | "first";
 export type ListingStatus = "active" | "pending" | "sold" | "placeholder";
 
+export interface OpenHouse {
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  type: "public" | "broker" | "private";
+  notes?: string;
+}
+
 export interface Listing {
   id: string;
   title: string;
@@ -20,10 +28,21 @@ export interface Listing {
   yearBuilt?: number;
   lotSize?: string;
   mlsNumber?: string;
+  createdDate?: string;
   lastUpdated?: string;
   daysOnline?: number;
   highlights?: string[];
   features?: Record<string, string[]>;
+  openHouses?: OpenHouse[];
+  floorplan?: string;
+  specialFeatures?: {
+    title: string;
+    description?: string;
+    categories: Array<{
+      name: string;
+      items: string[];
+    }>;
+  };
 }
 
 export const listings: Listing[] = [
@@ -37,7 +56,7 @@ export const listings: Listing[] = [
     sqft: 4850,
     slug: "3105-palmdale-cir",
     category: "mid",
-    status: "pending",
+    status: "sold",
     heroImage: "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir01.webp",
     galleryImages: [
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir01.webp",
@@ -51,13 +70,14 @@ export const listings: Listing[] = [
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir09.webp",
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir10.webp"
     ],
-    description: "An exceptional Highland Park residence offering timeless elegance and modern luxury. This meticulously maintained home features soaring ceilings, custom millwork, and designer finishes throughout. The chef's kitchen opens to a spacious family room with fireplace, perfect for entertaining. The primary suite offers a private retreat with spa-inspired bath and generous closet space. Expansive outdoor living areas include a covered patio and mature landscaping. Located in one of Dallas's most prestigious neighborhoods, this home provides the perfect blend of sophistication and comfort.",
+    description: "An exceptional Highland Park residence offering timeless elegance and modern luxury. This meticulously maintained home featured soaring ceilings, custom millwork, and designer finishes throughout. The chef's kitchen opened to a spacious family room with fireplace, perfect for entertaining. The primary suite offered a private retreat with spa-inspired bath and generous closet space. Expansive outdoor living areas included a covered patio and mature landscaping. Located in one of Dallas's most prestigious neighborhoods, this home provided the perfect blend of sophistication and comfort. This property generated exceptional buyer interest and sold successfully in Highland Park's competitive luxury market.",
     address: "3105 Palmdale Circle, Highland Park, Dallas, TX",
     propertyType: "Single Family Residence",
     yearBuilt: 2008,
     lotSize: "0.32 acres",
     mlsNumber: "20745891",
-    lastUpdated: "February 18, 2026",
+    createdDate: "March 25, 2026",
+    lastUpdated: "April 6, 2026",
     daysOnline: 12,
     highlights: [
       "Soaring ceilings with custom millwork and architectural details",
@@ -65,7 +85,8 @@ export const listings: Listing[] = [
       "Primary suite with spa-inspired bath and walk-in closets",
       "Covered outdoor patio with mature landscaping",
       "Premium location in prestigious Highland Park",
-      "Smart home technology and security system"
+      "Smart home technology and security system",
+      "Successfully sold in Highland Park's competitive luxury market"
     ],
     features: {
       Interior: [
@@ -139,6 +160,7 @@ export const listings: Listing[] = [
     yearBuilt: 1980,
     lotSize: "9,017 sq ft",
     mlsNumber: "21156282",
+    createdDate: "February 21, 2026",
     lastUpdated: "March 6, 2026",
     daysOnline: 14,
     highlights: [
@@ -178,6 +200,171 @@ export const listings: Listing[] = [
         "Apollo Junior High School",
         "Berkner High School",
         "Established Yale Park neighborhood"
+      ]
+    }
+  },
+  {
+    id: "12",
+    title: "14636 Southern Pines Dr",
+    price: "$2,500,000",
+    locationText: "Farmers Branch, TX",
+    beds: 3,
+    baths: 3.5,
+    sqft: 6005,
+    slug: "14636-southern-pines-dr",
+    category: "luxury",
+    status: "active",
+    heroImage: "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr01.webp",
+    galleryImages: [
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr01.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr02.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr03.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr04.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr05.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr06.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr07.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr08.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr09.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr10.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr11.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr12.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr13.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr14.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr15.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr16.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr17.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr18.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr19.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr20.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr21.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr22.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr23.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr24.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr25.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr26.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr27.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr28.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr29.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr30.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr31.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr32.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr33.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr34.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr35.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr36.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr37.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr38.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr39.webp",
+      "/images/listings/14636-Southern-Pines-Dr/14636_Southern_Pines_Dr40.webp"
+    ],
+    description: "An exceptional luxury estate offering over 6,000 square feet of refined living space on a prestigious half-acre lot in Farmers Branch. This stunning 2019-built residence combines contemporary design with timeless elegance, featuring soaring ceilings, expansive windows, and premium finishes throughout. The home's sophisticated floor plan includes three spacious bedrooms and three and a half baths, with meticulous attention to detail evident in every room. The gourmet kitchen features top-tier appliances and custom cabinetry, while the primary suite offers a private retreat featuring a spa-inspired bathroom with a soaking tub, walk-in shower, and premium designer finishes. Positioned near championship golf courses and Brookhaven Country Club, this property delivers the ultimate luxury lifestyle with easy access to Dallas's finest dining, shopping, and entertainment destinations.",
+    address: "14636 Southern Pines Dr, Farmers Branch, TX 75234",
+    propertyType: "Single Family Residential",
+    yearBuilt: 2019,
+    lotSize: "0.55 Acres (23,958 Sq Ft)",
+    mlsNumber: "21216921",
+    createdDate: "March 26, 2026",
+    lastUpdated: "April 6, 2026",
+    daysOnline: 11,
+    highlights: [
+      "Expansive 6,005 square feet of luxury living space",
+      "Recently built in 2019 with modern design and finishes",
+      "Situated on 0.55 acres in prestigious Farmers Branch location",
+      "Three spacious bedrooms with three and a half baths",
+      "Near championship golf courses and Brookhaven Country Club",
+      "Soaring ceilings and expansive windows throughout",
+      "Gourmet kitchen with top-tier appliances and custom cabinetry",
+      "Spa-inspired primary bathroom with premium finishes",
+      "Primary suite with spa-inspired amenities and luxury finishes"
+    ],
+    features: {
+      Interior: [
+        "6,005 square feet of living space",
+        "3 spacious bedrooms and 3.5 bathrooms",
+        "Soaring ceilings with architectural details",
+        "Expansive windows for natural light",
+        "Gourmet kitchen with top-tier appliances",
+        "Custom cabinetry and premium finishes",
+        "Spa-inspired primary bathroom with soaking tub, walk-in shower, and designer finishes",
+        "Open floor plan for entertaining"
+      ],
+      Exterior: [
+        "0.55-acre lot (23,958 sq ft)",
+        "Professionally landscaped grounds",
+        "Private estate setting",
+        "Multiple outdoor living areas",
+        "Attached garage with storage"
+      ],
+      Location: [
+        "Prestigious Farmers Branch location",
+        "Near championship golf courses",
+        "Close to Brookhaven Country Club",
+        "Easy access to Dallas dining and shopping",
+        "Minutes from major thoroughfares"
+      ],
+      Community: [
+        "Carrollton-Farmers Branch ISD",
+        "Established luxury neighborhood",
+        "Country club proximity",
+        "Upscale community setting"
+      ]
+    },
+    openHouses: [
+      {
+        date: "March 31, 2026",
+        type: "broker",
+        notes: "Broker and agent preview"
+      },
+      {
+        date: "April 4, 2026",
+        startTime: "2:00 PM",
+        endTime: "4:00 PM",
+        type: "public"
+      }
+    ],
+    floorplan: "/images/listings/14636-Southern-Pines-Dr/14636-Southern-Pines-Dr-floorplan.pdf",
+    specialFeatures: {
+      title: "Special Features",
+      description: "This exceptional estate offers a rare blend of refined design, advanced construction quality, and luxury lifestyle features that set it apart from standard listings.",
+      categories: [
+        {
+          name: "Construction & Structural Quality",
+          items: [
+            "CMU and stucco exterior construction for durability and long-term strength",
+            "True pier-and-beam foundation supported by 61 concrete piers",
+            "Steel I-beam structural support system",
+            "Encapsulated spray-foam insulation for energy efficiency and performance",
+            "Thoughtful build quality with premium materials throughout"
+          ]
+        },
+        {
+          name: "Smart Home & Technology",
+          items: [
+            "Integrated smart home features designed for convenience and control",
+            "Whole-home audio and entertainment infrastructure",
+            "Cat6 wiring and advanced media connectivity",
+            "App-connected systems for streamlined day-to-day living",
+            "High-end AV planning and installation for a premium experience"
+          ]
+        },
+        {
+          name: "Lighting, Comfort & Atmosphere",
+          items: [
+            "Layered interior and exterior lighting designed for luxury ambiance",
+            "Landscape and accent lighting features that enhance evening presentation",
+            "Thoughtful lighting controls for both everyday living and entertaining",
+            "Designer finishes that elevate the feel of the entire home"
+          ]
+        },
+        {
+          name: "Lifestyle & Utility Features",
+          items: [
+            "Resort-style setting with strong indoor-outdoor flow",
+            "Golf-course-area luxury positioning near Brookhaven Country Club",
+            "Well-planned utility and support spaces for high-function living",
+            "Premium layout decisions that support both comfort and entertaining"
+          ]
+        }
       ]
     }
   },

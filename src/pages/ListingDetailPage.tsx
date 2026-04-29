@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { listings } from '../data/listings';
-import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown, ChevronLeft, ChevronRight, LayoutTemplate, Sparkles, Calendar, Clock } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
 import { useSwipeDetection } from '../hooks/useSwipeDetection';
+import { calculateDaysOnline } from '../utils/calculateDaysOnline';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -349,12 +350,49 @@ export default function ListingDetailPage() {
                         <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.lastUpdated}</p>
                       </div>
                     )}
-                    {listing.daysOnline !== undefined && (
+                    {listing.createdDate && (
                       <div>
                         <p className="text-xs sm:text-sm text-gray-500 mb-1">Days Online</p>
-                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.daysOnline}</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{calculateDaysOnline(listing.createdDate)}</p>
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Open House Premium Card */}
+              {listing.openHouses && listing.openHouses.filter(oh => oh.type === 'public').length > 0 && (
+                <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
+                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 border-2 border-amber-200/60 p-5 sm:p-6 shadow-lg shadow-amber-600/10 hover:shadow-xl hover:shadow-amber-600/20 transition-all duration-300 group">
+                    {/* Shimmer overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+
+                    {/* Header with icon */}
+                    <div className="relative flex items-center gap-3 mb-4 sm:mb-5">
+                      <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 flex items-center justify-center shadow-md">
+                        <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Open House Schedule</h3>
+                        <p className="text-xs sm:text-sm text-gray-600">Plan your visit</p>
+                      </div>
+                    </div>
+
+                    {/* Date cards */}
+                    <div className="relative space-y-3 sm:space-y-4">
+                      {listing.openHouses.filter(oh => oh.type === 'public').map((oh, idx) => (
+                        <div key={idx} className="group/card bg-white rounded-lg border-2 border-amber-300/50 p-4 sm:p-5 hover:border-amber-400 hover:shadow-md transition-all duration-300">
+                          {/* Date & Time */}
+                          <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">{oh.date}</p>
+                          {oh.startTime && (
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 flex-shrink-0" />
+                              <span className="text-base sm:text-lg font-medium">{oh.startTime} - {oh.endTime}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -410,6 +448,71 @@ export default function ListingDetailPage() {
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Floor Plan Section */}
+        {listing.floorplan && (
+          <div className="mb-10 sm:mb-12 lg:mb-16">
+            <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+              <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className="flex-shrink-0 mt-1">
+                  <LayoutTemplate className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600" strokeWidth={1.5} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl sm:text-3xl font-light text-gray-900">Floor Plan</h2>
+                </div>
+              </div>
+              <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
+                View the home layout and room flow for this property.
+              </p>
+              <a
+                href={listing.floorplan}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white rounded-lg font-medium text-base sm:text-lg shadow-lg shadow-amber-600/30 hover:shadow-xl hover:shadow-amber-600/40 transition-all duration-300 hover:-translate-y-0.5 border border-amber-400/50"
+              >
+                View Floor Plan & Layout
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Special Features Section */}
+        {listing.specialFeatures && (
+          <div className="mb-10 sm:mb-12 lg:mb-16">
+            <div className="bg-white rounded-xl shadow-md p-5 sm:p-6 lg:p-8">
+              <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div className="flex-shrink-0 mt-1">
+                  <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600" strokeWidth={1.5} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl sm:text-3xl font-light text-gray-900">{listing.specialFeatures.title}</h2>
+                </div>
+              </div>
+              {listing.specialFeatures.description && (
+                <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8">
+                  {listing.specialFeatures.description}
+                </p>
+              )}
+              <div className="space-y-6 sm:space-y-8">
+                {listing.specialFeatures.categories.map((category) => (
+                  <div key={category.name}>
+                    <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-3 sm:mb-4">
+                      {category.name}
+                    </h3>
+                    <ul className="space-y-3">
+                      {category.items.map((item, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-600 flex-shrink-0" />
+                          <span className="text-base sm:text-lg text-gray-700 leading-relaxed">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
