@@ -24,7 +24,7 @@ export default function AboutSection() {
 
           {/* LEFT — PORTRAIT CARD */}
           <LuxFadeIn delay={0.1}>
-            <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-b from-black/45 via-black/20 to-black/5 shadow-[0_28px_80px_rgba(15,23,42,0.6)] backdrop-blur-xl h-[400px] md:h-[480px] lg:h-[520px]">
+            <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-b from-black/45 via-black/20 to-black/5 border border-white/40 shadow-[0_28px_80px_rgba(15,23,42,0.6)] backdrop-blur-xl h-[400px] md:h-[480px] lg:h-[520px]">
               {images.map((img, index) => (
                 <img
                   key={img}
