@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { navigateToSection } from '../utils/scrollToSection';
+import { trackCTA } from '../utils/analytics';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -145,6 +146,7 @@ const Navbar: React.FC = () => {
           <button
             type="button"
             onClick={() => {
+              trackCTA('Request a Private Consultation', 'mobile_nav');
               navigateToSection('contact', navigate, location.pathname);
               setIsMobileMenuOpen(false);
             }}

@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { navigateToSection } from '../../utils/scrollToSection';
 import { CONTACT_INFO } from '../../config/contact';
 import { Instagram, Linkedin, Home, Facebook } from 'lucide-react';
+import { trackPhoneClick, trackEmailClick } from '../../utils/analytics';
 
 export default function FooterSection() {
   const navigate = useNavigate();
@@ -103,8 +104,8 @@ export default function FooterSection() {
               Get in touch
             </h4>
             <div className="space-y-3 text-base text-neutral-800/90 animate-[blindsDown_0.8s_ease-out]">
-              <p className="font-medium">Phone: <a href={CONTACT_INFO.phone.tel} className="font-normal text-black hover:text-[#c29f63] underline transition-colors">{CONTACT_INFO.phone.display}</a></p>
-              <p className="font-medium">Email: <a href={CONTACT_INFO.email.mailto} className="font-normal text-black hover:text-[#c29f63] underline transition-colors">{CONTACT_INFO.email.display}</a></p>
+              <p className="font-medium">Phone: <a href={CONTACT_INFO.phone.tel} onClick={() => trackPhoneClick('footer')} className="font-normal text-black hover:text-[#c29f63] underline transition-colors">{CONTACT_INFO.phone.display}</a></p>
+              <p className="font-medium">Email: <a href={CONTACT_INFO.email.mailto} onClick={() => trackEmailClick('footer')} className="font-normal text-black hover:text-[#c29f63] underline transition-colors">{CONTACT_INFO.email.display}</a></p>
               <div>
                 <p className="font-medium mb-1">Office:</p>
                 <a

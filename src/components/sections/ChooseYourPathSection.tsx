@@ -1,5 +1,6 @@
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import { ArrowRight, ArrowDown, CheckCircle2, Crown, TrendingUp, Heart } from "lucide-react";
+import { trackPathSelect } from "../../utils/analytics";
 
 interface ChooseYourPathSectionProps {
   selectedPath: "luxury" | "mid-tier" | "first-time" | null;
@@ -58,7 +59,7 @@ export default function ChooseYourPathSection({
               <LuxFadeIn key={option.id} delay={0.1 + index * 0.08}>
                 <button
                   type="button"
-                  onClick={() => onSelectPath(option.id)}
+                  onClick={() => { trackPathSelect(option.id); onSelectPath(option.id); }}
                   className={`group relative flex flex-col rounded-2xl overflow-hidden bg-black/55 border-2 backdrop-blur-md transition-all duration-300 w-full text-left ${
                     isSelected
                       ? "border-[#F5E6C8] shadow-[0_0_35px_rgba(245,230,200,0.8)] ring-2 ring-[#F5E6C8]/50"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import { scrollToSection } from "../../utils/scrollToSection";
+import { trackCTA } from "../../utils/analytics";
 
 export default function AboutSection() {
   const [currentImage, setCurrentImage] = useState(0);
@@ -88,7 +89,7 @@ export default function AboutSection() {
                 <div className="flex flex-wrap gap-3 sm:gap-4 justify-center lg:justify-start">
                   <button
                     type="button"
-                    onClick={() => scrollToSection('contact')}
+                    onClick={() => { trackCTA('Schedule a Private Consultation', 'about'); scrollToSection('contact'); }}
                     className="group relative inline-flex items-center justify-center rounded-full bg-[#111111] px-7 sm:px-9 py-3 text-sm sm:text-[0.95rem] font-medium tracking-[0.16em] uppercase text-white shadow-[0_18px_45px_rgba(15,23,42,0.55)] transition-all duration-300 hover:shadow-[0_24px_60px_rgba(15,23,42,0.7)] hover:bg-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f1d598]"
                   >
                     <span className="relative inline-block">

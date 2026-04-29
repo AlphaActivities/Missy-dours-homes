@@ -7,6 +7,7 @@ import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
 import { useSwipeDetection } from '../hooks/useSwipeDetection';
 import { calculateDaysOnline } from '../utils/calculateDaysOnline';
+import { trackPhoneClick, trackEmailClick, trackCTA, trackLightboxOpen, trackFloorplanView } from '../utils/analytics';
 
 export default function ListingDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -108,6 +109,7 @@ export default function ListingDetailPage() {
   }
 
   const handleContactClick = () => {
+    trackCTA('Contact Missy', 'listing_detail');
     navigate('/', { state: { scrollTo: 'contact' } });
   };
 
@@ -143,7 +145,7 @@ export default function ListingDetailPage() {
             {/* Main Image */}
             <div
               className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg group cursor-pointer"
-              onClick={() => setIsLightboxOpen(true)}
+              onClick={() => { trackLightboxOpen(listing.slug); setIsLightboxOpen(true); }}
             >
               <img
                 src={listing.galleryImages[selectedImage]}
@@ -183,6 +185,7 @@ export default function ListingDetailPage() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  trackLightboxOpen(listing.slug);
                   setIsLightboxOpen(true);
                 }}
                 className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 p-2 sm:p-3 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 z-10"
@@ -409,6 +412,7 @@ export default function ListingDetailPage() {
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <a
                     href={CONTACT_INFO.phone.tel}
+                    onClick={() => trackPhoneClick('listing_detail')}
                     className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all text-sm sm:text-base"
                   >
                     <Phone className="w-4 h-4" />
@@ -416,6 +420,7 @@ export default function ListingDetailPage() {
                   </a>
                   <a
                     href={CONTACT_INFO.email.mailto}
+                    onClick={() => trackEmailClick('listing_detail')}
                     className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all text-sm sm:text-base"
                   >
                     <Mail className="w-4 h-4" />
@@ -471,6 +476,7 @@ export default function ListingDetailPage() {
                 href={listing.floorplan}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackFloorplanView(listing.slug)}
                 className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 text-white rounded-lg font-medium text-base sm:text-lg shadow-lg shadow-amber-600/30 hover:shadow-xl hover:shadow-amber-600/40 transition-all duration-300 hover:-translate-y-0.5 border border-amber-400/50"
               >
                 View Floor Plan & Layout

@@ -5,6 +5,7 @@ import { Bed, Bath, Maximize, ArrowLeft, Home } from 'lucide-react';
 import FooterSection from '../components/sections/FooterSection';
 import { motion, AnimatePresence } from 'framer-motion';
 import { luxuryScrollToTop } from '../utils/luxuryScroll';
+import { trackListingClick, trackFilterChange } from '../utils/analytics';
 
 type FilterType = 'all' | 'active' | 'sold' | ListingCategory;
 
@@ -39,6 +40,7 @@ export default function ListingsPage() {
   const handleFilterChange = (newFilter: FilterType) => {
     if (newFilter === activeFilter) return;
 
+    trackFilterChange(newFilter);
     setIsLoading(true);
     setActiveFilter(newFilter);
 
@@ -289,7 +291,8 @@ export default function ListingsPage() {
                       delay: index * 0.05,
                       ease: [0.25, 0.46, 0.45, 0.94],
                     }}
-                    onClick={() =>
+                    onClick={() => {
+                      trackListingClick(listing.slug, activeFilter);
                       navigate(`/listings/${listing.slug}?from=${activeFilter}`, {
                         state: {
                           transitionPreview: {
@@ -298,8 +301,8 @@ export default function ListingsPage() {
                             price: listing.price,
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                     className="group cursor-pointer bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-1"
                   >
                     <div className="relative h-56 sm:h-64 overflow-hidden">

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Home } from 'lucide-react';
+import { trackCTA } from '../../utils/analytics';
 
 type Tier = "luxury" | "mid" | "first";
 
@@ -18,6 +19,7 @@ export default function SecondaryActiveListingsCTA({ tier }: SecondaryActiveList
   const config = tierConfig[tier];
 
   const handleClick = () => {
+    trackCTA(config.text, `secondary_active_listings_${tier}`);
     navigate(`/listings?filter=${config.filter}`);
   };
 

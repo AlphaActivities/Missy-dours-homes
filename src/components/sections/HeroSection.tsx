@@ -3,6 +3,7 @@ import { LuxFadeIn } from '../ui/LuxFadeIn';
 import { ShimmerButton } from '../ui/ShimmerButton';
 import { scrollToSection } from '../../utils/scrollToSection';
 import { Home } from 'lucide-react';
+import { trackCTA } from '../../utils/analytics';
 
 export default function HeroSection() {
   const navigate = useNavigate();
@@ -37,13 +38,13 @@ export default function HeroSection() {
               <div className="flex flex-col sm:flex-row gap-4 items-center md:items-start">
                 <button
                   type="button"
-                  onClick={() => scrollToSection('contact')}
+                  onClick={() => { trackCTA('Schedule a Consultation', 'hero'); scrollToSection('contact'); }}
                   className="inline-block bg-[#C4A46A] text-black font-medium px-7 py-3 rounded-full shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-all duration-300 cursor-pointer transform hover:scale-110"
                 >
                   Schedule a Consultation
                 </button>
                 <ShimmerButton
-                  onClick={() => navigate('/listings?filter=active')}
+                  onClick={() => { trackCTA('Active Listings', 'hero'); navigate('/listings?filter=active'); }}
                   className="inline-flex items-center gap-2 border-2 border-[#C4A46A] text-white hover:bg-gradient-to-br hover:from-[#8B6F47]/40 hover:to-[#6B5335]/30 rounded-full px-7 py-3 shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-all duration-300 cursor-pointer transform hover:scale-110"
                 >
                   <Home className="w-4 h-4" />
