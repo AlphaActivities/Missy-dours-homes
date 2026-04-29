@@ -143,6 +143,7 @@ export default function ContactSection() {
                       type="text"
                       autoComplete="name"
                       placeholder="First and last name"
+                      data-hj-suppress
                       className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition"
                     />
                   </div>
@@ -160,6 +161,7 @@ export default function ContactSection() {
                       type="email"
                       autoComplete="email"
                       placeholder="Preferred email for follow-up"
+                      data-hj-suppress
                       className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition"
                     />
                   </div>
@@ -177,6 +179,7 @@ export default function ContactSection() {
                       type="tel"
                       autoComplete="tel"
                       placeholder="Best number for a brief call"
+                      data-hj-suppress
                       className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition"
                     />
                   </div>
@@ -193,6 +196,7 @@ export default function ContactSection() {
                       name="message"
                       rows={4}
                       placeholder="Share a quick overview of your property, price range, and ideal timeframe."
+                      data-hj-suppress
                       className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition resize-none"
                     />
                   </div>
