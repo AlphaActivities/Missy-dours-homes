@@ -19,6 +19,15 @@ function Layout() {
   } | null>(null);
 
   useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'page_view', {
+        page_path: location.pathname + location.search,
+        page_title: document.title,
+      });
+    }
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
     const state = location.state as any;
     const isListingDetailPage = location.pathname.startsWith('/listings/') && location.pathname !== '/listings';
 
