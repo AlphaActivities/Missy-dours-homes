@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import { usePageTracking } from './hooks/usePageTracking';
+import CookieNotice from './components/ui/CookieNotice';
 
 function Layout() {
   const location = useLocation();
@@ -50,6 +51,7 @@ function Layout() {
         price={transitionData?.price}
         onDismiss={handleDismiss}
       />
+      <CookieNotice />
     </>
   );
 }
