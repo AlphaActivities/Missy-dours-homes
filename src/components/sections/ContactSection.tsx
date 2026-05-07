@@ -1,15 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import { CONTACT_INFO } from "../../config/contact";
-import { trackFormSubmit, trackEmailClick } from "../../utils/analytics";
+import { trackFormSubmitSuccess, trackFormSubmitError, trackFormStart, trackEmailClick } from "../../utils/analytics";
 
 export default function ContactSection() {
+  const location = useLocation();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const formStartedRef = useRef(false);
+
+  const sourcePage = location.pathname;
 
   const encode = (data: FormData) =>
     new URLSearchParams(data as any).toString();
+
+  const handleFieldFocus = () => {
+    if (formStartedRef.current) return;
+    formStartedRef.current = true;
+    trackFormStart('contact_section', sourcePage);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,15 +38,16 @@ export default function ContactSection() {
       });
 
       if (response.ok) {
-        trackFormSubmit('success');
+        trackFormSubmitSuccess('contact_section', sourcePage);
         setSubmitted(true);
+        formStartedRef.current = false;
         e.currentTarget.reset();
       } else {
-        trackFormSubmit('error');
+        trackFormSubmitError('contact_section', 'server_error', sourcePage);
         setError("Something went wrong. Please try again.");
       }
     } catch (err) {
-      trackFormSubmit('error');
+      trackFormSubmitError('contact_section', 'network_error', sourcePage);
       setError("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
@@ -147,6 +159,8 @@ export default function ContactSection() {
                       type="text"
                       autoComplete="name"
                       placeholder="First and last name"
+                      data-hj-suppress
+                      onFocus={handleFieldFocus}
                       className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition"
                     />
                   </div>
@@ -164,6 +178,8 @@ export default function ContactSection() {
                       type="email"
                       autoComplete="email"
                       placeholder="Preferred email for follow-up"
+                      data-hj-suppress
+                      onFocus={handleFieldFocus}
                       className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition"
                     />
                   </div>
@@ -181,6 +197,8 @@ export default function ContactSection() {
                       type="tel"
                       autoComplete="tel"
                       placeholder="Best number for a brief call"
+                      data-hj-suppress
+                      onFocus={handleFieldFocus}
                       className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition"
                     />
                   </div>
@@ -197,6 +215,8 @@ export default function ContactSection() {
                       name="message"
                       rows={4}
                       placeholder="Share a quick overview of your property, price range, and ideal timeframe."
+                      data-hj-suppress
+                      onFocus={handleFieldFocus}
                       className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition resize-none"
                     />
                   </div>

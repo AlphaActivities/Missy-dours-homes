@@ -18,6 +18,7 @@ export default function ListingsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = 'Active Listings | Missy Dours Real Estate';
     luxuryScrollToTop(1400);
   }, []);
 

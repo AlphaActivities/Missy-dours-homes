@@ -56,8 +56,11 @@ export default function ListingDetailPage() {
   });
 
   useEffect(() => {
+    document.title = listing
+      ? `${listing.title} | Missy Dours Real Estate`
+      : 'Listing | Missy Dours Real Estate';
     window.scrollTo(0, 0);
-  }, [slug]);
+  }, [slug, listing]);
 
   useEffect(() => {
     const imagePage = Math.floor(selectedImage / ITEMS_PER_PAGE);
@@ -109,7 +112,7 @@ export default function ListingDetailPage() {
   }
 
   const handleContactClick = () => {
-    trackCTA('Contact Missy', 'listing_detail');
+    trackCTA('Contact Missy', 'listing_detail', listing.slug);
     navigate('/', { state: { scrollTo: 'contact' } });
   };
 
@@ -412,7 +415,7 @@ export default function ListingDetailPage() {
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <a
                     href={CONTACT_INFO.phone.tel}
-                    onClick={() => trackPhoneClick('listing_detail')}
+                    onClick={() => trackPhoneClick('listing_detail', listing.slug)}
                     className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all text-sm sm:text-base"
                   >
                     <Phone className="w-4 h-4" />
@@ -420,7 +423,7 @@ export default function ListingDetailPage() {
                   </a>
                   <a
                     href={CONTACT_INFO.email.mailto}
-                    onClick={() => trackEmailClick('listing_detail')}
+                    onClick={() => trackEmailClick('listing_detail', listing.slug)}
                     className="flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-amber-600 hover:text-amber-700 transition-all text-sm sm:text-base"
                   >
                     <Mail className="w-4 h-4" />

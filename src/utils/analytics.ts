@@ -1,20 +1,27 @@
 export function trackEvent(eventName: string, params?: Record<string, unknown>) {
+  if (import.meta.env.DEV) return;
   if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
     window.gtag('event', eventName, params || {});
   }
 }
 
-export const trackFormSubmit = (status: 'success' | 'error') =>
-  trackEvent('contact_form_submit', { status });
+export const trackFormSubmitSuccess = (location: string, sourcePage?: string) =>
+  trackEvent('form_submit_success', { location, ...(sourcePage ? { source_page: sourcePage } : {}) });
 
-export const trackPhoneClick = (location: string) =>
-  trackEvent('phone_click', { location });
+export const trackFormSubmitError = (location: string, errorType?: string, sourcePage?: string) =>
+  trackEvent('form_submit_error', { location, ...(errorType ? { error_type: errorType } : {}), ...(sourcePage ? { source_page: sourcePage } : {}) });
 
-export const trackEmailClick = (location: string) =>
-  trackEvent('email_click', { location });
+export const trackFormStart = (location: string, sourcePage?: string) =>
+  trackEvent('form_start', { location, ...(sourcePage ? { source_page: sourcePage } : {}) });
 
-export const trackCTA = (label: string, location: string) =>
-  trackEvent('cta_click', { label, location });
+export const trackPhoneClick = (location: string, slug?: string) =>
+  trackEvent('phone_click', { location, ...(slug ? { slug } : {}) });
+
+export const trackEmailClick = (location: string, slug?: string) =>
+  trackEvent('email_click', { location, ...(slug ? { slug } : {}) });
+
+export const trackCTA = (label: string, location: string, slug?: string) =>
+  trackEvent('cta_click', { label, location, ...(slug ? { slug } : {}) });
 
 export const trackListingClick = (slug: string, filter: string) =>
   trackEvent('listing_click', { slug, filter });

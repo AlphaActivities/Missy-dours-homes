@@ -20,6 +20,10 @@ export default function HomePage() {
   const [pendingScrollTarget, setPendingScrollTarget] = useState<string | null>(null);
 
   useEffect(() => {
+    document.title = 'Missy Dours | Luxury Real Estate · Dallas · Fort Worth · North Texas';
+  }, []);
+
+  useEffect(() => {
     if (isRefreshed) {
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
