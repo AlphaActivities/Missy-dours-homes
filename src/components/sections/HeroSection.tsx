@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
 import { LuxFadeIn } from '../ui/LuxFadeIn';
 import { ShimmerButton } from '../ui/ShimmerButton';
 import { scrollToSection } from '../../utils/scrollToSection';
@@ -8,15 +7,6 @@ import { trackCTA } from '../../utils/analytics';
 
 export default function HeroSection() {
   const navigate = useNavigate();
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 767px)');
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
-
   return (
     <section id="home" className="lux-section bg-transparent relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/40 to-transparent" />
@@ -44,7 +34,7 @@ export default function HeroSection() {
               </p>
             </LuxFadeIn>
 
-            <LuxFadeIn delay={0.25} disableAnimation={isMobile}>
+            <LuxFadeIn delay={0.25}>
               <div className="flex flex-col sm:flex-row gap-4 items-center md:items-start">
                 <button
                   type="button"

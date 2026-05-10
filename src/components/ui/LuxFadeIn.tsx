@@ -4,14 +4,9 @@ import { ReactNode } from "react";
 interface LuxFadeInProps {
   children: ReactNode;
   delay?: number;
-  disableAnimation?: boolean;
 }
 
-export const LuxFadeIn = ({ children, delay = 0, disableAnimation = false }: LuxFadeInProps) => {
-  if (disableAnimation) {
-    return <div>{children}</div>;
-  }
-
+export const LuxFadeIn = ({ children, delay = 0 }: LuxFadeInProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
