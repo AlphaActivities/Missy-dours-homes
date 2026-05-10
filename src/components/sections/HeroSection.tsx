@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { LuxFadeIn } from '../ui/LuxFadeIn';
 import { ShimmerButton } from '../ui/ShimmerButton';
 import { scrollToSection } from '../../utils/scrollToSection';
@@ -34,7 +35,11 @@ export default function HeroSection() {
               </p>
             </LuxFadeIn>
 
-            <LuxFadeIn delay={0.25}>
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: 'easeOut', delay: 0.25 }}
+            >
               <div className="flex flex-col sm:flex-row gap-4 items-center md:items-start">
                 <button
                   type="button"
@@ -51,7 +56,7 @@ export default function HeroSection() {
                   Active Listings
                 </ShimmerButton>
               </div>
-            </LuxFadeIn>
+            </motion.div>
           </div>
         </div>
       </div>
