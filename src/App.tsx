@@ -1,5 +1,5 @@
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
 import Navbar from './components/Navbar';
 import FloatingCallButton from './components/ui/FloatingCallButton';
@@ -11,6 +11,7 @@ import ListingDetailPage from './pages/ListingDetailPage';
 function Layout() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const csInitialPageViewSentRef = useRef(false);
   const [showTransition, setShowTransition] = useState(false);
   const [transitionData, setTransitionData] = useState<{
     heroImage?: string;
@@ -28,6 +29,12 @@ function Layout() {
           page_location: window.location.href,
         };
         console.log('[GA4] page_view fired', payload);
+        if (!csInitialPageViewSentRef.current) {
+          csInitialPageViewSentRef.current = true;
+          console.log('[CS] trackPageview skipped (initial mount handled by bootstrap)');
+        } else {
+          console.log('[CS] trackPageview fired', location.pathname + location.search);
+        }
       });
       return () => cancelAnimationFrame(rafId);
     }
@@ -48,7 +55,14 @@ function Layout() {
           page_location: window.location.href,
         };
         window.gtag('event', 'page_view', payload);
-        // Contentsquare SPA route tracking hook goes here
+        // Contentsquare SPA route tracking
+        window._uxa = window._uxa || [];
+        if (!csInitialPageViewSentRef.current) {
+          csInitialPageViewSentRef.current = true;
+          // Initial mount: bootstrap script owns the first CS pageview — skip here
+        } else {
+          window._uxa.push(['trackPageview', location.pathname + location.search]);
+        }
       });
     };
 
