@@ -20,12 +20,33 @@ function Layout() {
 
   useEffect(() => {
     if (import.meta.env.DEV) return;
-    if (typeof window.gtag === 'function') {
+
+    const MAX_ATTEMPTS = 10;
+    const RETRY_DELAY = 250;
+    let attempt = 0;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const sendPageView = () => {
       window.gtag('event', 'page_view', {
         page_path: location.pathname + location.search,
         page_title: document.title,
+        page_location: window.location.href,
       });
-    }
+    };
+
+    const tryFire = () => {
+      if (typeof window.gtag === 'function') {
+        sendPageView();
+        return;
+      }
+      attempt += 1;
+      if (attempt < MAX_ATTEMPTS) {
+        timeoutId = setTimeout(tryFire, RETRY_DELAY);
+      }
+    };
+
+    tryFire();
+    return () => clearTimeout(timeoutId);
   }, [location.pathname, location.search]);
 
   useEffect(() => {
