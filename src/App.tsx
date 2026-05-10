@@ -19,18 +19,36 @@ function Layout() {
   } | null>(null);
 
   useEffect(() => {
-    if (import.meta.env.DEV) return;
+    if (import.meta.env.DEV) {
+      // DEV diagnostic: simulate what production would fire
+      const rafId = requestAnimationFrame(() => {
+        const payload = {
+          page_path: location.pathname + location.search,
+          page_title: document.title,
+          page_location: window.location.href,
+        };
+        console.log('[GA4] page_view fired', payload);
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
 
-    const MAX_ATTEMPTS = 10;
+    const MAX_ATTEMPTS = 20;
     const RETRY_DELAY = 250;
     let attempt = 0;
     let timeoutId: ReturnType<typeof setTimeout>;
+    let rafId: number;
 
     const sendPageView = () => {
-      window.gtag('event', 'page_view', {
-        page_path: location.pathname + location.search,
-        page_title: document.title,
-        page_location: window.location.href,
+      // Use requestAnimationFrame so child route effects (document.title updates)
+      // complete before we read document.title for the GA4 payload.
+      rafId = requestAnimationFrame(() => {
+        const payload = {
+          page_path: location.pathname + location.search,
+          page_title: document.title,
+          page_location: window.location.href,
+        };
+        window.gtag('event', 'page_view', payload);
+        // Contentsquare SPA route tracking hook goes here
       });
     };
 
@@ -40,13 +58,19 @@ function Layout() {
         return;
       }
       attempt += 1;
+      if (import.meta.env.DEV) {
+        console.log('[GA4] retry attempt', attempt);
+      }
       if (attempt < MAX_ATTEMPTS) {
         timeoutId = setTimeout(tryFire, RETRY_DELAY);
       }
     };
 
     tryFire();
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      cancelAnimationFrame(rafId);
+    };
   }, [location.pathname, location.search]);
 
   useEffect(() => {
