@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import { CONTACT_INFO } from "../../config/contact";
 import { trackFormSubmitSuccess, trackFormSubmitError, trackFormStart, trackEmailClick } from "../../utils/analytics";
+import { supabase } from "../../lib/supabase";
 
 export default function ContactSection() {
   const location = useLocation();
@@ -39,6 +40,22 @@ export default function ContactSection() {
 
       if (response.ok) {
         trackFormSubmitSuccess('contact_section', sourcePage);
+
+        const listingSlug = sourcePage.startsWith('/listings/')
+          ? sourcePage.replace('/listings/', '').replace(/\/$/, '')
+          : '';
+
+        supabase.from('leads').insert({
+          name: formData.get('name') as string,
+          email: formData.get('email') as string,
+          phone: formData.get('phone') as string,
+          message: formData.get('message') as string,
+          source_page: sourcePage,
+          listing_slug: listingSlug,
+        }).then(({ error: insertError }) => {
+          if (insertError) console.warn('[leads] Supabase insert failed:', insertError.message);
+        });
+
         setSubmitted(true);
         formStartedRef.current = false;
         e.currentTarget.reset();
