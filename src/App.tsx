@@ -7,6 +7,12 @@ import ListingTransitionOverlay from './components/ui/ListingTransitionOverlay';
 import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
+import { AuthProvider } from './contexts/AuthContext';
+import DashboardLayout from './components/dashboard/DashboardLayout';
+import ProtectedRoute from './components/dashboard/ProtectedRoute';
+import LoginPage from './pages/dashboard/LoginPage';
+import DashboardOverviewPage from './pages/dashboard/DashboardOverviewPage';
+import LeadsPage from './pages/dashboard/LeadsPage';
 
 function Layout() {
   const location = useLocation();
@@ -123,12 +129,36 @@ function Layout() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/listings" element={<ListingsPage />} />
-        <Route path="/listings/:slug" element={<ListingDetailPage />} />
-      </Route>
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        {/* Public site */}
+        <Route element={<Layout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/listings" element={<ListingsPage />} />
+          <Route path="/listings/:slug" element={<ListingDetailPage />} />
+        </Route>
+
+        {/* Dashboard — isolated layout, no public Navbar/Footer */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard/login" element={<LoginPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardOverviewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/leads"
+            element={
+              <ProtectedRoute>
+                <LeadsPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+      </Routes>
+    </AuthProvider>
   );
 }
