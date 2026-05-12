@@ -1,18 +1,18 @@
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'closed' | 'archived';
 
 const STYLES: Record<LeadStatus, string> = {
-  new:       'bg-sky-950/60 text-sky-300 border-sky-800/40',
-  contacted: 'bg-amber-950/60 text-amber-300 border-amber-800/40',
-  qualified: 'bg-emerald-950/60 text-emerald-300 border-emerald-800/40',
-  closed:    'bg-[#1f1e1c] text-[#8c8880] border-white/10',
-  archived:  'bg-transparent text-[#5a5856] border-white/[0.06]',
+  new:       'bg-[rgba(30,54,80,0.55)] text-[#9ec5e0] border-[rgba(120,175,215,0.25)]',
+  contacted: 'bg-[rgba(60,44,18,0.55)] text-[#c8a96e] border-[rgba(196,164,106,0.28)]',
+  qualified: 'bg-[rgba(18,52,40,0.55)] text-[#86c9a8] border-[rgba(110,185,155,0.25)]',
+  closed:    'bg-[rgba(40,36,32,0.6)] text-[#a89880] border-[rgba(168,152,128,0.2)]',
+  archived:  'bg-[rgba(255,255,255,0.03)] text-[#5a5856] border-white/[0.07]',
 };
 
 const LEFT_BORDER: Record<LeadStatus, string> = {
-  new:       'border-l-sky-400',
-  contacted: 'border-l-amber-400',
-  qualified: 'border-l-emerald-400',
-  closed:    'border-l-[#5a5856]',
+  new:       'border-l-[#7aafd4]',
+  contacted: 'border-l-[#c4a46a]',
+  qualified: 'border-l-[#7dbfa0]',
+  closed:    'border-l-[#7a6e62]',
   archived:  'border-l-[#3a3836]',
 };
 

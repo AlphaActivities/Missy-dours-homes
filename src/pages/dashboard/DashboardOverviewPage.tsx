@@ -66,7 +66,7 @@ function StatCard({
       }}
     >
       <div className="flex items-center gap-2 mb-4">
-        <span style={{ color: accent ? 'var(--ds-gold)' : 'var(--ds-text-tertiary)' }}>
+        <span style={{ color: accent ? 'var(--ds-gold)' : 'var(--ds-text-secondary)' }}>
           {icon}
         </span>
         <p
@@ -94,8 +94,10 @@ function StatCard({
 function RecentLeadRow({ lead }: { lead: RecentLead }) {
   return (
     <div
-      className="flex items-center justify-between gap-4 py-3 transition-colors duration-150"
+      className="flex items-center justify-between gap-4 py-3 px-2 -mx-2 rounded-lg transition-colors duration-150"
       style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
     >
       <div className="flex-1 min-w-0">
         <p

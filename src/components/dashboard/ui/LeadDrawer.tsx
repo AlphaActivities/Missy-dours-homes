@@ -303,11 +303,14 @@ function DrawerContent({
 // ── Small label helper ─────────────────────────────────────────
 function Label({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div
+      className="flex items-center gap-1.5 pl-2.5"
+      style={{ borderLeft: '2px solid var(--ds-gold-dim)' }}
+    >
       {icon && <span style={{ color: 'var(--ds-text-tertiary)' }}>{icon}</span>}
       <p
         className="text-[10px] font-medium tracking-[0.14em] uppercase"
-        style={{ color: 'var(--ds-text-tertiary)' }}
+        style={{ color: 'var(--ds-text-secondary)' }}
       >
         {children}
       </p>

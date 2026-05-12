@@ -22,10 +22,10 @@ export interface Lead {
 }
 
 const STATUS_BORDER_COLOR: Record<LeadStatus, string> = {
-  new:       '#38bdf8',
-  contacted: '#fbbf24',
-  qualified: '#6ee7b7',
-  closed:    '#5a5856',
+  new:       '#7aafd4',
+  contacted: '#c4a46a',
+  qualified: '#7dbfa0',
+  closed:    '#7a6e62',
   archived:  '#3a3836',
 };
 

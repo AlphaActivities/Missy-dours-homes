@@ -3,11 +3,11 @@ import { ChevronDown, Check } from 'lucide-react';
 import { LeadStatus } from './StatusBadge';
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string; color: string; bg: string; border: string }[] = [
-  { value: 'new',       label: 'New',       color: '#7dd3fc', bg: 'rgba(14,116,144,0.15)',  border: 'rgba(125,211,252,0.2)' },
-  { value: 'contacted', label: 'Contacted', color: '#fbbf24', bg: 'rgba(120,53,15,0.2)',    border: 'rgba(251,191,36,0.2)'  },
-  { value: 'qualified', label: 'Qualified', color: '#6ee7b7', bg: 'rgba(6,78,59,0.2)',      border: 'rgba(110,231,183,0.2)' },
-  { value: 'closed',    label: 'Closed',    color: '#8c8880', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.08)'},
-  { value: 'archived',  label: 'Archived',  color: '#5a5856', bg: 'transparent',            border: 'rgba(255,255,255,0.06)'},
+  { value: 'new',       label: 'New',       color: '#9ec5e0', bg: 'rgba(30,54,80,0.55)',    border: 'rgba(120,175,215,0.25)' },
+  { value: 'contacted', label: 'Contacted', color: '#c8a96e', bg: 'rgba(60,44,18,0.55)',    border: 'rgba(196,164,106,0.28)' },
+  { value: 'qualified', label: 'Qualified', color: '#86c9a8', bg: 'rgba(18,52,40,0.55)',    border: 'rgba(110,185,155,0.25)' },
+  { value: 'closed',    label: 'Closed',    color: '#a89880', bg: 'rgba(40,36,32,0.6)',     border: 'rgba(168,152,128,0.2)'  },
+  { value: 'archived',  label: 'Archived',  color: '#5a5856', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)' },
 ];
 
 interface StatusSelectProps {
