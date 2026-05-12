@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Mail, Phone, MapPin, Tag, Calendar, Users, Search } from 'lucide-react';
+import { Mail, Phone, Calendar, Users, Search } from 'lucide-react';
 import StatusBadge, { LeadStatus } from './ui/StatusBadge';
 import StatusSelect from './ui/StatusSelect';
 import QuickActionBar from './ui/QuickActionBar';
-import { formatDate, formatSourcePage } from '../../utils/formatDate';
+import { formatDate } from '../../utils/formatDate';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../contexts/ToastContext';
 
@@ -47,7 +47,7 @@ function LeadTable({
     setUpdatingId(null);
   };
 
-  const cols = ['Date', 'Name', 'Contact', 'Message', 'Source', 'Status', 'Actions'];
+  const cols = ['Date', 'Name', 'Contact', 'Message', 'Status', 'Actions'];
 
   return (
     <div className="overflow-x-auto flex-1">
@@ -145,27 +145,6 @@ function LeadTable({
                 ) : (
                   <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>—</span>
                 )}
-              </td>
-
-              {/* Source */}
-              <td className="px-4 py-4 align-top">
-                <div className="space-y-1.5">
-                  {lead.source_page && (
-                    <span className="flex items-center gap-1.5 text-xs whitespace-nowrap" style={{ color: 'var(--ds-text-tertiary)' }}>
-                      <MapPin size={10} className="shrink-0" />
-                      {formatSourcePage(lead.source_page)}
-                    </span>
-                  )}
-                  {lead.listing_slug && (
-                    <span className="flex items-center gap-1.5 text-xs whitespace-nowrap" style={{ color: 'var(--ds-text-tertiary)' }}>
-                      <Tag size={10} className="shrink-0" />
-                      {formatSourcePage(lead.listing_slug)}
-                    </span>
-                  )}
-                  {!lead.source_page && !lead.listing_slug && (
-                    <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>—</span>
-                  )}
-                </div>
               </td>
 
               {/* Status */}
@@ -290,24 +269,6 @@ function LeadCard({
             <p className="text-xs leading-relaxed line-clamp-3" style={{ color: 'var(--ds-text-secondary)' }}>
               {lead.message}
             </p>
-          </div>
-        )}
-
-        {/* Source */}
-        {(lead.source_page || lead.listing_slug) && (
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-            {lead.source_page && (
-              <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--ds-text-tertiary)' }}>
-                <MapPin size={10} />
-                {formatSourcePage(lead.source_page)}
-              </span>
-            )}
-            {lead.listing_slug && (
-              <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--ds-text-tertiary)' }}>
-                <Tag size={10} />
-                {formatSourcePage(lead.listing_slug)}
-              </span>
-            )}
           </div>
         )}
 

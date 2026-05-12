@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Calendar, MapPin, Tag, MessageSquare } from 'lucide-react';
+import { X, Calendar, MessageSquare } from 'lucide-react';
 import { Lead } from '../LeadList';
 import { LeadStatus } from './StatusBadge';
 import StatusSelect from './StatusSelect';
 import QuickActionBar from './QuickActionBar';
 import NotesEditor from './NotesEditor';
-import { formatDate, formatSourcePage } from '../../../utils/formatDate';
+import { formatDate } from '../../../utils/formatDate';
 
 interface LeadDrawerProps {
   lead: Lead | null;
@@ -277,27 +277,6 @@ function DrawerContent({
               >
                 {lead.message}
               </p>
-            </div>
-          </div>
-        )}
-
-        {/* Source */}
-        {(lead.source_page || lead.listing_slug) && (
-          <div>
-            <Label>Source</Label>
-            <div className="mt-2 space-y-1.5">
-              {lead.source_page && (
-                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
-                  <MapPin size={11} style={{ color: 'var(--ds-text-tertiary)', flexShrink: 0 }} />
-                  <span>{formatSourcePage(lead.source_page)}</span>
-                </div>
-              )}
-              {lead.listing_slug && (
-                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
-                  <Tag size={11} style={{ color: 'var(--ds-text-tertiary)', flexShrink: 0 }} />
-                  <span>{formatSourcePage(lead.listing_slug)}</span>
-                </div>
-              )}
             </div>
           </div>
         )}
