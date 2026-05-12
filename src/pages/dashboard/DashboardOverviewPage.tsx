@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowRight, TrendingUp, Users, Zap } from 'lucide-react';
 import StatusBadge, { LeadStatus } from '../../components/dashboard/ui/StatusBadge';
-import LoadingSpinner from '../../components/dashboard/ui/LoadingSpinner';
+import { SkeletonRecentRow } from '../../components/dashboard/ui/LeadSkeleton';
 import { timeAgo } from '../../utils/formatDate';
 
 interface RecentLead {
@@ -224,8 +224,8 @@ export default function DashboardOverviewPage() {
           style={{ background: 'var(--ds-bg-raised)', boxShadow: 'var(--ds-shadow-card)' }}
         >
           {recentLeads === null ? (
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner size="sm" />
+            <div className="px-5 py-2">
+              {Array.from({ length: 4 }).map((_, i) => <SkeletonRecentRow key={i} />)}
             </div>
           ) : recentLeads.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-6">
