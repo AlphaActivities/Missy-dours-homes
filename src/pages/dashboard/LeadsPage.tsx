@@ -162,7 +162,7 @@ export default function LeadsPage() {
   return (
     <>
       <div
-        className="p-6 sm:p-8 lg:p-10 max-w-screen-xl mx-auto animate-ds-fade-up"
+        className="p-6 sm:p-8 lg:p-10 animate-ds-fade-up"
         style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
       >
         {/* ── Page header ──────────────────────────────────── */}
@@ -229,7 +229,7 @@ export default function LeadsPage() {
 
         {/* ── Filter tabs ───────────────────────────────────── */}
         <div
-          className="flex items-center gap-1 mb-4 overflow-x-auto pb-0.5"
+          className="flex items-center gap-1 mb-4 overflow-x-auto py-1 -my-1"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {FILTER_TABS.map(tab => {

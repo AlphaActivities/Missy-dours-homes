@@ -51,7 +51,15 @@ function LeadTable({
 
   return (
     <div className="overflow-x-auto flex-1">
-      <table className="w-full text-sm min-w-[840px]">
+      <table className="w-full text-sm min-w-[700px]">
+        <colgroup>
+          <col style={{ width: '90px' }} />   {/* Date */}
+          <col style={{ width: '130px' }} />  {/* Name */}
+          <col style={{ width: '170px' }} />  {/* Contact */}
+          <col />                             {/* Message — fills remaining */}
+          <col style={{ width: '110px' }} />  {/* Status */}
+          <col style={{ width: '90px' }} />   {/* Actions */}
+        </colgroup>
         <thead>
           <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             {cols.map(col => (
@@ -133,7 +141,7 @@ function LeadTable({
               </td>
 
               {/* Message */}
-              <td className="px-4 py-4 align-top max-w-[200px]">
+              <td className="px-4 py-4 align-top max-w-[240px]">
                 {lead.message ? (
                   <p
                     className="text-xs leading-relaxed line-clamp-3"
