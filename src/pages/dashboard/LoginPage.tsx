@@ -1,7 +1,8 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import LoadingSpinner, { LoadingScreen } from '../../components/dashboard/ui/LoadingSpinner';
 
 export default function LoginPage() {
   const { session, loading, isApproved, signIn } = useAuth();
@@ -13,7 +14,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Redirect already-authenticated approved users
   useEffect(() => {
     if (!loading && session && isApproved) {
       navigate('/dashboard', { replace: true });
@@ -24,126 +24,182 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-
     const { error: signInError } = await signIn(email.trim(), password);
-
     if (signInError) {
       setError('Invalid email or password.');
       setSubmitting(false);
-      return;
     }
-
-    // onAuthStateChange will update context; useEffect above handles redirect
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-neutral-600 border-t-neutral-200 rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
   return (
-    <>
-      <meta name="robots" content="noindex, nofollow" />
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
+    <div
+      className="ds-shell min-h-screen flex items-center justify-center px-4"
+      style={{ background: 'var(--ds-bg-base)' }}
+    >
+      {/* Subtle ambient glow */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(196,164,106,0.06) 0%, transparent 70%)',
+        }}
+      />
 
-          {/* Logo / wordmark */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-neutral-800 border border-neutral-700 mb-5">
-              <Lock size={17} className="text-neutral-300" />
-            </div>
-            <h1 className="text-xl font-semibold tracking-tight text-neutral-100">Missy Dours</h1>
-            <p className="text-sm text-neutral-500 mt-1">Dashboard access</p>
+      <div className="relative w-full max-w-sm animate-ds-fade-up">
+
+        {/* Brand mark */}
+        <div className="flex flex-col items-center mb-10">
+          <div
+            className="mb-5 p-3 rounded-2xl"
+            style={{ background: 'var(--ds-bg-raised)', boxShadow: 'var(--ds-shadow-card)' }}
+          >
+            <img
+              src="/images/md-logo.png"
+              alt="Missy Dours"
+              className="h-12 w-auto object-contain"
+              style={{ filter: 'brightness(0.9) sepia(0.1)' }}
+            />
           </div>
-
-          {/* Card */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8">
-            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-              {/* Email */}
-              <div>
-                <label htmlFor="email" className="block text-xs font-medium text-neutral-400 mb-1.5 tracking-wide uppercase">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  disabled={submitting}
-                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2.5 text-sm text-neutral-100 placeholder-neutral-600
-                    focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500
-                    disabled:opacity-50 transition-colors"
-                  placeholder="you@example.com"
-                />
-              </div>
-
-              {/* Password */}
-              <div>
-                <label htmlFor="password" className="block text-xs font-medium text-neutral-400 mb-1.5 tracking-wide uppercase">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    required
-                    disabled={submitting}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2.5 pr-11 text-sm text-neutral-100 placeholder-neutral-600
-                      focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500
-                      disabled:opacity-50 transition-colors"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 transition-colors"
-                    tabIndex={-1}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Error */}
-              {error && (
-                <p className="text-xs text-red-400 bg-red-950/40 border border-red-900/50 rounded-lg px-3 py-2.5">
-                  {error}
-                </p>
-              )}
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={submitting || !email || !password}
-                className="w-full bg-neutral-100 hover:bg-white text-neutral-950 font-semibold text-sm py-2.5 rounded-lg
-                  transition-colors disabled:opacity-40 disabled:cursor-not-allowed mt-1"
-              >
-                {submitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-neutral-400 border-t-neutral-800 rounded-full animate-spin" />
-                    Signing in…
-                  </span>
-                ) : (
-                  'Sign in'
-                )}
-              </button>
-            </form>
-          </div>
-
-          <p className="text-center text-xs text-neutral-700 mt-8">
-            Access restricted to authorized users only.
+          <h1
+            className="text-2xl font-semibold tracking-tight"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ds-text-primary)' }}
+          >
+            Missy Dours
+          </h1>
+          <p
+            className="text-sm mt-1 tracking-wide"
+            style={{ color: 'var(--ds-text-tertiary)' }}
+          >
+            Private dashboard access
           </p>
         </div>
+
+        {/* Login card */}
+        <div
+          className="rounded-2xl p-7"
+          style={{ background: 'var(--ds-bg-raised)', boxShadow: 'var(--ds-shadow-float)' }}
+        >
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+
+            {/* Email */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-[11px] font-medium tracking-[0.14em] uppercase mb-1.5"
+                style={{ color: 'var(--ds-text-secondary)' }}
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                disabled={submitting}
+                placeholder="you@example.com"
+                className="w-full rounded-xl px-4 py-2.5 text-sm placeholder:text-[#3a3836] disabled:opacity-50 outline-none transition-all duration-200"
+                style={{
+                  background: 'var(--ds-bg-overlay)',
+                  color: 'var(--ds-text-primary)',
+                  boxShadow: '0 0 0 1px rgba(255,255,255,0.07)',
+                }}
+                onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1.5px var(--ds-gold)')}
+                onBlur={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.07)')}
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-[11px] font-medium tracking-[0.14em] uppercase mb-1.5"
+                style={{ color: 'var(--ds-text-secondary)' }}
+              >
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  disabled={submitting}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl px-4 py-2.5 pr-11 text-sm placeholder:text-[#3a3836] disabled:opacity-50 outline-none transition-all duration-200"
+                  style={{
+                    background: 'var(--ds-bg-overlay)',
+                    color: 'var(--ds-text-primary)',
+                    boxShadow: '0 0 0 1px rgba(255,255,255,0.07)',
+                  }}
+                  onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1.5px var(--ds-gold)')}
+                  onBlur={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.07)')}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-150"
+                  style={{ color: 'var(--ds-text-tertiary)' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-tertiary)')}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <div
+                className="rounded-xl px-4 py-3 text-xs"
+                style={{
+                  background: 'rgba(239,68,68,0.08)',
+                  color: '#fca5a5',
+                  boxShadow: '0 0 0 1px rgba(239,68,68,0.2)',
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={submitting || !email || !password}
+              className="w-full rounded-xl py-2.5 text-sm font-semibold tracking-wide transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed mt-1"
+              style={{
+                background: 'linear-gradient(135deg, #d4b47a 0%, #C4A46A 50%, #a8894f 100%)',
+                color: 'var(--ds-text-inverse)',
+                boxShadow: submitting || !email || !password
+                  ? 'none'
+                  : '0 4px 16px rgba(196,164,106,0.25)',
+              }}
+            >
+              {submitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <LoadingSpinner size="sm" />
+                  Signing in…
+                </span>
+              ) : (
+                'Sign in'
+              )}
+            </button>
+          </form>
+        </div>
+
+        <p
+          className="text-center text-xs mt-8"
+          style={{ color: 'var(--ds-text-tertiary)' }}
+        >
+          Access restricted to authorized users.
+        </p>
       </div>
-    </>
+    </div>
   );
 }

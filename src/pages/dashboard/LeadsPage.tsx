@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import LeadList, { Lead } from '../../components/dashboard/LeadList';
-import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import LoadingSpinner from '../../components/dashboard/ui/LoadingSpinner';
+import SectionHeader from '../../components/dashboard/ui/SectionHeader';
+import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 
 const PAGE_SIZE = 25;
 
@@ -26,7 +28,7 @@ export default function LeadsPage() {
       .range(from, to);
 
     if (fetchError) {
-      setError('Failed to load leads. Please try again.');
+      setError('Unable to load leads. Please try again.');
       setLoading(false);
       return;
     }
@@ -42,41 +44,75 @@ export default function LeadsPage() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
+  const subtitle = loading
+    ? undefined
+    : total === 0
+    ? 'No submissions yet'
+    : `${total} total submission${total !== 1 ? 's' : ''}`;
+
   return (
-    <div className="p-6 lg:p-8 max-w-screen-xl mx-auto">
+    <div
+      className="p-6 sm:p-8 lg:p-10 max-w-screen-xl mx-auto animate-ds-fade-up"
+      style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
+    >
+      <SectionHeader
+        title="Leads"
+        subtitle={subtitle}
+        action={
+          <button
+            onClick={() => fetchLeads(page)}
+            disabled={loading}
+            className="flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-xl transition-all duration-150 disabled:opacity-40"
+            style={{
+              color: 'var(--ds-text-secondary)',
+              background: 'var(--ds-bg-raised)',
+              boxShadow: 'var(--ds-shadow-card)',
+            }}
+            onMouseEnter={e => !loading && (e.currentTarget.style.color = 'var(--ds-text-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        }
+      />
 
-      {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-semibold text-neutral-100 tracking-tight">Leads</h1>
-          {!loading && (
-            <p className="text-sm text-neutral-500 mt-0.5">
-              {total === 0 ? 'No submissions yet' : `${total} total submission${total !== 1 ? 's' : ''}`}
-            </p>
-          )}
-        </div>
-        <button
-          onClick={() => fetchLeads(page)}
-          disabled={loading}
-          className="flex items-center gap-2 text-xs text-neutral-500 hover:text-neutral-200 border border-neutral-800 hover:border-neutral-700 px-3 py-2 rounded-lg transition-colors disabled:opacity-40"
-        >
-          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
+      {/* Main table card */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: 'var(--ds-bg-raised)',
+          boxShadow: 'var(--ds-shadow-card)',
+        }}
+      >
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-6 h-6 border-2 border-neutral-700 border-t-neutral-300 rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <LoadingSpinner size="md" />
+            <p className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
+              Loading leads…
+            </p>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center px-6 gap-3">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(239,68,68,0.1)' }}
+            >
+              <AlertCircle size={18} style={{ color: '#f87171' }} />
+            </div>
+            <p className="text-sm font-medium" style={{ color: '#f87171' }}>
+              {error}
+            </p>
             <button
               onClick={() => fetchLeads(page)}
-              className="mt-4 text-xs text-neutral-500 hover:text-neutral-300 border border-neutral-800 px-3 py-1.5 rounded-lg transition-colors"
+              className="text-xs px-4 py-2 rounded-xl transition-all duration-150"
+              style={{
+                color: 'var(--ds-text-secondary)',
+                background: 'var(--ds-bg-overlay)',
+                boxShadow: 'var(--ds-shadow-card)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
             >
               Try again
             </button>
@@ -89,14 +125,21 @@ export default function LeadsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 px-1">
-          <p className="text-xs text-neutral-600">
+          <p className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
             Page {page + 1} of {totalPages}
           </p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-200 border border-neutral-800 hover:border-neutral-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-xl font-medium transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{
+                color: 'var(--ds-text-secondary)',
+                background: 'var(--ds-bg-raised)',
+                boxShadow: 'var(--ds-shadow-card)',
+              }}
+              onMouseEnter={e => !(page === 0) && (e.currentTarget.style.color = 'var(--ds-text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
             >
               <ChevronLeft size={13} />
               Prev
@@ -104,7 +147,14 @@ export default function LeadsPage() {
             <button
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-200 border border-neutral-800 hover:border-neutral-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-xl font-medium transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{
+                color: 'var(--ds-text-secondary)',
+                background: 'var(--ds-bg-raised)',
+                boxShadow: 'var(--ds-shadow-card)',
+              }}
+              onMouseEnter={e => !(page >= totalPages - 1) && (e.currentTarget.style.color = 'var(--ds-text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
             >
               Next
               <ChevronRight size={13} />

@@ -205,3 +205,108 @@
     touch-action: pan-y;
   }
 }
+
+/* ── Dashboard Design System ──────────────────────────────────
+   Scoped to .ds-shell to guarantee zero bleed into public site.
+   ─────────────────────────────────────────────────────────── */
+
+.ds-shell {
+  /* Surfaces */
+  --ds-bg-base:    #0c0b0a;
+  --ds-bg-raised:  #161514;
+  --ds-bg-overlay: #1f1e1c;
+  --ds-bg-hover:   #252320;
+
+  /* Borders (ring-shadow technique) */
+  --ds-ring:        rgba(255,255,255,0.055);
+  --ds-ring-md:     rgba(255,255,255,0.10);
+  --ds-ring-strong: rgba(255,255,255,0.15);
+
+  /* Gold brand accent */
+  --ds-gold:        #C4A46A;
+  --ds-gold-dim:    #8a7045;
+  --ds-gold-light:  #e8d5a8;
+  --ds-gold-muted:  rgba(196,164,106,0.15);
+  --ds-gold-glow:   rgba(196,164,106,0.08);
+
+  /* Text — warm-toned */
+  --ds-text-primary:   #f0ede8;
+  --ds-text-secondary: #8c8880;
+  --ds-text-tertiary:  #5a5856;
+  --ds-text-inverse:   #1a1917;
+
+  /* Shadows */
+  --ds-shadow-card:  0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.055);
+  --ds-shadow-hover: 0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+  --ds-shadow-float: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+
+  /* Motion */
+  --ds-ease-luxury:     cubic-bezier(0.16, 1, 0.3, 1);
+  --ds-ease-drawer-in:  cubic-bezier(0.32, 0.72, 0, 1);
+  --ds-ease-drawer-out: cubic-bezier(0.72, 0, 0.84, 0);
+
+  /* Allow text selection inside dashboard */
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+
+  background-color: var(--ds-bg-base);
+  color: var(--ds-text-primary);
+}
+
+/* Scrollbar — subtle in dashboard */
+.ds-shell ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.ds-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ds-shell ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 9999px;
+}
+.ds-shell ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+/* Gold accent nav active bar */
+.ds-nav-active {
+  border-left: 2px solid var(--ds-gold);
+  background: var(--ds-gold-muted);
+  color: var(--ds-text-primary);
+}
+.ds-nav-inactive {
+  border-left: 2px solid transparent;
+  color: var(--ds-text-secondary);
+}
+.ds-nav-inactive:hover {
+  background: var(--ds-bg-hover);
+  color: var(--ds-text-primary);
+}
+
+/* Skeleton pulse */
+.ds-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: ds-skeleton-sweep 1.8s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes ds-skeleton-sweep {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ds-shell * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
