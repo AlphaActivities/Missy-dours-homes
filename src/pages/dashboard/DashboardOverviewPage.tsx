@@ -15,11 +15,21 @@ interface RecentLead {
   status: LeadStatus;
 }
 
-function getGreeting(): string {
+const EMAIL_TO_NAME: Record<string, string> = {
+  'yourcustomerflowguy@gmail.com': 'Josh',
+  'missydourshomes@gmail.com':     'Missy',
+  'heberherrera92@gmail.com':      'Heber',
+};
+
+function getFirstName(email: string | undefined): string {
+  if (!email) return 'there';
+  return EMAIL_TO_NAME[email.toLowerCase()] ?? 'there';
+}
+
+function getGreeting(name: string): string {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning.';
-  if (h < 17) return 'Good afternoon.';
-  return 'Good evening.';
+  const salutation = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  return `${salutation}, ${name}.`;
 }
 
 // ── Stat card skeleton ────────────────────────────────────────
@@ -144,7 +154,8 @@ export default function DashboardOverviewPage() {
     });
   }, []);
 
-  const greeting = getGreeting();
+  const firstName = getFirstName(user?.email);
+  const greeting = getGreeting(firstName);
 
   return (
     <div
@@ -166,8 +177,16 @@ export default function DashboardOverviewPage() {
           className="text-sm mt-2"
           style={{ color: 'var(--ds-text-secondary)' }}
         >
-          {user?.email} · Your lead activity at a glance
+          Your lead activity at a glance
         </p>
+        {user?.email && (
+          <p
+            className="text-xs mt-1"
+            style={{ color: 'var(--ds-text-tertiary)' }}
+          >
+            Signed in as {user.email}
+          </p>
+        )}
       </div>
 
       {/* ── Stat cards ───────────────────────────────────── */}

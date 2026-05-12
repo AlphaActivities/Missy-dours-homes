@@ -71,12 +71,22 @@ export default function DashboardLayout() {
           style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
         >
           <div className="flex items-center gap-3">
-            <img
-              src="/images/md-logo.png"
-              alt="Missy Dours"
-              className="h-9 w-auto object-contain"
-              style={{ filter: 'brightness(0.92) sepia(0.1)' }}
-            />
+            <div
+              className="flex items-center justify-center rounded-xl shrink-0"
+              style={{
+                width: '40px',
+                height: '40px',
+                background: 'rgba(245,237,220,0.92)',
+                boxShadow: '0 0 0 1px rgba(196,164,106,0.3)',
+              }}
+            >
+              <img
+                src="/images/md-logo.png"
+                alt="Missy Dours"
+                className="object-contain"
+                style={{ width: '28px', height: '28px' }}
+              />
+            </div>
             <div>
               <p
                 className="text-[11px] tracking-[0.22em] uppercase font-medium leading-none"
@@ -199,7 +209,22 @@ export default function DashboardLayout() {
           </button>
 
           <div className="flex items-center gap-2.5">
-            <img src="/images/md-logo.png" alt="Missy Dours" className="h-7 w-auto object-contain" />
+            <div
+              className="flex items-center justify-center rounded-lg shrink-0"
+              style={{
+                width: '32px',
+                height: '32px',
+                background: 'rgba(245,237,220,0.92)',
+                boxShadow: '0 0 0 1px rgba(196,164,106,0.25)',
+              }}
+            >
+              <img
+                src="/images/md-logo.png"
+                alt="Missy Dours"
+                className="object-contain"
+                style={{ width: '22px', height: '22px' }}
+              />
+            </div>
             <span
               className="text-sm font-semibold tracking-tight"
               style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ds-text-primary)' }}
