@@ -162,7 +162,7 @@ export default function LeadsPage() {
   return (
     <>
       <div
-        className="p-6 sm:p-8 lg:p-10 animate-ds-fade-up"
+        className="px-4 py-6 sm:px-6 sm:py-8 lg:px-6 lg:py-8 animate-ds-fade-up"
         style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
       >
         {/* ── Page header ──────────────────────────────────── */}
