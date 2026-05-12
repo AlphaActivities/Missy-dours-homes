@@ -259,10 +259,12 @@ export default function LeadsPage() {
 
         {/* ── Main content card ─────────────────────────────── */}
         <div
-          className="rounded-2xl overflow-hidden"
+          className="rounded-2xl"
           style={{
             background: 'var(--ds-bg-raised)',
             boxShadow: 'var(--ds-shadow-card)',
+            minHeight: '520px',
+            overflowX: 'clip',
           }}
         >
           {loading ? (

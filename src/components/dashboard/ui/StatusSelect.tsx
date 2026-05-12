@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { LeadStatus } from './StatusBadge';
 
@@ -17,35 +16,17 @@ interface StatusSelectProps {
   onChange: (next: LeadStatus) => void;
 }
 
-interface DropdownPos {
-  top: number;
-  right: number;
-}
-
 export default function StatusSelect({ status, disabled = false, onChange }: StatusSelectProps) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<DropdownPos | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const current = STATUS_OPTIONS.find(o => o.value === status)!;
-
-  const measureAndOpen = useCallback(() => {
-    if (disabled) return;
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setPos({
-      top: rect.bottom + 6,
-      // align dropdown right edge with trigger right edge
-      right: window.innerWidth - rect.right,
-    });
-    setOpen(v => !v);
-  }, [disabled]);
 
   // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (!triggerRef.current?.contains(e.target as Node)) setOpen(false);
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -59,33 +40,17 @@ export default function StatusSelect({ status, disabled = false, onChange }: Sta
     return () => document.removeEventListener('keydown', handler);
   }, [open]);
 
-  // Reposition on scroll/resize while open
-  useEffect(() => {
-    if (!open) return;
-    const reposition = () => {
-      const rect = triggerRef.current?.getBoundingClientRect();
-      if (rect) setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
-    };
-    window.addEventListener('scroll', reposition, true);
-    window.addEventListener('resize', reposition);
-    return () => {
-      window.removeEventListener('scroll', reposition, true);
-      window.removeEventListener('resize', reposition);
-    };
-  }, [open]);
-
   const handleSelect = (value: LeadStatus) => {
     setOpen(false);
     if (value !== status) onChange(value);
   };
 
   return (
-    <>
+    <div ref={containerRef} className="relative inline-block">
       {/* Trigger badge */}
       <button
-        ref={triggerRef}
         type="button"
-        onClick={measureAndOpen}
+        onClick={() => { if (!disabled) setOpen(v => !v); }}
         disabled={disabled}
         className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium tracking-wide border transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60"
         style={{
@@ -105,15 +70,14 @@ export default function StatusSelect({ status, disabled = false, onChange }: Sta
         />
       </button>
 
-      {/* Dropdown — rendered at document root to escape overflow:hidden ancestors */}
-      {open && pos && createPortal(
+      {/* Dropdown — inline, positioned relative to trigger */}
+      {open && (
         <div
-          className="fixed z-[150] min-w-[140px] rounded-xl overflow-hidden py-1"
+          className="absolute right-0 top-full mt-1.5 min-w-[140px] rounded-xl py-1 z-50"
           style={{
-            top: pos.top,
-            right: pos.right,
             background: 'var(--ds-bg-overlay)',
             boxShadow: 'var(--ds-shadow-float)',
+            border: '1px solid rgba(255,255,255,0.07)',
           }}
           role="listbox"
         >
@@ -135,9 +99,8 @@ export default function StatusSelect({ status, disabled = false, onChange }: Sta
               )}
             </button>
           ))}
-        </div>,
-        document.body
+        </div>
       )}
-    </>
+    </div>
   );
 }
