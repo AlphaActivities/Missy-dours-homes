@@ -264,7 +264,6 @@ export default function LeadsPage() {
             background: 'var(--ds-bg-raised)',
             boxShadow: 'var(--ds-shadow-card)',
             minHeight: '520px',
-            overflowX: 'clip',
           }}
         >
           {loading ? (
