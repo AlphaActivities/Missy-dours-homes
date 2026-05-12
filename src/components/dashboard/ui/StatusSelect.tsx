@@ -16,11 +16,24 @@ interface StatusSelectProps {
   onChange: (next: LeadStatus) => void;
 }
 
+const MENU_WIDTH = 140;
+const VIEWPORT_PADDING = 8;
+
 export default function StatusSelect({ status, disabled = false, onChange }: StatusSelectProps) {
   const [open, setOpen] = useState(false);
+  const [alignLeft, setAlignLeft] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const current = STATUS_OPTIONS.find(o => o.value === status)!;
+
+  const handleOpen = () => {
+    if (disabled) return;
+    if (!open && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setAlignLeft(rect.right - MENU_WIDTH < VIEWPORT_PADDING);
+    }
+    setOpen(v => !v);
+  };
 
   // Close on outside click
   useEffect(() => {
@@ -50,7 +63,7 @@ export default function StatusSelect({ status, disabled = false, onChange }: Sta
       {/* Trigger badge */}
       <button
         type="button"
-        onClick={() => { if (!disabled) setOpen(v => !v); }}
+        onClick={handleOpen}
         disabled={disabled}
         className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium tracking-wide border transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60"
         style={{
@@ -73,7 +86,7 @@ export default function StatusSelect({ status, disabled = false, onChange }: Sta
       {/* Dropdown — inline, positioned relative to trigger */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-1.5 min-w-[140px] rounded-xl py-1 z-50"
+          className={`absolute ${alignLeft ? 'left-0' : 'right-0'} top-full mt-1.5 min-w-[140px] rounded-xl py-1 z-50`}
           style={{
             background: 'var(--ds-bg-overlay)',
             boxShadow: 'var(--ds-shadow-float)',
