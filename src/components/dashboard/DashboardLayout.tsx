@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { ToastProvider } from '../../contexts/ToastContext';
 import { LogOut, Users, LayoutDashboard, Menu, X } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -37,6 +38,7 @@ export default function DashboardLayout() {
   const avatarLetter = user?.email ? user.email[0].toUpperCase() : '?';
 
   return (
+    <ToastProvider>
     <div className="ds-shell min-h-screen flex" style={{ background: 'var(--ds-bg-base)' }}>
 
       {/* ── Mobile overlay ────────────────────────────────── */}
@@ -225,5 +227,6 @@ export default function DashboardLayout() {
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }

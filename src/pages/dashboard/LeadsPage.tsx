@@ -118,7 +118,7 @@ export default function LeadsPage() {
             </button>
           </div>
         ) : (
-          <LeadList leads={leads} />
+          <LeadList leads={leads} onLeadsChange={setLeads} />
         )}
       </div>
 
