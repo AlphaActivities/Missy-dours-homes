@@ -259,7 +259,7 @@ export default function LeadsPage() {
 
         {/* ── Main content card ─────────────────────────────── */}
         <div
-          className="rounded-2xl"
+          className="rounded-2xl flex flex-col"
           style={{
             background: 'var(--ds-bg-raised)',
             boxShadow: 'var(--ds-shadow-card)',

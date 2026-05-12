@@ -50,7 +50,7 @@ function LeadTable({
   const cols = ['Date', 'Name', 'Contact', 'Message', 'Source', 'Status', 'Actions'];
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto flex-1">
       <table className="w-full text-sm min-w-[840px]">
         <thead>
           <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -445,7 +445,7 @@ export default function LeadList({
   return (
     <>
       {/* Desktop */}
-      <div className="hidden md:block">
+      <div className="hidden md:flex md:flex-col md:flex-1">
         <LeadTable
           leads={leads}
           onStatusChange={handleStatusChange}
