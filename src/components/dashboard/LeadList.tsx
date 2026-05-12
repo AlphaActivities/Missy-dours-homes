@@ -230,33 +230,19 @@ function LeadCard({
           </div>
         </div>
 
-        {/* Contact links */}
+        {/* Contact info — plain text only, tapping opens drawer */}
         <div className="space-y-1.5">
           {lead.email && (
-            <a
-              href={`mailto:${lead.email}`}
-              className="flex items-center gap-2 text-xs transition-colors duration-150"
-              style={{ color: 'var(--ds-text-secondary)' }}
-              onClick={e => e.stopPropagation()}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-gold)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
-            >
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
               <Mail size={11} className="shrink-0" style={{ color: 'var(--ds-text-tertiary)' }} />
               {lead.email}
-            </a>
+            </div>
           )}
           {lead.phone && (
-            <a
-              href={`tel:${lead.phone}`}
-              className="flex items-center gap-2 text-xs transition-colors duration-150"
-              style={{ color: 'var(--ds-text-secondary)' }}
-              onClick={e => e.stopPropagation()}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-gold)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
-            >
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
               <Phone size={11} className="shrink-0" style={{ color: 'var(--ds-text-tertiary)' }} />
               {lead.phone}
-            </a>
+            </div>
           )}
         </div>
 
