@@ -92,7 +92,10 @@ function LeadTable({
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               {/* Date */}
-              <td className="px-4 py-4 pl-6 align-top">
+              <td
+                className="px-4 py-4 pl-5 align-top"
+                style={{ borderLeft: `3px solid ${STATUS_BORDER_COLOR[lead.status]}` }}
+              >
                 <span className="text-xs whitespace-nowrap" style={{ color: 'var(--ds-text-tertiary)' }}>
                   {formatDate(lead.created_at)}
                 </span>
@@ -257,33 +260,6 @@ function LeadCard({
           )}
         </div>
 
-        {/* Quick actions */}
-        {(lead.phone || lead.email) && (
-          <div
-            className="pt-3"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
-            onClick={e => e.stopPropagation()}
-          >
-            <QuickActionBar phone={lead.phone} email={lead.email} compact={false} />
-          </div>
-        )}
-
-        {/* Message preview */}
-        {lead.message && (
-          <div
-            className="rounded-lg px-3 py-2.5"
-            style={{ background: 'var(--ds-bg-overlay)' }}
-          >
-            <p className="text-xs leading-relaxed line-clamp-3" style={{ color: 'var(--ds-text-secondary)' }}>
-              {lead.message}
-            </p>
-          </div>
-        )}
-
-        {/* Tap to view hint */}
-        <p className="text-[11px]" style={{ color: 'var(--ds-text-tertiary)' }}>
-          Tap to view details &amp; notes
-        </p>
       </div>
     </div>
   );
