@@ -229,7 +229,7 @@ export default function LeadsPage() {
 
         {/* ── Filter tabs ───────────────────────────────────── */}
         <div
-          className="flex items-center gap-1 mb-4 overflow-x-auto py-1 -my-1"
+          className="flex items-center gap-1 mb-4 overflow-x-auto py-1 -my-1 px-1 -mx-1"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {FILTER_TABS.map(tab => {

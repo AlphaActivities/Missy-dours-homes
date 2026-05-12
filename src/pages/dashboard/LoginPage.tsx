@@ -52,7 +52,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center mb-10">
           <div
             className="mb-5 p-3 rounded-2xl"
-            style={{ background: 'var(--ds-bg-raised)', boxShadow: 'var(--ds-shadow-card)' }}
+            style={{ background: 'rgba(245,237,220,0.92)', boxShadow: '0 0 0 1px rgba(196,164,106,0.3)' }}
           >
             <img
               src="/images/md-logo.png"
