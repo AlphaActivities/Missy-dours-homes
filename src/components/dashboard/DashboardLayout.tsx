@@ -59,7 +59,7 @@ export default function DashboardLayout() {
 
       {/* ── Sidebar ───────────────────────────────────────── */}
       <aside
-        className="fixed top-0 left-0 h-full z-30 w-64 flex flex-col lg:static lg:z-auto lg:!translate-x-0"
+        className="fixed top-0 left-0 h-full z-30 w-64 flex flex-col lg:z-auto lg:!translate-x-0"
         style={{
           background: 'var(--ds-bg-raised)',
           boxShadow: 'var(--ds-shadow-card), 1px 0 0 rgba(255,255,255,0.04)',
