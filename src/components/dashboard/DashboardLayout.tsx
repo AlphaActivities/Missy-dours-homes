@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
 import { LogOut, Users, LayoutDashboard, Menu, X } from 'lucide-react';
@@ -12,6 +12,8 @@ const NAV_ITEMS = [
 export default function DashboardLayout() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isLoginRoute = pathname === '/dashboard/login';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -190,9 +192,9 @@ export default function DashboardLayout() {
       {/* ── Main content ──────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
 
-        {/* Mobile top bar */}
+        {/* Mobile top bar — hidden on login route, which has its own full-screen layout */}
         <header
-          className="lg:hidden flex items-center justify-between px-4 py-4 shrink-0"
+          className={`${isLoginRoute ? 'hidden' : 'lg:hidden'} flex items-center justify-between px-4 py-4 shrink-0`}
           style={{
             background: 'var(--ds-bg-raised)',
             borderBottom: '1px solid rgba(255,255,255,0.06)',

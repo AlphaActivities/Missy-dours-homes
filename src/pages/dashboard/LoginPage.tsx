@@ -58,7 +58,6 @@ export default function LoginPage() {
               src="/images/md-logo.png"
               alt="Missy Dours"
               className="h-12 w-auto object-contain"
-              style={{ filter: 'brightness(0.9) sepia(0.1)' }}
             />
           </div>
           <h1
