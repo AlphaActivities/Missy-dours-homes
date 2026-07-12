@@ -81,13 +81,13 @@ function hasErrors(errors: FieldErrors): boolean {
 // ─── Field Background ────────────────────────────────────────────────────────
 
 // Three visual states, evaluated in priority order:
-// 1. Any content typed  →  white  (confirmed)
+// 1. Filled (field-specific criteria met)  →  white  (confirmed)
 // 2. Empty + error shown  →  red tint  (abandoned required field)
 // 3. Empty + no error  →  gold tint  (needs attention)
 function fieldBg(filled: boolean, hasError: boolean): string {
-  if (filled)   return 'bg-white/[0.13]';
-  if (hasError) return 'bg-red-500/[0.10]';
-  return 'bg-[#F5E6C8]/[0.13]';
+  if (filled)   return 'bg-white/30';
+  if (hasError) return 'bg-red-500/10';
+  return 'bg-[#F5E6C8]/15';
 }
 
 // ─── Phone Formatter ─────────────────────────────────────────────────────────
@@ -187,19 +187,28 @@ export default function ContactSection() {
     setFieldErrors(prev => ({ ...prev, [field]: fresh[field] }));
   };
 
-  // Tracks filled state for any uncontrolled text field.
-  const handleFieldChange = (field: 'name' | 'email' | 'message', value: string) => {
-    setFilledFields(prev => ({ ...prev, [field]: value.trim().length > 0 }));
-  };
+  // Per-field filled criteria:
+  //   name    → any character typed
+  //   email   → passes EMAIL_RE (valid format)
+  //   message → any character typed
+  const handleNameChange    = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setFilledFields(prev => ({ ...prev, name: e.target.value.trim().length > 0 }));
+
+  const handleEmailChange   = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setFilledFields(prev => ({ ...prev, email: EMAIL_RE.test(e.target.value.trim()) }));
+
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
+    setFilledFields(prev => ({ ...prev, message: e.target.value.trim().length > 0 }));
 
   // Progressive phone formatting on every keystroke.
+  // Phone filled → 10+ digits entered (complete US number).
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value);
     e.target.value = formatted;
     // Keep cursor at end — standard behavior for phone formatters.
     const len = formatted.length;
     e.target.setSelectionRange(len, len);
-    setFilledFields(prev => ({ ...prev, phone: formatted.trim().length > 0 }));
+    setFilledFields(prev => ({ ...prev, phone: formatted.replace(/\D/g, '').length >= 10 }));
     // Re-validate phone in real-time only after first submit attempt.
     if (attemptedSubmit) {
       const fresh = validateFields(
@@ -424,7 +433,7 @@ export default function ContactSection() {
                       placeholder="First and last name"
                       data-hj-suppress
                       onFocus={handleFieldFocus}
-                      onChange={(e) => handleFieldChange('name', e.target.value)}
+                      onChange={handleNameChange}
                       onBlur={() => handleBlur('name')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.name}
                       aria-describedby={fieldErrors.name && attemptedSubmit ? 'error-name' : undefined}
@@ -455,7 +464,7 @@ export default function ContactSection() {
                       placeholder="Preferred email for follow-up"
                       data-hj-suppress
                       onFocus={handleFieldFocus}
-                      onChange={(e) => handleFieldChange('email', e.target.value)}
+                      onChange={handleEmailChange}
                       onBlur={() => handleBlur('email')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.email}
                       aria-describedby={fieldErrors.email && attemptedSubmit ? 'error-email' : undefined}
@@ -515,7 +524,7 @@ export default function ContactSection() {
                       placeholder="Share a quick overview of your property, price range, and ideal timeframe."
                       data-hj-suppress
                       onFocus={handleFieldFocus}
-                      onChange={(e) => handleFieldChange('message', e.target.value)}
+                      onChange={handleMessageChange}
                       onBlur={() => handleBlur('message')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.message}
                       aria-describedby={fieldErrors.message && attemptedSubmit ? 'error-message' : undefined}
