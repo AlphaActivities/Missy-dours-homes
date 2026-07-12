@@ -45,8 +45,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
   <body>
-    <form name="contact" method="POST" data-netlify="true" hidden>
+    <form name="contact" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
       <input type="hidden" name="form-name" value="contact" />
+      <input name="bot-field" />
       <input type="text" name="name" />
       <input type="email" name="email" />
       <input type="tel" name="phone" />

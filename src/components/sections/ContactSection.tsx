@@ -5,17 +5,99 @@ import { CONTACT_INFO } from "../../config/contact";
 import { trackFormSubmitSuccess, trackFormSubmitError, trackFormStart, trackEmailClick } from "../../utils/analytics";
 import { supabase } from "../../lib/supabase";
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type FieldErrors = {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+};
+
+const EMPTY_ERRORS: FieldErrors = { name: '', email: '', phone: '', message: '' };
+
+// ─── Validation ──────────────────────────────────────────────────────────────
+
+const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+// First char: digit or '+'. Remaining: digits, spaces, hyphens, parens, periods, slashes.
+// eslint-disable-next-line no-useless-escape
+const PHONE_RE = /^[+\d][\d\s\-()\./]+$/;
+
+function validateFields(
+  name: string,
+  email: string,
+  phone: string,
+  message: string,
+): FieldErrors {
+  const errors: FieldErrors = { ...EMPTY_ERRORS };
+
+  const nameTrim    = name.trim();
+  const emailTrim   = email.trim();
+  const phoneTrim   = phone.trim();
+  const messageTrim = message.trim();
+
+  if (!nameTrim) {
+    errors.name = 'Please enter your name.';
+  } else if (nameTrim.length < 2) {
+    errors.name = 'Name must be at least 2 characters.';
+  } else if (nameTrim.length > 100) {
+    errors.name = 'Name must be 100 characters or fewer.';
+  }
+
+  if (!emailTrim) {
+    errors.email = 'Please enter your email address.';
+  } else if (emailTrim.length > 255) {
+    errors.email = 'Email address is too long.';
+  } else if (!EMAIL_RE.test(emailTrim)) {
+    errors.email = 'Please enter a valid email address.';
+  }
+
+  if (phoneTrim !== '') {
+    if (phoneTrim.length < 10) {
+      errors.phone = 'Please enter a valid phone number.';
+    } else if (phoneTrim.length > 20) {
+      errors.phone = 'Phone number is too long.';
+    } else if (!PHONE_RE.test(phoneTrim)) {
+      errors.phone = 'Please enter a valid phone number (digits, spaces, hyphens, and parentheses only).';
+    }
+  }
+
+  if (!messageTrim) {
+    errors.message = 'Please enter a message.';
+  } else if (messageTrim.length < 10) {
+    errors.message = 'Please enter at least 10 characters.';
+  } else if (messageTrim.length > 2000) {
+    errors.message = `Message is too long (${messageTrim.length.toLocaleString()} / 2,000 characters).`;
+  }
+
+  return errors;
+}
+
+function hasErrors(errors: FieldErrors): boolean {
+  return !!(errors.name || errors.email || errors.phone || errors.message);
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
 export default function ContactSection() {
   const location = useLocation();
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const formStartedRef = useRef(false);
+  const [submitted, setSubmitted]   = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors]     = useState<FieldErrors>(EMPTY_ERRORS);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+
+  const formStartedRef   = useRef(false);
+  const submittingRef    = useRef(false);  // synchronous duplicate-submit lock
+  const nameRef          = useRef<HTMLInputElement>(null);
+  const emailRef         = useRef<HTMLInputElement>(null);
+  const phoneRef         = useRef<HTMLInputElement>(null);
+  const messageRef       = useRef<HTMLTextAreaElement>(null);
 
   const sourcePage = location.pathname;
 
   const encode = (data: FormData) =>
-    new URLSearchParams(data as any).toString();
+    new URLSearchParams(data as unknown as Record<string, string>).toString();
 
   const handleFieldFocus = () => {
     if (formStartedRef.current) return;
@@ -23,18 +105,64 @@ export default function ContactSection() {
     trackFormStart('contact_section', sourcePage);
   };
 
+  // Re-validate a single field on blur after the first submit attempt.
+  const handleBlur = (field: keyof FieldErrors) => {
+    if (!attemptedSubmit) return;
+    const name    = nameRef.current?.value    ?? '';
+    const email   = emailRef.current?.value   ?? '';
+    const phone   = phoneRef.current?.value   ?? '';
+    const message = messageRef.current?.value ?? '';
+    const fresh = validateFields(name, email, phone, message);
+    setFieldErrors(prev => ({ ...prev, [field]: fresh[field] }));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitting(true);
+
+    // Synchronous lock — guards against programmatic/keyboard duplicate fires.
+    if (submittingRef.current) return;
+
+    // Read current DOM values for validation.
+    const nameVal    = nameRef.current?.value    ?? '';
+    const emailVal   = emailRef.current?.value   ?? '';
+    const phoneVal   = phoneRef.current?.value   ?? '';
+    const messageVal = messageRef.current?.value ?? '';
+
+    const errors = validateFields(nameVal, emailVal, phoneVal, messageVal);
+
+    // Always mark as attempted so field errors become visible.
+    setAttemptedSubmit(true);
+    setFieldErrors(errors);
+
+    if (hasErrors(errors)) {
+      // Focus the first invalid visible field — do not proceed to network.
+      if (errors.name)    { nameRef.current?.focus();    return; }
+      if (errors.email)   { emailRef.current?.focus();   return; }
+      if (errors.phone)   { phoneRef.current?.focus();   return; }
+      if (errors.message) { messageRef.current?.focus(); return; }
+      return;
+    }
+
+    // Build FormData and write trimmed values back so Netlify and Supabase
+    // both receive clean data.
+    const formData = new FormData(e.currentTarget);
+    formData.set('form-name', 'contact');
+    formData.set('name',    nameVal.trim());
+    formData.set('email',   emailVal.trim());
+    formData.set('phone',   phoneVal.trim());
+    formData.set('message', messageVal.trim());
+    // bot-field is left as-is from the DOM (empty for real users).
+
     setError(null);
 
-    try {
-      const formData = new FormData(e.currentTarget);
-      formData.set("form-name", "contact");
+    // Activate synchronous lock before any async work.
+    submittingRef.current = true;
+    setSubmitting(true);
 
-      const response = await fetch("/", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    try {
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: encode(formData),
       });
 
@@ -46,31 +174,38 @@ export default function ContactSection() {
           : '';
 
         supabase.from('leads').insert({
-          name: formData.get('name') as string,
-          email: formData.get('email') as string,
-          phone: formData.get('phone') as string,
-          message: formData.get('message') as string,
-          source_page: sourcePage,
+          name:         formData.get('name')    as string,
+          email:        formData.get('email')   as string,
+          phone:        formData.get('phone')   as string,
+          message:      formData.get('message') as string,
+          source_page:  sourcePage,
           listing_slug: listingSlug,
         }).then(({ error: insertError }) => {
           if (insertError) console.warn('[leads] Supabase insert failed:', insertError.message);
         });
 
         setSubmitted(true);
+        setAttemptedSubmit(false);
+        setFieldErrors(EMPTY_ERRORS);
         formStartedRef.current = false;
         e.currentTarget.reset();
+        // Six-second success message cleared by the existing useEffect below.
       } else {
         trackFormSubmitError('contact_section', 'server_error', sourcePage);
-        setError("Something went wrong. Please try again.");
+        setError('Something went wrong. Please try again.');
+        // Entered values preserved — no reset on failure.
       }
-    } catch (err) {
+    } catch {
       trackFormSubmitError('contact_section', 'network_error', sourcePage);
-      setError("Something went wrong. Please try again.");
+      setError('Something went wrong. Please try again.');
+      // Entered values preserved — no reset on failure.
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
 
+  // Six-second success-message dismissal — preserved from original.
   useEffect(() => {
     if (!submitted) return;
     const timer = setTimeout(() => {
@@ -159,10 +294,22 @@ export default function ContactSection() {
                   name="contact"
                   method="POST"
                   data-netlify="true"
+                  data-netlify-honeypot="bot-field"
                   onSubmit={handleSubmit}
                   className="space-y-5"
+                  noValidate
                 >
                   <input type="hidden" name="form-name" value="contact" />
+
+                  {/* Honeypot — hidden from real users and assistive technology */}
+                  <p style={{ display: 'none' }} aria-hidden="true">
+                    <label>
+                      Do not fill this field
+                      <input name="bot-field" tabIndex={-1} autoComplete="off" />
+                    </label>
+                  </p>
+
+                  {/* Name */}
                   <div className="space-y-2">
                     <label
                       htmlFor="contact-name"
@@ -171,17 +318,28 @@ export default function ContactSection() {
                       Name
                     </label>
                     <input
+                      ref={nameRef}
                       id="contact-name"
                       name="name"
                       type="text"
+                      required
                       autoComplete="name"
                       placeholder="First and last name"
                       data-hj-suppress
                       onFocus={handleFieldFocus}
-                      className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition"
+                      onBlur={() => handleBlur('name')}
+                      aria-invalid={attemptedSubmit && !!fieldErrors.name}
+                      aria-describedby={fieldErrors.name && attemptedSubmit ? 'error-name' : undefined}
+                      className={`w-full rounded-xl bg-white/5 border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition ${attemptedSubmit && fieldErrors.name ? 'border-red-400/60' : 'border-white/18'}`}
                     />
+                    {attemptedSubmit && fieldErrors.name && (
+                      <p id="error-name" className="text-xs mt-1 text-red-300/90">
+                        {fieldErrors.name}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Email */}
                   <div className="space-y-2">
                     <label
                       htmlFor="contact-email"
@@ -190,17 +348,28 @@ export default function ContactSection() {
                       Email
                     </label>
                     <input
+                      ref={emailRef}
                       id="contact-email"
                       name="email"
                       type="email"
+                      required
                       autoComplete="email"
                       placeholder="Preferred email for follow-up"
                       data-hj-suppress
                       onFocus={handleFieldFocus}
-                      className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition"
+                      onBlur={() => handleBlur('email')}
+                      aria-invalid={attemptedSubmit && !!fieldErrors.email}
+                      aria-describedby={fieldErrors.email && attemptedSubmit ? 'error-email' : undefined}
+                      className={`w-full rounded-xl bg-white/5 border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition ${attemptedSubmit && fieldErrors.email ? 'border-red-400/60' : 'border-white/18'}`}
                     />
+                    {attemptedSubmit && fieldErrors.email && (
+                      <p id="error-email" className="text-xs mt-1 text-red-300/90">
+                        {fieldErrors.email}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Phone (optional) */}
                   <div className="space-y-2">
                     <label
                       htmlFor="contact-phone"
@@ -209,6 +378,7 @@ export default function ContactSection() {
                       Phone (optional)
                     </label>
                     <input
+                      ref={phoneRef}
                       id="contact-phone"
                       name="phone"
                       type="tel"
@@ -216,10 +386,19 @@ export default function ContactSection() {
                       placeholder="Best number for a brief call"
                       data-hj-suppress
                       onFocus={handleFieldFocus}
-                      className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition"
+                      onBlur={() => handleBlur('phone')}
+                      aria-invalid={attemptedSubmit && !!fieldErrors.phone}
+                      aria-describedby={fieldErrors.phone && attemptedSubmit ? 'error-phone' : undefined}
+                      className={`w-full rounded-xl bg-white/5 border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition ${attemptedSubmit && fieldErrors.phone ? 'border-red-400/60' : 'border-white/18'}`}
                     />
+                    {attemptedSubmit && fieldErrors.phone && (
+                      <p id="error-phone" className="text-xs mt-1 text-red-300/90">
+                        {fieldErrors.phone}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Message */}
                   <div className="space-y-2">
                     <label
                       htmlFor="contact-message"
@@ -228,15 +407,39 @@ export default function ContactSection() {
                       How can Missy help?
                     </label>
                     <textarea
+                      ref={messageRef}
                       id="contact-message"
                       name="message"
                       rows={4}
+                      required
                       placeholder="Share a quick overview of your property, price range, and ideal timeframe."
                       data-hj-suppress
                       onFocus={handleFieldFocus}
-                      className="w-full rounded-xl bg-white/5 border border-white/18 px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition resize-none"
+                      onBlur={() => handleBlur('message')}
+                      aria-invalid={attemptedSubmit && !!fieldErrors.message}
+                      aria-describedby={fieldErrors.message && attemptedSubmit ? 'error-message' : undefined}
+                      className={`w-full rounded-xl bg-white/5 border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition resize-none ${attemptedSubmit && fieldErrors.message ? 'border-red-400/60' : 'border-white/18'}`}
                     />
+                    {attemptedSubmit && fieldErrors.message && (
+                      <p id="error-message" className="text-xs mt-1 text-red-300/90">
+                        {fieldErrors.message}
+                      </p>
+                    )}
                   </div>
+
+                  {/* General server/network error */}
+                  {error && (
+                    <div
+                      role="alert"
+                      className="rounded-xl px-4 py-3 text-xs md:text-sm text-red-300/90"
+                      style={{
+                        background: 'rgba(239,68,68,0.08)',
+                        boxShadow: '0 0 0 1px rgba(239,68,68,0.2)',
+                      }}
+                    >
+                      {error}
+                    </div>
+                  )}
 
                   <div className="pt-1">
                     <button
