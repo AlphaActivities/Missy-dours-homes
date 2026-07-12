@@ -78,6 +78,18 @@ function hasErrors(errors: FieldErrors): boolean {
   return !!(errors.name || errors.email || errors.phone || errors.message);
 }
 
+// ─── Field Background ────────────────────────────────────────────────────────
+
+// Three visual states, evaluated in priority order:
+// 1. Any content typed  →  white  (confirmed)
+// 2. Empty + error shown  →  red tint  (abandoned required field)
+// 3. Empty + no error  →  gold tint  (needs attention)
+function fieldBg(filled: boolean, hasError: boolean): string {
+  if (filled)   return 'bg-white/[0.13]';
+  if (hasError) return 'bg-red-500/[0.10]';
+  return 'bg-[#F5E6C8]/[0.13]';
+}
+
 // ─── Phone Formatter ─────────────────────────────────────────────────────────
 
 /**
@@ -144,6 +156,7 @@ export default function ContactSection() {
   const [error, setError]           = useState<string | null>(null);
   const [fieldErrors, setFieldErrors]     = useState<FieldErrors>(EMPTY_ERRORS);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [filledFields, setFilledFields]   = useState({ name: false, email: false, phone: false, message: false });
 
   const formStartedRef   = useRef(false);
   const submittingRef    = useRef(false);  // synchronous duplicate-submit lock
@@ -174,6 +187,11 @@ export default function ContactSection() {
     setFieldErrors(prev => ({ ...prev, [field]: fresh[field] }));
   };
 
+  // Tracks filled state for any uncontrolled text field.
+  const handleFieldChange = (field: 'name' | 'email' | 'message', value: string) => {
+    setFilledFields(prev => ({ ...prev, [field]: value.trim().length > 0 }));
+  };
+
   // Progressive phone formatting on every keystroke.
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value);
@@ -181,6 +199,7 @@ export default function ContactSection() {
     // Keep cursor at end — standard behavior for phone formatters.
     const len = formatted.length;
     e.target.setSelectionRange(len, len);
+    setFilledFields(prev => ({ ...prev, phone: formatted.trim().length > 0 }));
     // Re-validate phone in real-time only after first submit attempt.
     if (attemptedSubmit) {
       const fresh = validateFields(
@@ -264,6 +283,7 @@ export default function ContactSection() {
         setSubmitted(true);
         setAttemptedSubmit(false);
         setFieldErrors(EMPTY_ERRORS);
+        setFilledFields({ name: false, email: false, phone: false, message: false });
         formStartedRef.current = false;
         e.currentTarget.reset();
         // Six-second success message cleared by the existing useEffect below.
@@ -404,10 +424,11 @@ export default function ContactSection() {
                       placeholder="First and last name"
                       data-hj-suppress
                       onFocus={handleFieldFocus}
+                      onChange={(e) => handleFieldChange('name', e.target.value)}
                       onBlur={() => handleBlur('name')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.name}
                       aria-describedby={fieldErrors.name && attemptedSubmit ? 'error-name' : undefined}
-                      className={`w-full rounded-xl bg-white/5 border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition ${attemptedSubmit && fieldErrors.name ? 'border-red-400/60' : 'border-white/18'}`}
+                      className={`w-full rounded-xl ${fieldBg(filledFields.name, attemptedSubmit && !!fieldErrors.name)} border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 ${attemptedSubmit && fieldErrors.name ? 'border-red-400/60' : 'border-white/18'}`}
                     />
                     {attemptedSubmit && fieldErrors.name && (
                       <p id="error-name" className="text-xs mt-1 text-red-300/90">
@@ -434,10 +455,11 @@ export default function ContactSection() {
                       placeholder="Preferred email for follow-up"
                       data-hj-suppress
                       onFocus={handleFieldFocus}
+                      onChange={(e) => handleFieldChange('email', e.target.value)}
                       onBlur={() => handleBlur('email')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.email}
                       aria-describedby={fieldErrors.email && attemptedSubmit ? 'error-email' : undefined}
-                      className={`w-full rounded-xl bg-white/5 border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition ${attemptedSubmit && fieldErrors.email ? 'border-red-400/60' : 'border-white/18'}`}
+                      className={`w-full rounded-xl ${fieldBg(filledFields.email, attemptedSubmit && !!fieldErrors.email)} border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 ${attemptedSubmit && fieldErrors.email ? 'border-red-400/60' : 'border-white/18'}`}
                     />
                     {attemptedSubmit && fieldErrors.email && (
                       <p id="error-email" className="text-xs mt-1 text-red-300/90">
@@ -467,7 +489,7 @@ export default function ContactSection() {
                       onBlur={() => handleBlur('phone')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.phone}
                       aria-describedby={fieldErrors.phone && attemptedSubmit ? 'error-phone' : undefined}
-                      className={`w-full rounded-xl bg-white/5 border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition ${attemptedSubmit && fieldErrors.phone ? 'border-red-400/60' : 'border-white/18'}`}
+                      className={`w-full rounded-xl ${fieldBg(filledFields.phone, attemptedSubmit && !!fieldErrors.phone)} border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 ${attemptedSubmit && fieldErrors.phone ? 'border-red-400/60' : 'border-white/18'}`}
                     />
                     {attemptedSubmit && fieldErrors.phone && (
                       <p id="error-phone" className="text-xs mt-1 text-red-300/90">
@@ -493,10 +515,11 @@ export default function ContactSection() {
                       placeholder="Share a quick overview of your property, price range, and ideal timeframe."
                       data-hj-suppress
                       onFocus={handleFieldFocus}
+                      onChange={(e) => handleFieldChange('message', e.target.value)}
                       onBlur={() => handleBlur('message')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.message}
                       aria-describedby={fieldErrors.message && attemptedSubmit ? 'error-message' : undefined}
-                      className={`w-full rounded-xl bg-white/5 border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition resize-none ${attemptedSubmit && fieldErrors.message ? 'border-red-400/60' : 'border-white/18'}`}
+                      className={`w-full rounded-xl ${fieldBg(filledFields.message, attemptedSubmit && !!fieldErrors.message)} border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 resize-none ${attemptedSubmit && fieldErrors.message ? 'border-red-400/60' : 'border-white/18'}`}
                     />
                     {attemptedSubmit && fieldErrors.message && (
                       <p id="error-message" className="text-xs mt-1 text-red-300/90">

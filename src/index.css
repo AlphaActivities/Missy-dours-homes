@@ -194,6 +194,19 @@
     }
   }
 
+  /* Override browser autofill highlight — scoped to the contact form only.
+     Inset box-shadow paints over Chrome's forced yellow without touching
+     background-color (which browsers ignore on autofilled inputs). */
+  #contact input:-webkit-autofill,
+  #contact input:-webkit-autofill:hover,
+  #contact input:-webkit-autofill:focus,
+  #contact input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.13) inset;
+    -webkit-text-fill-color: #f9f9f7;
+    /* Long delay prevents the browser from animating its autofill glow in. */
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
 }
 
 @layer utilities {
