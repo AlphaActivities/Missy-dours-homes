@@ -78,16 +78,22 @@ function hasErrors(errors: FieldErrors): boolean {
   return !!(errors.name || errors.email || errors.phone || errors.message);
 }
 
-// ─── Field Background ────────────────────────────────────────────────────────
+// ─── Field Background & Text ─────────────────────────────────────────────────
 
 // Three visual states, evaluated in priority order:
-// 1. Filled (field-specific criteria met)  →  white  (confirmed)
-// 2. Empty + error shown  →  red tint  (abandoned required field)
-// 3. Empty + no error  →  gold tint  (needs attention)
+// 1. Filled (field-specific criteria met)  →  cream bg, dark text
+// 2. Empty + error shown  →  red tint, light text
+// 3. Empty + no error  →  gold tint, light text
 function fieldBg(filled: boolean, hasError: boolean): string {
-  if (filled)   return 'bg-white/30';
+  if (filled)   return 'bg-[#f7f3ea]/90';
   if (hasError) return 'bg-red-500/10';
   return 'bg-[#F5E6C8]/15';
+}
+
+function fieldText(filled: boolean): string {
+  return filled
+    ? 'text-[#3a2f1e] placeholder:text-[#3a2f1e]/40'
+    : 'text-neutral-50 placeholder:text-neutral-300/60';
 }
 
 // ─── Phone Formatter ─────────────────────────────────────────────────────────
@@ -437,7 +443,7 @@ export default function ContactSection() {
                       onBlur={() => handleBlur('name')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.name}
                       aria-describedby={fieldErrors.name && attemptedSubmit ? 'error-name' : undefined}
-                      className={`w-full rounded-xl ${fieldBg(filledFields.name, attemptedSubmit && !!fieldErrors.name)} border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 ${attemptedSubmit && fieldErrors.name ? 'border-red-400/60' : 'border-white/18'}`}
+                      className={`w-full rounded-xl ${fieldBg(filledFields.name, attemptedSubmit && !!fieldErrors.name)} border px-4 py-3.5 text-sm md:text-[15px] ${fieldText(filledFields.name)} focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 ${attemptedSubmit && fieldErrors.name ? 'border-red-400/60' : 'border-white/18'}`}
                     />
                     {attemptedSubmit && fieldErrors.name && (
                       <p id="error-name" className="text-xs mt-1 text-red-300/90">
@@ -468,7 +474,7 @@ export default function ContactSection() {
                       onBlur={() => handleBlur('email')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.email}
                       aria-describedby={fieldErrors.email && attemptedSubmit ? 'error-email' : undefined}
-                      className={`w-full rounded-xl ${fieldBg(filledFields.email, attemptedSubmit && !!fieldErrors.email)} border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 ${attemptedSubmit && fieldErrors.email ? 'border-red-400/60' : 'border-white/18'}`}
+                      className={`w-full rounded-xl ${fieldBg(filledFields.email, attemptedSubmit && !!fieldErrors.email)} border px-4 py-3.5 text-sm md:text-[15px] ${fieldText(filledFields.email)} focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 ${attemptedSubmit && fieldErrors.email ? 'border-red-400/60' : 'border-white/18'}`}
                     />
                     {attemptedSubmit && fieldErrors.email && (
                       <p id="error-email" className="text-xs mt-1 text-red-300/90">
@@ -498,7 +504,7 @@ export default function ContactSection() {
                       onBlur={() => handleBlur('phone')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.phone}
                       aria-describedby={fieldErrors.phone && attemptedSubmit ? 'error-phone' : undefined}
-                      className={`w-full rounded-xl ${fieldBg(filledFields.phone, attemptedSubmit && !!fieldErrors.phone)} border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 ${attemptedSubmit && fieldErrors.phone ? 'border-red-400/60' : 'border-white/18'}`}
+                      className={`w-full rounded-xl ${fieldBg(filledFields.phone, attemptedSubmit && !!fieldErrors.phone)} border px-4 py-3.5 text-sm md:text-[15px] ${fieldText(filledFields.phone)} focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 ${attemptedSubmit && fieldErrors.phone ? 'border-red-400/60' : 'border-white/18'}`}
                     />
                     {attemptedSubmit && fieldErrors.phone && (
                       <p id="error-phone" className="text-xs mt-1 text-red-300/90">
@@ -528,7 +534,7 @@ export default function ContactSection() {
                       onBlur={() => handleBlur('message')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.message}
                       aria-describedby={fieldErrors.message && attemptedSubmit ? 'error-message' : undefined}
-                      className={`w-full rounded-xl ${fieldBg(filledFields.message, attemptedSubmit && !!fieldErrors.message)} border px-4 py-3.5 text-sm md:text-[15px] text-neutral-50 placeholder:text-neutral-300/60 focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 resize-none ${attemptedSubmit && fieldErrors.message ? 'border-red-400/60' : 'border-white/18'}`}
+                      className={`w-full rounded-xl ${fieldBg(filledFields.message, attemptedSubmit && !!fieldErrors.message)} border px-4 py-3.5 text-sm md:text-[15px] ${fieldText(filledFields.message)} focus:outline-none focus:ring-2 focus:ring-[#F5E6C8] focus:border-transparent transition-all duration-200 resize-none ${attemptedSubmit && fieldErrors.message ? 'border-red-400/60' : 'border-white/18'}`}
                     />
                     {attemptedSubmit && fieldErrors.message && (
                       <p id="error-message" className="text-xs mt-1 text-red-300/90">

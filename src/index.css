@@ -201,8 +201,8 @@
   #contact input:-webkit-autofill:hover,
   #contact input:-webkit-autofill:focus,
   #contact input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.30) inset;
-    -webkit-text-fill-color: #f9f9f7;
+    -webkit-box-shadow: 0 0 0 1000px rgba(247, 243, 234, 0.90) inset;
+    -webkit-text-fill-color: #3a2f1e;
     /* Long delay prevents the browser from animating its autofill glow in. */
     transition: background-color 9999s ease-in-out 0s;
   }
