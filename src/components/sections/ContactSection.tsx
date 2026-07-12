@@ -19,9 +19,10 @@ const EMPTY_ERRORS: FieldErrors = { name: '', email: '', phone: '', message: '' 
 // ─── Validation ──────────────────────────────────────────────────────────────
 
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-// First char: digit or '+'. Remaining: digits, spaces, hyphens, parens, periods, slashes.
+// First char: digit, '+', or '(' (formatted US numbers start with open-paren).
+// Remaining: digits, spaces, hyphens, parens, periods, slashes.
 // eslint-disable-next-line no-useless-escape
-const PHONE_RE = /^[+\d][\d\s\-()\./]+$/;
+const PHONE_RE = /^[+\d(][\d\s\-()\./]+$/;
 
 function validateFields(
   name: string,
@@ -77,6 +78,63 @@ function hasErrors(errors: FieldErrors): boolean {
   return !!(errors.name || errors.email || errors.phone || errors.message);
 }
 
+// ─── Phone Formatter ─────────────────────────────────────────────────────────
+
+/**
+ * Formats a raw phone input value into a standard US display format.
+ *
+ * 10 digits → (NXX) NXX-XXXX
+ * 11 digits starting with 1 → +1 (NXX) NXX-XXXX
+ * Anything else (international, partial) → preserved as-is
+ *
+ * Returns the formatted string and whether formatting was applied.
+ */
+function formatPhone(raw: string): string {
+  // Strip everything except digits and leading '+'.
+  const hasLeadingPlus = raw.trimStart().startsWith('+');
+  const digits = raw.replace(/\D/g, '');
+
+  // 11 digits starting with 1: US number with country code
+  if (digits.length === 11 && digits[0] === '1') {
+    const area = digits.slice(1, 4);
+    const mid  = digits.slice(4, 7);
+    const last = digits.slice(7, 11);
+    return `+1 (${area}) ${mid}-${last}`;
+  }
+
+  // 10 digits: standard US number
+  if (digits.length === 10) {
+    const area = digits.slice(0, 3);
+    const mid  = digits.slice(3, 6);
+    const last = digits.slice(6, 10);
+    return `(${area}) ${mid}-${last}`;
+  }
+
+  // More than 11 digits, or 11 digits not starting with 1:
+  // treat as international — preserve the user's input unchanged.
+  if (digits.length > 11 || (digits.length === 11 && digits[0] !== '1')) {
+    return raw;
+  }
+
+  // Partial entry (< 10 digits): format progressively up to the point where
+  // structure is clear. Only apply light progressive formatting once we have
+  // enough digits to start the area code.
+  if (digits.length === 0) return '';
+
+  // If the user is explicitly typing a +1 international prefix, let them type freely.
+  if (hasLeadingPlus) return raw;
+
+  // Progressive US formatting for partial input.
+  if (digits.length <= 3) {
+    return digits;
+  }
+  if (digits.length <= 6) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  }
+  // 7–9 digits
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ContactSection() {
@@ -114,6 +172,25 @@ export default function ContactSection() {
     const message = messageRef.current?.value ?? '';
     const fresh = validateFields(name, email, phone, message);
     setFieldErrors(prev => ({ ...prev, [field]: fresh[field] }));
+  };
+
+  // Progressive phone formatting on every keystroke.
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    e.target.value = formatted;
+    // Keep cursor at end — standard behavior for phone formatters.
+    const len = formatted.length;
+    e.target.setSelectionRange(len, len);
+    // Re-validate phone in real-time only after first submit attempt.
+    if (attemptedSubmit) {
+      const fresh = validateFields(
+        nameRef.current?.value    ?? '',
+        emailRef.current?.value   ?? '',
+        formatted,
+        messageRef.current?.value ?? '',
+      );
+      setFieldErrors(prev => ({ ...prev, phone: fresh.phone }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -386,6 +463,7 @@ export default function ContactSection() {
                       placeholder="Best number for a brief call"
                       data-hj-suppress
                       onFocus={handleFieldFocus}
+                      onChange={handlePhoneChange}
                       onBlur={() => handleBlur('phone')}
                       aria-invalid={attemptedSubmit && !!fieldErrors.phone}
                       aria-describedby={fieldErrors.phone && attemptedSubmit ? 'error-phone' : undefined}
