@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import LeadList, { Lead } from '../../components/dashboard/LeadList';
 import LeadDrawer from '../../components/dashboard/ui/LeadDrawer';
@@ -20,11 +21,17 @@ const FILTER_TABS: { value: FilterValue; label: string }[] = [
   { value: 'archived',  label: 'Archived' },
 ];
 
+const VALID_FILTERS = new Set<FilterValue>(['all', 'new', 'contacted', 'qualified', 'closed', 'archived']);
+
 export default function LeadsPage() {
+  const [searchParams] = useSearchParams();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
-  const [filter, setFilter] = useState<FilterValue>('all');
+  const [filter, setFilter] = useState<FilterValue>(() => {
+    const param = searchParams.get('filter') as FilterValue | null;
+    return param && VALID_FILTERS.has(param) ? param : 'all';
+  });
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);

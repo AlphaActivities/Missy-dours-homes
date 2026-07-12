@@ -1,5 +1,5 @@
 import { useEffect, useState, ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowRight, TrendingUp, Users, Zap } from 'lucide-react';
@@ -51,19 +51,37 @@ function StatCard({
   value,
   icon,
   accent,
+  onClick,
 }: {
   label: string;
   value: number | null;
   icon: ReactNode;
   accent?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <div
-      className="rounded-2xl p-6 transition-all duration-200"
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+      className={`rounded-2xl p-6 transition-all duration-200${onClick ? ' cursor-pointer' : ''}`}
       style={{
         background: accent ? 'var(--ds-gold-muted)' : 'var(--ds-bg-raised)',
         boxShadow: accent ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.2)' : 'var(--ds-shadow-card)',
       }}
+      onMouseEnter={onClick ? e => {
+        (e.currentTarget as HTMLDivElement).style.boxShadow = accent
+          ? 'var(--ds-shadow-card), 0 0 0 1.5px rgba(196,164,106,0.45)'
+          : 'var(--ds-shadow-card), 0 0 0 1px rgba(255,255,255,0.1)';
+        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)';
+      } : undefined}
+      onMouseLeave={onClick ? e => {
+        (e.currentTarget as HTMLDivElement).style.boxShadow = accent
+          ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.2)'
+          : 'var(--ds-shadow-card)';
+        (e.currentTarget as HTMLDivElement).style.transform = '';
+      } : undefined}
     >
       <div className="flex items-center gap-2 mb-4">
         <span style={{ color: accent ? 'var(--ds-gold)' : 'var(--ds-text-secondary)' }}>
@@ -129,6 +147,7 @@ function RecentLeadRow({ lead }: { lead: RecentLead }) {
 // ── Page ─────────────────────────────────────────────────────
 export default function DashboardOverviewPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [totalLeads, setTotalLeads] = useState<number | null>(null);
   const [newLeads, setNewLeads] = useState<number | null>(null);
   const [weekLeads, setWeekLeads] = useState<number | null>(null);
@@ -204,17 +223,20 @@ export default function DashboardOverviewPage() {
             label="Total leads"
             value={totalLeads}
             icon={<Users size={15} />}
+            onClick={() => navigate('/dashboard/leads?filter=all')}
           />
           <StatCard
             label="This week"
             value={weekLeads}
             icon={<TrendingUp size={15} />}
+            onClick={() => navigate('/dashboard/leads?filter=all')}
           />
           <StatCard
             label="New — uncontacted"
             value={newLeads}
             icon={<Zap size={15} />}
             accent={!!newLeads && newLeads > 0}
+            onClick={() => navigate('/dashboard/leads?filter=new')}
           />
         </div>
       )}
