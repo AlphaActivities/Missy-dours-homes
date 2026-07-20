@@ -432,7 +432,7 @@ export default function ContactSection() {
                     Service Area
                   </p>
                   <a
-                    href="https://www.google.com/maps/place/Beam+Mortgage,+Inc./@32.9454615,-96.872839,17z/data=!4m15!1m8!3m7!1s0x864c26f9f70fc909:0x54c7957654502123!2s14455+Webb+Chapel+Rd,+Farmers+Branch,+TX+75234!3b1!8m2!3d32.9454615!4d-96.872839!16s%2Fg%2F11bw3y3q59!3m5!1s0x864c26f9f6230373:0xa34aae587b4aea8e!8m2!3d32.945462!4d-96.872839!16s%2Fg%2F1tctf_vl?entry=ttu&g_ep=EgoyMDI2MDQwMS4wIKXMDSoASAFQAw%3D%3D"
+                    href="https://www.google.com/maps/place/Clancy+Realty/@32.9405561,-96.8235514,17z/data=!3m1!4b1!4m6!3m5!1s0x8e6b8a480b85908b:0x6124928e9cc64901!8m2!3d32.9405561!4d-96.8209765!16s%2Fg%2F11z5c6y4vw?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block rounded-2xl overflow-hidden border border-white/20 shadow-lg hover:border-white/40 transition-colors cursor-pointer"
