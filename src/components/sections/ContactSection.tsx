@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import { CONTACT_INFO } from "../../config/contact";
 import { trackFormSubmitSuccess, trackFormSubmitError, trackFormStart, trackEmailClick } from "../../utils/analytics";
-import { supabase } from "../../lib/supabase";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -195,9 +194,6 @@ export default function ContactSection() {
 
   const sourcePage = location.pathname;
 
-  const encode = (data: FormData) =>
-    new URLSearchParams(data as unknown as Record<string, string>).toString();
-
   // Recalculates the progress count from current DOM ref values.
   const recalcProgress = () => {
     setProgressStages(calcProgressStages(
@@ -296,14 +292,22 @@ export default function ContactSection() {
       return;
     }
 
-    // Build FormData from the live form reference (captured before any await).
-    const formData = new FormData(form);
-    formData.set('form-name', 'contact');
-    formData.set('name',    nameVal.trim());
-    formData.set('email',   emailVal.trim());
-    formData.set('phone',   phoneVal.trim());
-    formData.set('message', messageVal.trim());
-    // bot-field is left as-is from the DOM (empty for real users).
+    // Read honeypot value from the live form (empty for real users).
+    const botFieldVal = (form.querySelector('input[name="bot-field"]') as HTMLInputElement | null)?.value ?? '';
+
+    const listingSlug = sourcePage.startsWith('/listings/')
+      ? sourcePage.replace('/listings/', '').replace(/\/$/, '')
+      : '';
+
+    const requestBody = JSON.stringify({
+      name: nameVal.trim(),
+      email: emailVal.trim(),
+      phone: phoneVal.trim(),
+      message: messageVal.trim(),
+      source_page: sourcePage,
+      listing_slug: listingSlug,
+      'bot-field': botFieldVal,
+    });
 
     // Clear all previous state before the async fetch so:
     //   • any prior success timer is cancelled (submitted → false triggers cleanup)
@@ -319,29 +323,14 @@ export default function ContactSection() {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/', {
+      const response = await fetch('/.netlify/functions/contact-handler', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: encode(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: requestBody,
       });
 
       if (response.ok) {
         trackFormSubmitSuccess('contact_section', sourcePage);
-
-        const listingSlug = sourcePage.startsWith('/listings/')
-          ? sourcePage.replace('/listings/', '').replace(/\/$/, '')
-          : '';
-
-        supabase.from('leads').insert({
-          name:         formData.get('name')    as string,
-          email:        formData.get('email')   as string,
-          phone:        formData.get('phone')   as string,
-          message:      formData.get('message') as string,
-          source_page:  sourcePage,
-          listing_slug: listingSlug,
-        }).then(({ error: insertError }) => {
-          if (insertError) console.warn('[leads] Supabase insert failed:', insertError.message);
-        });
 
         // Reset the form via the captured live reference — safe to call after await.
         form.reset();
