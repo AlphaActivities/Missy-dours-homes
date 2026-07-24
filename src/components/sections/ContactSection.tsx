@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import { CONTACT_INFO } from "../../config/contact";
 import { trackFormSubmitSuccess, trackFormSubmitError, trackFormStart, trackEmailClick } from "../../utils/analytics";
-import { supabase } from "../../lib/supabase";
+
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -406,34 +406,33 @@ export default function ContactSection() {
     submittingRef.current = true;
     setSubmitting(true);
 
+    // Compute listing slug from the current page before the async call.
+    const listingSlug = sourcePage.startsWith('/listings/')
+      ? sourcePage.replace('/listings/', '').replace(/\/$/, '')
+      : '';
+
+    // Include source_page and listing_slug in the form data so the Netlify
+    // webhook payload carries them through to the Supabase insert.
+    formData.set('source_page', sourcePage);
+    formData.set('listing_slug', listingSlug);
+
     try {
+      // Use Netlify's documented AJAX pattern with default redirect following.
+      // The browser response is NOT the database source of truth — the verified
+      // Netlify webhook drives the Supabase insert server-side.
+      // Limitation: Netlify may not expose a server-side CAPTCHA rejection
+      // distinctly through its AJAX redirect behavior. Both accepted and
+      // rejected submissions may resolve as a 200 after redirect following.
+      // The real gate is server-side: rejected submissions do not trigger the
+      // webhook, so no Supabase row is created for them.
       const response = await fetch('/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: encode(formData),
-        redirect: 'manual',
       });
 
-      // With redirect: 'manual', a genuine Netlify acceptance returns 200 with
-      // response.type === 'basic'. A CAPTCHA/honeypot rejection returns a 303
-      // which fetch surfaces as response.type === 'opaqueredirect' (status 0, ok false).
-      if (response.ok && response.type === 'basic') {
+      if (response.ok) {
         trackFormSubmitSuccess('contact_section', sourcePage);
-
-        const listingSlug = sourcePage.startsWith('/listings/')
-          ? sourcePage.replace('/listings/', '').replace(/\/$/, '')
-          : '';
-
-        supabase.from('leads').insert({
-          name:         formData.get('name')    as string,
-          email:        formData.get('email')   as string,
-          phone:        formData.get('phone')   as string,
-          message:      formData.get('message') as string,
-          source_page:  sourcePage,
-          listing_slug: listingSlug,
-        }).then(({ error: insertError }) => {
-          if (insertError) console.warn('[leads] Supabase insert failed:', insertError.message);
-        });
 
         // Reset the form via the captured live reference — safe to call after await.
         form.reset();
@@ -571,6 +570,8 @@ export default function ContactSection() {
                   noValidate
                 >
                   <input type="hidden" name="form-name" value="contact" />
+                  <input type="hidden" name="source_page" value={sourcePage} />
+                  <input type="hidden" name="listing_slug" value={sourcePage.startsWith('/listings/') ? sourcePage.replace('/listings/', '').replace(/\/$/, '') : ''} />
 
                   {/* Honeypot — hidden from real users and assistive technology */}
                   <p style={{ display: 'none' }} aria-hidden="true">
