@@ -199,7 +199,7 @@ function LeadCard({
 
   return (
     <div
-      className="rounded-xl overflow-hidden transition-all duration-200 cursor-pointer"
+      className="rounded-xl overflow-visible transition-all duration-200 cursor-pointer"
       style={{
         background: 'var(--ds-bg-raised)',
         boxShadow: 'var(--ds-shadow-card)',
