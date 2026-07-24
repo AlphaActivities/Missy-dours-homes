@@ -296,6 +296,16 @@ export default function ContactSection() {
       return;
     }
 
+    // Client-side reCAPTCHA presence check — improves UX, does not replace server validation.
+    const recaptchaToken = typeof window.grecaptcha !== 'undefined'
+      ? window.grecaptcha.getResponse()
+      : '';
+    if (!recaptchaToken) {
+      setAttemptedSubmit(true);
+      setError("Please complete the 'I'm not a robot' verification.");
+      return;
+    }
+
     // Build FormData from the live form reference (captured before any await).
     const formData = new FormData(form);
     formData.set('form-name', 'contact');
@@ -304,6 +314,7 @@ export default function ContactSection() {
     formData.set('phone',   phoneVal.trim());
     formData.set('message', messageVal.trim());
     // bot-field is left as-is from the DOM (empty for real users).
+    // g-recaptcha-response is captured automatically by FormData from the widget input.
 
     // Clear all previous state before the async fetch so:
     //   • any prior success timer is cancelled (submitted → false triggers cleanup)
@@ -323,9 +334,13 @@ export default function ContactSection() {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: encode(formData),
+        redirect: 'manual',
       });
 
-      if (response.ok) {
+      // With redirect: 'manual', a genuine Netlify acceptance returns 200 with
+      // response.type === 'basic'. A CAPTCHA/honeypot rejection returns a 303
+      // which fetch surfaces as response.type === 'opaqueredirect' (status 0, ok false).
+      if (response.ok && response.type === 'basic') {
         trackFormSubmitSuccess('contact_section', sourcePage);
 
         const listingSlug = sourcePage.startsWith('/listings/')
@@ -345,6 +360,7 @@ export default function ContactSection() {
 
         // Reset the form via the captured live reference — safe to call after await.
         form.reset();
+        if (typeof window.grecaptcha !== 'undefined') window.grecaptcha.reset();
         setFilledFields({ name: false, email: false, phone: false, message: false });
         setProgressStages(0);
         setAttemptedSubmit(false);
@@ -356,11 +372,13 @@ export default function ContactSection() {
       } else {
         trackFormSubmitError('contact_section', 'server_error', sourcePage);
         setError('Something went wrong. Please try again.');
+        if (typeof window.grecaptcha !== 'undefined') window.grecaptcha.reset();
         // Entered values preserved — no reset on failure.
       }
     } catch {
       trackFormSubmitError('contact_section', 'network_error', sourcePage);
       setError('Something went wrong. Please try again.');
+      if (typeof window.grecaptcha !== 'undefined') window.grecaptcha.reset();
       // Entered values preserved — no reset on failure.
     } finally {
       submittingRef.current = false;
@@ -465,6 +483,7 @@ export default function ContactSection() {
                   name="contact"
                   method="POST"
                   data-netlify="true"
+                  data-netlify-recaptcha="true"
                   data-netlify-honeypot="bot-field"
                   onSubmit={handleSubmit}
                   className="space-y-5"
@@ -615,6 +634,13 @@ export default function ContactSection() {
                       {error}
                     </div>
                   )}
+
+                  <div className="flex justify-center py-2">
+                    <div
+                      className="g-recaptcha"
+                      data-sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                    />
+                  </div>
 
                   <div className="pt-1">
                     {/* Visually hidden progress announcement for screen readers */}
