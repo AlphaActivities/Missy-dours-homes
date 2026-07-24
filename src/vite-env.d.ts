@@ -7,7 +7,7 @@ interface ImportMetaEnv {
 interface Window {
   gtag: (...args: unknown[]) => void;
   grecaptcha: {
-    render: (container: HTMLElement, options: { sitekey: string }) => number;
+    render: (container: HTMLElement, options: { sitekey: string; callback?: () => void; 'expired-callback'?: () => void }) => number;
     reset: (widgetId?: number) => void;
     getResponse: (widgetId?: number) => string;
   };

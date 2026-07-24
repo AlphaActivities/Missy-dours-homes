@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import { CONTACT_INFO } from "../../config/contact";
 import { trackFormSubmitSuccess, trackFormSubmitError, trackFormStart, trackEmailClick } from "../../utils/analytics";
@@ -186,12 +187,17 @@ export default function ContactSection() {
   // is not affected.
   const [progressStages, setProgressStages] = useState(0);
 
+  // Progressive reCAPTCHA state
+  const [showCaptcha, setShowCaptcha] = useState(false);
+
   const formStartedRef   = useRef(false);
   const submittingRef    = useRef(false);  // synchronous duplicate-submit lock
   const nameRef          = useRef<HTMLInputElement>(null);
   const emailRef         = useRef<HTMLInputElement>(null);
   const phoneRef         = useRef<HTMLInputElement>(null);
   const messageRef       = useRef<HTMLTextAreaElement>(null);
+  const captchaContainerRef = useRef<HTMLDivElement>(null);
+  const captchaWidgetIdRef   = useRef<number | null>(null);
 
   const sourcePage = location.pathname;
 
@@ -224,6 +230,58 @@ export default function ContactSection() {
     setFieldErrors(prev => ({ ...prev, [field]: fresh[field] }));
   };
 
+  // Render the reCAPTCHA widget explicitly once the container is in the DOM.
+  const renderCaptcha = useCallback(() => {
+    if (captchaWidgetIdRef.current !== null) return;
+    if (!captchaContainerRef.current) return;
+    if (typeof window.grecaptcha === 'undefined') return;
+
+    const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+    if (!siteKey) return;
+
+    captchaWidgetIdRef.current = window.grecaptcha.render(
+      captchaContainerRef.current,
+      { sitekey: siteKey },
+    );
+  }, []);
+
+  // Wait for the Google api.js script to load, then render.
+  useEffect(() => {
+    if (!showCaptcha) return;
+
+    // If the script is already loaded, render immediately.
+    if (typeof window.grecaptcha !== 'undefined') {
+      renderCaptcha();
+      return;
+    }
+
+    // Poll until grecaptcha becomes available (script loaded async).
+    const interval = setInterval(() => {
+      if (typeof window.grecaptcha !== 'undefined') {
+        renderCaptcha();
+        clearInterval(interval);
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [showCaptcha, renderCaptcha]);
+
+  // Reset the captcha widget and token, keeping it visible.
+  const resetCaptchaWidget = useCallback(() => {
+    if (captchaWidgetIdRef.current !== null && typeof window.grecaptcha !== 'undefined') {
+      window.grecaptcha.reset(captchaWidgetIdRef.current);
+    }
+  }, []);
+
+  // Tear down the widget entirely (used on successful submit).
+  const destroyCaptchaWidget = useCallback(() => {
+    if (captchaWidgetIdRef.current !== null && typeof window.grecaptcha !== 'undefined') {
+      window.grecaptcha.reset(captchaWidgetIdRef.current);
+    }
+    captchaWidgetIdRef.current = null;
+    setShowCaptcha(false);
+  }, []);
+
   // Per-field filled criteria (unchanged — controls field bg/text color):
   //   name    → any character typed
   //   email   → passes EMAIL_RE (valid format)
@@ -231,16 +289,20 @@ export default function ContactSection() {
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilledFields(prev => ({ ...prev, name: e.target.value.trim().length > 0 }));
     recalcProgress();
+    // If captcha was solved, editing any field invalidates the token.
+    resetCaptchaWidget();
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilledFields(prev => ({ ...prev, email: EMAIL_RE.test(e.target.value.trim()) }));
     recalcProgress();
+    resetCaptchaWidget();
   };
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setFilledFields(prev => ({ ...prev, message: e.target.value.trim().length > 0 }));
     recalcProgress();
+    resetCaptchaWidget();
   };
 
   // Progressive phone formatting on every keystroke.
@@ -263,6 +325,7 @@ export default function ContactSection() {
       setFieldErrors(prev => ({ ...prev, phone: fresh.phone }));
     }
     // Phone is not a progress field — no recalcProgress() call needed.
+    resetCaptchaWidget();
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -296,12 +359,26 @@ export default function ContactSection() {
       return;
     }
 
-    // Client-side reCAPTCHA presence check — improves UX, does not replace server validation.
-    const recaptchaToken = typeof window.grecaptcha !== 'undefined'
-      ? window.grecaptcha.getResponse()
+    // ── Progressive gate: reveal captcha on first valid click, don't submit. ──
+    if (!showCaptcha) {
+      setShowCaptcha(true);
+      setAttemptedSubmit(false);
+      setFieldErrors(EMPTY_ERRORS);
+      // Gently scroll the captcha into view after it appears.
+      setTimeout(() => {
+        captchaContainerRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 300);
+      return;
+    }
+
+    // ── Second click: verify captcha token before submitting. ──
+    const recaptchaToken = typeof window.grecaptcha !== 'undefined' && captchaWidgetIdRef.current !== null
+      ? window.grecaptcha.getResponse(captchaWidgetIdRef.current)
       : '';
     if (!recaptchaToken) {
-      setAttemptedSubmit(true);
       setError("Please complete the 'I'm not a robot' verification.");
       return;
     }
@@ -360,7 +437,7 @@ export default function ContactSection() {
 
         // Reset the form via the captured live reference — safe to call after await.
         form.reset();
-        if (typeof window.grecaptcha !== 'undefined') window.grecaptcha.reset();
+        destroyCaptchaWidget();
         setFilledFields({ name: false, email: false, phone: false, message: false });
         setProgressStages(0);
         setAttemptedSubmit(false);
@@ -372,13 +449,13 @@ export default function ContactSection() {
       } else {
         trackFormSubmitError('contact_section', 'server_error', sourcePage);
         setError('Something went wrong. Please try again.');
-        if (typeof window.grecaptcha !== 'undefined') window.grecaptcha.reset();
+        resetCaptchaWidget();
         // Entered values preserved — no reset on failure.
       }
     } catch {
       trackFormSubmitError('contact_section', 'network_error', sourcePage);
       setError('Something went wrong. Please try again.');
-      if (typeof window.grecaptcha !== 'undefined') window.grecaptcha.reset();
+      resetCaptchaWidget();
       // Entered values preserved — no reset on failure.
     } finally {
       submittingRef.current = false;
@@ -403,6 +480,10 @@ export default function ContactSection() {
   const progressLabel = progressStages > 0
     ? `${progressStages} of 3 required fields complete`
     : '';
+
+  const buttonLabel = showCaptcha
+    ? (submitting ? "Sending..." : "Send Verified Message")
+    : (submitting ? "Sending..." : "Send Message Now");
 
   return (
     <section
@@ -635,12 +716,25 @@ export default function ContactSection() {
                     </div>
                   )}
 
-                  <div className="flex justify-center py-2">
-                    <div
-                      className="g-recaptcha"
-                      data-sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                    />
-                  </div>
+                  {/* Progressive reCAPTCHA — only rendered after fields validate */}
+                  <AnimatePresence>
+                    {showCaptcha && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <p className="text-xs md:text-sm text-neutral-200/80 text-center mb-3">
+                          Please complete the final verification below.
+                        </p>
+                        <div className="flex justify-center py-2">
+                          <div ref={captchaContainerRef} />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   <div className="pt-1">
                     {/* Visually hidden progress announcement for screen readers */}
@@ -675,7 +769,7 @@ export default function ContactSection() {
                       />
                       {/* Button label — above the sweep */}
                       <span className="relative">
-                        {submitting ? "Sending..." : "Send Message Now"}
+                        {buttonLabel}
                       </span>
                     </button>
                   </div>
