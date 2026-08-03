@@ -6,6 +6,7 @@ import LeadDrawer from '../../components/dashboard/ui/LeadDrawer';
 import LeadSkeleton from '../../components/dashboard/ui/LeadSkeleton';
 import SectionHeader from '../../components/dashboard/ui/SectionHeader';
 import { LeadStatus } from '../../components/dashboard/ui/StatusBadge';
+import { useToast } from '../../contexts/ToastContext';
 import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle, Search, X } from 'lucide-react';
 
 const PAGE_SIZE = 25;
@@ -24,6 +25,7 @@ const FILTER_TABS: { value: FilterValue; label: string }[] = [
 const VALID_FILTERS = new Set<FilterValue>(['all', 'new', 'contacted', 'qualified', 'closed', 'archived']);
 
 export default function LeadsPage() {
+  const { showToast } = useToast();
   const [searchParams] = useSearchParams();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
@@ -68,7 +70,9 @@ export default function LeadsPage() {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    if (currentFilter !== 'all') {
+    if (currentFilter === 'all') {
+      query = query.neq('status', 'archived');
+    } else {
       query = query.eq('status', currentFilter);
     }
 
@@ -119,30 +123,39 @@ export default function LeadsPage() {
     setDrawerLead(null);
   }, []);
 
-  // When status/notes update via drawer, sync into local leads array
-  const handleLeadsChange = useCallback((updated: Lead[]) => {
-    setLeads(updated);
-    // Also update drawer if it's showing the same lead
-    setDrawerLead(prev => {
-      if (!prev) return null;
-      return updated.find(l => l.id === prev.id) ?? prev;
-    });
+  // Centralized filter-membership check. LeadsPage is the single source of
+  // truth for whether an updated lead still belongs in the active view.
+  const leadBelongsInFilter = useCallback((status: LeadStatus, activeFilter: FilterValue): boolean => {
+    if (activeFilter === 'all') return status !== 'archived';
+    return status === activeFilter;
   }, []);
 
-  const handleDrawerStatusChange = useCallback(async (id: string, next: LeadStatus) => {
-    // Delegate to LeadList via the shared Supabase path — but since drawer is
-    // outside LeadList, we call Supabase directly here and update both states.
+  // Shared status-change handler used by both the lead list and the drawer.
+  // Database-first: only mutate local state after the update succeeds.
+  const handleStatusChange = useCallback(async (id: string, next: LeadStatus) => {
     const { error } = await supabase
       .from('leads')
       .update({ status: next })
       .eq('id', id);
 
-    if (!error) {
-      setLeads(prev => prev.map(l => l.id === id ? { ...l, status: next } : l));
-      setDrawerLead(prev => prev?.id === id ? { ...prev, status: next } : prev);
+    if (error) {
+      showToast('Failed to update status.', 'error');
+      return;
     }
-    // Toast is fired inside LeadList for list updates; drawer has its own feedback path
-  }, []);
+
+    showToast('Status updated.');
+
+    setLeads(prev => {
+      const belongs = leadBelongsInFilter(next, filter);
+      if (belongs) {
+        return prev.map(l => l.id === id ? { ...l, status: next } : l);
+      }
+      setTotal(t => Math.max(0, t - 1));
+      return prev.filter(l => l.id !== id);
+    });
+
+    setDrawerLead(prev => prev?.id === id ? { ...prev, status: next } : prev);
+  }, [filter, leadBelongsInFilter, showToast]);
 
   const handleDrawerSaveNotes = useCallback(async (id: string, notes: string) => {
     const { error } = await supabase
@@ -306,7 +319,7 @@ export default function LeadsPage() {
           ) : (
             <LeadList
               leads={leads}
-              onLeadsChange={handleLeadsChange}
+              onStatusChange={handleStatusChange}
               onOpenDrawer={handleOpenDrawer}
               isFiltered={isFiltered}
               onClearSearch={handleClearSearch}
@@ -360,7 +373,7 @@ export default function LeadsPage() {
       <LeadDrawer
         lead={drawerLead}
         onClose={handleCloseDrawer}
-        onStatusChange={handleDrawerStatusChange}
+        onStatusChange={handleStatusChange}
         onSaveNotes={handleDrawerSaveNotes}
       />
     </>

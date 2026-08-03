@@ -1,11 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Mail, Phone, Calendar, Users, Search } from 'lucide-react';
-import StatusBadge, { LeadStatus } from './ui/StatusBadge';
+import { LeadStatus } from './ui/StatusBadge';
 import StatusSelect from './ui/StatusSelect';
 import QuickActionBar from './ui/QuickActionBar';
 import { formatDate } from '../../utils/formatDate';
-import { supabase } from '../../lib/supabase';
-import { useToast } from '../../contexts/ToastContext';
 
 export interface Lead {
   id: string;
@@ -302,64 +300,28 @@ export function EmptyNoResults({ onClear }: { onClear: () => void }) {
 // ── Exported Component ────────────────────────────────────────
 export default function LeadList({
   leads: initialLeads,
-  onLeadsChange,
+  onStatusChange,
   onOpenDrawer,
   isFiltered = false,
   onClearSearch,
 }: {
   leads: Lead[];
-  onLeadsChange: (leads: Lead[]) => void;
+  onStatusChange: (id: string, status: LeadStatus) => Promise<void>;
   onOpenDrawer: (lead: Lead) => void;
   isFiltered?: boolean;
   onClearSearch?: () => void;
 }) {
-  const { showToast } = useToast();
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
 
   useEffect(() => {
     setLeads(initialLeads);
   }, [initialLeads]);
 
-  const updateLeadLocal = useCallback((id: string, patch: Partial<Lead>) => {
-    setLeads(prev => {
-      const next = prev.map(l => l.id === id ? { ...l, ...patch } : l);
-      onLeadsChange(next);
-      return next;
-    });
-  }, [onLeadsChange]);
-
+  // Status changes are delegated to LeadsPage, which owns the database update
+  // and filter-membership logic. This component just forwards the request.
   const handleStatusChange = useCallback(async (id: string, next: LeadStatus) => {
-    let prevStatus: LeadStatus | undefined;
-    setLeads(prev => { prevStatus = prev.find(l => l.id === id)?.status; return prev; });
-    updateLeadLocal(id, { status: next });
-
-    const { error } = await supabase
-      .from('leads')
-      .update({ status: next })
-      .eq('id', id);
-
-    if (error) {
-      if (prevStatus) updateLeadLocal(id, { status: prevStatus });
-      showToast('Failed to update status.', 'error');
-    } else {
-      showToast('Status updated.');
-    }
-  }, [updateLeadLocal, showToast]);
-
-  const handleSaveNotes = useCallback(async (id: string, notes: string) => {
-    const { error } = await supabase
-      .from('leads')
-      .update({ notes })
-      .eq('id', id);
-
-    if (error) {
-      showToast('Failed to save note.', 'error');
-      throw error;
-    }
-
-    updateLeadLocal(id, { notes });
-    showToast('Note saved.');
-  }, [updateLeadLocal, showToast]);
+    await onStatusChange(id, next);
+  }, [onStatusChange]);
 
   // Sync openDrawer with fresh lead state so drawer always has latest data
   const handleOpenDrawer = useCallback((lead: Lead) => {
