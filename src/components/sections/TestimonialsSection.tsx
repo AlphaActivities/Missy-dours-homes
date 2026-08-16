@@ -17,7 +17,7 @@ export default function TestimonialsSection() {
   return (
     <section
       id="testimonials"
-      className="lux-section bg-transparent text-white pt-24 pb-20 md:pt-32 md:pb-28 lg:pt-40 lg:pb-28"
+      className="lux-section bg-transparent text-white py-24 md:py-32 lg:py-40"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16 space-y-10">
 
