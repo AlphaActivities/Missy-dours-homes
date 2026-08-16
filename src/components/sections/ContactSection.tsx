@@ -487,7 +487,7 @@ export default function ContactSection() {
   return (
     <section
       id="contact"
-      className="relative bg-transparent text-white py-24 md:py-32 lg:py-40"
+      className="relative bg-transparent text-white pt-4 pb-24 md:pt-4 md:pb-32 lg:pt-8 lg:pb-40"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16">
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-14 lg:gap-20">
