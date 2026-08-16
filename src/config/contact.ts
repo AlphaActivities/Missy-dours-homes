@@ -8,4 +8,5 @@ export const CONTACT_INFO = {
     mailto: 'mailto:missydourshomes@gmail.com',
     actual: 'missydourshomes@gmail.com',
   },
+  googleReviewUrl: 'https://g.page/r/CVzUH2n6y9MLEBI/review',
 } as const;
