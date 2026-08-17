@@ -85,10 +85,10 @@ export default function TestimonialsSection() {
         {/* GOOGLE REVIEW CTA */}
         <LuxFadeIn delay={0.25}>
           <div className="max-w-2xl mx-auto mt-6">
-            <div className="rounded-2xl border border-[#c29f63]/40 bg-gradient-to-br from-white/[0.06] via-white/[0.03] to-transparent backdrop-blur-xl px-6 py-6 sm:px-8 sm:py-7 shadow-[0_12px_35px_rgba(0,0,0,0.4)]">
+            <div className="rounded-2xl border border-[#c29f63]/60 bg-gradient-to-br from-white/[0.06] via-white/[0.03] to-transparent backdrop-blur-xl px-6 py-6 sm:px-8 sm:py-7 shadow-[0_12px_35px_rgba(0,0,0,0.4)] hover:shadow-[0_18px_45px_rgba(0,0,0,0.5),0_0_30px_rgba(196,164,106,0.25)] transition-shadow duration-300 ring-1 ring-inset ring-white/10">
               <div className="flex flex-col items-center text-center gap-4 sm:gap-5">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 drop-shadow-[0_0_6px_rgba(245,230,200,0.35)]">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star key={star} size={15} fill="#F5E6C8" stroke="#F5E6C8" strokeWidth={1.5} />
                     ))}
@@ -96,6 +96,7 @@ export default function TestimonialsSection() {
                   <h3 className="text-lg sm:text-xl font-semibold text-[#F5E6C8] tracking-wide">
                     Share Your Experience
                   </h3>
+                  <p className="text-xs tracking-[0.2em] uppercase text-[#F5E6C8]/70">Review on Google</p>
                 </div>
                 <p className="text-sm sm:text-[0.95rem] leading-relaxed text-neutral-200/90 max-w-md">
                   Worked with Missy? Share your experience on Google and help future buyers and sellers feel confident about their next move.
@@ -105,7 +106,7 @@ export default function TestimonialsSection() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackCTA('Leave Missy a Google Review', 'testimonials')}
-                  className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#f5e3b6] via-[#e7c78a] to-[#c89c4f] px-7 sm:px-8 py-3 text-[0.78rem] sm:text-[0.82rem] font-semibold tracking-[0.18em] uppercase text-[#1b1b1b] shadow-[0_14px_40px_rgba(0,0,0,0.55)] hover:brightness-105 hover:shadow-[0_18px_50px_rgba(0,0,0,0.65)] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/80"
+                  className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#f5e3b6] via-[#e7c78a] to-[#c89c4f] px-7 sm:px-8 py-3 text-[0.78rem] sm:text-[0.82rem] font-semibold tracking-[0.18em] uppercase text-[#1b1b1b] shadow-[0_14px_40px_rgba(0,0,0,0.55)] hover:brightness-105 hover:shadow-[0_18px_50px_rgba(0,0,0,0.65)] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/80 active:translate-y-px ring-1 ring-[#f5e3b6]/25"
                 >
                   <Star size={15} fill="#1b1b1b" stroke="#1b1b1b" strokeWidth={1.5} />
                   <span>Leave Missy a Google Review</span>
