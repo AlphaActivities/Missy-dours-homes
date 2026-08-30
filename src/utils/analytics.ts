@@ -37,3 +37,15 @@ export const trackPathSelect = (path: string) =>
 
 export const trackFloorplanView = (slug: string) =>
   trackEvent('floorplan_view', { slug });
+
+export const trackBrokerageLinkClick = (location: string) =>
+  trackEvent('brokerage_link_click', { location });
+
+export const trackBrokerageWebsiteClick = (location: string) =>
+  trackEvent('brokerage_website_click', { location });
+
+export const trackIABSClick = (location: string) =>
+  trackEvent('iabs_click', { location });
+
+export const trackConsumerProtectionClick = (location: string) =>
+  trackEvent('consumer_protection_click', { location });

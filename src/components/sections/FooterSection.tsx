@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { navigateToSection } from '../../utils/scrollToSection';
 import { CONTACT_INFO } from '../../config/contact';
 import { Instagram, Linkedin, Home, Facebook } from 'lucide-react';
-import { trackPhoneClick, trackEmailClick } from '../../utils/analytics';
+import { trackPhoneClick, trackEmailClick, trackBrokerageLinkClick, trackBrokerageWebsiteClick, trackIABSClick, trackConsumerProtectionClick } from '../../utils/analytics';
 
 export default function FooterSection() {
   const navigate = useNavigate();
@@ -111,6 +111,7 @@ export default function FooterSection() {
                   href="https://www.google.com/maps/place/Clancy+Realty/@32.9405561,-96.8235514,17z/data=!3m1!4b1!4m6!3m5!1s0x8e6b8a480b85908b:0x6124928e9cc64901!8m2!3d32.9405561!4d-96.8209765!16s%2Fg%2F11z5c6y4vw?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackBrokerageLinkClick('footer')}
                   className="font-normal leading-relaxed block text-black hover:text-[#c29f63] no-underline transition-colors"
                 >
                   <span className="font-medium">Office:</span> <strong>Clancy Realty</strong><br />
@@ -121,7 +122,8 @@ export default function FooterSection() {
                   href="https://clancyrealty.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block text-sm text-[#c29f63] hover:text-black underline transition-colors mt-1"
+                  onClick={() => trackBrokerageWebsiteClick('footer')}
+                  className="inline-block text-sm text-black hover:text-[#c29f63] underline transition-colors mt-1"
                 >
                   ClancyRealty.com
                 </a>
@@ -131,6 +133,7 @@ export default function FooterSection() {
                   href="/docs/IABS.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackIABSClick('footer')}
                   className="block text-black hover:text-[#c29f63] underline transition-colors"
                 >
                   Information About Brokerage Services
@@ -139,6 +142,7 @@ export default function FooterSection() {
                   href="/docs/ConsumerProtectionNotice.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackConsumerProtectionClick('footer')}
                   className="block text-black hover:text-[#c29f63] underline transition-colors"
                 >
                   Texas Real Estate Commission Consumer Protection Notice
