@@ -4,6 +4,18 @@ to = "/images/Favicons/favicon.ico"
 status = 301
 force = true
 
+# Dashboard/admin routes → admin HTML shell (must come before the generic /* fallback)
+[[redirects]]
+from = "/dashboard"
+to = "/admin.html"
+status = 200
+
+[[redirects]]
+from = "/dashboard/*"
+to = "/admin.html"
+status = 200
+
+# Generic SPA fallback for all public routes
 [[redirects]]
 from = "/*"
 to = "/index.html"
@@ -13,6 +25,13 @@ status = 200
 command = "npx vite build"
 publish = "dist"
 
+# noindex/nofollow for the exact /dashboard route
+[[headers]]
+  for = "/dashboard"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+# noindex/nofollow for all /dashboard/* sub-routes
 [[headers]]
   for = "/dashboard/*"
   [headers.values]
