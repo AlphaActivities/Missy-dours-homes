@@ -118,6 +118,14 @@ export default function FooterSection() {
                   14114 N Dallas Parkway, Suite 420<br />
                   Dallas, Texas 75254
                 </a>
+                <a
+                  href="https://clancyrealty.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-sm text-[#c29f63] hover:text-black underline transition-colors mt-1"
+                >
+                  ClancyRealty.com
+                </a>
               </div>
               <div className="mt-4 space-y-2.5 text-sm">
                 <a
@@ -134,7 +142,7 @@ export default function FooterSection() {
                   rel="noopener noreferrer"
                   className="block text-black hover:text-[#c29f63] underline transition-colors"
                 >
-                  Consumer Protection Notice
+                  Texas Real Estate Commission Consumer Protection Notice
                 </a>
               </div>
             </div>
