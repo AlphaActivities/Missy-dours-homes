@@ -107,14 +107,13 @@ export default function FooterSection() {
               <p className="font-medium">Phone: <a href={CONTACT_INFO.phone.tel} onClick={() => trackPhoneClick('footer')} className="font-normal text-black hover:text-[#c29f63] underline transition-colors">{CONTACT_INFO.phone.display}</a></p>
               <p className="font-medium">Email: <a href={CONTACT_INFO.email.mailto} onClick={() => trackEmailClick('footer')} className="font-normal text-black hover:text-[#c29f63] underline transition-colors">{CONTACT_INFO.email.display}</a></p>
               <div>
-                <p className="font-medium mb-1">Office:</p>
                 <a
                   href="https://www.google.com/maps/place/Clancy+Realty/@32.9405561,-96.8235514,17z/data=!3m1!4b1!4m6!3m5!1s0x8e6b8a480b85908b:0x6124928e9cc64901!8m2!3d32.9405561!4d-96.8209765!16s%2Fg%2F11z5c6y4vw?entry=ttu&g_ep=EgoyMDI2MDcxNS4wIKXMDSoASAFQAw%3D%3D"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-normal leading-relaxed block text-black hover:text-[#c29f63] no-underline transition-colors"
                 >
-                  <strong>Clancy Realty</strong><br />
+                  <span className="font-medium">Office:</span> <strong>Clancy Realty</strong><br />
                   14114 N Dallas Parkway, Suite 420<br />
                   Dallas, Texas 75254
                 </a>
