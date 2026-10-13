@@ -19,7 +19,7 @@ export default function FooterSection() {
     <footer id="footer" className="bg-[#f9f7f3] relative z-10">
       <div className="max-w-6xl mx-auto px-6 md:px-10 lg:px-12 py-8 md:py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-8">
-          <div className="flex flex-col md:pr-16">
+          <div className="flex flex-col md:pr-20">
             <button
               type="button"
               onClick={() => navigateToSection('home', navigate, location.pathname)}
