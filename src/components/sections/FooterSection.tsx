@@ -19,7 +19,7 @@ export default function FooterSection() {
     <footer id="footer" className="bg-[#f9f7f3] relative z-10">
       <div className="max-w-6xl mx-auto px-6 md:px-10 lg:px-12 py-8 md:py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-8">
-          <div className="flex flex-col">
+          <div className="flex flex-col md:pr-8">
             <button
               type="button"
               onClick={() => navigateToSection('home', navigate, location.pathname)}
@@ -147,20 +147,18 @@ export default function FooterSection() {
                 >
                   TREC Consumer Protection Notice
                 </a>
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-2.5 text-sm">
-                  <Link
-                    to="/privacy"
-                    className="text-black hover:text-[#c29f63] underline transition-colors"
-                  >
-                    Privacy Policy
-                  </Link>
-                  <Link
-                    to="/terms"
-                    className="text-black hover:text-[#c29f63] underline transition-colors"
-                  >
-                    Terms of Service
-                  </Link>
-                </div>
+                <Link
+                  to="/privacy"
+                  className="block text-black hover:text-[#c29f63] underline transition-colors"
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  to="/terms"
+                  className="block text-black hover:text-[#c29f63] underline transition-colors"
+                >
+                  Terms of Service
+                </Link>
               </div>
             </div>
           </div>
