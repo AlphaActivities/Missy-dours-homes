@@ -78,21 +78,6 @@ export default function FooterSection() {
                 <Linkedin className="w-7 h-7" strokeWidth={1.5} />
               </a>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 mt-4 text-sm">
-              <Link
-                to="/privacy"
-                className="text-black hover:text-[#c29f63] underline transition-colors"
-              >
-                Privacy Policy
-              </Link>
-              <span className="text-black/40">·</span>
-              <Link
-                to="/terms"
-                className="text-black hover:text-[#c29f63] underline transition-colors"
-              >
-                Terms of Service
-              </Link>
-            </div>
           </div>
 
           <div className="flex flex-col">
@@ -162,6 +147,20 @@ export default function FooterSection() {
                 >
                   TREC Consumer Protection Notice
                 </a>
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-2.5 text-sm">
+                  <Link
+                    to="/privacy"
+                    className="text-black hover:text-[#c29f63] underline transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
+                  <Link
+                    to="/terms"
+                    className="text-black hover:text-[#c29f63] underline transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
