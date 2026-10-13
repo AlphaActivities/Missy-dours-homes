@@ -1,19 +1,64 @@
+import { useEffect, useState } from "react";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import { Star } from 'lucide-react';
 import { trackCTA } from "../../utils/analytics";
 import { CONTACT_INFO } from "../../config/contact";
+import { supabase } from "../../lib/supabase";
+import { formatDateShort } from "../../utils/formatDate";
 
-const testimonials = [
-  {
-    id: 1,
-    name: "Landon Haas",
-    detail: "First-Time Homebuyer",
-    quote:
-      "Missy made my first-time home-buying experience seamless. She took the time to understand what I wanted and what fit my style and personality. My favorite part about working with Missy was her hands-on and proactive approach. She visited all types of properties before narrowing down the best one for me.",
-  },
-];
+interface GoogleReview {
+  id: string;
+  google_review_id: string;
+  reviewer_name: string | null;
+  reviewer_profile_photo_url: string | null;
+  star_rating: number | null;
+  comment: string | null;
+  review_created_at: string | null;
+  review_updated_at: string | null;
+  owner_reply: string | null;
+  owner_reply_updated_at: string | null;
+}
 
 export default function TestimonialsSection() {
+  const [reviews, setReviews] = useState<GoogleReview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchReviews() {
+      try {
+        const { data, error } = await supabase
+          .from("google_reviews")
+          .select("id, google_review_id, reviewer_name, reviewer_profile_photo_url, star_rating, comment, review_created_at, review_updated_at, owner_reply, owner_reply_updated_at")
+          .eq("is_displayable", true)
+          .order("review_created_at", { ascending: false });
+
+        if (cancelled) return;
+
+        if (error) {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
+
+        setReviews(data || []);
+        setLoading(false);
+      } catch {
+        if (cancelled) return;
+        setFailed(true);
+        setLoading(false);
+      }
+    }
+
+    fetchReviews();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section
       id="testimonials"
@@ -40,47 +85,100 @@ export default function TestimonialsSection() {
           </div>
         </LuxFadeIn>
 
-        {/* TESTIMONIAL GRID */}
-        <div className="grid grid-cols-1 max-w-2xl mx-auto gap-8">
-          {testimonials.map((testimonial, index) => (
-            <LuxFadeIn key={testimonial.id} delay={0.1 + index * 0.08}>
-              <article className="group relative h-full rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 flex flex-col justify-between shadow-[0_18px_45px_rgba(0,0,0,0.7)] select-none">
+        {/* REVIEW GRID — only render when not loading and reviews exist */}
+        {!loading && reviews.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 md:gap-8">
+            {reviews.map((review, index) => (
+              <LuxFadeIn key={review.id} delay={0.1 + index * 0.08}>
+                <article className="group relative h-full rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 flex flex-col justify-between shadow-[0_18px_45px_rgba(0,0,0,0.7)] select-none">
 
-                {/* QUOTE CONTENT */}
-                <div>
-                  {testimonial.quote && (
-                    <div className="flex items-center gap-1 mb-4">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} size={16} fill="#F5E6C8" stroke="#F5E6C8" strokeWidth={1.5} />
-                      ))}
-                    </div>
-                  )}
-                  {testimonial.quote && (
-                    <p className="text-sm md:text-[15px] leading-relaxed text-white">
-                      {testimonial.quote}
-                    </p>
-                  )}
-                </div>
-
-                {/* CLIENT INFO OR DECORATIVE LINE */}
-                {testimonial.name ? (
-                  <div className="mt-6 pt-4 border-t border-white/20 flex flex-col">
-                    <span className="text-sm font-semibold text-white">
-                      {testimonial.name}
-                    </span>
-                    {testimonial.detail && (
-                      <span className="text-xs text-neutral-200">
-                        {testimonial.detail}
+                  {/* QUOTE CONTENT */}
+                  <div>
+                    {/* STAR RATING + GOOGLE ATTRIBUTION */}
+                    <div className="flex items-center justify-between mb-4">
+                      {review.star_rating && (
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: 5 }).map((_, star) => (
+                            <Star
+                              key={star}
+                              size={16}
+                              fill={star < review.star_rating! ? "#F5E6C8" : "none"}
+                              stroke="#F5E6C8"
+                              strokeWidth={1.5}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <span className="text-[0.65rem] tracking-[0.15em] uppercase text-[#F5E6C8]/60">
+                        Google Review
                       </span>
+                    </div>
+
+                    {/* REVIEW COMMENT */}
+                    {review.comment && (
+                      <p className="text-sm md:text-[15px] leading-relaxed text-white">
+                        {review.comment}
+                      </p>
+                    )}
+
+                    {/* OWNER REPLY */}
+                    {review.owner_reply && (
+                      <div className="mt-4 pl-4 border-l-2 border-[#F5E6C8]/30">
+                        <p className="text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8]/70 mb-1.5">
+                          Response from Missy
+                        </p>
+                        <p className="text-xs md:text-[13px] leading-relaxed text-neutral-200/80">
+                          {review.owner_reply}
+                        </p>
+                      </div>
                     )}
                   </div>
-                ) : (
-                  <div className="mt-auto pt-4 border-t border-white/20"></div>
-                )}
-              </article>
-            </LuxFadeIn>
-          ))}
-        </div>
+
+                  {/* REVIEWER INFO */}
+                  <div className="mt-6 pt-4 border-t border-white/20 flex items-center gap-3">
+                    {review.reviewer_profile_photo_url ? (
+                      <img
+                        src={review.reviewer_profile_photo_url}
+                        alt={review.reviewer_name || "Reviewer"}
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-[#F5E6C8]/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-semibold text-[#F5E6C8]">
+                          {(review.reviewer_name || "?").charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-semibold text-white truncate">
+                        {review.reviewer_name || "Anonymous"}
+                      </span>
+                      {review.review_created_at && (
+                        <span className="text-xs text-neutral-200">
+                          {formatDateShort(review.review_created_at)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              </LuxFadeIn>
+            ))}
+          </div>
+        )}
+
+        {/* LOADING SKELETON */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 md:gap-8">
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/40 via-[#7A5F3C]/40 to-[#6B5335]/40 border border-[#c29f63]/15 backdrop-blur-2xl px-6 py-7 animate-pulse"
+                style={{ minHeight: "200px" }}
+              />
+            ))}
+          </div>
+        )}
 
         {/* GOOGLE REVIEW CTA */}
         <LuxFadeIn delay={0.25}>
