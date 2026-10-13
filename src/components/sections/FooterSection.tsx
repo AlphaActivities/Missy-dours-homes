@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { navigateToSection } from '../../utils/scrollToSection';
 import { CONTACT_INFO } from '../../config/contact';
 import { Instagram, Linkedin, Home, Facebook } from 'lucide-react';
@@ -145,8 +145,22 @@ export default function FooterSection() {
                   onClick={() => trackConsumerProtectionClick('footer')}
                   className="block text-black hover:text-[#c29f63] underline transition-colors"
                 >
-                  Texas Real Estate Commission Consumer Protection Notice
+                  TREC Consumer Protection Notice
                 </a>
+                <div className="pt-2.5 space-y-2.5">
+                  <Link
+                    to="/privacy"
+                    className="block text-black hover:text-[#c29f63] underline transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
+                  <Link
+                    to="/terms"
+                    className="block text-black hover:text-[#c29f63] underline transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

@@ -13,6 +13,8 @@ import ProtectedRoute from './components/dashboard/ProtectedRoute';
 import LoginPage from './pages/dashboard/LoginPage';
 import DashboardOverviewPage from './pages/dashboard/DashboardOverviewPage';
 import LeadsPage from './pages/dashboard/LeadsPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 
 function Layout() {
   const location = useLocation();
@@ -136,6 +138,8 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/listings" element={<ListingsPage />} />
           <Route path="/listings/:slug" element={<ListingDetailPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
         </Route>
 
         {/* Dashboard — isolated layout, no public Navbar/Footer */}
