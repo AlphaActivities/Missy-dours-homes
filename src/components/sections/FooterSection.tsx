@@ -23,7 +23,7 @@ export default function FooterSection() {
             <button
               type="button"
               onClick={() => navigateToSection('home', navigate, location.pathname)}
-              className="flex justify-center md:justify-start mb-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c29f63] rounded-lg transition-transform duration-200 hover:scale-105"
+              className="flex justify-center mb-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c29f63] rounded-lg transition-transform duration-200 hover:scale-105"
             >
               <img
                 src="/images/md-logo.png"
@@ -31,16 +31,16 @@ export default function FooterSection() {
                 className="h-20 w-auto object-contain"
               />
             </button>
-            <h3 className="text-sm font-semibold tracking-[0.26em] uppercase text-black leading-tight text-center md:text-left">
+            <h3 className="text-sm font-semibold tracking-[0.26em] uppercase text-black leading-tight text-center">
               Missy Dours
             </h3>
-            <p className="text-sm text-black leading-relaxed mt-1.5 text-center md:text-left">
+            <p className="text-sm text-black leading-relaxed mt-1.5 text-center mx-auto" style={{ maxWidth: '280px' }}>
               Dallas · Fort Worth · Carrollton · Farmers Branch · Addison · Coppell · North Dallas Metroplex · North Texas
             </p>
-            <p className="text-sm text-black leading-relaxed mt-1.5 text-center md:text-left">
+            <p className="text-sm text-black leading-relaxed mt-1.5 text-center mx-auto" style={{ maxWidth: '300px' }}>
               Luxury real estate advisor curating exceptional properties for discerning buyers and sellers across North Texas.
             </p>
-            <div className="flex items-center justify-center md:justify-start gap-4 mt-2.5">
+            <div className="flex items-center justify-center gap-4 mt-2.5">
               <a
                 href="https://www.realtor.com/realestateagents/690d57de7abd2208461fc50b"
                 target="_blank"
@@ -77,6 +77,21 @@ export default function FooterSection() {
               >
                 <Linkedin className="w-7 h-7" strokeWidth={1.5} />
               </a>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 mt-4 text-sm">
+              <Link
+                to="/privacy"
+                className="text-black hover:text-[#c29f63] underline transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <span className="text-black/40">·</span>
+              <Link
+                to="/terms"
+                className="text-black hover:text-[#c29f63] underline transition-colors"
+              >
+                Terms of Service
+              </Link>
             </div>
           </div>
 
@@ -147,20 +162,6 @@ export default function FooterSection() {
                 >
                   TREC Consumer Protection Notice
                 </a>
-                <div className="pt-2.5 space-y-2.5">
-                  <Link
-                    to="/privacy"
-                    className="block text-black hover:text-[#c29f63] underline transition-colors"
-                  >
-                    Privacy Policy
-                  </Link>
-                  <Link
-                    to="/terms"
-                    className="block text-black hover:text-[#c29f63] underline transition-colors"
-                  >
-                    Terms of Service
-                  </Link>
-                </div>
               </div>
             </div>
           </div>
