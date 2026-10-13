@@ -1,0 +1,3 @@
+[functions.sync-google-reviews]
+verify_jwt = false
+entrypoint = "./functions/sync-google-reviews/index.ts"
