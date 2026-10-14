@@ -163,13 +163,15 @@
     }
   }
 
-  @keyframes livingGoldPerimeter {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
+  @property --gold-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  @keyframes livingGoldSweep {
+    0%   { --gold-angle: 0deg; }
+    100% { --gold-angle: 360deg; }
   }
 
   .luxury-headline-glow {
@@ -238,7 +240,7 @@
     border-radius: inherit;
     padding: 2px;
     background: conic-gradient(
-      from 0deg,
+      from var(--gold-angle, 0deg),
       #8B6A32 0deg,
       #A57C3C 60deg,
       #C4A46A 120deg,
@@ -255,7 +257,7 @@
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
-    animation: livingGoldPerimeter 5s linear infinite;
+    animation: livingGoldSweep 5s linear infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
