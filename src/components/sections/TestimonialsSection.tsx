@@ -640,11 +640,6 @@ function ReviewText({
                   );
                 });
               })()}
-              {revealedCount < words.length && (
-                <span className="invisible">
-                  {words.slice(Math.min(revealedCount, effectiveVisibleLimit)).join(' ')}
-                </span>
-              )}
             </>
           )}
         </p>
