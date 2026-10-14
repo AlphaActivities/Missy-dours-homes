@@ -22,8 +22,8 @@ interface GoogleReview {
 const FIRST_DELAY_MS = 2500;
 const AUTOPLAY_MS = 5500;
 const MANUAL_PAUSE_MS = 20000;
-const MOBILE_CLAMP = 6;
-const DESKTOP_CLAMP = 12;
+const MOBILE_CLAMP = 5;
+const DESKTOP_CLAMP = 7;
 
 const GOOGLE_COLORS = ['#4285F4', '#DB4437', '#F4B400', '#4285F4', '#0F9D58'];
 
@@ -239,7 +239,6 @@ export default function TestimonialsSection() {
               <div
                 key={activeIndex}
                 className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:animate-review-fade-in flex flex-col"
-                style={{ minHeight: "320px" }}
               >
                 {/* STAR RATING + GOOGLE ATTRIBUTION */}
                 <div className="flex items-center justify-between mb-5">
@@ -447,37 +446,43 @@ function ReviewText({
   }, [text]);
 
   return (
-    <div>
-      <p
-        ref={fullRef}
-        className={`text-sm md:text-[15px] leading-relaxed text-white ${
-          !isExpanded && needsTruncation
-            ? 'line-clamp-6 md:line-clamp-12'
-            : ''
-        }`}
-      >
-        {text}
-      </p>
-
-      {needsTruncation && (
-        <button
-          onClick={onToggle}
-          aria-expanded={isExpanded}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#c29f63]/40 bg-[#c29f63]/10 px-3.5 py-1.5 text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8] font-medium hover:bg-[#c29f63]/20 hover:border-[#c29f63]/70 hover:-translate-y-0.5 hover:brightness-110 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/70 active:translate-y-0"
+    <div className="flex flex-col">
+      {/* Text area — reserved min-height when collapsed for equal card heights */}
+      <div className={isExpanded ? '' : 'min-h-[120px] md:min-h-[176px]'}>
+        <p
+          ref={fullRef}
+          className={`text-sm md:text-[15px] leading-relaxed text-white ${
+            !isExpanded && needsTruncation
+              ? 'line-clamp-5 md:line-clamp-7'
+              : ''
+          }`}
         >
-          {isExpanded ? (
-            <>
-              <span>Show Less</span>
-              <ChevronUp size={12} strokeWidth={2} />
-            </>
-          ) : (
-            <>
-              <span>Read More</span>
-              <ChevronDown size={12} strokeWidth={2} />
-            </>
-          )}
-        </button>
-      )}
+          {text}
+        </p>
+      </div>
+
+      {/* Read More slot — always reserved to prevent footer shift */}
+      <div className={isExpanded ? 'mt-3' : 'min-h-[32px] mt-3'}>
+        {needsTruncation && (
+          <button
+            onClick={onToggle}
+            aria-expanded={isExpanded}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#c29f63]/40 bg-[#c29f63]/10 px-3.5 py-1.5 text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8] font-medium hover:bg-[#c29f63]/20 hover:border-[#c29f63]/70 hover:-translate-y-0.5 hover:brightness-110 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/70 active:translate-y-0"
+          >
+            {isExpanded ? (
+              <>
+                <span>Show Less</span>
+                <ChevronUp size={12} strokeWidth={2} />
+              </>
+            ) : (
+              <>
+                <span>Read More</span>
+                <ChevronDown size={12} strokeWidth={2} />
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
