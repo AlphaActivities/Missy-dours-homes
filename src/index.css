@@ -241,15 +241,17 @@
     padding: 2px;
     background: conic-gradient(
       from var(--gold-angle, 0deg),
-      #8B6A32 0deg,
-      #A57C3C 60deg,
-      #C4A46A 120deg,
-      #F3D998 160deg,
-      #FFE8AC 180deg,
-      #F3D998 200deg,
-      #C4A46A 240deg,
-      #A57C3C 300deg,
-      #8B6A32 360deg
+      #5C4422 0deg,
+      #7A5A2E 50deg,
+      #A57C3C 100deg,
+      #C4A46A 140deg,
+      #F3D998 165deg,
+      #FFF1C8 180deg,
+      #F3D998 195deg,
+      #C4A46A 220deg,
+      #A57C3C 260deg,
+      #7A5A2E 310deg,
+      #5C4422 360deg
     );
     -webkit-mask:
       linear-gradient(#fff 0 0) content-box,
@@ -263,7 +265,7 @@
   @media (prefers-reduced-motion: reduce) {
     .living-gold-border::after {
       animation: none;
-      background: linear-gradient(135deg, #8B6A32, #C4A46A, #F3D998, #C4A46A, #8B6A32);
+      background: linear-gradient(135deg, #5C4422, #A57C3C, #FFF1C8, #C4A46A, #5C4422);
     }
   }
 }

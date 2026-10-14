@@ -243,7 +243,7 @@ export default function TestimonialsSection() {
               {/* REVIEW CARD */}
               <div
                 key={activeIndex}
-                className={`living-gold-border rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border-2 border-[#C4A46A]/50 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7),0_0_22px_rgba(196,164,106,0.15)] hover:shadow-[0_18px_45px_rgba(0,0,0,0.7),0_0_34px_rgba(196,164,106,0.25)] transition-shadow duration-500 ${direction === 'forward' ? 'motion-safe:animate-review-fade-in' : 'motion-safe:animate-review-fade-in-reverse'} flex flex-col`}
+                className={`living-gold-border rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border-2 border-[#C4A46A]/50 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7),0_0_30px_rgba(196,164,106,0.22)] hover:shadow-[0_18px_45px_rgba(0,0,0,0.7),0_0_44px_rgba(196,164,106,0.35)] transition-shadow duration-500 ${direction === 'forward' ? 'motion-safe:animate-review-fade-in' : 'motion-safe:animate-review-fade-in-reverse'} flex flex-col`}
               >
                 {/* STAR RATING + GOOGLE ATTRIBUTION */}
                 <div className="flex items-center justify-between mb-5">
