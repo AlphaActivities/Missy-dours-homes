@@ -163,15 +163,12 @@
     }
   }
 
-  @keyframes livingGoldBorderShift {
-    0%, 100% {
-      border-color: rgba(196, 164, 106, 0.5);
+  @keyframes livingGoldPerimeter {
+    0% {
+      transform: rotate(0deg);
     }
-    33% {
-      border-color: rgba(232, 213, 168, 0.65);
-    }
-    66% {
-      border-color: rgba(245, 230, 200, 0.55);
+    100% {
+      transform: rotate(360deg);
     }
   }
 
@@ -239,14 +236,32 @@
     position: absolute;
     inset: -2px;
     border-radius: inherit;
-    border: 2px solid rgba(196, 164, 106, 0.5);
+    padding: 2px;
+    background: conic-gradient(
+      from 0deg,
+      #8B6A32 0deg,
+      #A57C3C 60deg,
+      #C4A46A 120deg,
+      #F3D998 160deg,
+      #FFE8AC 180deg,
+      #F3D998 200deg,
+      #C4A46A 240deg,
+      #A57C3C 300deg,
+      #8B6A32 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
     pointer-events: none;
-    animation: livingGoldBorderShift 6s ease-in-out infinite;
+    animation: livingGoldPerimeter 5s linear infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .living-gold-border::after {
       animation: none;
+      background: linear-gradient(135deg, #8B6A32, #C4A46A, #F3D998, #C4A46A, #8B6A32);
     }
   }
 }
