@@ -456,9 +456,14 @@ function useProgressiveReveal(text: string, enabled: boolean, collapsedLimit: nu
       return;
     }
 
-    // Same review re-enabled (Show Less) — text already revealed, no replay
-    if (hasRevealedRef.current && !textChanged) {
-      setRevealedCount(wordsRef.current.length);
+    // Already revealed — show completed collapsed state without replay
+    if (hasRevealedRef.current && !textChanged && enabled) {
+      const words = wordsRef.current;
+      if (collapsedLimit > 0 && collapsedLimit < words.length) {
+        setRevealedCount(collapsedLimit + 1);
+      } else {
+        setRevealedCount(words.length);
+      }
       return;
     }
 
@@ -472,16 +477,18 @@ function useProgressiveReveal(text: string, enabled: boolean, collapsedLimit: nu
 
     // When collapsed, only reveal up to the measured visible word count
     const revealLimit = collapsedLimit > 0 ? Math.min(collapsedLimit, wordCount) : wordCount;
+    const isTruncated = revealLimit < wordCount;
+    const totalTokens = isTruncated ? revealLimit + 1 : revealLimit;
 
     const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
     const minInterval = isDesktop ? 18 : 110;
     const maxInterval = isDesktop ? 90 : 200;
-    const interval = Math.max(minInterval, Math.min(maxInterval, REVEAL_TOTAL_MS / revealLimit));
+    const interval = Math.max(minInterval, Math.min(maxInterval, REVEAL_TOTAL_MS / totalTokens));
 
-    for (let i = 0; i < revealLimit; i++) {
+    for (let i = 0; i < totalTokens; i++) {
       const t = setTimeout(() => {
         setRevealedCount(i + 1);
-        if (i === revealLimit - 1) hasRevealedRef.current = true;
+        if (i === totalTokens - 1) hasRevealedRef.current = true;
       }, REVEAL_DELAY_MS + i * interval);
       timersRef.current.push(t);
     }
@@ -566,7 +573,9 @@ function ReviewText({
   }, [text]);
 
   const words = text ? text.split(/\s+/) : [];
-  const isFullyRevealed = isExpanded || revealedCount >= words.length || prefersReducedMotion;
+  const effectiveVisibleLimit = visibleWordCount || words.length;
+  const showEllipsis = needsTruncation && !isExpanded;
+  const isFullyRevealed = isExpanded || (revealedCount >= words.length && !showEllipsis) || prefersReducedMotion;
 
   return (
     <div className="flex flex-col">
@@ -595,7 +604,7 @@ function ReviewText({
             text
           ) : (
             <>
-              {words.slice(0, revealedCount).map((word, i) => (
+              {words.slice(0, Math.min(revealedCount, effectiveVisibleLimit)).map((word, i) => (
                 <span
                   key={i}
                   className="inline animate-word-reveal"
@@ -603,9 +612,12 @@ function ReviewText({
                   {word}{' '}
                 </span>
               ))}
+              {showEllipsis && revealedCount > effectiveVisibleLimit && (
+                <span className="inline animate-word-reveal">...</span>
+              )}
               {revealedCount < words.length && (
                 <span className="invisible">
-                  {words.slice(revealedCount).join(' ')}
+                  {words.slice(Math.min(revealedCount, effectiveVisibleLimit)).join(' ')}
                 </span>
               )}
             </>
