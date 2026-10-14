@@ -163,6 +163,18 @@
     }
   }
 
+  @keyframes livingGoldBorderShift {
+    0%, 100% {
+      border-color: rgba(196, 164, 106, 0.5);
+    }
+    33% {
+      border-color: rgba(232, 213, 168, 0.65);
+    }
+    66% {
+      border-color: rgba(245, 230, 200, 0.55);
+    }
+  }
+
   .luxury-headline-glow {
     font-family: 'Cinzel', 'Playfair Display', 'Georgia', serif;
     letter-spacing: 0.08em;
@@ -216,6 +228,26 @@
 
   .touch-pan-y {
     touch-action: pan-y;
+  }
+
+  .living-gold-border {
+    position: relative;
+  }
+
+  .living-gold-border::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 2px solid rgba(196, 164, 106, 0.5);
+    pointer-events: none;
+    animation: livingGoldBorderShift 6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .living-gold-border::after {
+      animation: none;
+    }
   }
 }
 
