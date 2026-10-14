@@ -37,7 +37,6 @@ export default function TestimonialsSection() {
   const [isFocused, setIsFocused] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [manualPauseActive, setManualPauseActive] = useState(false);
-  const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
 
   const touchStartX = useRef<number | null>(null);
   const manualPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -116,22 +115,18 @@ export default function TestimonialsSection() {
   }, []);
 
   const goToReview = useCallback((index: number) => {
-    if (index === activeIndex) return;
-    setSlideDirection(index > activeIndex ? 'next' : 'prev');
     setActiveIndex(index);
     setIsExpanded(false);
     startManualPause();
-  }, [activeIndex, startManualPause]);
+  }, [startManualPause]);
 
   const goNext = useCallback(() => {
-    setSlideDirection('next');
     setActiveIndex((prev) => (prev + 1) % reviews.length);
     setIsExpanded(false);
     startManualPause();
   }, [reviews.length, startManualPause]);
 
   const goPrev = useCallback(() => {
-    setSlideDirection('prev');
     setActiveIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
     setIsExpanded(false);
     startManualPause();
@@ -147,7 +142,6 @@ export default function TestimonialsSection() {
     const delay = hasTransitioned.current ? AUTOPLAY_MS : FIRST_DELAY_MS;
     const timer = setTimeout(() => {
       hasTransitioned.current = true;
-      setSlideDirection('next');
       setActiveIndex((prev) => (prev + 1) % reviews.length);
       setIsExpanded(false);
     }, delay);
@@ -244,11 +238,7 @@ export default function TestimonialsSection() {
               {/* REVIEW CARD */}
               <div
                 key={activeIndex}
-                className={`rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] ${
-                  slideDirection === 'next'
-                    ? 'motion-safe:animate-review-slide-next'
-                    : 'motion-safe:animate-review-slide-prev'
-                } flex flex-col`}
+                className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:animate-review-fade-in flex flex-col"
               >
                 {/* STAR RATING + GOOGLE ATTRIBUTION */}
                 <div className="flex items-center justify-between mb-5">
