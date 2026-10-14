@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
-import { Star } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { trackCTA } from "../../utils/analytics";
 import { CONTACT_INFO } from "../../config/contact";
 import { supabase } from "../../lib/supabase";
@@ -19,10 +19,20 @@ interface GoogleReview {
   owner_reply_updated_at: string | null;
 }
 
+const AUTOPLAY_MS = 9000;
+const MOBILE_CLAMP = 6;
+const DESKTOP_CLAMP = 12;
+
 export default function TestimonialsSection() {
   const [reviews, setReviews] = useState<GoogleReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const touchStartX = useRef<number | null>(null);
+  const autoplayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +69,58 @@ export default function TestimonialsSection() {
     };
   }, []);
 
+  const hasMultiple = reviews.length > 1;
+
+  const goToReview = useCallback((index: number) => {
+    setActiveIndex(index);
+    setIsExpanded(false);
+  }, []);
+
+  const goNext = useCallback(() => {
+    setActiveIndex((prev) => (prev + 1) % reviews.length);
+    setIsExpanded(false);
+  }, [reviews.length]);
+
+  const goPrev = useCallback(() => {
+    setActiveIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
+    setIsExpanded(false);
+  }, [reviews.length]);
+
+  // Autoplay — only when 2+ reviews, not paused, not expanded
+  useEffect(() => {
+    if (!hasMultiple || isPaused || isExpanded || loading || failed) return;
+
+    autoplayTimer.current = setTimeout(() => {
+      goNext();
+    }, AUTOPLAY_MS);
+
+    return () => {
+      if (autoplayTimer.current) clearTimeout(autoplayTimer.current);
+    };
+  }, [activeIndex, hasMultiple, isPaused, isExpanded, loading, failed, goNext]);
+
+  // Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || !hasMultiple) return;
+    const distance = touchStartX.current - e.changedTouches[0].clientX;
+    if (distance > 60) goNext();
+    else if (distance < -60) goPrev();
+    touchStartX.current = null;
+  };
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (autoplayTimer.current) clearTimeout(autoplayTimer.current);
+    };
+  }, []);
+
+  const currentReview = reviews[activeIndex];
+
   return (
     <section
       id="testimonials"
@@ -85,98 +147,163 @@ export default function TestimonialsSection() {
           </div>
         </LuxFadeIn>
 
-        {/* REVIEW GRID — only render when not loading and reviews exist */}
-        {!loading && reviews.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 md:gap-8">
-            {reviews.map((review, index) => (
-              <LuxFadeIn key={review.id} delay={0.1 + index * 0.08}>
-                <article className="group relative h-full rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 flex flex-col justify-between shadow-[0_18px_45px_rgba(0,0,0,0.7)] select-none">
+        {/* CAROUSEL — only render when not loading and reviews exist */}
+        {!loading && reviews.length > 0 && currentReview && (
+          <div className="flex flex-col items-center gap-6">
+            <div
+              className="relative w-full max-w-2xl mx-auto"
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+              onFocus={() => setIsPaused(true)}
+              onBlur={() => setIsPaused(false)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* DESKTOP ARROW CONTROLS */}
+              {hasMultiple && (
+                <>
+                  <button
+                    onClick={goPrev}
+                    aria-label="Previous review"
+                    className="hidden md:flex absolute left-[-52px] top-1/2 -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full border border-[#c29f63]/30 bg-white/[0.04] backdrop-blur-md text-[#F5E6C8]/70 hover:text-[#F5E6C8] hover:border-[#c29f63]/60 hover:bg-white/[0.08] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60"
+                  >
+                    <ChevronLeft size={20} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={goNext}
+                    aria-label="Next review"
+                    className="hidden md:flex absolute right-[-52px] top-1/2 -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full border border-[#c29f63]/30 bg-white/[0.04] backdrop-blur-md text-[#F5E6C8]/70 hover:text-[#F5E6C8] hover:border-[#c29f63]/60 hover:bg-white/[0.08] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60"
+                  >
+                    <ChevronRight size={20} strokeWidth={1.5} />
+                  </button>
+                </>
+              )}
 
-                  {/* QUOTE CONTENT */}
-                  <div>
-                    {/* STAR RATING + GOOGLE ATTRIBUTION */}
-                    <div className="flex items-center justify-between mb-4">
-                      {review.star_rating && (
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: 5 }).map((_, star) => (
-                            <Star
-                              key={star}
-                              size={16}
-                              fill={star < review.star_rating! ? "#F5E6C8" : "none"}
-                              stroke="#F5E6C8"
-                              strokeWidth={1.5}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      <span className="text-[0.65rem] tracking-[0.15em] uppercase text-[#F5E6C8]/60">
-                        Google Review
+              {/* REVIEW CARD */}
+              <div
+                key={activeIndex}
+                className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:animate-review-fade-in"
+                style={{ minHeight: "280px" }}
+              >
+                {/* STAR RATING + GOOGLE ATTRIBUTION */}
+                <div className="flex items-center justify-between mb-5">
+                  {currentReview.star_rating && (
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, star) => (
+                        <Star
+                          key={star}
+                          size={16}
+                          fill={star < currentReview.star_rating! ? "#F5E6C8" : "none"}
+                          stroke="#F5E6C8"
+                          strokeWidth={1.5}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <span className="text-[0.65rem] tracking-[0.15em] uppercase text-[#F5E6C8]/60">
+                    Google Review
+                  </span>
+                </div>
+
+                {/* REVIEW COMMENT with Read More */}
+                {currentReview.comment && (
+                  <ReviewText
+                    text={currentReview.comment}
+                    isExpanded={isExpanded}
+                    onToggle={() => setIsExpanded(!isExpanded)}
+                  />
+                )}
+
+                {/* OWNER REPLY */}
+                {currentReview.owner_reply && (
+                  <div className="mt-5 pl-4 border-l-2 border-[#F5E6C8]/30">
+                    <p className="text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8]/70 mb-1.5">
+                      Response from Missy
+                    </p>
+                    <p className="text-xs md:text-[13px] leading-relaxed text-neutral-200/80">
+                      {currentReview.owner_reply}
+                    </p>
+                  </div>
+                )}
+
+                {/* REVIEWER INFO */}
+                <div className="mt-6 pt-4 border-t border-white/20 flex items-center gap-3">
+                  {currentReview.reviewer_profile_photo_url ? (
+                    <img
+                      src={currentReview.reviewer_profile_photo_url}
+                      alt={currentReview.reviewer_name || "Reviewer"}
+                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#F5E6C8]/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-[#F5E6C8]">
+                        {(currentReview.reviewer_name || "?").charAt(0).toUpperCase()}
                       </span>
                     </div>
-
-                    {/* REVIEW COMMENT */}
-                    {review.comment && (
-                      <p className="text-sm md:text-[15px] leading-relaxed text-white">
-                        {review.comment}
-                      </p>
-                    )}
-
-                    {/* OWNER REPLY */}
-                    {review.owner_reply && (
-                      <div className="mt-4 pl-4 border-l-2 border-[#F5E6C8]/30">
-                        <p className="text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8]/70 mb-1.5">
-                          Response from Missy
-                        </p>
-                        <p className="text-xs md:text-[13px] leading-relaxed text-neutral-200/80">
-                          {review.owner_reply}
-                        </p>
-                      </div>
+                  )}
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-semibold text-white truncate">
+                      {currentReview.reviewer_name || "Anonymous"}
+                    </span>
+                    {currentReview.review_created_at && (
+                      <span className="text-xs text-neutral-200">
+                        {formatDateShort(currentReview.review_created_at)}
+                      </span>
                     )}
                   </div>
+                </div>
+              </div>
 
-                  {/* REVIEWER INFO */}
-                  <div className="mt-6 pt-4 border-t border-white/20 flex items-center gap-3">
-                    {review.reviewer_profile_photo_url ? (
-                      <img
-                        src={review.reviewer_profile_photo_url}
-                        alt={review.reviewer_name || "Reviewer"}
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                        referrerPolicy="no-referrer"
+              {/* MOBILE ARROWS + PAGINATION DOTS */}
+              {hasMultiple && (
+                <div className="flex items-center justify-center gap-4 mt-5">
+                  <button
+                    onClick={goPrev}
+                    aria-label="Previous review"
+                    className="md:hidden flex w-9 h-9 items-center justify-center rounded-full border border-[#c29f63]/30 bg-white/[0.04] backdrop-blur-md text-[#F5E6C8]/70 hover:text-[#F5E6C8] hover:border-[#c29f63]/60 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60"
+                  >
+                    <ChevronLeft size={18} strokeWidth={1.5} />
+                  </button>
+
+                  {/* DOTS */}
+                  <div className="flex items-center gap-2" role="tablist" aria-label="Review navigation">
+                    {reviews.map((review, index) => (
+                      <button
+                        key={review.id}
+                        onClick={() => goToReview(index)}
+                        role="tab"
+                        aria-selected={index === activeIndex}
+                        aria-label={`Go to review ${index + 1}`}
+                        className={`transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60 ${
+                          index === activeIndex
+                            ? 'w-6 h-[6px] bg-[#F5E6C8]'
+                            : 'w-[6px] h-[6px] bg-white/25 hover:bg-white/40'
+                        }`}
                       />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#F5E6C8]/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-semibold text-[#F5E6C8]">
-                          {(review.reviewer_name || "?").charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-semibold text-white truncate">
-                        {review.reviewer_name || "Anonymous"}
-                      </span>
-                      {review.review_created_at && (
-                        <span className="text-xs text-neutral-200">
-                          {formatDateShort(review.review_created_at)}
-                        </span>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                </article>
-              </LuxFadeIn>
-            ))}
+
+                  <button
+                    onClick={goNext}
+                    aria-label="Next review"
+                    className="md:hidden flex w-9 h-9 items-center justify-center rounded-full border border-[#c29f63]/30 bg-white/[0.04] backdrop-blur-md text-[#F5E6C8]/70 hover:text-[#F5E6C8] hover:border-[#c29f63]/60 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60"
+                  >
+                    <ChevronRight size={18} strokeWidth={1.5} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* LOADING SKELETON */}
         {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6 md:gap-8">
-            {[0, 1].map((i) => (
-              <div
-                key={i}
-                className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/40 via-[#7A5F3C]/40 to-[#6B5335]/40 border border-[#c29f63]/15 backdrop-blur-2xl px-6 py-7 animate-pulse"
-                style={{ minHeight: "200px" }}
-              />
-            ))}
+          <div className="max-w-2xl mx-auto">
+            <div
+              className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/40 via-[#7A5F3C]/40 to-[#6B5335]/40 border border-[#c29f63]/15 backdrop-blur-2xl px-6 py-7 animate-pulse"
+              style={{ minHeight: "280px" }}
+            />
           </div>
         )}
 
@@ -215,5 +342,62 @@ export default function TestimonialsSection() {
         </LuxFadeIn>
       </div>
     </section>
+  );
+}
+
+/* ---------- ReviewText with responsive Read More / Show Less ---------- */
+
+function ReviewText({
+  text,
+  isExpanded,
+  onToggle,
+}: {
+  text: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const [needsTruncation, setNeedsTruncation] = useState(false);
+  const fullRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const el = fullRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 24;
+      const isDesktop = window.innerWidth >= 768;
+      const clampLines = isDesktop ? DESKTOP_CLAMP : MOBILE_CLAMP;
+      const threshold = lineHeight * clampLines;
+      setNeedsTruncation(el.scrollHeight > threshold + 4);
+    };
+
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [text]);
+
+  return (
+    <div>
+      <p
+        ref={fullRef}
+        className={`text-sm md:text-[15px] leading-relaxed text-white ${
+          !isExpanded && needsTruncation
+            ? 'line-clamp-6 md:line-clamp-12'
+            : ''
+        }`}
+      >
+        {text}
+      </p>
+
+      {needsTruncation && (
+        <button
+          onClick={onToggle}
+          aria-expanded={isExpanded}
+          className="mt-2 text-xs tracking-[0.1em] uppercase text-[#F5E6C8]/80 hover:text-[#F5E6C8] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60 rounded px-1"
+        >
+          {isExpanded ? 'Show Less' : 'Read More'}
+        </button>
+      )}
+    </div>
   );
 }

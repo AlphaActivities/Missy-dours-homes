@@ -45,6 +45,10 @@ export default {
         '400': '400ms',
       },
       keyframes: {
+        'review-fade-in': {
+          '0%':   { opacity: '0', transform: 'translateX(16px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
         'ds-fade-up': {
           '0%':   { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -59,6 +63,7 @@ export default {
         },
       },
       animation: {
+        'review-fade-in': 'review-fade-in 350ms ease-out both',
         'ds-fade-up':  'ds-fade-up 0.4s cubic-bezier(0.16,1,0.3,1) both',
         'ds-fade-in':  'ds-fade-in 0.3s ease-out both',
         'ds-skeleton': 'ds-skeleton 1.6s ease-in-out infinite',
