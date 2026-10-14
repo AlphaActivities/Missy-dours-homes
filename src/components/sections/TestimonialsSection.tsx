@@ -424,7 +424,7 @@ export default function TestimonialsSection() {
 const REVEAL_DELAY_MS = 280;
 const REVEAL_TOTAL_MS = 3600;
 
-function useProgressiveReveal(text: string, enabled: boolean) {
+function useProgressiveReveal(text: string, enabled: boolean, collapsedLimit: number) {
   const [revealedCount, setRevealedCount] = useState(0);
   const wordsRef = useRef<string[]>([]);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -470,15 +470,18 @@ function useProgressiveReveal(text: string, enabled: boolean) {
     const wordCount = words.length;
     if (wordCount === 0) return;
 
+    // When collapsed, only reveal up to the measured visible word count
+    const revealLimit = collapsedLimit > 0 ? Math.min(collapsedLimit, wordCount) : wordCount;
+
     const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
     const minInterval = isDesktop ? 18 : 110;
     const maxInterval = isDesktop ? 90 : 200;
-    const interval = Math.max(minInterval, Math.min(maxInterval, REVEAL_TOTAL_MS / wordCount));
+    const interval = Math.max(minInterval, Math.min(maxInterval, REVEAL_TOTAL_MS / revealLimit));
 
-    for (let i = 0; i < wordCount; i++) {
+    for (let i = 0; i < revealLimit; i++) {
       const t = setTimeout(() => {
         setRevealedCount(i + 1);
-        if (i === wordCount - 1) hasRevealedRef.current = true;
+        if (i === revealLimit - 1) hasRevealedRef.current = true;
       }, REVEAL_DELAY_MS + i * interval);
       timersRef.current.push(t);
     }
@@ -487,7 +490,7 @@ function useProgressiveReveal(text: string, enabled: boolean) {
       timersRef.current.forEach(clearTimeout);
       timersRef.current = [];
     };
-  }, [text, enabled, prefersReducedMotion]);
+  }, [text, enabled, prefersReducedMotion, collapsedLimit]);
 
   const skip = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -511,9 +514,11 @@ function ReviewText({
   onToggle: () => void;
 }) {
   const [needsTruncation, setNeedsTruncation] = useState(false);
+  const [visibleWordCount, setVisibleWordCount] = useState(0);
   const fullRef = useRef<HTMLParagraphElement>(null);
+  const measureRef = useRef<HTMLParagraphElement>(null);
 
-  const { revealedCount, skip } = useProgressiveReveal(text, !isExpanded);
+  const { revealedCount, skip } = useProgressiveReveal(text, !isExpanded, !isExpanded ? visibleWordCount : 0);
 
   const prefersReducedMotion = typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -525,8 +530,9 @@ function ReviewText({
     }
   }, [isExpanded, skip]);
 
+  // Measure truncation AND visible word count from a hidden full-text render
   useEffect(() => {
-    const el = fullRef.current;
+    const el = measureRef.current;
     if (!el) return;
 
     const measure = () => {
@@ -534,7 +540,24 @@ function ReviewText({
       const isDesktop = window.innerWidth >= 768;
       const clampLines = isDesktop ? DESKTOP_CLAMP : MOBILE_CLAMP;
       const threshold = lineHeight * clampLines;
-      setNeedsTruncation(el.scrollHeight > threshold + 4);
+      const fullHeight = el.scrollHeight;
+      setNeedsTruncation(fullHeight > threshold + 4);
+
+      // Determine how many words fit within the collapsed viewport
+      const wordSpans = el.querySelectorAll('span[data-word]');
+      if (wordSpans.length === 0) return;
+      const containerTop = el.getBoundingClientRect().top;
+      let count = 0;
+      for (let i = 0; i < wordSpans.length; i++) {
+        const span = wordSpans[i];
+        const spanTop = span.getBoundingClientRect().top - containerTop;
+        if (spanTop < threshold) {
+          count = i + 1;
+        } else {
+          break;
+        }
+      }
+      setVisibleWordCount(count);
     };
 
     measure();
@@ -551,6 +574,17 @@ function ReviewText({
       <div className={isExpanded ? '' : 'h-[120px] md:h-[122px] overflow-hidden'}>
         {/* Screen-reader text — always complete, never staggered */}
         <p className="sr-only">{text}</p>
+
+        {/* Hidden measurement paragraph — full text rendered for layout measurement */}
+        <p
+          ref={measureRef}
+          aria-hidden="true"
+          className="text-sm md:text-[15px] leading-relaxed text-white absolute opacity-0 pointer-events-none -z-10"
+        >
+          {words.map((word, i) => (
+            <span key={i} data-word="">{word}{' '}</span>
+          ))}
+        </p>
 
         <p
           ref={fullRef}
