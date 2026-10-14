@@ -243,7 +243,7 @@ export default function TestimonialsSection() {
               {/* REVIEW CARD */}
               <div
                 key={activeIndex}
-                className={`rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:${direction === 'forward' ? 'animate-review-fade-in' : 'animate-review-fade-in-reverse'} flex flex-col`}
+                className={`rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] ${direction === 'forward' ? 'motion-safe:animate-review-fade-in' : 'motion-safe:animate-review-fade-in-reverse'} flex flex-col`}
               >
                 {/* STAR RATING + GOOGLE ATTRIBUTION */}
                 <div className="flex items-center justify-between mb-5">
