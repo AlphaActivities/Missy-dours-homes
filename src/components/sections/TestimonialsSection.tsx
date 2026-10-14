@@ -20,7 +20,7 @@ interface GoogleReview {
 }
 
 const FIRST_DELAY_MS = 2500;
-const AUTOPLAY_MS = 5500;
+const AUTOPLAY_MS = 7000;
 const MANUAL_PAUSE_MS = 20000;
 const MOBILE_CLAMP = 5;
 const DESKTOP_CLAMP = 5;
