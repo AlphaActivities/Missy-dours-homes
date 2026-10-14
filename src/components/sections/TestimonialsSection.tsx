@@ -651,7 +651,7 @@ function ReviewText({
           <button
             onClick={onToggle}
             aria-expanded={isExpanded}
-            className={`inline-flex items-center gap-1.5 rounded-full border border-[#c29f63]/40 bg-[#c29f63]/10 px-3.5 py-1.5 text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8] font-medium hover:bg-[#c29f63]/20 hover:border-[#c29f63]/70 hover:-translate-y-0.5 hover:brightness-110 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/70 active:translate-y-0${isExpanded ? '' : ' relative -top-[7px]'}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border border-[#c29f63]/40 bg-[#c29f63]/10 px-3.5 py-1.5 text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8] font-medium hover:bg-[#c29f63]/20 hover:border-[#c29f63]/70 hover:-translate-y-0.5 hover:brightness-110 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/70 active:translate-y-0${isExpanded ? '' : ' relative -top-[11px]'}`}
           >
             {isExpanded ? (
               <>
