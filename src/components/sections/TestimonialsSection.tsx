@@ -238,9 +238,7 @@ export default function TestimonialsSection() {
               {/* REVIEW CARD */}
               <div
                 key={activeIndex}
-                className={`rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:animate-review-fade-in flex flex-col transition-[height] duration-300 ${
-                  isExpanded ? '' : 'h-[440px] md:h-[420px]'
-                }`}
+                className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:animate-review-fade-in flex flex-col"
               >
                 {/* STAR RATING + GOOGLE ATTRIBUTION */}
                 <div className="flex items-center justify-between mb-5">
@@ -275,7 +273,7 @@ export default function TestimonialsSection() {
                 </div>
 
                 {/* REVIEW COMMENT with Read More + OWNER REPLY (expanded only) */}
-                <div className="flex-1">
+                <div>
                   {currentReview.comment && (
                     <ReviewText
                       text={currentReview.comment}
@@ -298,7 +296,7 @@ export default function TestimonialsSection() {
                 </div>
 
                 {/* REVIEWER INFO */}
-                <div className="mt-6 pt-4 border-t border-white/20 flex items-center gap-3">
+                <div className="mt-5 pt-4 border-t border-white/20 flex items-center gap-3">
                   {currentReview.reviewer_profile_photo_url ? (
                     <img
                       src={currentReview.reviewer_profile_photo_url}
@@ -372,7 +370,7 @@ export default function TestimonialsSection() {
         {loading && (
           <div className="max-w-2xl mx-auto">
             <div
-              className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/40 via-[#7A5F3C]/40 to-[#6B5335]/40 border border-[#c29f63]/15 backdrop-blur-2xl px-6 py-7 animate-pulse h-[440px] md:h-[420px]"
+              className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/40 via-[#7A5F3C]/40 to-[#6B5335]/40 border border-[#c29f63]/15 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 animate-pulse min-h-[280px] md:min-h-[440px]"
             />
           </div>
         )}
@@ -457,14 +455,18 @@ function ReviewText({
         {text}
       </div>
 
-      {/* Visible text — always clamped when collapsed for consistent height */}
-      <p
-        className={`text-sm md:text-[15px] leading-relaxed text-white ${
-          !isExpanded ? 'line-clamp-7 md:line-clamp-12' : ''
-        }`}
+      {/* Visible text — fixed-height region when collapsed for consistent card height */}
+      <div
+        className={`overflow-hidden ${!isExpanded ? 'h-[160px] md:h-[292px]' : ''}`}
       >
-        {text}
-      </p>
+        <p
+          className={`text-sm md:text-[15px] leading-relaxed text-white ${
+            !isExpanded ? 'line-clamp-7 md:line-clamp-12' : ''
+          }`}
+        >
+          {text}
+        </p>
+      </div>
 
       {/* Fixed-height slot for Read More / Show Less — prevents height jump */}
       <div className="min-h-[34px]">
