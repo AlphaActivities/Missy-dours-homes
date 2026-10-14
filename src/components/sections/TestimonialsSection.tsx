@@ -22,7 +22,7 @@ interface GoogleReview {
 const FIRST_DELAY_MS = 2500;
 const AUTOPLAY_MS = 5500;
 const MANUAL_PAUSE_MS = 20000;
-const MOBILE_CLAMP = 6;
+const MOBILE_CLAMP = 7;
 const DESKTOP_CLAMP = 12;
 
 const GOOGLE_COLORS = ['#4285F4', '#DB4437', '#F4B400', '#4285F4', '#0F9D58'];
@@ -238,8 +238,9 @@ export default function TestimonialsSection() {
               {/* REVIEW CARD */}
               <div
                 key={activeIndex}
-                className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:animate-review-fade-in flex flex-col"
-                style={{ minHeight: "320px" }}
+                className={`rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:animate-review-fade-in flex flex-col transition-[height] duration-300 ${
+                  isExpanded ? '' : 'h-[440px] md:h-[420px]'
+                }`}
               >
                 {/* STAR RATING + GOOGLE ATTRIBUTION */}
                 <div className="flex items-center justify-between mb-5">
@@ -371,8 +372,7 @@ export default function TestimonialsSection() {
         {loading && (
           <div className="max-w-2xl mx-auto">
             <div
-              className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/40 via-[#7A5F3C]/40 to-[#6B5335]/40 border border-[#c29f63]/15 backdrop-blur-2xl px-6 py-7 animate-pulse"
-              style={{ minHeight: "320px" }}
+              className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/40 via-[#7A5F3C]/40 to-[#6B5335]/40 border border-[#c29f63]/15 backdrop-blur-2xl px-6 py-7 animate-pulse h-[440px] md:h-[420px]"
             />
           </div>
         )}
@@ -427,18 +427,18 @@ function ReviewText({
   onToggle: () => void;
 }) {
   const [needsTruncation, setNeedsTruncation] = useState(false);
-  const fullRef = useRef<HTMLParagraphElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = fullRef.current;
-    if (!el) return;
+    const measureEl = measureRef.current;
+    if (!measureEl) return;
 
     const measure = () => {
-      const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 24;
+      const lineHeight = parseFloat(getComputedStyle(measureEl).lineHeight) || 24;
       const isDesktop = window.innerWidth >= 768;
       const clampLines = isDesktop ? DESKTOP_CLAMP : MOBILE_CLAMP;
       const threshold = lineHeight * clampLines;
-      setNeedsTruncation(el.scrollHeight > threshold + 4);
+      setNeedsTruncation(measureEl.scrollHeight > threshold + 4);
     };
 
     measure();
@@ -448,36 +448,46 @@ function ReviewText({
 
   return (
     <div>
+      {/* Hidden full-text measurer — always unclamped so we can detect overflow */}
+      <div
+        ref={measureRef}
+        className="text-sm md:text-[15px] leading-relaxed text-white absolute invisible pointer-events-none whitespace-pre-wrap"
+        aria-hidden="true"
+      >
+        {text}
+      </div>
+
+      {/* Visible text — always clamped when collapsed for consistent height */}
       <p
-        ref={fullRef}
         className={`text-sm md:text-[15px] leading-relaxed text-white ${
-          !isExpanded && needsTruncation
-            ? 'line-clamp-6 md:line-clamp-12'
-            : ''
+          !isExpanded ? 'line-clamp-7 md:line-clamp-12' : ''
         }`}
       >
         {text}
       </p>
 
-      {needsTruncation && (
-        <button
-          onClick={onToggle}
-          aria-expanded={isExpanded}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#c29f63]/40 bg-[#c29f63]/10 px-3.5 py-1.5 text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8] font-medium hover:bg-[#c29f63]/20 hover:border-[#c29f63]/70 hover:-translate-y-0.5 hover:brightness-110 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/70 active:translate-y-0"
-        >
-          {isExpanded ? (
-            <>
-              <span>Show Less</span>
-              <ChevronUp size={12} strokeWidth={2} />
-            </>
-          ) : (
-            <>
-              <span>Read More</span>
-              <ChevronDown size={12} strokeWidth={2} />
-            </>
-          )}
-        </button>
-      )}
+      {/* Fixed-height slot for Read More / Show Less — prevents height jump */}
+      <div className="min-h-[34px]">
+        {needsTruncation && (
+          <button
+            onClick={onToggle}
+            aria-expanded={isExpanded}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#c29f63]/40 bg-[#c29f63]/10 px-3.5 py-1.5 text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8] font-medium hover:bg-[#c29f63]/20 hover:border-[#c29f63]/70 hover:-translate-y-0.5 hover:brightness-110 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/70 active:translate-y-0"
+          >
+            {isExpanded ? (
+              <>
+                <span>Show Less</span>
+                <ChevronUp size={12} strokeWidth={2} />
+              </>
+            ) : (
+              <>
+                <span>Read More</span>
+                <ChevronDown size={12} strokeWidth={2} />
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
