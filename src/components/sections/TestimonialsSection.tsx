@@ -23,7 +23,7 @@ const FIRST_DELAY_MS = 2500;
 const AUTOPLAY_MS = 5500;
 const MANUAL_PAUSE_MS = 20000;
 const MOBILE_CLAMP = 5;
-const DESKTOP_CLAMP = 7;
+const DESKTOP_CLAMP = 5;
 
 const GOOGLE_COLORS = ['#4285F4', '#DB4437', '#F4B400', '#4285F4', '#0F9D58'];
 
@@ -296,7 +296,7 @@ export default function TestimonialsSection() {
                 </div>
 
                 {/* REVIEWER INFO */}
-                <div className="mt-6 pt-4 border-t border-white/20 flex items-center gap-3">
+                <div className="mt-3 pt-3 border-t border-white/20 flex items-center gap-3">
                   {currentReview.reviewer_profile_photo_url ? (
                     <img
                       src={currentReview.reviewer_profile_photo_url}
@@ -448,12 +448,12 @@ function ReviewText({
   return (
     <div className="flex flex-col">
       {/* Text area — reserved min-height when collapsed for equal card heights */}
-      <div className={isExpanded ? '' : 'min-h-[120px] md:min-h-[176px]'}>
+      <div className={isExpanded ? '' : 'min-h-[120px] md:h-[122px]'}>
         <p
           ref={fullRef}
           className={`text-sm md:text-[15px] leading-relaxed text-white ${
             !isExpanded && needsTruncation
-              ? 'line-clamp-5 md:line-clamp-7'
+              ? 'line-clamp-5 md:line-clamp-5'
               : ''
           }`}
         >
@@ -462,7 +462,7 @@ function ReviewText({
       </div>
 
       {/* Read More slot — always reserved to prevent footer shift */}
-      <div className={isExpanded ? 'mt-3' : 'min-h-[32px] mt-3'}>
+      <div className={isExpanded ? 'mt-3' : 'min-h-[28px] mt-3'}>
         {needsTruncation && (
           <button
             onClick={onToggle}
