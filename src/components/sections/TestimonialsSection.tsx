@@ -448,7 +448,7 @@ function useProgressiveReveal(text: string, enabled: boolean) {
     const wordCount = words.length;
     if (wordCount === 0) return;
 
-    const interval = Math.max(18, Math.min(90, REVEAL_TOTAL_MS / wordCount));
+    const interval = Math.max(110, Math.min(200, REVEAL_TOTAL_MS / wordCount));
 
     for (let i = 0; i < wordCount; i++) {
       const t = setTimeout(() => {
