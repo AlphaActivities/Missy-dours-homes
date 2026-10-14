@@ -548,18 +548,14 @@ function ReviewText({
   return (
     <div className="flex flex-col">
       {/* Text area — reserved min-height when collapsed for equal card heights */}
-      <div className={isExpanded ? '' : 'min-h-[120px] md:h-[122px]'}>
+      <div className={isExpanded ? '' : 'h-[120px] md:h-[122px] overflow-hidden'}>
         {/* Screen-reader text — always complete, never staggered */}
         <p className="sr-only">{text}</p>
 
         <p
           ref={fullRef}
           aria-hidden="true"
-          className={`text-sm md:text-[15px] leading-relaxed text-white ${
-            !isExpanded && needsTruncation && isFullyRevealed
-              ? 'line-clamp-5 md:line-clamp-5'
-              : ''
-          }`}
+          className="text-sm md:text-[15px] leading-relaxed text-white"
         >
           {isFullyRevealed ? (
             text
