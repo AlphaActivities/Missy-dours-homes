@@ -429,6 +429,7 @@ function useProgressiveReveal(text: string, enabled: boolean) {
   const wordsRef = useRef<string[]>([]);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const hasRevealedRef = useRef(false);
+  const prevTextRef = useRef('');
 
   const prefersReducedMotion = typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -436,6 +437,9 @@ function useProgressiveReveal(text: string, enabled: boolean) {
   useEffect(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
+
+    const textChanged = text !== prevTextRef.current;
+    prevTextRef.current = text;
 
     if (!enabled) {
       if (hasRevealedRef.current) {
@@ -449,6 +453,12 @@ function useProgressiveReveal(text: string, enabled: boolean) {
     if (prefersReducedMotion) {
       setRevealedCount(text ? text.split(/\s+/).length : 0);
       hasRevealedRef.current = true;
+      return;
+    }
+
+    // Same review re-enabled (Show Less) — text already revealed, no replay
+    if (hasRevealedRef.current && !textChanged) {
+      setRevealedCount(wordsRef.current.length);
       return;
     }
 
@@ -546,7 +556,7 @@ function ReviewText({
           ref={fullRef}
           aria-hidden="true"
           className={`text-sm md:text-[15px] leading-relaxed text-white ${
-            !isExpanded && needsTruncation
+            !isExpanded && needsTruncation && isFullyRevealed
               ? 'line-clamp-5 md:line-clamp-5'
               : ''
           }`}
