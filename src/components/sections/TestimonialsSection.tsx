@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { trackCTA } from "../../utils/analytics";
 import { CONTACT_INFO } from "../../config/contact";
 import { supabase } from "../../lib/supabase";
@@ -19,9 +19,13 @@ interface GoogleReview {
   owner_reply_updated_at: string | null;
 }
 
-const AUTOPLAY_MS = 9000;
+const FIRST_DELAY_MS = 2500;
+const AUTOPLAY_MS = 5500;
+const MANUAL_PAUSE_MS = 20000;
 const MOBILE_CLAMP = 6;
 const DESKTOP_CLAMP = 12;
+
+const GOOGLE_COLORS = ['#4285F4', '#DB4437', '#F4B400', '#4285F4', '#0F9D58'];
 
 export default function TestimonialsSection() {
   const [reviews, setReviews] = useState<GoogleReview[]>([]);
@@ -29,10 +33,15 @@ export default function TestimonialsSection() {
   const [failed, setFailed] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [manualPauseActive, setManualPauseActive] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
-  const autoplayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const manualPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const hasTransitioned = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,33 +80,74 @@ export default function TestimonialsSection() {
 
   const hasMultiple = reviews.length > 1;
 
+  // Reduced motion check — stable across renders
+  const prefersReducedMotion = typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // IntersectionObserver — detect when section is meaningfully visible
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.35) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: [0, 0.35, 0.5] }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Start or restart the 20-second manual pause
+  const startManualPause = useCallback(() => {
+    if (manualPauseTimer.current) clearTimeout(manualPauseTimer.current);
+    setManualPauseActive(true);
+    manualPauseTimer.current = setTimeout(() => {
+      setManualPauseActive(false);
+      manualPauseTimer.current = null;
+    }, MANUAL_PAUSE_MS);
+  }, []);
+
   const goToReview = useCallback((index: number) => {
     setActiveIndex(index);
     setIsExpanded(false);
-  }, []);
+    startManualPause();
+  }, [startManualPause]);
 
   const goNext = useCallback(() => {
     setActiveIndex((prev) => (prev + 1) % reviews.length);
     setIsExpanded(false);
-  }, [reviews.length]);
+    startManualPause();
+  }, [reviews.length, startManualPause]);
 
   const goPrev = useCallback(() => {
     setActiveIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
     setIsExpanded(false);
-  }, [reviews.length]);
+    startManualPause();
+  }, [reviews.length, startManualPause]);
 
-  // Autoplay — only when 2+ reviews, not paused, not expanded
+  // Autoplay logic
   useEffect(() => {
-    if (!hasMultiple || isPaused || isExpanded || loading || failed) return;
+    if (!hasMultiple || !isVisible || loading || failed) return;
+    if (isExpanded) return; // Read More stops autoplay completely
+    if (prefersReducedMotion) return; // Respect reduced motion
+    if (isHovered || isFocused || manualPauseActive) return;
 
-    autoplayTimer.current = setTimeout(() => {
-      goNext();
-    }, AUTOPLAY_MS);
+    const delay = hasTransitioned.current ? AUTOPLAY_MS : FIRST_DELAY_MS;
+    const timer = setTimeout(() => {
+      hasTransitioned.current = true;
+      setActiveIndex((prev) => (prev + 1) % reviews.length);
+      setIsExpanded(false);
+    }, delay);
 
-    return () => {
-      if (autoplayTimer.current) clearTimeout(autoplayTimer.current);
-    };
-  }, [activeIndex, hasMultiple, isPaused, isExpanded, loading, failed, goNext]);
+    return () => clearTimeout(timer);
+  }, [activeIndex, hasMultiple, isVisible, isExpanded, isHovered, isFocused, manualPauseActive, loading, failed, prefersReducedMotion]);
 
   // Swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -112,10 +162,15 @@ export default function TestimonialsSection() {
     touchStartX.current = null;
   };
 
+  // Read More toggle — stops autoplay when expanded, resumes when collapsed
+  const handleReadMoreToggle = () => {
+    setIsExpanded((prev) => !prev);
+  };
+
   // Cleanup
   useEffect(() => {
     return () => {
-      if (autoplayTimer.current) clearTimeout(autoplayTimer.current);
+      if (manualPauseTimer.current) clearTimeout(manualPauseTimer.current);
     };
   }, []);
 
@@ -123,6 +178,7 @@ export default function TestimonialsSection() {
 
   return (
     <section
+      ref={sectionRef}
       id="testimonials"
       className="lux-section bg-transparent text-white pt-24 pb-20 md:pt-32 md:pb-28 lg:pt-40 lg:pb-28"
     >
@@ -152,10 +208,10 @@ export default function TestimonialsSection() {
           <div className="flex flex-col items-center gap-6">
             <div
               className="relative w-full max-w-2xl mx-auto"
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
-              onFocus={() => setIsPaused(true)}
-              onBlur={() => setIsPaused(false)}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
@@ -182,8 +238,8 @@ export default function TestimonialsSection() {
               {/* REVIEW CARD */}
               <div
                 key={activeIndex}
-                className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:animate-review-fade-in"
-                style={{ minHeight: "280px" }}
+                className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/90 via-[#7A5F3C]/90 to-[#6B5335]/90 border border-[#c29f63]/30 backdrop-blur-2xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_18px_45px_rgba(0,0,0,0.7)] motion-safe:animate-review-fade-in flex flex-col"
+                style={{ minHeight: "320px" }}
               >
                 {/* STAR RATING + GOOGLE ATTRIBUTION */}
                 <div className="flex items-center justify-between mb-5">
@@ -200,31 +256,45 @@ export default function TestimonialsSection() {
                       ))}
                     </div>
                   )}
-                  <span className="text-[0.65rem] tracking-[0.15em] uppercase text-[#F5E6C8]/60">
-                    Google Review
-                  </span>
+                  {/* GOOGLE REVIEW ATTRIBUTION — premium treatment */}
+                  <div className="flex items-center gap-1.5 motion-safe:animate-review-attrib-in">
+                    <div className="flex items-center gap-[1px]">
+                      {GOOGLE_COLORS.map((color, i) => (
+                        <span
+                          key={i}
+                          className="inline-block w-[3px] h-[10px] rounded-[1px]"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[0.65rem] tracking-[0.15em] uppercase text-[#F5E6C8]/70 font-medium">
+                      Google Review
+                    </span>
+                  </div>
                 </div>
 
-                {/* REVIEW COMMENT with Read More */}
-                {currentReview.comment && (
-                  <ReviewText
-                    text={currentReview.comment}
-                    isExpanded={isExpanded}
-                    onToggle={() => setIsExpanded(!isExpanded)}
-                  />
-                )}
+                {/* REVIEW COMMENT with Read More + OWNER REPLY (expanded only) */}
+                <div className="flex-1">
+                  {currentReview.comment && (
+                    <ReviewText
+                      text={currentReview.comment}
+                      isExpanded={isExpanded}
+                      onToggle={handleReadMoreToggle}
+                    />
+                  )}
 
-                {/* OWNER REPLY */}
-                {currentReview.owner_reply && (
-                  <div className="mt-5 pl-4 border-l-2 border-[#F5E6C8]/30">
-                    <p className="text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8]/70 mb-1.5">
-                      Response from Missy
-                    </p>
-                    <p className="text-xs md:text-[13px] leading-relaxed text-neutral-200/80">
-                      {currentReview.owner_reply}
-                    </p>
-                  </div>
-                )}
+                  {/* OWNER REPLY — hidden when collapsed, shown when expanded */}
+                  {isExpanded && currentReview.owner_reply && (
+                    <div className="mt-5 pl-4 border-l-2 border-[#F5E6C8]/30 motion-safe:animate-review-fade-in">
+                      <p className="text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8]/70 mb-1.5">
+                        Response from Missy
+                      </p>
+                      <p className="text-xs md:text-[13px] leading-relaxed text-neutral-200/80">
+                        {currentReview.owner_reply}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 {/* REVIEWER INFO */}
                 <div className="mt-6 pt-4 border-t border-white/20 flex items-center gap-3">
@@ -302,7 +372,7 @@ export default function TestimonialsSection() {
           <div className="max-w-2xl mx-auto">
             <div
               className="rounded-2xl bg-gradient-to-br from-[#8B6F47]/40 via-[#7A5F3C]/40 to-[#6B5335]/40 border border-[#c29f63]/15 backdrop-blur-2xl px-6 py-7 animate-pulse"
-              style={{ minHeight: "280px" }}
+              style={{ minHeight: "320px" }}
             />
           </div>
         )}
@@ -393,9 +463,19 @@ function ReviewText({
         <button
           onClick={onToggle}
           aria-expanded={isExpanded}
-          className="mt-2 text-xs tracking-[0.1em] uppercase text-[#F5E6C8]/80 hover:text-[#F5E6C8] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60 rounded px-1"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#c29f63]/40 bg-[#c29f63]/10 px-3.5 py-1.5 text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8] font-medium hover:bg-[#c29f63]/20 hover:border-[#c29f63]/70 hover:-translate-y-0.5 hover:brightness-110 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/70 active:translate-y-0"
         >
-          {isExpanded ? 'Show Less' : 'Read More'}
+          {isExpanded ? (
+            <>
+              <span>Show Less</span>
+              <ChevronUp size={12} strokeWidth={2} />
+            </>
+          ) : (
+            <>
+              <span>Read More</span>
+              <ChevronDown size={12} strokeWidth={2} />
+            </>
+          )}
         </button>
       )}
     </div>
