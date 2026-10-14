@@ -524,6 +524,7 @@ function ReviewText({
   const [visibleWordCount, setVisibleWordCount] = useState(0);
   const fullRef = useRef<HTMLParagraphElement>(null);
   const measureRef = useRef<HTMLParagraphElement>(null);
+  const ellipsisMeasureRef = useRef<HTMLParagraphElement>(null);
 
   const { revealedCount, skip } = useProgressiveReveal(text, !isExpanded, !isExpanded ? visibleWordCount : 0);
 
@@ -537,10 +538,11 @@ function ReviewText({
     }
   }, [isExpanded, skip]);
 
-  // Measure truncation AND visible word count from a hidden full-text render
+  // Measure truncation AND visible word count (with ellipsis reserved)
   useEffect(() => {
     const el = measureRef.current;
-    if (!el) return;
+    const ellipsisEl = ellipsisMeasureRef.current;
+    if (!el || !ellipsisEl) return;
 
     const measure = () => {
       const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 24;
@@ -564,6 +566,22 @@ function ReviewText({
           break;
         }
       }
+
+      // If truncated, reserve room for "..." by testing words[0..N] + "..." height
+      if (count < wordSpans.length) {
+        const allWords = text ? text.split(/\s+/) : [];
+        let safeCount = count;
+        while (safeCount > 0) {
+          ellipsisEl.textContent = allWords.slice(0, safeCount).join(' ') + ' ...';
+          const testHeight = ellipsisEl.scrollHeight;
+          if (testHeight <= threshold) {
+            break;
+          }
+          safeCount--;
+        }
+        count = safeCount;
+      }
+
       setVisibleWordCount(count);
     };
 
@@ -588,12 +606,19 @@ function ReviewText({
         <p
           ref={measureRef}
           aria-hidden="true"
-          className="text-sm md:text-[15px] leading-relaxed text-white absolute opacity-0 pointer-events-none -z-10"
+          className="text-sm md:text-[15px] leading-relaxed text-white w-full opacity-0 pointer-events-none absolute"
         >
           {words.map((word, i) => (
             <span key={i} data-word="">{word}{' '}</span>
           ))}
         </p>
+
+        {/* Hidden measurement paragraph for words + ellipsis height testing */}
+        <p
+          ref={ellipsisMeasureRef}
+          aria-hidden="true"
+          className="text-sm md:text-[15px] leading-relaxed text-white w-full opacity-0 pointer-events-none absolute"
+        />
 
         <p
           ref={fullRef}
