@@ -428,6 +428,7 @@ function useProgressiveReveal(text: string, enabled: boolean) {
   const [revealedCount, setRevealedCount] = useState(0);
   const wordsRef = useRef<string[]>([]);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const hasRevealedRef = useRef(false);
 
   const prefersReducedMotion = typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -436,10 +437,15 @@ function useProgressiveReveal(text: string, enabled: boolean) {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
 
-    if (!enabled || prefersReducedMotion) {
-      setRevealedCount(text ? text.split(/\s+/).length : 0);
-      return;
-    }
+   if (!enabled || prefersReducedMotion || hasRevealedRef.current) {
+  setRevealedCount(text ? text.split(/\s+/).length : 0);
+
+  if (!enabled || prefersReducedMotion) {
+    hasRevealedRef.current = true;
+  }
+
+  return;
+}
 
     const words = text ? text.split(/\s+/) : [];
     wordsRef.current = words;
@@ -452,7 +458,11 @@ function useProgressiveReveal(text: string, enabled: boolean) {
 
     for (let i = 0; i < wordCount; i++) {
       const t = setTimeout(() => {
-        setRevealedCount(i + 1);
+setRevealedCount(i + 1);
+        
+if (i === wordCount - 1) {
+  hasRevealedRef.current = true;
+}
       }, REVEAL_DELAY_MS + i * interval);
       timersRef.current.push(t);
     }
@@ -463,11 +473,12 @@ function useProgressiveReveal(text: string, enabled: boolean) {
     };
   }, [text, enabled, prefersReducedMotion]);
 
-  const skip = useCallback(() => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
-    setRevealedCount(wordsRef.current.length);
-  }, []);
+const skip = useCallback(() => {
+  timersRef.current.forEach(clearTimeout);
+  timersRef.current = [];
+  hasRevealedRef.current = true;
+  setRevealedCount(wordsRef.current.length);
+}, []);
 
   return { revealedCount, skip };
 }
