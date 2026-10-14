@@ -229,6 +229,21 @@
     touch-action: pan-y;
   }
 
+  @keyframes wordReveal {
+    0% {
+      opacity: 0;
+      transform: translateX(3px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-word-reveal {
+    animation: wordReveal 0.4s ease-out both;
+  }
+
   .living-gold-border {
     position: relative;
   }

@@ -419,6 +419,59 @@ export default function TestimonialsSection() {
   );
 }
 
+/* ---------- Progressive word-by-word reveal hook ---------- */
+
+const REVEAL_DELAY_MS = 280;
+const REVEAL_TOTAL_MS = 1800;
+
+function useProgressiveReveal(text: string, enabled: boolean) {
+  const [revealedCount, setRevealedCount] = useState(0);
+  const wordsRef = useRef<string[]>([]);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const prefersReducedMotion = typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
+    if (!enabled || prefersReducedMotion) {
+      setRevealedCount(text ? text.split(/\s+/).length : 0);
+      return;
+    }
+
+    const words = text ? text.split(/\s+/) : [];
+    wordsRef.current = words;
+    setRevealedCount(0);
+
+    const wordCount = words.length;
+    if (wordCount === 0) return;
+
+    const interval = Math.max(18, Math.min(90, REVEAL_TOTAL_MS / wordCount));
+
+    for (let i = 0; i < wordCount; i++) {
+      const t = setTimeout(() => {
+        setRevealedCount(i + 1);
+      }, REVEAL_DELAY_MS + i * interval);
+      timersRef.current.push(t);
+    }
+
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+    };
+  }, [text, enabled, prefersReducedMotion]);
+
+  const skip = useCallback(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    setRevealedCount(wordsRef.current.length);
+  }, []);
+
+  return { revealedCount, skip };
+}
+
 /* ---------- ReviewText with responsive Read More / Show Less ---------- */
 
 function ReviewText({
@@ -432,6 +485,18 @@ function ReviewText({
 }) {
   const [needsTruncation, setNeedsTruncation] = useState(false);
   const fullRef = useRef<HTMLParagraphElement>(null);
+
+  const { revealedCount, skip } = useProgressiveReveal(text, !isExpanded);
+
+  const prefersReducedMotion = typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // When expanded or Read More clicked mid-reveal, show full text immediately
+  useEffect(() => {
+    if (isExpanded) {
+      skip();
+    }
+  }, [isExpanded, skip]);
 
   useEffect(() => {
     const el = fullRef.current;
@@ -450,19 +515,44 @@ function ReviewText({
     return () => window.removeEventListener('resize', measure);
   }, [text]);
 
+  const words = text ? text.split(/\s+/) : [];
+  const isFullyRevealed = isExpanded || revealedCount >= words.length || prefersReducedMotion;
+
   return (
     <div className="flex flex-col">
       {/* Text area — reserved min-height when collapsed for equal card heights */}
       <div className={isExpanded ? '' : 'min-h-[120px] md:h-[122px]'}>
+        {/* Screen-reader text — always complete, never staggered */}
+        <p className="sr-only">{text}</p>
+
         <p
           ref={fullRef}
+          aria-hidden="true"
           className={`text-sm md:text-[15px] leading-relaxed text-white ${
             !isExpanded && needsTruncation
               ? 'line-clamp-5 md:line-clamp-5'
               : ''
           }`}
         >
-          {text}
+          {isFullyRevealed ? (
+            text
+          ) : (
+            <>
+              {words.slice(0, revealedCount).map((word, i) => (
+                <span
+                  key={i}
+                  className="inline animate-word-reveal"
+                >
+                  {word}{' '}
+                </span>
+              ))}
+              {revealedCount < words.length && (
+                <span className="invisible">
+                  {words.slice(revealedCount).join(' ')}
+                </span>
+              )}
+            </>
+          )}
         </p>
       </div>
 
