@@ -564,12 +564,15 @@ function ReviewText({
         return;
       }
 
-      // Binary search for the maximum N where words[0..N] + " ..." fits within threshold
+      // Binary search for the maximum N where words[0..N] with "..." attached to last word fits
       let lo = 0;
       let hi = allWords.length;
       while (lo < hi) {
         const mid = Math.ceil((lo + hi) / 2);
-        ellipsisEl.textContent = allWords.slice(0, mid).join(' ') + ' ...';
+        const prefix = mid === 1
+          ? allWords[0] + '...'
+          : allWords.slice(0, mid - 1).join(' ') + ' ' + allWords[mid - 1] + '...';
+        ellipsisEl.textContent = prefix;
         if (ellipsisEl.scrollHeight <= threshold) {
           lo = mid;
         } else {
@@ -623,17 +626,20 @@ function ReviewText({
             text
           ) : (
             <>
-              {words.slice(0, Math.min(revealedCount, effectiveVisibleLimit)).map((word, i) => (
-                <span
-                  key={i}
-                  className="inline animate-word-reveal"
-                >
-                  {word}{' '}
-                </span>
-              ))}
-              {showEllipsis && revealedCount > effectiveVisibleLimit && (
-                <span className="inline animate-word-reveal">...</span>
-              )}
+              {(() => {
+                const limit = Math.min(revealedCount, effectiveVisibleLimit);
+                return words.slice(0, limit).map((word, i) => {
+                  const isLastVisible = showEllipsis && i === effectiveVisibleLimit - 1 && revealedCount > effectiveVisibleLimit;
+                  return (
+                    <span
+                      key={i}
+                      className="inline animate-word-reveal"
+                    >
+                      {word}{isLastVisible ? '...' : ' '}
+                    </span>
+                  );
+                });
+              })()}
               {revealedCount < words.length && (
                 <span className="invisible">
                   {words.slice(Math.min(revealedCount, effectiveVisibleLimit)).join(' ')}
