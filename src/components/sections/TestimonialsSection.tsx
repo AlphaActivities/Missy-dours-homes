@@ -422,7 +422,7 @@ export default function TestimonialsSection() {
 /* ---------- Progressive word-by-word reveal hook ---------- */
 
 const REVEAL_DELAY_MS = 280;
-const REVEAL_TOTAL_MS = 1800;
+const REVEAL_TOTAL_MS = 3600;
 
 function useProgressiveReveal(text: string, enabled: boolean) {
   const [revealedCount, setRevealedCount] = useState(0);
