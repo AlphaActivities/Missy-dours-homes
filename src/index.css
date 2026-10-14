@@ -244,6 +244,12 @@
     animation: wordReveal 0.1s ease-out both;
   }
 
+  @media (min-width: 768px) {
+    .animate-word-reveal {
+      animation: wordReveal 0.4s ease-out both;
+    }
+  }
+
   .living-gold-border {
     position: relative;
   }

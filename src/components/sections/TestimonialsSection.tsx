@@ -428,6 +428,7 @@ function useProgressiveReveal(text: string, enabled: boolean) {
   const [revealedCount, setRevealedCount] = useState(0);
   const wordsRef = useRef<string[]>([]);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const hasRevealedRef = useRef(false);
 
   const prefersReducedMotion = typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -436,23 +437,38 @@ function useProgressiveReveal(text: string, enabled: boolean) {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
 
-    if (!enabled || prefersReducedMotion) {
+    if (!enabled) {
+      if (hasRevealedRef.current) {
+        setRevealedCount(wordsRef.current.length);
+      } else {
+        setRevealedCount(text ? text.split(/\s+/).length : 0);
+      }
+      return;
+    }
+
+    if (prefersReducedMotion) {
       setRevealedCount(text ? text.split(/\s+/).length : 0);
+      hasRevealedRef.current = true;
       return;
     }
 
     const words = text ? text.split(/\s+/) : [];
     wordsRef.current = words;
     setRevealedCount(0);
+    hasRevealedRef.current = false;
 
     const wordCount = words.length;
     if (wordCount === 0) return;
 
-    const interval = Math.max(110, Math.min(200, REVEAL_TOTAL_MS / wordCount));
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+    const minInterval = isDesktop ? 18 : 110;
+    const maxInterval = isDesktop ? 90 : 200;
+    const interval = Math.max(minInterval, Math.min(maxInterval, REVEAL_TOTAL_MS / wordCount));
 
     for (let i = 0; i < wordCount; i++) {
       const t = setTimeout(() => {
         setRevealedCount(i + 1);
+        if (i === wordCount - 1) hasRevealedRef.current = true;
       }, REVEAL_DELAY_MS + i * interval);
       timersRef.current.push(t);
     }
@@ -467,6 +483,7 @@ function useProgressiveReveal(text: string, enabled: boolean) {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
     setRevealedCount(wordsRef.current.length);
+    hasRevealedRef.current = true;
   }, []);
 
   return { revealedCount, skip };
