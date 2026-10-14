@@ -23,7 +23,7 @@ const FIRST_DELAY_MS = 2500;
 const AUTOPLAY_MS = 7000;
 const MANUAL_PAUSE_MS = 20000;
 const MOBILE_CLAMP = 5;
-const DESKTOP_CLAMP = 5;
+const DESKTOP_CLAMP = 4;
 
 const GOOGLE_COLORS = ['#4285F4', '#DB4437', '#F4B400', '#4285F4', '#0F9D58'];
 
@@ -424,7 +424,7 @@ export default function TestimonialsSection() {
 const REVEAL_DELAY_MS = 280;
 const REVEAL_TOTAL_MS = 3600;
 
-function useProgressiveReveal(text: string, enabled: boolean) {
+function useProgressiveReveal(text: string, enabled: boolean, maxRevealWords: number) {
   const [revealedCount, setRevealedCount] = useState(0);
   const wordsRef = useRef<string[]>([]);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -454,15 +454,18 @@ function useProgressiveReveal(text: string, enabled: boolean) {
     const wordCount = words.length;
     if (wordCount === 0) return;
 
-    const interval = Math.max(110, Math.min(200, REVEAL_TOTAL_MS / wordCount));
+    const revealTarget = maxRevealWords > 0 ? Math.min(maxRevealWords, wordCount) : 0;
+    if (revealTarget === 0) return;
 
-    for (let i = 0; i < wordCount; i++) {
+    const interval = Math.max(110, Math.min(200, REVEAL_TOTAL_MS / revealTarget));
+
+    for (let i = 0; i < revealTarget; i++) {
       const t = setTimeout(() => {
-setRevealedCount(i + 1);
-        
-if (i === wordCount - 1) {
-  hasRevealedRef.current = true;
-}
+        setRevealedCount(i + 1);
+
+        if (i === revealTarget - 1) {
+          hasRevealedRef.current = true;
+        }
       }, REVEAL_DELAY_MS + i * interval);
       timersRef.current.push(t);
     }
@@ -471,7 +474,7 @@ if (i === wordCount - 1) {
       timersRef.current.forEach(clearTimeout);
       timersRef.current = [];
     };
-  }, [text, enabled, prefersReducedMotion]);
+  }, [text, enabled, prefersReducedMotion, maxRevealWords]);
 
 const skip = useCallback(() => {
   timersRef.current.forEach(clearTimeout);
@@ -495,9 +498,10 @@ function ReviewText({
   onToggle: () => void;
 }) {
   const [needsTruncation, setNeedsTruncation] = useState(false);
+  const [collapsedWordLimit, setCollapsedWordLimit] = useState(0);
   const fullRef = useRef<HTMLParagraphElement>(null);
 
-  const { revealedCount, skip } = useProgressiveReveal(text, !isExpanded);
+  const { revealedCount, skip } = useProgressiveReveal(text, !isExpanded, collapsedWordLimit);
 
   const prefersReducedMotion = typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -518,7 +522,18 @@ function ReviewText({
       const isDesktop = window.innerWidth >= 768;
       const clampLines = isDesktop ? DESKTOP_CLAMP : MOBILE_CLAMP;
       const threshold = lineHeight * clampLines;
-      setNeedsTruncation(el.scrollHeight > threshold + 4);
+      const fullHeight = el.scrollHeight;
+      setNeedsTruncation(fullHeight > threshold + 4);
+
+      const wordCount = text ? text.split(/\s+/).length : 0;
+      if (wordCount === 0) return;
+      if (fullHeight <= threshold + 4) {
+        setCollapsedWordLimit(wordCount);
+      } else {
+        const ratio = threshold / fullHeight;
+        const estimated = Math.ceil(wordCount * ratio + 2);
+        setCollapsedWordLimit(Math.min(estimated, wordCount));
+      }
     };
 
     measure();
@@ -532,7 +547,7 @@ function ReviewText({
   return (
     <div className="flex flex-col">
       {/* Text area — reserved min-height when collapsed for equal card heights */}
-      <div className={isExpanded ? '' : 'min-h-[120px] md:h-[122px]'}>
+      <div className={isExpanded ? '' : 'min-h-[120px] md:h-[98px]'}>
         {/* Screen-reader text — always complete, never staggered */}
         <p className="sr-only">{text}</p>
 
@@ -540,8 +555,8 @@ function ReviewText({
           ref={fullRef}
           aria-hidden="true"
           className={`text-sm md:text-[15px] leading-relaxed text-white ${
-            !isExpanded && needsTruncation
-              ? 'line-clamp-5 md:line-clamp-5'
+            !isExpanded
+              ? 'line-clamp-5 md:line-clamp-4'
               : ''
           }`}
         >
