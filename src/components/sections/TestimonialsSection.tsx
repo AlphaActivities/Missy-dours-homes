@@ -552,37 +552,31 @@ function ReviewText({
       const fullHeight = el.scrollHeight;
       setNeedsTruncation(fullHeight > threshold + 4);
 
-      // Determine how many words fit within the collapsed viewport
-      const wordSpans = el.querySelectorAll('span[data-word]');
-      if (wordSpans.length === 0) return;
-      const containerTop = el.getBoundingClientRect().top;
-      let count = 0;
-      for (let i = 0; i < wordSpans.length; i++) {
-        const span = wordSpans[i];
-        const spanTop = span.getBoundingClientRect().top - containerTop;
-        if (spanTop < threshold) {
-          count = i + 1;
+      const allWords = text ? text.split(/\s+/) : [];
+      if (allWords.length === 0) {
+        setVisibleWordCount(0);
+        return;
+      }
+
+      // If the full text already fits, show all words
+      if (fullHeight <= threshold) {
+        setVisibleWordCount(allWords.length);
+        return;
+      }
+
+      // Binary search for the maximum N where words[0..N] + " ..." fits within threshold
+      let lo = 0;
+      let hi = allWords.length;
+      while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2);
+        ellipsisEl.textContent = allWords.slice(0, mid).join(' ') + ' ...';
+        if (ellipsisEl.scrollHeight <= threshold) {
+          lo = mid;
         } else {
-          break;
+          hi = mid - 1;
         }
       }
-
-      // If truncated, reserve room for "..." by testing words[0..N] + "..." height
-      if (count < wordSpans.length) {
-        const allWords = text ? text.split(/\s+/) : [];
-        let safeCount = count;
-        while (safeCount > 0) {
-          ellipsisEl.textContent = allWords.slice(0, safeCount).join(' ') + ' ...';
-          const testHeight = ellipsisEl.scrollHeight;
-          if (testHeight <= threshold) {
-            break;
-          }
-          safeCount--;
-        }
-        count = safeCount;
-      }
-
-      setVisibleWordCount(count);
+      setVisibleWordCount(lo);
     };
 
     measure();
@@ -598,26 +592,26 @@ function ReviewText({
   return (
     <div className="flex flex-col">
       {/* Text area — reserved min-height when collapsed for equal card heights */}
-      <div className={isExpanded ? '' : 'h-[120px] md:h-[122px] overflow-hidden'}>
+      <div className={isExpanded ? '' : 'h-[120px] md:h-[122px] overflow-hidden relative'}>
         {/* Screen-reader text — always complete, never staggered */}
         <p className="sr-only">{text}</p>
 
-        {/* Hidden measurement paragraph — full text rendered for layout measurement */}
+        {/* Hidden measurement paragraph — full text for needsTruncation check */}
         <p
           ref={measureRef}
           aria-hidden="true"
-          className="text-sm md:text-[15px] leading-relaxed text-white w-full opacity-0 pointer-events-none absolute"
+          className="text-sm md:text-[15px] leading-relaxed text-white w-full opacity-0 pointer-events-none absolute top-0 left-0"
         >
           {words.map((word, i) => (
             <span key={i} data-word="">{word}{' '}</span>
           ))}
         </p>
 
-        {/* Hidden measurement paragraph for words + ellipsis height testing */}
+        {/* Hidden measurement paragraph for words + ellipsis binary search */}
         <p
           ref={ellipsisMeasureRef}
           aria-hidden="true"
-          className="text-sm md:text-[15px] leading-relaxed text-white w-full opacity-0 pointer-events-none absolute"
+          className="text-sm md:text-[15px] leading-relaxed text-white w-full opacity-0 pointer-events-none absolute top-0 left-0"
         />
 
         <p
