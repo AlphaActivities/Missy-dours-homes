@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://missydours.com/sitemap.xml
