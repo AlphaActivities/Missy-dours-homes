@@ -647,7 +647,7 @@ function ReviewText({
       </div>
 
       {/* Read More slot — always reserved to prevent footer shift */}
-      <div className={isExpanded ? 'mt-3' : 'h-[20px] mt-2 md:h-[24px]'}>
+      <div className={isExpanded ? 'mt-3' : 'min-h-[28px] mt-0 md:h-[32px] md:min-h-[32px]'}>
         {needsTruncation && (
           <button
             onClick={onToggle}
