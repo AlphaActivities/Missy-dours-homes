@@ -75,6 +75,11 @@ export default function FeaturedListingsSection() {
                   />
 
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/20" />
+                  <div className="absolute top-3 right-3">
+                    <span className="text-[0.6rem] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-full bg-black/60 text-gray-200 backdrop-blur-sm border border-white/20">
+                      Representative Example
+                    </span>
+                  </div>
                 </div>
 
                 {/* CONTENT */}

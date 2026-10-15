@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { listings, ListingCategory, ListingStatus } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Home } from 'lucide-react';
+import SEO from '../components/SEO';
 import FooterSection from '../components/sections/FooterSection';
 import { motion, AnimatePresence } from 'framer-motion';
 import { luxuryScrollToTop } from '../utils/luxuryScroll';
@@ -18,7 +19,6 @@ export default function ListingsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = 'Active Listings | Missy Dours Real Estate';
     luxuryScrollToTop(1400);
   }, []);
 
@@ -62,6 +62,11 @@ export default function ListingsPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f3ea]">
+      <SEO
+        title="Property Listings | Missy Dours · North Texas Real Estate"
+        description="Explore available homes, sold properties, and illustrative property examples across Dallas, Farmers Branch, and North Texas with Missy Dours, Clancy Realty."
+        canonicalPath="/listings"
+      />
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-16 sm:pb-20 lg:pb-24">
         {/* Back to Home Button */}
@@ -312,6 +317,13 @@ export default function ListingsPage() {
                         alt={listing.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
+                      {listing.status === 'placeholder' && (
+                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
+                          <span className="text-[0.6rem] sm:text-[0.65rem] font-semibold tracking-wider uppercase px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-gray-800/80 text-gray-200 backdrop-blur-sm border border-gray-600/50">
+                            Representative Example
+                          </span>
+                        </div>
+                      )}
                       {(listing.status === 'active' || listing.status === 'pending' || listing.status === 'sold') && (
                         <div className="absolute top-3 right-3 sm:top-4 sm:right-4 group/badge">
                           <div className="relative">

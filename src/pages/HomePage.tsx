@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { scrollToSection } from '../utils/scrollToSection';
 import { useRefreshDetection } from '../utils/refreshDetection';
 import HeroSection from '../components/sections/HeroSection';
@@ -19,9 +20,7 @@ export default function HomePage() {
   const [selectedPath, setSelectedPath] = useState<"luxury" | "mid-tier" | "first-time" | null>(null);
   const [pendingScrollTarget, setPendingScrollTarget] = useState<string | null>(null);
 
-  useEffect(() => {
-    document.title = 'Missy Dours | Luxury Real Estate · Dallas · Fort Worth · North Texas';
-  }, []);
+
 
   useEffect(() => {
     if (isRefreshed) {
@@ -57,6 +56,11 @@ export default function HomePage() {
 
   return (
     <>
+      <SEO
+        title="Missy Dours | Luxury Real Estate in Dallas & North Texas"
+        description="Premier luxury real estate advisor serving Dallas, Fort Worth, and North Texas. Specializing in exclusive properties in Highland Park, Preston Hollow, Southlake, and beyond."
+        canonicalPath="/"
+      />
       <HeroSection />
       <ChooseYourPathSection
         selectedPath={selectedPath}

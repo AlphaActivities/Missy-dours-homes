@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { listings } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown, ChevronLeft, ChevronRight, LayoutTemplate, Sparkles, Calendar, Clock } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
+import SEO from '../components/SEO';
 import FooterSection from '../components/sections/FooterSection';
 import ImageLightbox from '../components/ui/ImageLightbox';
 import { useSwipeDetection } from '../hooks/useSwipeDetection';
@@ -55,10 +56,66 @@ export default function ListingDetailPage() {
     touchOnly: true,
   });
 
+  const isPlaceholder = listing?.status === 'placeholder';
+  const isSold = listing?.status === 'sold';
+
+  const seoTitle = !listing
+    ? 'Listing | Missy Dours Real Estate'
+    : isPlaceholder
+      ? listing.title + ' — Representative Example | Missy Dours'
+      : isSold
+        ? listing.title + ' [Sold] | Missy Dours Real Estate'
+        : listing.title + ', ' + listing.locationText + ' | ' + listing.price + ' | Missy Dours';
+
+  const seoDescription = listing
+    ? isPlaceholder
+      ? 'Representative example of the type of ' + (listing.category === 'luxury' ? 'luxury' : listing.category === 'mid' ? 'mid-tier' : 'first-time buyer') + ' property Missy Dours curates in North Texas. Not an active listing.'
+      : listing.description.slice(0, 155)
+    : 'Property listing detail page.';
+
+  const canonicalPath = !listing
+    ? '/listings'
+    : isPlaceholder
+      ? '/listings'
+      : '/listings/' + listing.slug;
+
+  const seoRobots = isPlaceholder ? 'noindex, follow' : undefined;
+
+  const jsonLd = useMemo(() => {
+    if (!listing || isPlaceholder) return undefined;
+    const slug = listing.slug;
+    const cleanPrice = listing.price.replace(/[^\d.]/g, '');
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'SingleFamilyResidence',
+      name: listing.title,
+      description: listing.description.slice(0, 300),
+      url: 'https://missydours.com/listings/' + slug,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: listing.address,
+        addressLocality: listing.locationText,
+        addressRegion: 'TX',
+        addressCountry: 'US',
+      },
+      numberOfBedrooms: listing.beds,
+      numberOfBathroomsTotal: listing.baths,
+      floorSize: { '@type': 'QuantitativeValue', value: listing.sqft, unitText: 'sqft' },
+      offers: {
+        '@type': isSold ? 'CompletedSale' : 'Offer',
+        price: cleanPrice,
+        priceCurrency: 'USD',
+        availability: isSold ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+      },
+    };
+  }, [listing, isPlaceholder, isSold]);
+
+  const upcomingOpenHouses = listing?.openHouses?.filter(oh => {
+    const ohDate = new Date(oh.date);
+    return ohDate >= new Date();
+  }) || [];
+
   useEffect(() => {
-    document.title = listing
-      ? `${listing.title} | Missy Dours Real Estate`
-      : 'Listing | Missy Dours Real Estate';
     window.scrollTo(0, 0);
   }, [slug, listing]);
 
@@ -128,6 +185,13 @@ export default function ListingDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f3ea]">
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        canonicalPath={canonicalPath}
+        robots={seoRobots}
+        jsonLd={jsonLd}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-8 sm:pb-12 lg:pb-16">
         {/* Back Link */}
         <div className="-mt-5 mb-6 sm:mb-8 lg:mb-12">
@@ -367,7 +431,7 @@ export default function ListingDetailPage() {
               )}
 
               {/* Open House Premium Card */}
-              {listing.openHouses && listing.openHouses.filter(oh => oh.type === 'public').length > 0 && (
+              {upcomingOpenHouses.filter(oh => oh.type === 'public').length > 0 && (
                 <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
                   <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-50/80 to-orange-50/60 border-2 border-amber-200/60 p-5 sm:p-6 shadow-lg shadow-amber-600/10 hover:shadow-xl hover:shadow-amber-600/20 transition-all duration-300 group">
                     {/* Shimmer overlay */}
@@ -386,7 +450,7 @@ export default function ListingDetailPage() {
 
                     {/* Date cards */}
                     <div className="relative space-y-3 sm:space-y-4">
-                      {listing.openHouses.filter(oh => oh.type === 'public').map((oh, idx) => (
+                      {upcomingOpenHouses.filter(oh => oh.type === 'public').map((oh, idx) => (
                         <div key={idx} className="group/card bg-white rounded-lg border-2 border-amber-300/50 p-4 sm:p-5 hover:border-amber-400 hover:shadow-md transition-all duration-300">
                           {/* Date & Time */}
                           <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">{oh.date}</p>

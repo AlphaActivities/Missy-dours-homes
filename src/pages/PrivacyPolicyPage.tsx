@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import SEO from '../components/SEO';
 import FooterSection from '../components/sections/FooterSection';
 import { luxuryScrollToTop } from '../utils/luxuryScroll';
 
@@ -97,12 +98,16 @@ const sections: Section[] = [
 
 export default function PrivacyPolicyPage() {
   useEffect(() => {
-    document.title = 'Privacy Policy | Missy Dours Real Estate';
     luxuryScrollToTop(1400);
   }, []);
 
   return (
     <div className="min-h-screen bg-[#f7f3ea]">
+      <SEO
+        title="Privacy Policy | Missy Dours Real Estate"
+        description="Privacy policy for missydours.com, outlining how visitor information is collected, used, and protected."
+        canonicalPath="/privacy"
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 sm:pt-36 lg:pt-40 pb-16 sm:pb-20 lg:pb-24">
         <div className="-mt-5 mb-6 sm:mb-8 lg:mb-12">
           <Link
