@@ -52,6 +52,35 @@ export default function ListingsPage() {
 
   const filteredListings = displayedListings;
 
+  const filterContent: Record<FilterType, { heading: string; description: string }> = {
+    all: {
+      heading: 'PROPERTY LISTINGS',
+      description: "Explore Missy Dours' current listings, successfully sold properties, and representative home examples across North Texas.",
+    },
+    active: {
+      heading: 'ACTIVE LISTINGS',
+      description: 'Explore homes currently offered through Missy Dours, with property photos, details, and opportunities to learn more.',
+    },
+    sold: {
+      heading: 'SOLD PROPERTIES',
+      description: "Explore properties marked as sold in Missy Dours' portfolio, showcasing past real estate transactions.",
+    },
+    luxury: {
+      heading: 'LUXURY HOMES',
+      description: 'Explore luxury real estate and representative examples of upscale homes across North Texas. Property availability varies.',
+    },
+    mid: {
+      heading: 'MOVE-UP HOMES',
+      description: 'Explore spacious move-up homes and representative examples for buyers ready for their next chapter.',
+    },
+    first: {
+      heading: 'FIRST-TIME BUYER HOMES',
+      description: 'Explore homes and representative examples suited to buyers beginning their homeownership journey.',
+    },
+  };
+
+  const currentContent = filterContent[activeFilter];
+
   const filters: { label: string; value: FilterType }[] = [
     { label: 'All', value: 'all' },
     { label: 'Active', value: 'active' },
@@ -99,7 +128,7 @@ export default function ListingsPage() {
               filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05))',
             }}
           >
-            ACTIVE LISTINGS
+            {currentContent.heading}
           </h1>
           <div className="h-px w-32 mx-auto bg-gradient-to-r from-transparent via-[#C4A46A] to-transparent mb-6 sm:mb-8" />
           <p
@@ -111,8 +140,7 @@ export default function ListingsPage() {
               letterSpacing: '0.015em',
             }}
           >
-            A curated selection of exceptional properties across North Texas. Each home represents
-            an opportunity to find the perfect setting for your next chapter.
+            {currentContent.description}
           </p>
         </div>
 
