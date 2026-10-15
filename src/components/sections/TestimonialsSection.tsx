@@ -525,6 +525,7 @@ function ReviewText({
   const fullRef = useRef<HTMLParagraphElement>(null);
   const measureRef = useRef<HTMLParagraphElement>(null);
   const ellipsisMeasureRef = useRef<HTMLParagraphElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   const { revealedCount, skip } = useProgressiveReveal(text, !isExpanded, !isExpanded ? visibleWordCount : 0);
 
@@ -545,12 +546,12 @@ function ReviewText({
     if (!el || !ellipsisEl) return;
 
     const measure = () => {
-      const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 24;
-      const isDesktop = window.innerWidth >= 768;
-      const clampLines = isDesktop ? DESKTOP_CLAMP : MOBILE_CLAMP;
-      const threshold = lineHeight * clampLines;
+      const viewportEl = viewportRef.current;
+      const threshold = viewportEl ? viewportEl.clientHeight : (
+        (parseFloat(getComputedStyle(el).lineHeight) || 24) * (window.innerWidth >= 768 ? DESKTOP_CLAMP : MOBILE_CLAMP)
+      );
       const fullHeight = el.scrollHeight;
-      setNeedsTruncation(fullHeight > threshold + 4);
+      setNeedsTruncation(fullHeight > threshold);
 
       const allWords = text ? text.split(/\s+/) : [];
       if (allWords.length === 0) {
@@ -595,7 +596,7 @@ function ReviewText({
   return (
     <div className="flex flex-col">
       {/* Text area — reserved min-height when collapsed for equal card heights */}
-      <div className={isExpanded ? '' : 'h-[120px] md:h-[122px] overflow-hidden relative'}>
+      <div ref={viewportRef} className={isExpanded ? '' : 'h-[120px] md:h-[122px] overflow-hidden relative'}>
         {/* Screen-reader text — always complete, never staggered */}
         <p className="sr-only">{text}</p>
 
