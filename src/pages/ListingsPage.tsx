@@ -132,7 +132,7 @@ export default function ListingsPage() {
           </h1>
           <div className="h-px w-32 mx-auto bg-gradient-to-r from-transparent via-[#C4A46A] to-transparent mb-6 sm:mb-8" />
           <p
-            className="text-base sm:text-lg max-w-3xl mx-auto leading-relaxed px-4"
+            className="text-base sm:text-lg max-w-3xl mx-auto leading-relaxed px-4 min-h-[5rem] sm:min-h-[3.75rem]"
             style={{
               fontFamily: "'Cormorant Garamond', serif",
               fontWeight: 400,
