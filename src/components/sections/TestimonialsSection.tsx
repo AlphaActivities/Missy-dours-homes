@@ -284,6 +284,7 @@ export default function TestimonialsSection() {
                       text={currentReview.comment}
                       isExpanded={isExpanded}
                       onToggle={handleReadMoreToggle}
+                      ownerReply={currentReview.owner_reply}
                     />
                   )}
 
@@ -515,10 +516,12 @@ function ReviewText({
   text,
   isExpanded,
   onToggle,
+  ownerReply,
 }: {
   text: string;
   isExpanded: boolean;
   onToggle: () => void;
+  ownerReply?: string | null;
 }) {
   const [needsTruncation, setNeedsTruncation] = useState(false);
   const [visibleWordCount, setVisibleWordCount] = useState(0);
@@ -648,7 +651,7 @@ function ReviewText({
 
       {/* Read More slot — always reserved to prevent footer shift */}
       <div className={isExpanded ? 'mt-3' : 'min-h-[28px] mt-2 md:h-[32px] md:min-h-[32px]'}>
-        {needsTruncation && (
+        {(needsTruncation || Boolean(ownerReply)) && (
           <button
             onClick={onToggle}
             aria-expanded={isExpanded}
