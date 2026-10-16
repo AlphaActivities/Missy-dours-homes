@@ -386,7 +386,7 @@ export default function ListingDetailPage() {
               </div>
 
               {/* Listing Snapshot */}
-              {(listing.propertyType || listing.yearBuilt || listing.lotSize || listing.mlsNumber || listing.lastUpdated || listing.daysOnline) && (
+              {(listing.propertyType || listing.yearBuilt || listing.lotSize || listing.mlsNumber || listing.lastUpdated || listing.daysOnline || listing.soldDate || listing.agentRole || listing.brokerageAtTransaction) && (
                 <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
                   <h3 className="text-lg sm:text-xl font-medium text-gray-900 mb-4">Property Details</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -412,6 +412,24 @@ export default function ListingDetailPage() {
                       <div>
                         <p className="text-xs sm:text-sm text-gray-500 mb-1">MLS #</p>
                         <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.mlsNumber}</p>
+                      </div>
+                    )}
+                    {listing.soldDate && (
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">Sold Date</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.soldDate}</p>
+                      </div>
+                    )}
+                    {listing.agentRole && (
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">Represented</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.agentRole === 'buyer' ? "Buyer's Agent" : "Seller's Agent"}</p>
+                      </div>
+                    )}
+                    {listing.brokerageAtTransaction && (
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-1">Brokerage at Transaction</p>
+                        <p className="text-sm sm:text-base text-gray-900 font-medium">{listing.brokerageAtTransaction}</p>
                       </div>
                     )}
                     {listing.lastUpdated && (

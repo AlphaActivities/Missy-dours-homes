@@ -43,6 +43,9 @@ export interface Listing {
       items: string[];
     }>;
   };
+  agentRole?: "buyer" | "seller";
+  brokerageAtTransaction?: string;
+  soldDate?: string;
 }
 
 export const listings: Listing[] = [
@@ -50,10 +53,10 @@ export const listings: Listing[] = [
     id: "1",
     title: "3105 Palmdale Circle",
     price: "$565,000",
-    locationText: "Highland Park, Dallas",
-    beds: 5,
-    baths: 4,
-    sqft: 4850,
+    locationText: "Farmers Branch, TX",
+    beds: 4,
+    baths: 2,
+    sqft: 1908,
     slug: "3105-palmdale-cir",
     category: "mid",
     status: "sold",
@@ -70,53 +73,15 @@ export const listings: Listing[] = [
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir09.webp",
       "/images/listings/3105-palmdale-cir/3105_Palmdale_Cir10.webp"
     ],
-    description: "An exceptional Highland Park residence offering timeless elegance and modern luxury. This meticulously maintained home featured soaring ceilings, custom millwork, and designer finishes throughout. The chef's kitchen opened to a spacious family room with fireplace, perfect for entertaining. The primary suite offered a private retreat with spa-inspired bath and generous closet space. Expansive outdoor living areas included a covered patio and mature landscaping. Located in one of Dallas's most prestigious neighborhoods, this home provided the perfect blend of sophistication and comfort. This property generated exceptional buyer interest and sold successfully in Highland Park's competitive luxury market.",
-    address: "3105 Palmdale Circle, Highland Park, Dallas, TX",
+    description: "Located in Farmers Branch, Texas, this single-family residence features 4 bedrooms, 2 bathrooms, and approximately 1,908 square feet of living space. Built in 1968, the property represents one of Missy Dours' successfully closed real estate transactions, where she represented the seller.",
+    address: "3105 Palmdale Circle, Farmers Branch, TX 75234",
     propertyType: "Single Family Residence",
-    yearBuilt: 2008,
-    lotSize: "0.32 acres",
-    mlsNumber: "20745891",
-    createdDate: "March 25, 2026",
-    lastUpdated: "April 6, 2026",
-    daysOnline: 12,
-    highlights: [
-      "Soaring ceilings with custom millwork and architectural details",
-      "Chef's kitchen with high-end appliances and center island",
-      "Primary suite with spa-inspired bath and walk-in closets",
-      "Covered outdoor patio with mature landscaping",
-      "Premium location in prestigious Highland Park",
-      "Smart home technology and security system",
-      "Successfully sold in Highland Park's competitive luxury market"
-    ],
-    features: {
-      Interior: [
-        "Hardwood floors throughout main living areas",
-        "Custom built-ins and designer lighting",
-        "Gourmet kitchen with premium appliances",
-        "Formal dining room with tray ceiling",
-        "Primary suite with sitting area",
-        "Walk-in closets with custom organization"
-      ],
-      Exterior: [
-        "Covered patio with ceiling fans",
-        "Professionally landscaped grounds",
-        "Sprinkler system",
-        "Two-car attached garage",
-        "Brick and stone exterior"
-      ],
-      Utilities: [
-        "Central heating and air conditioning",
-        "High-efficiency HVAC system",
-        "Tankless water heater",
-        "Energy-efficient windows"
-      ],
-      Community: [
-        "Highland Park Independent School District",
-        "Walking distance to parks and shopping",
-        "Low-traffic residential street",
-        "Award-winning schools"
-      ]
-    }
+    yearBuilt: 1968,
+    lotSize: "Approximately 0.216 acres",
+    mlsNumber: "21170925",
+    soldDate: "March 24, 2026",
+    agentRole: "seller",
+    brokerageAtTransaction: "Beam Real Estate, LLC",
   },
   {
     id: "11",
@@ -511,5 +476,49 @@ export const listings: Listing[] = [
     galleryImages: ["/images/3-first-time-buyer/photo_2.jpg"],
     description: "An excellent opportunity for first-time homebuyers in Plano. This well-maintained home features move-in ready condition with access to top-rated schools and community amenities.",
     address: "Plano, TX"
+  },
+  {
+    id: "13",
+    title: "505 Lowell Lane",
+    price: "$394,500",
+    locationText: "Richardson, TX",
+    beds: 3,
+    baths: 2,
+    sqft: 1551,
+    slug: "505-lowell-ln",
+    category: "first",
+    status: "sold",
+    heroImage: "/images/listings/505-lowell-ln/505_Lowell_Ln_placeholder.svg",
+    galleryImages: ["/images/listings/505-lowell-ln/505_Lowell_Ln_placeholder.svg"],
+    description: "Located in Richardson, Texas, this single-family home features 3 bedrooms, 2 bathrooms, and approximately 1,551 square feet of living space. Built in 1959, the property is part of Missy Dours' completed real estate transactions. Missy represented the buyer through Clancy Realty.",
+    address: "505 Lowell Lane, Richardson, TX 75080",
+    propertyType: "Single-family residence",
+    yearBuilt: 1959,
+    mlsNumber: "21288866",
+    soldDate: "August 10, 2026",
+    agentRole: "buyer",
+    brokerageAtTransaction: "Clancy Realty",
+  },
+  {
+    id: "14",
+    title: "4067 Beltway Drive, Unit 121",
+    price: "$275,000",
+    locationText: "Addison, TX",
+    beds: 2,
+    baths: 2.5,
+    sqft: 1029,
+    slug: "4067-beltway-dr-unit-121",
+    category: "first",
+    status: "sold",
+    heroImage: "/images/listings/4067-beltway-dr-unit-121/4067_Beltway_Dr_placeholder.svg",
+    galleryImages: ["/images/listings/4067-beltway-dr-unit-121/4067_Beltway_Dr_placeholder.svg"],
+    description: "Located in Addison, Texas, this condominium features 2 bedrooms, 2.5 bathrooms, and approximately 1,029 square feet of living space. Built in 1982, the property is among Missy Dours' completed real estate transactions. Missy represented the buyer through Beam Real Estate, LLC.",
+    address: "4067 Beltway Drive, Unit 121, Addison, TX 75001",
+    propertyType: "Condominium",
+    yearBuilt: 1982,
+    mlsNumber: "21051647",
+    soldDate: "December 12, 2025",
+    agentRole: "buyer",
+    brokerageAtTransaction: "Beam Real Estate, LLC",
   }
 ];
