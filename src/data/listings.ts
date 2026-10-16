@@ -206,7 +206,7 @@ export const listings: Listing[] = [
   {
     id: "12",
     title: "14636 Southern Pines Dr",
-    price: "$2,500,000",
+    price: "$2,487,000",
     locationText: "Farmers Branch, TX",
     beds: 4,
     baths: 3.5,
