@@ -55,27 +55,27 @@ export default function ListingsPage() {
   const filterContent: Record<FilterType, { heading: string; description: string }> = {
     all: {
       heading: 'PROPERTY LISTINGS',
-      description: "Explore Missy Dours' current listings, successfully sold properties, and representative home examples across North Texas.",
+      description: 'Explore available homes, previously sold properties, and inspiring home styles across North Texas.',
     },
     active: {
       heading: 'ACTIVE LISTINGS',
-      description: 'Explore homes currently offered through Missy Dours, with property photos, details, and opportunities to learn more.',
+      description: 'Discover available homes across North Texas, with detailed property information and photos to help guide your search.',
     },
     sold: {
       heading: 'SOLD PROPERTIES',
-      description: "Explore properties marked as sold in Missy Dours' portfolio, showcasing past real estate transactions.",
+      description: "Explore previously sold properties featured in Missy Dours' real estate portfolio.",
     },
     luxury: {
       heading: 'LUXURY HOMES',
-      description: 'Explore luxury real estate and representative examples of upscale homes across North Texas. Property availability varies.',
+      description: 'Explore exceptional homes and distinctive architectural styles that reflect luxury living across North Texas.',
     },
     mid: {
       heading: 'MOVE-UP HOMES',
-      description: 'Explore spacious move-up homes and representative examples for buyers ready for their next chapter.',
+      description: 'Discover spacious homes, thoughtful designs, and inspiring possibilities for the next chapter of homeownership.',
     },
     first: {
       heading: 'FIRST-TIME BUYER HOMES',
-      description: 'Explore homes and representative examples suited to buyers beginning their homeownership journey.',
+      description: 'Explore welcoming homes and inspiring possibilities as you take your first steps toward homeownership.',
     },
   };
 
