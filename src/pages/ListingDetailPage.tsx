@@ -138,7 +138,7 @@ export default function ListingDetailPage() {
 
       const overlayTimer = setTimeout(() => {
         setOverlayActive(false);
-      }, 1800);
+      }, 3200);
 
       return () => {
         clearTimeout(thumbnailTimer);
