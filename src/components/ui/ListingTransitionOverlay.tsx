@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavbarHeight } from '../../hooks/useNavbarHeight';
 
 interface ListingTransitionOverlayProps {
@@ -10,6 +10,10 @@ interface ListingTransitionOverlayProps {
   onDismiss: () => void;
 }
 
+// Card is held visible for this long, then the ~200ms Framer Motion exit
+// animation plays, totaling approximately 2000ms.
+const HOLD_DURATION = 1800;
+
 export default function ListingTransitionOverlay({
   isVisible,
   heroImage,
@@ -17,40 +21,32 @@ export default function ListingTransitionOverlay({
   price,
   onDismiss,
 }: ListingTransitionOverlayProps) {
-  const [shouldDismiss, setShouldDismiss] = useState(false);
-  const [mountTime, setMountTime] = useState<number>(0);
-  const [introComplete, setIntroComplete] = useState(false);
   const { navbarHeight, isReady } = useNavbarHeight();
+  const dismissRef = useRef(onDismiss);
+  const dismissedRef = useRef(false);
 
   useEffect(() => {
-    if (!isVisible) return;
+    dismissRef.current = onDismiss;
+  }, [onDismiss]);
 
-    const mountTimestamp = Date.now();
-    setMountTime(mountTimestamp);
+  useEffect(() => {
+    if (!isVisible) {
+      dismissedRef.current = false;
+      return;
+    }
 
-    const introCompleteTimer = setTimeout(() => {
-      setIntroComplete(true);
-    }, 250);
-
-    const maxDurationTimer = setTimeout(() => {
-      setShouldDismiss(true);
-      onDismiss();
-    }, 3200);
+    const timer = setTimeout(() => {
+      if (dismissedRef.current) return;
+      dismissedRef.current = true;
+      dismissRef.current();
+    }, HOLD_DURATION);
 
     return () => {
-      clearTimeout(introCompleteTimer);
-      clearTimeout(maxDurationTimer);
-      setIntroComplete(false);
+      clearTimeout(timer);
     };
-  }, [isVisible, onDismiss]);
+  }, [isVisible]);
 
-  useEffect(() => {
-    if (shouldDismiss) {
-      onDismiss();
-    }
-  }, [shouldDismiss, onDismiss]);
-
-  const paddingTop = isReady ? navbarHeight + 8 : 128;
+  const paddingTop = isReady ? navbarHeight + 24 : 128;
 
   return (
     <AnimatePresence mode="wait">
@@ -60,26 +56,25 @@ export default function ListingTransitionOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="fixed inset-0 z-40 bg-[#f7f3ea]"
-          style={{ paddingTop: `${paddingTop}px` }}
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
+          style={{ paddingTop: `${paddingTop}px`, paddingBottom: '24px' }}
         >
-          <div className="min-h-full flex items-start sm:items-center justify-center px-4 pt-[8px] sm:pt-0">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="w-full max-w-md lg:max-w-3xl"
-            >
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="w-full max-w-md lg:max-w-3xl max-h-[calc(100dvh-180px)] overflow-y-auto"
+          >
             <div className="bg-gradient-to-br from-[#FFFBF5] to-[#FFF9F0] rounded-2xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.6)] border border-[#C4A46A]/20 overflow-hidden">
-              <div className="p-8 sm:p-10 lg:p-14 text-center space-y-6">
+              <div className="p-6 sm:p-8 lg:p-10 text-center space-y-5">
                 <div className="flex justify-center">
                   <img
                     src="/images/md-logo.png"
                     alt="Missy Davis"
                     loading="eager"
                     decoding="sync"
-                    className="h-16 sm:h-20 lg:h-28 drop-shadow-[0_4px_12px_rgba(196,164,106,0.4)]"
+                    className="h-14 sm:h-16 lg:h-20 drop-shadow-[0_4px_12px_rgba(196,164,106,0.4)]"
                   />
                 </div>
 
@@ -90,15 +85,7 @@ export default function ListingTransitionOverlay({
                       alt={title || 'Property preview'}
                       loading="eager"
                       decoding="sync"
-                      className="w-full h-48 sm:h-56 lg:h-80 object-cover"
-                      onLoad={() => {
-                        if (!introComplete) return;
-                        const elapsed = Date.now() - (mountTime + 250);
-                        const remaining = Math.max(0, 2200 - elapsed);
-                        setTimeout(() => {
-                          setShouldDismiss(true);
-                        }, remaining);
-                      }}
+                      className="w-full h-40 sm:h-48 lg:h-56 object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                   </div>
@@ -156,8 +143,7 @@ export default function ListingTransitionOverlay({
                 </div>
               </div>
             </div>
-            </motion.div>
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
