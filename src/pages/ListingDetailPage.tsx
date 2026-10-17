@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams, useLocation, useOutletContext } from 'react-router-dom';
 import { listings } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Phone, Mail, Expand, Home, ChevronDown, ChevronLeft, ChevronRight, LayoutTemplate, Sparkles, Calendar, Clock } from 'lucide-react';
 import { CONTACT_INFO } from '../config/contact';
@@ -21,7 +21,7 @@ export default function ListingDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [openFeatureSections, setOpenFeatureSections] = useState<string[]>([]);
-  const [overlayActive, setOverlayActive] = useState(!!location.state?.transitionPreview);
+  const { transitionOverlayVisible } = useOutletContext<{ transitionOverlayVisible: boolean }>();
   const [renderThumbnails, setRenderThumbnails] = useState(false);
   const [renderMap, setRenderMap] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
@@ -127,7 +127,7 @@ export default function ListingDetailPage() {
   }, [selectedImage]);
 
   useEffect(() => {
-    if (overlayActive) {
+    if (transitionOverlayVisible) {
       const thumbnailTimer = setTimeout(() => {
         setRenderThumbnails(true);
       }, 500);
@@ -136,20 +136,15 @@ export default function ListingDetailPage() {
         setRenderMap(true);
       }, 1000);
 
-      const overlayTimer = setTimeout(() => {
-        setOverlayActive(false);
-      }, 2300);
-
       return () => {
         clearTimeout(thumbnailTimer);
         clearTimeout(mapTimer);
-        clearTimeout(overlayTimer);
       };
     } else {
       setRenderThumbnails(true);
       setRenderMap(true);
     }
-  }, [overlayActive]);
+  }, [transitionOverlayVisible]);
 
   if (!listing) {
     return (

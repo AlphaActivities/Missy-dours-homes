@@ -1,5 +1,5 @@
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
 import Navbar from './components/Navbar';
 import FloatingCallButton from './components/ui/FloatingCallButton';
@@ -112,11 +112,16 @@ function Layout() {
     setShowTransition(false);
   }, []);
 
+  const outletContext = useMemo(
+    () => ({ transitionOverlayVisible: showTransition }),
+    [showTransition],
+  );
+
   return (
     <>
       {isHomePage && <GlobalVideoBackground />}
       <Navbar />
-      <Outlet />
+      <Outlet context={outletContext} />
       <FloatingCallButton />
       <ListingTransitionOverlay
         isVisible={showTransition}
