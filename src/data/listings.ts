@@ -488,16 +488,76 @@ export const listings: Listing[] = [
     slug: "505-lowell-ln",
     category: "first",
     status: "sold",
-    heroImage: "/images/listings/505-lowell-ln/505_Lowell_Ln_placeholder.svg",
-    galleryImages: ["/images/listings/505-lowell-ln/505_Lowell_Ln_placeholder.svg"],
-    description: "Located in Richardson, Texas, this single-family home features 3 bedrooms, 2 bathrooms, and approximately 1,551 square feet of living space. Built in 1959, the property is part of Missy Dours' completed real estate transactions. Missy represented the buyer through Clancy Realty.",
+    heroImage: "/images/listings/505-lowell-ln/505-Lowell-Ln01.webp",
+    galleryImages: [
+      "/images/listings/505-lowell-ln/505-Lowell-Ln01.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln02.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln03.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln04.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln05.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln06.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln08.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln09.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln10.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln11.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln12.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln13.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln14.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln15.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln16.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln17.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln18.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln19.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln20.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln21.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln22.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln23.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln24.webp",
+      "/images/listings/505-lowell-ln/505-Lowell-Ln25.webp"
+    ],
+    description: "Located in Richardson's established Northrich neighborhood, this single-story brick residence offers three bedrooms, two bathrooms, and 1,551 square feet of living space. Built in 1959, the home features refreshed interiors, an updated kitchen and bathrooms, a fireplace, and a two-car garage. Recent improvements included significant updates to major home systems. Set on approximately 0.184 acres, the property combines established neighborhood character with modernized living spaces. Missy Dours represented the buyer through Clancy Realty in the completed August 2026 transaction.",
     address: "505 Lowell Lane, Richardson, TX 75080",
-    propertyType: "Single-family residence",
+    propertyType: "Single-Family Residence",
     yearBuilt: 1959,
+    lotSize: "Approximately 0.184 acres (8,015 sq ft)",
     mlsNumber: "21288866",
     soldDate: "August 10, 2026",
     agentRole: "buyer",
     brokerageAtTransaction: "Clancy Realty",
+    floorplan: "/images/listings/505-lowell-ln/505-Lowell-Ln20-Floor_Plan.webp",
+    highlights: [
+      "Renovated kitchen and bathrooms",
+      "Updated major home systems",
+      "Single-story brick construction",
+      "Two-car garage",
+      "Fireplace",
+      "Established Richardson neighborhood"
+    ],
+    features: {
+      Interior: [
+        "Single-story detached home",
+        "Luxury vinyl plank flooring",
+        "Updated kitchen with dishwasher, gas cooktop, and refrigerator",
+        "Renovated bathrooms",
+        "Fireplace",
+        "1,551 square feet of living space"
+      ],
+      Exterior: [
+        "Brick construction",
+        "Composition roof",
+        "Pillar/post/pier foundation",
+        "Two-car garage",
+        "Approximately 0.184-acre lot"
+      ],
+      Utilities: [
+        "Central air conditioning",
+        "Central natural gas heating"
+      ],
+      Community: [
+        "Richardson Independent School District",
+        "Established Northrich neighborhood"
+      ]
+    }
   },
   {
     id: "14",
@@ -510,9 +570,46 @@ export const listings: Listing[] = [
     slug: "4067-beltway-dr-unit-121",
     category: "first",
     status: "sold",
-    heroImage: "/images/listings/4067-beltway-dr-unit-121/4067_Beltway_Dr_placeholder.svg",
-    galleryImages: ["/images/listings/4067-beltway-dr-unit-121/4067_Beltway_Dr_placeholder.svg"],
-    description: "Located in Addison, Texas, this condominium features 2 bedrooms, 2.5 bathrooms, and approximately 1,029 square feet of living space. Built in 1982, the property is among Missy Dours' completed real estate transactions. Missy represented the buyer through Beam Real Estate, LLC.",
+    heroImage: "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive01.webp",
+    galleryImages: [
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive01.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive02.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive03.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive04.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive05.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive06.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive07.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive08.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive09.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive10.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive11.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive12.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive13.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive14.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive15.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive16.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive17.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive18.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive19.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive20.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive21.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive22.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive23.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive24.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive25.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive26.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive27.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive28.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive29.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive30.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive31.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive32.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive33.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive34.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive35.webp",
+      "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive36.webp"
+    ],
+    description: "Situated in Addison's Pecan Square condominium community, this two-level residence offers two bedrooms, two full bathrooms, one half bathroom, and approximately 1,029 square feet of living space. The home features an updated kitchen, refreshed bathrooms, a welcoming living area with fireplace, and outdoor spaces including a balcony and covered patio. Residents enjoy landscaped community surroundings and access to a shared swimming pool. Missy Dours represented the buyer through Beam Real Estate, LLC in the completed December 2025 transaction.",
     address: "4067 Beltway Drive, Unit 121, Addison, TX 75001",
     propertyType: "Condominium",
     yearBuilt: 1982,
@@ -520,5 +617,40 @@ export const listings: Listing[] = [
     soldDate: "December 12, 2025",
     agentRole: "buyer",
     brokerageAtTransaction: "Beam Real Estate, LLC",
+    floorplan: "/images/listings/4067-beltway-dr-unit-121/4067-Beltway-Drive-Floor_Plan.webp",
+    highlights: [
+      "Updated kitchen and bathrooms",
+      "Two-level condominium layout",
+      "Fireplace",
+      "Private balcony and covered patio",
+      "One-car garage",
+      "Community swimming pool",
+      "Convenient Addison location"
+    ],
+    features: {
+      Interior: [
+        "Two-level floor plan",
+        "Updated kitchen with modern cabinetry and appliances",
+        "Updated bathrooms",
+        "Fireplace in living area",
+        "Hardwood/laminate flooring",
+        "1,029 square feet of living space"
+      ],
+      Exterior: [
+        "Private balcony",
+        "Covered patio",
+        "One-car garage",
+        "Landscaped community grounds"
+      ],
+      Utilities: [
+        "Community-maintained grounds"
+      ],
+      Community: [
+        "Pecan Square Condominium subdivision",
+        "Community swimming pool",
+        "Dallas Independent School District",
+        "Convenient Addison location"
+      ]
+    }
   }
 ];
