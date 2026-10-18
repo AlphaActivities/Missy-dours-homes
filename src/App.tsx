@@ -20,12 +20,13 @@ function Layout() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const csInitialPageViewSentRef = useRef(false);
-  const [showTransition, setShowTransition] = useState(false);
-  const [transitionData, setTransitionData] = useState<{
-    heroImage?: string;
-    title?: string;
-    price?: string;
-  } | null>(null);
+  const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set());
+
+  const transitionPreview = (location.state as any)?.transitionPreview;
+  const isListingDetailRoute =
+    location.pathname.startsWith('/listings/') && location.pathname !== '/listings';
+  const showTransition =
+    isListingDetailRoute && !!transitionPreview && !dismissedKeys.has(location.key);
 
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -95,22 +96,13 @@ function Layout() {
     };
   }, [location.pathname, location.search]);
 
-  useEffect(() => {
-    const state = location.state as any;
-    const isListingDetailPage = location.pathname.startsWith('/listings/') && location.pathname !== '/listings';
-
-    if (isListingDetailPage && state?.transitionPreview) {
-      setTransitionData(state.transitionPreview);
-      setShowTransition(true);
-    } else {
-      setShowTransition(false);
-      setTransitionData(null);
-    }
-  }, [location]);
-
   const handleDismiss = useCallback(() => {
-    setShowTransition(false);
-  }, []);
+    setDismissedKeys((prev) => {
+      const next = new Set(prev);
+      next.add(location.key);
+      return next;
+    });
+  }, [location.key]);
 
   const outletContext = useMemo(
     () => ({ transitionOverlayVisible: showTransition }),
@@ -125,9 +117,9 @@ function Layout() {
       <FloatingCallButton />
       <ListingTransitionOverlay
         isVisible={showTransition}
-        heroImage={transitionData?.heroImage}
-        title={transitionData?.title}
-        price={transitionData?.price}
+        heroImage={transitionPreview?.heroImage}
+        title={transitionPreview?.title}
+        price={transitionPreview?.price}
         onDismiss={handleDismiss}
       />
     </>

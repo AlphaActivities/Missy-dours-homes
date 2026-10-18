@@ -48,7 +48,7 @@ export default function ListingTransitionOverlay({
     <AnimatePresence mode="wait">
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -56,13 +56,23 @@ export default function ListingTransitionOverlay({
           style={{
             top: `${navH}px`,
             height: `calc(100dvh - ${navH}px)`,
-            background: 'rgba(15, 18, 25, 0.82)',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
+            background: '#f7f3ea',
           }}
         >
+          {/* Dark blurred backdrop — crossfades in over the cream base */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="absolute inset-0"
+            style={{
+              background: 'rgba(15, 18, 25, 0.82)',
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
+            }}
+          />
           <div
-            className="flex items-center justify-center w-full h-full px-4 sm:px-6 lg:px-10"
+            className="relative flex items-center justify-center w-full h-full px-4 sm:px-6 lg:px-10"
             style={{ paddingTop: 'clamp(12px, 3vh, 32px)', paddingBottom: 'clamp(12px, 3vh, 32px)' }}
           >
             <motion.div
