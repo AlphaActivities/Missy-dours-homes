@@ -546,14 +546,24 @@ function ReviewText({
   useEffect(() => {
     const el = measureRef.current;
     const ellipsisEl = ellipsisMeasureRef.current;
-    if (!el || !ellipsisEl) return;
+    const viewportEl = viewportRef.current;
+    if (!el || !ellipsisEl || !viewportEl) return;
+
+    let rafId = 0;
+    let cancelled = false;
 
     const measure = () => {
-      const viewportEl = viewportRef.current;
-      const threshold = viewportEl ? viewportEl.clientHeight : (
-        (parseFloat(getComputedStyle(el).lineHeight) || 24) * (window.innerWidth >= 768 ? DESKTOP_CLAMP : MOBILE_CLAMP)
+      const measureEl = measureRef.current;
+      const ellipsisEl2 = ellipsisMeasureRef.current;
+      const viewportEl2 = viewportRef.current;
+      if (!measureEl || !ellipsisEl2 || !viewportEl2) return;
+      // Avoid measuring during invalid/hidden layout — never store false from a zero-width state
+      if (measureEl.clientWidth === 0 || viewportEl2.clientHeight === 0) return;
+
+      const threshold = viewportEl2.clientHeight || (
+        (parseFloat(getComputedStyle(measureEl).lineHeight) || 24) * (window.innerWidth >= 768 ? DESKTOP_CLAMP : MOBILE_CLAMP)
       );
-      const fullHeight = el.scrollHeight;
+      const fullHeight = measureEl.scrollHeight;
       setNeedsTruncation(fullHeight > threshold);
 
       const allWords = text ? text.split(/\s+/) : [];
@@ -576,8 +586,8 @@ function ReviewText({
         const prefix = mid === 1
           ? allWords[0] + '...'
           : allWords.slice(0, mid - 1).join(' ') + ' ' + allWords[mid - 1] + '...';
-        ellipsisEl.textContent = prefix;
-        if (ellipsisEl.scrollHeight <= threshold) {
+        ellipsisEl2.textContent = prefix;
+        if (ellipsisEl2.scrollHeight <= threshold) {
           lo = mid;
         } else {
           hi = mid - 1;
@@ -586,9 +596,46 @@ function ReviewText({
       setVisibleWordCount(lo);
     };
 
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    const scheduleMeasure = () => {
+      if (cancelled) return;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(measure);
+    };
+
+    // Initial measure on next frame once layout is available
+    scheduleMeasure();
+
+    // Re-measure when fonts finish loading (late-loaded web fonts shift text metrics)
+    let fontReadyHandler: (() => void) | null = null;
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        if (cancelled) return;
+        scheduleMeasure();
+      });
+    }
+
+    // Re-measure on window resize
+    window.addEventListener('resize', scheduleMeasure);
+
+    // Re-measure when the viewport element's box changes (container width, breakpoints, etc.)
+    // Only observe width changes — observing height would loop since height is fixed by truncation state.
+    let lastWidth = viewportEl.clientWidth;
+    const resizeObserver = new ResizeObserver(() => {
+      if (cancelled) return;
+      const currentWidth = viewportEl.clientWidth;
+      if (currentWidth === lastWidth) return;
+      lastWidth = currentWidth;
+      scheduleMeasure();
+    });
+    resizeObserver.observe(viewportEl);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', scheduleMeasure);
+      resizeObserver.disconnect();
+      if (fontReadyHandler) document.removeEventListener('fonts.ready', fontReadyHandler);
+    };
   }, [text]);
 
   const words = text ? text.split(/\s+/) : [];
