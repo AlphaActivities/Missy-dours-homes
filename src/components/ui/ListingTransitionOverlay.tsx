@@ -60,8 +60,8 @@ export default function ListingTransitionOverlay({
           }}
         >
           <div
-            className="flex items-center justify-center w-full h-full px-4 sm:px-6 lg:px-10"
-            style={{ paddingTop: 'clamp(12px, 3vh, 32px)', paddingBottom: 'clamp(12px, 3vh, 32px)' }}
+            className="flex items-center justify-center w-full h-full px-4 sm:px-6 lg:px-10 pb-28 md:pb-8"
+            style={{ paddingTop: 'clamp(12px, 3vh, 32px)' }}
           >
             <motion.div
               initial={{ opacity: 0, y: 14 }}
