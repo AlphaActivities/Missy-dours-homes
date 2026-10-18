@@ -16,6 +16,9 @@ export default function ListingDetailPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const fromFilter = searchParams.get('from') || 'all';
+  const detailState = location.state as { listingsScrollY?: number; fromFilter?: string } | null;
+  const returnScrollY = detailState?.listingsScrollY ?? null;
+  const returnFilter = detailState?.fromFilter || fromFilter;
   const listing = listings.find((l) => l.slug === slug);
 
   const [selectedImage, setSelectedImage] = useState(0);
@@ -191,7 +194,8 @@ export default function ListingDetailPage() {
         {/* Back Link */}
         <div className="-mt-5 mb-6 sm:mb-8 lg:mb-12">
           <Link
-            to={`/listings?filter=${fromFilter}`}
+            to={`/listings?filter=${returnFilter}`}
+            state={returnScrollY !== null ? { scrollY: returnScrollY } : undefined}
             className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#C4A46A]/70 text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.18)] ring-1 ring-[#C4A46A]/60 backdrop-blur-md transition-all duration-300 hover:-translate-y-[1px] hover:shadow-[0_12px_35px_rgba(15,23,42,0.25)] overflow-hidden text-sm sm:text-base font-medium"
           >
             <span className="absolute inset-0 bg-gradient-to-r from-white/40 via-transparent to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />

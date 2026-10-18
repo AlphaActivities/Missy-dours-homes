@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { listings, ListingCategory, ListingStatus } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Home } from 'lucide-react';
 import SEO from '../components/SEO';
@@ -17,10 +17,22 @@ export default function ListingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [displayedListings, setDisplayedListings] = useState(listings);
   const navigate = useNavigate();
+  const location = useLocation();
+  const savedScrollY = (location.state as { scrollY?: number } | null)?.scrollY ?? null;
+  const restoredScrollRef = useRef(false);
 
   useEffect(() => {
+    if (savedScrollY !== null) return;
     luxuryScrollToTop(1400);
-  }, []);
+  }, [savedScrollY]);
+
+  useEffect(() => {
+    if (savedScrollY === null) return;
+    if (restoredScrollRef.current) return;
+    if (isLoading) return;
+    window.scrollTo(0, savedScrollY);
+    restoredScrollRef.current = true;
+  }, [savedScrollY, isLoading, displayedListings]);
 
   useEffect(() => {
     if (filterParam && ['all', 'active', 'sold', 'luxury', 'mid', 'first'].includes(filterParam)) {
@@ -334,6 +346,8 @@ export default function ListingsPage() {
                             title: listing.title,
                             price: listing.price,
                           },
+                          listingsScrollY: window.scrollY,
+                          fromFilter: activeFilter,
                         },
                       });
                     }}
