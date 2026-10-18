@@ -59,20 +59,8 @@ export default function ListingTransitionOverlay({
             background: '#f7f3ea',
           }}
         >
-          {/* Dark blurred backdrop — crossfades in over the cream base */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="absolute inset-0"
-            style={{
-              background: 'rgba(15, 18, 25, 0.82)',
-              backdropFilter: 'blur(6px)',
-              WebkitBackdropFilter: 'blur(6px)',
-            }}
-          />
           <div
-            className="relative flex items-center justify-center w-full h-full px-4 sm:px-6 lg:px-10"
+            className="flex items-center justify-center w-full h-full px-4 sm:px-6 lg:px-10"
             style={{ paddingTop: 'clamp(12px, 3vh, 32px)', paddingBottom: 'clamp(12px, 3vh, 32px)' }}
           >
             <motion.div
