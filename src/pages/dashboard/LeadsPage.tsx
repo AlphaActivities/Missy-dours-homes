@@ -237,6 +237,7 @@ export default function LeadsPage() {
         style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
       >
         {/* ── Page header ──────────────────────────────────── */}
+        <div className="ds-dash-scrim rounded-2xl px-4 py-3 -mx-4 sm:mx-0 mb-6">
         <SectionHeader
           title="Leads"
           subtitle={subtitle}
@@ -297,10 +298,11 @@ export default function LeadsPage() {
             </div>
           }
         />
+        </div>
 
         {/* ── Filter tabs ───────────────────────────────────── */}
         <div
-          className="flex items-center gap-1 mb-4 overflow-x-auto py-1 -my-1 px-1 -mx-1"
+          className="ds-dash-scrim flex items-center gap-1 mb-4 overflow-x-auto py-1.5 px-2 -mx-1"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {FILTER_TABS.map(tab => {
@@ -309,7 +311,7 @@ export default function LeadsPage() {
               <button
                 key={tab.value}
                 onClick={() => handleFilterChange(tab.value)}
-                className="flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150"
+                className={`ds-filter-tab ${isActive ? 'ds-filter-tab-active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150`}
                 style={{
                   background: isActive ? 'var(--ds-gold-muted)' : 'transparent',
                   color: isActive ? 'var(--ds-gold-light)' : 'var(--ds-text-secondary)',

@@ -454,4 +454,53 @@
   .ds-dash-shell {
     background-color: transparent !important;
   }
+  /* Translucent sidebar — video subtly visible, text stays readable */
+  .ds-dash-sidebar {
+    background: rgba(12, 11, 10, 0.82) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  /* Mobile top bar stays solid (video hidden on mobile anyway) */
+  .ds-dash-topbar {
+    background: var(--ds-bg-raised);
+  }
+}
+@media (max-width: 767px) {
+  .ds-dash-sidebar {
+    background: var(--ds-bg-raised);
+  }
+}
+
+/* ── Leads page header + filter contrast over video ──────────── */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  /* Wrap heading + filter row in a subtle dark scrim so text reads
+     over bright video scenes. Applied via .ds-dash-scrim class. */
+  .ds-dash-scrim {
+    background: rgba(12, 11, 10, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+  /* Filter tabs: clearer states over moving background */
+  .ds-filter-tab {
+    background: rgba(12, 11, 10, 0.55) !important;
+    color: var(--ds-text-secondary) !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .ds-filter-tab:hover {
+    color: var(--ds-text-primary) !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+  }
+  .ds-filter-tab.ds-filter-tab-active {
+    background: var(--ds-gold-muted) !important;
+    color: var(--ds-gold-light) !important;
+    box-shadow: 0 0 0 1px rgba(196, 164, 106, 0.4) !important;
+  }
+  .ds-filter-tab:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(196, 164, 106, 0.55) !important;
+  }
 }

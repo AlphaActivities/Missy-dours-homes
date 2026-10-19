@@ -63,9 +63,8 @@ export default function DashboardLayout() {
 
       {/* ── Sidebar ───────────────────────────────────────── */}
       <aside
-        className="fixed top-0 left-0 h-full z-30 w-64 flex flex-col lg:z-auto lg:!translate-x-0"
+        className="ds-dash-sidebar fixed top-0 left-0 h-full z-30 w-64 flex flex-col lg:z-auto lg:!translate-x-0"
         style={{
-          background: 'var(--ds-bg-raised)',
           boxShadow: 'var(--ds-shadow-card), 1px 0 0 rgba(255,255,255,0.04)',
           transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: `transform 320ms var(--ds-ease-drawer-in)`,
@@ -198,9 +197,8 @@ export default function DashboardLayout() {
 
         {/* Mobile top bar — hidden on login route, which has its own full-screen layout */}
         <header
-          className={`${isLoginRoute ? 'hidden' : 'lg:hidden'} flex items-center justify-between px-4 py-4 shrink-0`}
+          className={`ds-dash-topbar ${isLoginRoute ? 'hidden' : 'lg:hidden'} flex items-center justify-between px-4 py-4 shrink-0`}
           style={{
-            background: 'var(--ds-bg-raised)',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             boxShadow: '0 1px 0 rgba(255,255,255,0.04)',
           }}
