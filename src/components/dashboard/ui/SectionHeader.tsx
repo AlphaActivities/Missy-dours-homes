@@ -14,7 +14,7 @@ export default function SectionHeader({ title, subtitle, action }: SectionHeader
           {title}
         </h1>
         {subtitle && (
-          <p className="text-sm mt-0.5" style={{ color: 'var(--ds-text-secondary)' }}>
+          <p className="text-sm mt-0.5" style={{ color: '#f5f5f5' }}>
             {subtitle}
           </p>
         )}
