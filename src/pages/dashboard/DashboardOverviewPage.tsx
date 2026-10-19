@@ -53,12 +53,14 @@ function StatCard({
   value,
   icon,
   accent,
+  animated,
   onClick,
 }: {
   label: string;
   value: number | null;
   icon: ReactNode;
   accent?: boolean;
+  animated?: boolean;
   onClick?: () => void;
 }) {
   const interactive = !!onClick;
@@ -68,7 +70,7 @@ function StatCard({
       tabIndex={interactive ? 0 : undefined}
       onClick={onClick}
       onKeyDown={interactive ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
-      className={`ds-stat-card group relative overflow-hidden rounded-2xl p-6 ${interactive ? 'cursor-pointer' : ''}`}
+      className={`ds-stat-card group relative overflow-hidden rounded-2xl p-6 ${interactive ? 'cursor-pointer' : ''} ${animated ? 'ds-stat-living-gold' : ''}`}
       style={{
         background: accent ? 'var(--ds-bg-raised)' : 'var(--ds-bg-raised)',
         boxShadow: accent
@@ -255,6 +257,7 @@ export default function DashboardOverviewPage() {
             value={newLeads}
             icon={<Zap size={15} />}
             accent={!!newLeads && newLeads > 0}
+            animated={!!newLeads && newLeads > 0}
             onClick={() => navigate('/dashboard/leads?filter=new')}
           />
         </div>

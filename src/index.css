@@ -434,6 +434,51 @@
   }
 }
 
+/* ── Living gold border for the priority stat card ──────────────
+   Same conic-gradient language as the review container border,
+   adapted to sit inside the card's rounded, overflow-hidden frame
+   using a masked ::before layer. Animated only when the card
+   carries .ds-stat-living-gold (i.e. count > 0). */
+.ds-stat-living-gold::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--gold-angle, 0deg),
+    rgba(92, 68, 34, 0.0) 0deg,
+    rgba(122, 90, 46, 0.3) 50deg,
+    rgba(165, 124, 60, 0.55) 100deg,
+    rgba(196, 164, 106, 0.85) 140deg,
+    rgba(243, 217, 152, 1) 165deg,
+    rgba(255, 241, 200, 1) 180deg,
+    rgba(243, 217, 152, 1) 195deg,
+    rgba(196, 164, 106, 0.85) 220deg,
+    rgba(165, 124, 60, 0.55) 260deg,
+    rgba(122, 90, 46, 0.3) 310deg,
+    rgba(92, 68, 34, 0.0) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+  animation: ds-stat-gold-travel 6s linear infinite;
+}
+@keyframes ds-stat-gold-travel {
+  0%   { --gold-angle: 0deg; }
+  100% { --gold-angle: 360deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-stat-living-gold::before {
+    animation: none;
+    background: linear-gradient(135deg, rgba(92,68,34,0.4), rgba(196,164,106,0.8), rgba(255,241,200,0.9), rgba(196,164,106,0.8), rgba(92,68,34,0.4));
+  }
+}
+
 /* ── Cinematic dashboard background ──────────────────────────── */
 .ds-dash-bg {
   z-index: -10;
