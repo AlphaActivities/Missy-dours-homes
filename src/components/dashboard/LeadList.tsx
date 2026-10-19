@@ -56,7 +56,7 @@ function LeadTable({
           <col style={{ width: '170px' }} />  {/* Contact */}
           <col />                             {/* Message — fills remaining */}
           <col style={{ width: '110px' }} />  {/* Status */}
-          <col style={{ width: '90px' }} />   {/* Actions */}
+          <col style={{ width: '190px' }} />  {/* Actions */}
         </colgroup>
         <thead>
           <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -152,8 +152,10 @@ function LeadTable({
               </td>
 
               {/* Actions */}
-              <td className="px-4 py-4 pr-6 align-top" onClick={e => e.stopPropagation()}>
-                <QuickActionBar phone={lead.phone} email={lead.email} compact />
+              <td className="px-4 py-4 pr-6 align-top text-center" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-center">
+                  <QuickActionBar phone={lead.phone} email={lead.email} compact />
+                </div>
               </td>
             </tr>
           ))}

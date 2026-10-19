@@ -30,7 +30,7 @@ function ActionBtn({ href, icon, label, compact = false, accent }: ActionBtnProp
       href={href}
       className={
         isCompact
-          ? 'flex items-center justify-center gap-1.5 rounded-lg transition-all duration-150'
+          ? 'ds-quick-compact flex items-center justify-center gap-1.5 rounded-lg transition-all duration-150 shrink-0'
           : 'ds-quick-action flex items-center justify-center gap-1.5 rounded-lg transition-all duration-150 w-full h-11 text-[13px] px-3'
       }
       style={{
@@ -38,8 +38,9 @@ function ActionBtn({ href, icon, label, compact = false, accent }: ActionBtnProp
         background: accent.bg,
         boxShadow: `0 0 0 1px ${accent.ring}`,
         fontWeight: 500,
-        minHeight: 44,
-        ...(isCompact ? { padding: '0.5rem 0.85rem', fontSize: '12px' } : {}),
+        ...(isCompact
+          ? { padding: '0.3rem 0.7rem', fontSize: '11px', lineHeight: '1.2', height: '28px', minWidth: '52px' }
+          : { minHeight: 44 }),
       }}
       onMouseEnter={e => {
         e.currentTarget.style.color = accent.hoverText;
@@ -94,7 +95,7 @@ export default function QuickActionBar({ phone, email, compact = false }: QuickA
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center justify-center gap-1.5">
         {phone && (
           <ActionBtn
             href={`tel:${phone}`}
