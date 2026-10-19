@@ -168,6 +168,7 @@ export default function DashboardOverviewPage() {
       supabase
         .from('leads')
         .select('id, created_at, name, email, status')
+        .neq('status', 'archived')
         .order('created_at', { ascending: false })
         .limit(5),
     ]).then(([total, newCount, week, recent]) => {
