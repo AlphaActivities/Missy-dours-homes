@@ -26,7 +26,7 @@ const VALID_FILTERS = new Set<FilterValue>(['all', 'new', 'contacted', 'qualifie
 
 export default function LeadsPage() {
   const { showToast } = useToast();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -41,6 +41,8 @@ export default function LeadsPage() {
   const [drawerLead, setDrawerLead] = useState<Lead | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const consumedLeadRef = useRef<string | null>(null);
+  const directFetchRef = useRef<string | null>(null);
 
   // ── Debounced search ──────────────────────────────────────
   useEffect(() => {
@@ -113,6 +115,55 @@ export default function LeadsPage() {
 
   // Refresh preserves current filter/search/page
   const handleRefresh = () => fetchLeads(page, filter, searchQuery);
+
+  // ── Direct lead opening from Overview (?lead=<id>) ────────
+  // Consumes the `lead` query param once: opens the drawer for that
+  // exact lead, fetching by ID if it's not in the current page/filter,
+  // then clears the param via history replacement so refresh/back
+  // does not reopen the drawer.
+  const pendingLeadId = searchParams.get('lead');
+
+  useEffect(() => {
+    if (!pendingLeadId) return;
+    if (consumedLeadRef.current === pendingLeadId) return;
+    if (loading) return;
+
+    const clearLeadParam = () => {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('lead');
+        return next;
+      }, { replace: true });
+    };
+
+    const found = leads.find(l => l.id === pendingLeadId);
+    if (found) {
+      setDrawerLead(found);
+      consumedLeadRef.current = pendingLeadId;
+      clearLeadParam();
+      return;
+    }
+
+    // Not in the loaded list (archived, off-page, or different filter) —
+    // single authorized lookup by ID.
+    if (directFetchRef.current === pendingLeadId) return;
+    directFetchRef.current = pendingLeadId;
+
+    (async () => {
+      const { data, error: fetchError } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', pendingLeadId)
+        .maybeSingle();
+      if (fetchError || !data) {
+        showToast('That lead could not be found.', 'error');
+      } else {
+        setDrawerLead(data as Lead);
+        consumedLeadRef.current = pendingLeadId;
+      }
+      clearLeadParam();
+    })();
+  }, [pendingLeadId, loading, leads, setSearchParams, showToast]);
 
   // ── Drawer ────────────────────────────────────────────────
   const handleOpenDrawer = useCallback((lead: Lead) => {
@@ -204,7 +255,7 @@ export default function LeadsPage() {
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
                   placeholder="Search name, email, phone…"
-                  className="h-9 pl-8 pr-8 rounded-xl text-xs outline-none transition-all duration-200 w-48 sm:w-64"
+                  className="h-9 pl-8 pr-8 rounded-xl text-[16px] sm:text-xs outline-none transition-all duration-200 w-48 sm:w-64"
                   style={{
                     background: 'var(--ds-bg-raised)',
                     color: 'var(--ds-text-primary)',

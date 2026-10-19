@@ -1,4 +1,4 @@
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, useCallback, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -109,10 +109,14 @@ function StatCard({
 }
 
 // ── Recent lead row ───────────────────────────────────────────
-function RecentLeadRow({ lead }: { lead: RecentLead }) {
+function RecentLeadRow({ lead, onOpen }: { lead: RecentLead; onOpen: (id: string) => void }) {
   return (
     <div
-      className="flex items-center justify-between gap-4 py-3 px-2 -mx-2 rounded-lg transition-colors duration-150"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(lead.id)}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(lead.id); } }}
+      className="flex items-center justify-between gap-4 py-3 px-2 -mx-2 rounded-lg transition-colors duration-150 cursor-pointer"
       style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -177,6 +181,10 @@ export default function DashboardOverviewPage() {
 
   const firstName = getFirstName(user?.email);
   const greeting = getGreeting(firstName);
+
+  const handleOpenRecent = useCallback((id: string) => {
+    navigate(`/dashboard/leads?lead=${id}`);
+  }, [navigate]);
 
   return (
     <div
@@ -288,7 +296,7 @@ export default function DashboardOverviewPage() {
           ) : (
             <div className="px-5">
               {recentLeads.map(lead => (
-                <RecentLeadRow key={lead.id} lead={lead} />
+                <RecentLeadRow key={lead.id} lead={lead} onOpen={handleOpenRecent} />
               ))}
               <div className="py-3.5">
                 <Link

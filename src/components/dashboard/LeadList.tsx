@@ -106,34 +106,20 @@ function LeadTable({
                 </span>
               </td>
 
-              {/* Contact */}
+              {/* Contact — plain text; row click opens drawer */}
               <td className="px-4 py-4 align-top">
                 <div className="space-y-1.5">
                   {lead.email && (
-                    <a
-                      href={`mailto:${lead.email}`}
-                      className="flex items-center gap-1.5 text-xs transition-colors duration-150"
-                      style={{ color: 'var(--ds-text-secondary)' }}
-                      onClick={e => e.stopPropagation()}
-                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-gold)')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
-                    >
-                      <Mail size={11} className="shrink-0" />
-                      {lead.email}
-                    </a>
+                    <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
+                      <Mail size={11} className="shrink-0" style={{ color: 'var(--ds-text-tertiary)' }} />
+                      <span style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>{lead.email}</span>
+                    </div>
                   )}
                   {lead.phone && (
-                    <a
-                      href={`tel:${lead.phone}`}
-                      className="flex items-center gap-1.5 text-xs transition-colors duration-150"
-                      style={{ color: 'var(--ds-text-secondary)' }}
-                      onClick={e => e.stopPropagation()}
-                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-gold)')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
-                    >
-                      <Phone size={11} className="shrink-0" />
-                      {lead.phone}
-                    </a>
+                    <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--ds-text-secondary)' }}>
+                      <Phone size={11} className="shrink-0" style={{ color: 'var(--ds-text-tertiary)' }} />
+                      <span style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>{lead.phone}</span>
+                    </div>
                   )}
                   {!lead.email && !lead.phone && (
                     <span style={{ color: 'var(--ds-text-tertiary)' }}>—</span>

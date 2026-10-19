@@ -58,7 +58,7 @@ export default function NotesEditor({ leadId, initialNotes, onSave }: NotesEdito
         disabled={saving}
         placeholder="Add private notes about this lead…"
         rows={3}
-        className="w-full resize-none rounded-xl px-3.5 py-3 text-xs leading-relaxed outline-none transition-all duration-200 disabled:opacity-50"
+        className="w-full resize-none rounded-xl px-3.5 py-3 text-[16px] sm:text-xs leading-relaxed outline-none transition-all duration-200 disabled:opacity-50"
         style={{
           background: 'var(--ds-bg-overlay)',
           color: 'var(--ds-text-primary)',

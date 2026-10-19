@@ -236,28 +236,16 @@ function DrawerContent({
             <Label>Contact</Label>
             <div className="mt-2 space-y-1.5">
               {lead.email && (
-                <a
-                  href={`mailto:${lead.email}`}
-                  className="flex items-center gap-2 text-sm transition-colors duration-150"
-                  style={{ color: 'var(--ds-text-secondary)' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-gold)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
-                >
+                <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
                   <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)', minWidth: '36px' }}>Email</span>
-                  {lead.email}
-                </a>
+                  <span style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>{lead.email}</span>
+                </div>
               )}
               {lead.phone && (
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="flex items-center gap-2 text-sm transition-colors duration-150"
-                  style={{ color: 'var(--ds-text-secondary)' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-gold)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
-                >
+                <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
                   <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)', minWidth: '36px' }}>Phone</span>
-                  {lead.phone}
-                </a>
+                  <span style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>{lead.phone}</span>
+                </div>
               )}
             </div>
           </div>

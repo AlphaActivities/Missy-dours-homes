@@ -24,17 +24,21 @@ interface ActionBtnProps {
 }
 
 function ActionBtn({ href, icon, label, compact = false, accent }: ActionBtnProps) {
+  const isCompact = compact;
   return (
     <a
       href={href}
-      className="flex items-center gap-1.5 rounded-lg transition-all duration-150"
+      className={
+        isCompact
+          ? 'flex items-center gap-1.5 rounded-lg transition-all duration-150'
+          : 'flex items-center justify-center gap-1.5 rounded-lg transition-all duration-150 w-full h-11 sm:w-auto sm:h-auto text-[13px] sm:text-xs px-3 py-2.5 sm:px-3 sm:py-[0.45rem]'
+      }
       style={{
         color: accent.text,
         background: accent.bg,
         boxShadow: `0 0 0 1px ${accent.ring}`,
-        padding: compact ? '0.3rem 0.65rem' : '0.45rem 0.75rem',
-        fontSize: compact ? '11px' : '12px',
         fontWeight: 500,
+        ...(isCompact ? { padding: '0.3rem 0.65rem', fontSize: '11px' } : {}),
       }}
       onMouseEnter={e => {
         e.currentTarget.style.color = accent.hoverText;
@@ -49,7 +53,7 @@ function ActionBtn({ href, icon, label, compact = false, accent }: ActionBtnProp
       aria-label={label}
     >
       {icon}
-      {!compact && <span>{label}</span>}
+      {!isCompact && <span>{label}</span>}
     </a>
   );
 }
@@ -85,32 +89,68 @@ export default function QuickActionBar({ phone, email, compact = false }: QuickA
   const hasAny = phone || email;
   if (!hasAny) return null;
 
+  const actionCount = (phone ? 2 : 0) + (email ? 1 : 0);
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2 flex-wrap">
+        {phone && (
+          <ActionBtn
+            href={`tel:${phone}`}
+            icon={<Phone size={11} />}
+            label="Call"
+            compact
+            accent={ACCENT_CALL}
+          />
+        )}
+        {phone && (
+          <ActionBtn
+            href={`sms:${phone}`}
+            icon={<MessageSquare size={11} />}
+            label="Text"
+            compact
+            accent={ACCENT_TEXT}
+          />
+        )}
+        {email && (
+          <ActionBtn
+            href={`mailto:${email}`}
+            icon={<Mail size={11} />}
+            label="Email"
+            compact
+            accent={ACCENT_EMAIL}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div
+      className="grid sm:flex sm:flex-wrap sm:items-center gap-2"
+      style={{ gridTemplateColumns: `repeat(${actionCount}, minmax(0, 1fr))` }}
+    >
       {phone && (
         <ActionBtn
           href={`tel:${phone}`}
-          icon={<Phone size={compact ? 11 : 12} />}
+          icon={<Phone size={14} />}
           label="Call"
-          compact={compact}
           accent={ACCENT_CALL}
         />
       )}
       {phone && (
         <ActionBtn
           href={`sms:${phone}`}
-          icon={<MessageSquare size={compact ? 11 : 12} />}
+          icon={<MessageSquare size={14} />}
           label="Text"
-          compact={compact}
           accent={ACCENT_TEXT}
         />
       )}
       {email && (
         <ActionBtn
           href={`mailto:${email}`}
-          icon={<Mail size={compact ? 11 : 12} />}
+          icon={<Mail size={14} />}
           label="Email"
-          compact={compact}
           accent={ACCENT_EMAIL}
         />
       )}
