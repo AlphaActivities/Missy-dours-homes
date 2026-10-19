@@ -395,3 +395,63 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Premium stat cards ──────────────────────────────────────── */
+.ds-stat-card .ds-stat-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 38%,
+    rgba(255, 255, 255, 0.05) 47%,
+    rgba(196, 164, 106, 0.12) 50%,
+    rgba(255, 255, 255, 0.05) 53%,
+    transparent 62%,
+    transparent 100%
+  );
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.ds-stat-card:hover .ds-stat-sweep {
+  opacity: 1;
+  animation: ds-stat-sweep-pass 900ms var(--ds-ease-luxury) forwards;
+}
+@keyframes ds-stat-sweep-pass {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -200% 0; }
+}
+.ds-stat-card:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-shadow-hover), 0 0 0 2px rgba(196, 164, 106, 0.55) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-stat-card .ds-stat-sweep {
+    display: none;
+  }
+}
+
+/* ── Cinematic dashboard background ──────────────────────────── */
+.ds-dash-bg {
+  z-index: -10;
+}
+/* Mobile + reduced-motion: hide video layer, keep solid base */
+@media (max-width: 767px) {
+  .ds-dash-bg {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-dash-bg {
+    display: none;
+  }
+}
+/* Desktop without reduced-motion: let the video show through the shell */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .ds-dash-shell {
+    background-color: transparent !important;
+  }
+}

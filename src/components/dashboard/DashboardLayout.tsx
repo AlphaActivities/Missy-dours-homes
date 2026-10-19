@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
 import { LogOut, Users, LayoutDashboard, Menu, X } from 'lucide-react';
+import DashboardVideoBackground from './ui/DashboardVideoBackground';
 
 const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
@@ -41,7 +42,10 @@ export default function DashboardLayout() {
 
   return (
     <ToastProvider>
-    <div className="ds-shell min-h-screen flex" style={{ background: 'var(--ds-bg-base)' }}>
+    <div className="ds-shell min-h-screen flex ds-dash-shell" style={{ background: 'var(--ds-bg-base)' }}>
+
+      {/* ── Cinematic background (desktop only) ──────────── */}
+      <DashboardVideoBackground />
 
       {/* ── Mobile overlay ────────────────────────────────── */}
       <div

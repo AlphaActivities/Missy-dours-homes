@@ -46,6 +46,8 @@ function StatSkeleton() {
 }
 
 // ── Stat card ─────────────────────────────────────────────────
+// Premium gold-accent metric card with a single restrained diagonal
+// light sweep on hover. Reduced-motion users get the static treatment.
 function StatCard({
   label,
   value,
@@ -59,30 +61,38 @@ function StatCard({
   accent?: boolean;
   onClick?: () => void;
 }) {
+  const interactive = !!onClick;
   return (
     <div
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
       onClick={onClick}
-      onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
-      className={`rounded-2xl p-6 transition-all duration-200${onClick ? ' cursor-pointer' : ''}`}
+      onKeyDown={interactive ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
+      className={`ds-stat-card group relative overflow-hidden rounded-2xl p-6 ${interactive ? 'cursor-pointer' : ''}`}
       style={{
         background: accent ? 'var(--ds-gold-muted)' : 'var(--ds-bg-raised)',
-        boxShadow: accent ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.2)' : 'var(--ds-shadow-card)',
+        boxShadow: accent
+          ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.22)'
+          : 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.10)',
+        transition: 'transform 280ms var(--ds-ease-luxury), box-shadow 280ms var(--ds-ease-luxury)',
       }}
-      onMouseEnter={onClick ? e => {
-        (e.currentTarget as HTMLDivElement).style.boxShadow = accent
-          ? 'var(--ds-shadow-card), 0 0 0 1.5px rgba(196,164,106,0.45)'
-          : 'var(--ds-shadow-card), 0 0 0 1px rgba(255,255,255,0.1)';
-        (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)';
+      onMouseEnter={interactive ? e => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.transform = 'translateY(-2px)';
+        el.style.boxShadow = accent
+          ? 'var(--ds-shadow-hover), 0 0 0 1.5px rgba(196,164,106,0.5)'
+          : 'var(--ds-shadow-hover), 0 0 0 1.5px rgba(196,164,106,0.3)';
       } : undefined}
-      onMouseLeave={onClick ? e => {
-        (e.currentTarget as HTMLDivElement).style.boxShadow = accent
-          ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.2)'
-          : 'var(--ds-shadow-card)';
-        (e.currentTarget as HTMLDivElement).style.transform = '';
+      onMouseLeave={interactive ? e => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.transform = '';
+        el.style.boxShadow = accent
+          ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.22)'
+          : 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.10)';
       } : undefined}
     >
+      {/* Light sweep — one diagonal pass per hover, clipped to the card */}
+      <span className="ds-stat-sweep" aria-hidden="true" />
       <div className="flex items-center gap-2 mb-4">
         <span style={{ color: accent ? 'var(--ds-gold)' : 'var(--ds-text-secondary)' }}>
           {icon}
