@@ -10,8 +10,49 @@ const NAV_ITEMS = [
   { to: '/dashboard/leads', label: 'Leads',    icon: Users,            end: false },
 ];
 
+// Avatar that renders the authenticated Google profile picture when
+// available, falling back to the initial-letter circle on error or
+// when no picture URL exists.
+function UserAvatar({
+  avatarUrl,
+  avatarLetter,
+  size,
+}: {
+  avatarUrl: string | null;
+  avatarLetter: string;
+  size: number;
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = avatarUrl && !imgFailed;
+
+  return (
+    <div
+      className="rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 overflow-hidden"
+      style={{
+        width: size,
+        height: size,
+        background: 'var(--ds-gold-muted)',
+        border: '1px solid rgba(196,164,106,0.3)',
+        color: 'var(--ds-gold)',
+      }}
+    >
+      {showImage ? (
+        <img
+          src={avatarUrl}
+          alt="Profile"
+          className="w-full h-full object-cover"
+          onError={() => setImgFailed(true)}
+          referrerPolicy="no-referrer"
+        />
+      ) : (
+        avatarLetter
+      )}
+    </div>
+  );
+}
+
 export default function DashboardLayout() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, avatarUrl } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isLoginRoute = pathname === '/dashboard/login';
@@ -94,10 +135,10 @@ export default function DashboardLayout() {
             </div>
             <div>
               <p
-                className="text-[11px] tracking-[0.22em] uppercase font-medium leading-none"
+                className="text-[10px] tracking-[0.18em] uppercase font-medium leading-none"
                 style={{ color: 'var(--ds-text-tertiary)' }}
               >
-                Private
+                Admin Dashboard
               </p>
               <p
                 className="text-sm font-semibold tracking-tight mt-0.5"
@@ -157,24 +198,9 @@ export default function DashboardLayout() {
           className="px-3 py-4"
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
         >
-          {/* Avatar + email */}
+          {/* Avatar (no email displayed) */}
           <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-              style={{
-                background: 'var(--ds-gold-muted)',
-                border: '1px solid rgba(196,164,106,0.3)',
-                color: 'var(--ds-gold)',
-              }}
-            >
-              {avatarLetter}
-            </div>
-            <p
-              className="text-xs truncate"
-              style={{ color: 'var(--ds-text-tertiary)' }}
-            >
-              {user?.email}
-            </p>
+            <UserAvatar avatarUrl={avatarUrl} avatarLetter={avatarLetter} size={28} />
           </div>
 
           {/* Sign out */}
@@ -238,16 +264,7 @@ export default function DashboardLayout() {
           </div>
 
           {/* Avatar button */}
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold"
-            style={{
-              background: 'var(--ds-gold-muted)',
-              border: '1px solid rgba(196,164,106,0.25)',
-              color: 'var(--ds-gold)',
-            }}
-          >
-            {avatarLetter}
-          </div>
+          <UserAvatar avatarUrl={avatarUrl} avatarLetter={avatarLetter} size={32} />
         </header>
 
         {/* Page */}

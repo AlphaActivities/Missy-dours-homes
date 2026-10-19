@@ -13,6 +13,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   isApproved: boolean;
+  avatarUrl: string | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -52,8 +53,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = session?.user ?? null;
   const isApproved = user ? APPROVED_EMAILS.includes(user.email ?? '') : false;
 
+  // Extract a trustworthy Google OAuth profile picture from the
+  // authenticated identity metadata, if present. We do NOT guess
+  // or scrape — only use what Supabase Auth provides. Identity data
+  // comes from the provider (Google) via the verified OAuth flow.
+  const avatarUrl = (() => {
+    if (!user) return null;
+    // user_metadata is user-mutable, but avatar_url from Google
+    // OAuth is set by the provider during sign-in. Prefer the
+    // identity_data which is provider-managed.
+    const identities = user.identities ?? [];
+    const googleIdentity = identities.find(i => i.provider === 'google');
+    const identityAvatar = googleIdentity?.identity_data?.avatar_url as string | undefined;
+    if (identityAvatar) return identityAvatar;
+    const metaAvatar = user.user_metadata?.avatar_url as string | undefined;
+    if (metaAvatar) return metaAvatar;
+    return null;
+  })();
+
   return (
-    <AuthContext.Provider value={{ session, user, loading, isApproved, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, isApproved, avatarUrl, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

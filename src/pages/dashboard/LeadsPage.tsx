@@ -43,18 +43,25 @@ export default function LeadsPage() {
   const searchRef = useRef<HTMLInputElement>(null);
   const consumedLeadRef = useRef<string | null>(null);
   const directFetchRef = useRef<string | null>(null);
+  const requestIdRef = useRef(0);
 
-  // ── Debounced search ──────────────────────────────────────
+  const isSearchMode = searchQuery !== '';
+
+  // ── Debounced search (250–350ms) ───────────────────────────
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setSearchQuery(searchInput.trim());
       setPage(0);
-    }, 400);
+    }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchInput]);
 
   // ── Fetch ─────────────────────────────────────────────────
+  // In Search Results mode, the query ignores the selected status
+  // filter and searches across ALL leads (including archived),
+  // server-side. A monotonically increasing request id prevents
+  // stale responses from overriding newer results.
   const fetchLeads = useCallback(async (
     currentPage: number,
     currentFilter: FilterValue,
@@ -62,6 +69,8 @@ export default function LeadsPage() {
   ) => {
     setLoading(true);
     setError(null);
+
+    const requestId = ++requestIdRef.current;
 
     const from = currentPage * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
@@ -72,19 +81,21 @@ export default function LeadsPage() {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    if (currentFilter === 'all') {
+    if (currentSearch) {
+      // Global search: all statuses, including archived
+      query = query.or(
+        `name.ilike.%${currentSearch}%,email.ilike.%${currentSearch}%,phone.ilike.%${currentSearch}%`
+      );
+    } else if (currentFilter === 'all') {
       query = query.neq('status', 'archived');
     } else {
       query = query.eq('status', currentFilter);
     }
 
-    if (currentSearch) {
-      query = query.or(
-        `name.ilike.%${currentSearch}%,email.ilike.%${currentSearch}%,phone.ilike.%${currentSearch}%`
-      );
-    }
-
     const { data, error: fetchError, count } = await query;
+
+    // Stale request guard — a newer fetch has superseded this one
+    if (requestId !== requestIdRef.current) return;
 
     if (fetchError) {
       setError('Unable to load leads. Please try again.');
@@ -227,7 +238,9 @@ export default function LeadsPage() {
   const subtitle = loading
     ? undefined
     : total === 0
-    ? isFiltered ? 'No matching leads' : 'No submissions yet'
+    ? isSearchMode ? 'No matching customers found' : isFiltered ? 'No matching leads' : 'No submissions yet'
+    : isSearchMode
+    ? `${total} matching customer${total !== 1 ? 's' : ''} (all statuses)`
     : `${total} ${isFiltered ? 'matching ' : ''}submission${total !== 1 ? 's' : ''}`;
 
   return (
@@ -306,12 +319,13 @@ export default function LeadsPage() {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {FILTER_TABS.map(tab => {
-            const isActive = filter === tab.value;
+            // In search mode, no status filter is active — search covers all
+            const isActive = !isSearchMode && filter === tab.value;
             return (
               <button
                 key={tab.value}
                 onClick={() => handleFilterChange(tab.value)}
-                className={`ds-filter-tab ${isActive ? 'ds-filter-tab-active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150`}
+                className={`ds-filter-tab ${isActive ? 'ds-filter-tab-active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${isSearchMode ? 'opacity-50' : ''}`}
                 style={{
                   background: isActive ? 'var(--ds-gold-muted)' : 'rgba(12, 11, 10, 0.55)',
                   color: isActive ? 'var(--ds-gold-light)' : '#f5f5f5',
