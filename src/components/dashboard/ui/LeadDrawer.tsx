@@ -236,13 +236,13 @@ function DrawerContent({
             <Label>Contact</Label>
             <div className="mt-2 space-y-1.5">
               {lead.email && (
-                <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
+                <div className="flex items-center gap-2 text-sm" style={{ color: '#f0ede8' }}>
                   <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)', minWidth: '36px' }}>Email</span>
                   <span style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>{lead.email}</span>
                 </div>
               )}
               {lead.phone && (
-                <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
+                <div className="flex items-center gap-2 text-sm" style={{ color: '#f0ede8' }}>
                   <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)', minWidth: '36px' }}>Phone</span>
                   <span style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>{lead.phone}</span>
                 </div>
@@ -260,8 +260,8 @@ function DrawerContent({
               style={{ background: 'var(--ds-bg-overlay)' }}
             >
               <p
-                className="text-sm leading-relaxed whitespace-pre-wrap"
-                style={{ color: 'var(--ds-text-secondary)' }}
+                className="text-sm leading-relaxed whitespace-pre-wrap italic"
+                style={{ color: '#f0ede8' }}
               >
                 {lead.message}
               </p>

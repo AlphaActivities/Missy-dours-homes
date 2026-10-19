@@ -70,9 +70,9 @@ function StatCard({
       onKeyDown={interactive ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
       className={`ds-stat-card group relative overflow-hidden rounded-2xl p-6 ${interactive ? 'cursor-pointer' : ''}`}
       style={{
-        background: accent ? 'var(--ds-gold-muted)' : 'var(--ds-bg-raised)',
+        background: accent ? 'var(--ds-bg-raised)' : 'var(--ds-bg-raised)',
         boxShadow: accent
-          ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.22)'
+          ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.45), 0 0 24px rgba(196,164,106,0.12)'
           : 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.10)',
         transition: 'transform 280ms var(--ds-ease-luxury), box-shadow 280ms var(--ds-ease-luxury)',
       }}
@@ -80,14 +80,14 @@ function StatCard({
         const el = e.currentTarget as HTMLDivElement;
         el.style.transform = 'translateY(-2px)';
         el.style.boxShadow = accent
-          ? 'var(--ds-shadow-hover), 0 0 0 1.5px rgba(196,164,106,0.5)'
+          ? 'var(--ds-shadow-hover), 0 0 0 1.5px rgba(196,164,106,0.65), 0 0 32px rgba(196,164,106,0.2)'
           : 'var(--ds-shadow-hover), 0 0 0 1.5px rgba(196,164,106,0.3)';
       } : undefined}
       onMouseLeave={interactive ? e => {
         const el = e.currentTarget as HTMLDivElement;
         el.style.transform = '';
         el.style.boxShadow = accent
-          ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.22)'
+          ? 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.45), 0 0 24px rgba(196,164,106,0.12)'
           : 'var(--ds-shadow-card), 0 0 0 1px rgba(196,164,106,0.10)';
       } : undefined}
     >
@@ -251,7 +251,7 @@ export default function DashboardOverviewPage() {
             onClick={() => navigate('/dashboard/leads?filter=all')}
           />
           <StatCard
-            label="New — uncontacted"
+            label="New and Uncontacted"
             value={newLeads}
             icon={<Zap size={15} />}
             accent={!!newLeads && newLeads > 0}

@@ -255,7 +255,7 @@ export default function LeadsPage() {
                   type="text"
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
-                  placeholder="Search name, email, phone…"
+                  placeholder="Search Customer..."
                   className="h-9 pl-8 pr-8 rounded-xl text-[16px] sm:text-xs outline-none transition-all duration-200 w-48 sm:w-64"
                   style={{
                     background: 'var(--ds-bg-raised)',
@@ -313,15 +313,25 @@ export default function LeadsPage() {
                 onClick={() => handleFilterChange(tab.value)}
                 className={`ds-filter-tab ${isActive ? 'ds-filter-tab-active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150`}
                 style={{
-                  background: isActive ? 'var(--ds-gold-muted)' : 'transparent',
-                  color: isActive ? 'var(--ds-gold-light)' : 'var(--ds-text-secondary)',
-                  boxShadow: isActive ? '0 0 0 1px rgba(196,164,106,0.3)' : 'none',
+                  background: isActive ? 'var(--ds-gold-muted)' : 'rgba(12, 11, 10, 0.55)',
+                  color: isActive ? 'var(--ds-gold-light)' : '#f5f5f5',
+                  boxShadow: isActive
+                    ? '0 0 0 1px rgba(196,164,106,0.55), 0 0 12px rgba(196,164,106,0.2)'
+                    : '0 0 0 1px rgba(255,255,255,0.18)',
                 }}
                 onMouseEnter={e => {
-                  if (!isActive) e.currentTarget.style.color = 'var(--ds-text-primary)';
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#ffffff';
+                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.32)';
+                    e.currentTarget.style.background = 'rgba(20,18,16,0.6)';
+                  }
                 }}
                 onMouseLeave={e => {
-                  if (!isActive) e.currentTarget.style.color = 'var(--ds-text-secondary)';
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#f5f5f5';
+                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.18)';
+                    e.currentTarget.style.background = 'rgba(12,11,10,0.55)';
+                  }
                 }}
               >
                 {tab.label}

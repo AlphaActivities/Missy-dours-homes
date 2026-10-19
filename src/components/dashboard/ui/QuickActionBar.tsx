@@ -30,15 +30,16 @@ function ActionBtn({ href, icon, label, compact = false, accent }: ActionBtnProp
       href={href}
       className={
         isCompact
-          ? 'flex items-center gap-1.5 rounded-lg transition-all duration-150'
-          : 'flex items-center justify-center gap-1.5 rounded-lg transition-all duration-150 w-full h-11 sm:w-auto sm:h-auto text-[13px] sm:text-xs px-3 py-2.5 sm:px-3 sm:py-[0.45rem]'
+          ? 'flex items-center justify-center gap-1.5 rounded-lg transition-all duration-150'
+          : 'ds-quick-action flex items-center justify-center gap-1.5 rounded-lg transition-all duration-150 w-full h-11 text-[13px] px-3'
       }
       style={{
         color: accent.text,
         background: accent.bg,
         boxShadow: `0 0 0 1px ${accent.ring}`,
         fontWeight: 500,
-        ...(isCompact ? { padding: '0.3rem 0.65rem', fontSize: '11px' } : {}),
+        minHeight: 44,
+        ...(isCompact ? { padding: '0.5rem 0.85rem', fontSize: '12px' } : {}),
       }}
       onMouseEnter={e => {
         e.currentTarget.style.color = accent.hoverText;
@@ -127,7 +128,7 @@ export default function QuickActionBar({ phone, email, compact = false }: QuickA
 
   return (
     <div
-      className="grid sm:flex sm:flex-wrap sm:items-center gap-2"
+      className="grid gap-2 w-full"
       style={{ gridTemplateColumns: `repeat(${actionCount}, minmax(0, 1fr))` }}
     >
       {phone && (
