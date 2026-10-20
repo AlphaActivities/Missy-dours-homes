@@ -151,7 +151,16 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
       .upload(storagePath, file, { contentType: file.type, upsert: false });
 
     if (uploadError) {
-      reportError('Upload failed. Please try again.');
+      const detail = uploadError.message || uploadError.name || 'Unknown error';
+      console.error('[lead-attachments] Storage upload failed:', {
+        bucket: BUCKET,
+        path: storagePath,
+        contentType: file.type,
+        errorName: uploadError.name,
+        errorCode: (uploadError as { code?: string }).code,
+        message: uploadError.message,
+      });
+      reportError(`Upload failed: ${detail}`);
       setUploading(false);
       return;
     }
