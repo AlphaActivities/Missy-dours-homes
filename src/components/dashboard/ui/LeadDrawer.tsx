@@ -296,7 +296,7 @@ function DrawerContent({
                 }}
               >
                 <ClipboardList size={14} />
-                Log Contact
+                Record Interaction
               </button>
             </div>
           </div>

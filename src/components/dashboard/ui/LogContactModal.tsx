@@ -28,7 +28,7 @@ export default function LogContactModal({ leadName, onLog, onClose }: LogContact
     try {
       await onLog(channel, notes.trim());
     } catch {
-      setError('Failed to log contact. Please try again.');
+      setError('Failed to record interaction. Please try again.');
       setSaving(false);
     }
   };
@@ -46,11 +46,11 @@ export default function LogContactModal({ leadName, onLog, onClose }: LogContact
         style={{ background: 'var(--ds-bg-raised)', boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)' }}
         role="dialog"
         aria-modal="true"
-        aria-label="Log contact"
+        aria-label="Record customer interaction"
       >
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <h3 className="text-sm font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
-            Log Contact
+            Record Customer Interaction
           </h3>
           <button
             onClick={onClose}
@@ -66,7 +66,7 @@ export default function LogContactModal({ leadName, onLog, onClose }: LogContact
 
         <div className="px-5 py-4 space-y-4">
           <p className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
-            Recording contact for <span style={{ color: 'var(--ds-text-secondary)' }}>{leadName || 'this lead'}</span>
+            Recording interaction for <span style={{ color: 'var(--ds-text-secondary)' }}>{leadName || 'this lead'}</span>
           </p>
 
           <div>
@@ -138,7 +138,7 @@ export default function LogContactModal({ leadName, onLog, onClose }: LogContact
               }}
             >
               {saving ? <LoadingSpinner size="sm" /> : null}
-              {saving ? 'Saving…' : 'Log Contact'}
+              {saving ? 'Saving…' : 'Save Interaction'}
             </button>
           </div>
         </div>
