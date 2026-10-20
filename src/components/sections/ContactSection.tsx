@@ -416,10 +416,12 @@ export default function ContactSection() {
     formData.set('source_page', sourcePage);
     formData.set('listing_slug', listingSlug);
 
-    const gaAttr = getGA4Attribution();
+    const gaAttr = await getGA4Attribution();
     if (gaAttr) {
       formData.set('ga_client_id', gaAttr.clientId);
-      formData.set('ga_session_id', gaAttr.sessionId);
+      if (gaAttr.sessionId) {
+        formData.set('ga_session_id', gaAttr.sessionId);
+      }
     }
 
     try {

@@ -52,24 +52,48 @@ export const trackConsumerProtectionClick = (location: string) =>
 
 const CLIENT_ID_RE = /^[0-9]{1,20}\.[0-9]{1,20}$/;
 const SESSION_ID_RE = /^[0-9]{1,20}$/;
+const GA4_MEASUREMENT_ID = 'G-N0L41589NX';
 
 interface GA4Attribution {
   clientId: string;
-  sessionId: string;
+  sessionId?: string;
 }
 
-export function getGA4Attribution(): GA4Attribution | null {
-  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return null;
-  try {
+export function getGA4Attribution(): Promise<GA4Attribution | null> {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
     let clientId = '';
     let sessionId = '';
+    let settled = false;
 
-    window.gtag('get', 'G-N0L41589NX', 'client_id', (val: string) => { clientId = val; });
-    window.gtag('get', 'G-N0L41589NX', 'session_id', (val: string) => { sessionId = val; });
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (!CLIENT_ID_RE.test(clientId)) {
+        resolve(null);
+        return;
+      }
+      resolve({ clientId, sessionId: SESSION_ID_RE.test(sessionId) ? sessionId : undefined });
+    };
 
-    if (!CLIENT_ID_RE.test(clientId) || !SESSION_ID_RE.test(sessionId)) return null;
-    return { clientId, sessionId };
-  } catch {
-    return null;
-  }
+    const timer = setTimeout(finish, 1500);
+
+    try {
+      window.gtag('get', GA4_MEASUREMENT_ID, 'client_id', (val: string) => {
+        clientId = val;
+        if (sessionId !== '' || settled) finish();
+      });
+      window.gtag('get', GA4_MEASUREMENT_ID, 'session_id', (val: string) => {
+        sessionId = val;
+        if (clientId !== '' || settled) finish();
+      });
+    } catch {
+      clearTimeout(timer);
+      resolve(null);
+    }
+  });
 }
