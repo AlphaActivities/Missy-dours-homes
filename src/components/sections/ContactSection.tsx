@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import { CONTACT_INFO } from "../../config/contact";
-import { trackFormSubmitSuccess, trackFormSubmitError, trackFormStart, trackEmailClick } from "../../utils/analytics";
+import { trackFormSubmitSuccess, trackFormSubmitError, trackFormStart, trackEmailClick, getGA4Attribution } from "../../utils/analytics";
 
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -416,6 +416,12 @@ export default function ContactSection() {
     formData.set('source_page', sourcePage);
     formData.set('listing_slug', listingSlug);
 
+    const gaAttr = getGA4Attribution();
+    if (gaAttr) {
+      formData.set('ga_client_id', gaAttr.clientId);
+      formData.set('ga_session_id', gaAttr.sessionId);
+    }
+
     try {
       // Use Netlify's documented AJAX pattern with default redirect following.
       // The browser response is NOT the database source of truth — the verified
@@ -572,6 +578,8 @@ export default function ContactSection() {
                   <input type="hidden" name="form-name" value="contact" />
                   <input type="hidden" name="source_page" value={sourcePage} />
                   <input type="hidden" name="listing_slug" value={sourcePage.startsWith('/listings/') ? sourcePage.replace('/listings/', '').replace(/\/$/, '') : ''} />
+                  <input type="hidden" name="ga_client_id" value="" />
+                  <input type="hidden" name="ga_session_id" value="" />
 
                   {/* Honeypot — hidden from real users and assistive technology */}
                   <p style={{ display: 'none' }} aria-hidden="true">

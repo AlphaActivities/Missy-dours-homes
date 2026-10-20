@@ -49,3 +49,27 @@ export const trackIABSClick = (location: string) =>
 
 export const trackConsumerProtectionClick = (location: string) =>
   trackEvent('consumer_protection_click', { location });
+
+const CLIENT_ID_RE = /^[0-9]{1,20}\.[0-9]{1,20}$/;
+const SESSION_ID_RE = /^[0-9]{1,20}$/;
+
+interface GA4Attribution {
+  clientId: string;
+  sessionId: string;
+}
+
+export function getGA4Attribution(): GA4Attribution | null {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return null;
+  try {
+    let clientId = '';
+    let sessionId = '';
+
+    window.gtag('get', 'G-N0L41589NX', 'client_id', (val: string) => { clientId = val; });
+    window.gtag('get', 'G-N0L41589NX', 'session_id', (val: string) => { sessionId = val; });
+
+    if (!CLIENT_ID_RE.test(clientId) || !SESSION_ID_RE.test(sessionId)) return null;
+    return { clientId, sessionId };
+  } catch {
+    return null;
+  }
+}

@@ -5,7 +5,7 @@ interface ImportMetaEnv {
 }
 
 interface Window {
-  gtag: (...args: unknown[]) => void;
+  gtag: ((...args: unknown[]) => void) & ((command: string, targetId: string, fieldName: string, callback: (val: string) => void) => void);
   grecaptcha: {
     render: (container: HTMLElement, options: { sitekey: string; callback?: () => void; 'expired-callback'?: () => void }) => number;
     reset: (widgetId?: number) => void;
