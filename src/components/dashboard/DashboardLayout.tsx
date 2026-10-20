@@ -11,42 +11,37 @@ const NAV_ITEMS = [
 ];
 
 // Avatar that renders the authenticated Google profile picture when
-// available, falling back to the initial-letter circle on error or
-// when no picture URL exists.
+// available. When no picture URL exists (or the image fails to load),
+// returns null so callers can omit the avatar entirely instead of
+// showing an initial-letter fallback.
 function UserAvatar({
   avatarUrl,
-  avatarLetter,
   size,
 }: {
   avatarUrl: string | null;
-  avatarLetter: string;
   size: number;
 }) {
   const [imgFailed, setImgFailed] = useState(false);
   const showImage = avatarUrl && !imgFailed;
 
+  if (!showImage) return null;
+
   return (
     <div
-      className="rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 overflow-hidden"
+      className="rounded-full flex items-center justify-center shrink-0 overflow-hidden"
       style={{
         width: size,
         height: size,
-        background: 'var(--ds-gold-muted)',
         border: '1px solid rgba(196,164,106,0.3)',
-        color: 'var(--ds-gold)',
       }}
     >
-      {showImage ? (
-        <img
-          src={avatarUrl}
-          alt="Profile"
-          className="w-full h-full object-cover"
-          onError={() => setImgFailed(true)}
-          referrerPolicy="no-referrer"
-        />
-      ) : (
-        avatarLetter
-      )}
+      <img
+        src={avatarUrl!}
+        alt="Profile"
+        className="w-full h-full object-cover"
+        onError={() => setImgFailed(true)}
+        referrerPolicy="no-referrer"
+      />
     </div>
   );
 }
@@ -79,7 +74,7 @@ export default function DashboardLayout() {
 
   const closeSidebar = () => setSidebarOpen(false);
 
-  const avatarLetter = user?.email ? user.email[0].toUpperCase() : '?';
+
 
   return (
     <ToastProvider>
@@ -199,9 +194,11 @@ export default function DashboardLayout() {
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
         >
           {/* Avatar (no email displayed) */}
-          <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
-            <UserAvatar avatarUrl={avatarUrl} avatarLetter={avatarLetter} size={28} />
-          </div>
+          {avatarUrl && (
+            <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
+              <UserAvatar avatarUrl={avatarUrl} size={28} />
+            </div>
+          )}
 
           {/* Sign out */}
           <button
@@ -263,8 +260,8 @@ export default function DashboardLayout() {
             </span>
           </div>
 
-          {/* Avatar button */}
-          <UserAvatar avatarUrl={avatarUrl} avatarLetter={avatarLetter} size={32} />
+          {/* Avatar — only shown when a real Google profile photo exists */}
+          {avatarUrl && <UserAvatar avatarUrl={avatarUrl} size={32} />}
         </header>
 
         {/* Page */}

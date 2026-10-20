@@ -127,12 +127,12 @@ function LeadTable({
                 </div>
               </td>
 
-              {/* Message */}
+              {/* Message — near-white italic, matching drawer style */}
               <td className="px-4 py-4 align-top max-w-[240px]">
                 {lead.message ? (
                   <p
-                    className="text-xs leading-relaxed line-clamp-3"
-                    style={{ color: 'var(--ds-text-secondary)' }}
+                    className="text-xs leading-relaxed line-clamp-3 italic"
+                    style={{ color: '#f0ede8' }}
                     title={lead.message}
                   >
                     {lead.message}

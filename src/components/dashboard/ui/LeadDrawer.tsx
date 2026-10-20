@@ -5,7 +5,6 @@ import { LeadStatus } from './StatusBadge';
 import StatusSelect from './StatusSelect';
 import QuickActionBar from './QuickActionBar';
 import NotesEditor from './NotesEditor';
-import AttachmentsSection from './AttachmentsSection';
 import { formatDate } from '../../../utils/formatDate';
 
 interface LeadDrawerProps {
@@ -270,7 +269,7 @@ function DrawerContent({
           </div>
         )}
 
-        {/* Notes */}
+        {/* Notes with integrated per-note attachments */}
         <div>
           <Label>Private notes</Label>
           <div className="mt-2">
@@ -278,13 +277,9 @@ function DrawerContent({
               leadId={lead.id}
               initialNotes={lead.notes ?? ''}
               onSave={onSaveNotes}
+              onError={() => {}}
             />
           </div>
-        </div>
-
-        {/* Attachments */}
-        <div>
-          <AttachmentsSection leadId={lead.id} onError={() => {}} />
         </div>
 
         {/* Bottom spacing so notes editor isn't flush with edge on mobile */}

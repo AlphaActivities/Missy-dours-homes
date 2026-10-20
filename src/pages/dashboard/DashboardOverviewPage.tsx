@@ -174,7 +174,7 @@ export default function DashboardOverviewPage() {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
     Promise.all([
-      supabase.from('leads').select('*', { count: 'exact', head: true }),
+      supabase.from('leads').select('*', { count: 'exact', head: true }).neq('status', 'archived'),
       supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'new'),
       supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo),
       supabase
@@ -315,10 +315,17 @@ export default function DashboardOverviewPage() {
               <div className="py-3.5">
                 <Link
                   to="/dashboard/leads"
-                  className="flex items-center gap-1.5 text-xs font-medium transition-colors duration-150"
-                  style={{ color: 'var(--ds-text-tertiary)' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-gold)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-tertiary)')}
+                  className="ds-filter-tab inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150"
+                  onMouseEnter={e => {
+                    e.currentTarget.style.color = '#ffffff';
+                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.32)';
+                    e.currentTarget.style.background = 'rgba(20,18,16,0.6)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.color = '#f5f5f5';
+                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.18)';
+                    e.currentTarget.style.background = 'rgba(12,11,10,0.55)';
+                  }}
                 >
                   See all leads
                   <ArrowRight size={12} />
