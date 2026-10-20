@@ -176,7 +176,7 @@ export default function DashboardOverviewPage() {
     Promise.all([
       supabase.from('leads').select('*', { count: 'exact', head: true }).neq('status', 'archived'),
       supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'new'),
-      supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo),
+      supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo).neq('status', 'archived'),
       supabase
         .from('leads')
         .select('id, created_at, name, email, status')

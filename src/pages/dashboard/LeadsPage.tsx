@@ -113,8 +113,13 @@ export default function LeadsPage() {
     fetchLeads(page, filter, searchQuery);
   }, [page, filter, searchQuery, fetchLeads]);
 
-  // When filter changes, reset to page 0
+  // When a filter is clicked during Search Results mode, clear the search
+  // (input + debounced query) so the selected filter's normal results load.
+  // Cancels any pending debounced search to prevent stale results.
   const handleFilterChange = (next: FilterValue) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSearchInput('');
+    setSearchQuery('');
     setFilter(next);
     setPage(0);
   };
