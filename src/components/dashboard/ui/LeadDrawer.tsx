@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Calendar, MessageSquare } from 'lucide-react';
+import { X, Calendar, MessageSquare, ClipboardList } from 'lucide-react';
 import { Lead } from '../LeadList';
 import { LeadStatus } from './StatusBadge';
+import { ContactChannel } from '../types';
 import StatusSelect from './StatusSelect';
 import QuickActionBar from './QuickActionBar';
 import NotesEditor from './NotesEditor';
+import ContactTimer from './ContactTimer';
+import LogContactModal from './LogContactModal';
+import FollowUpSection from './FollowUpSection';
+import ActivityHistory from './ActivityHistory';
+import { supabase } from '../../../lib/supabase';
+import { useToast } from '../../../contexts/ToastContext';
 import { formatDate } from '../../../utils/formatDate';
 
 interface LeadDrawerProps {
@@ -12,18 +19,17 @@ interface LeadDrawerProps {
   onClose: () => void;
   onStatusChange: (id: string, status: LeadStatus) => Promise<void>;
   onSaveNotes: (id: string, notes: string) => Promise<void>;
+  onLeadUpdate?: (lead: Lead) => void;
 }
 
 const ANIMATION_DURATION = 300;
 
-export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes }: LeadDrawerProps) {
-  // Track whether we're animating out — keep component mounted during exit
+export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes, onLeadUpdate }: LeadDrawerProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const prevLeadRef = useRef<Lead | null>(null);
 
-  // When a lead is set, mount and animate in
   useEffect(() => {
     if (lead) {
       setIsRendered(true);
@@ -36,10 +42,8 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes 
     }
   }, [lead]);
 
-  // Keep showing previous lead data during exit animation
   const displayLead = lead ?? prevLeadRef.current;
 
-  // Escape key
   useEffect(() => {
     if (!isRendered) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -47,7 +51,6 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes 
     return () => document.removeEventListener('keydown', handler);
   }, [isRendered, onClose]);
 
-  // Lock body scroll while open
   useEffect(() => {
     if (isRendered) {
       document.body.style.overflow = 'hidden';
@@ -71,7 +74,6 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes 
 
   return (
     <>
-      {/* ── Overlay ─────────────────────────────────────────── */}
       <div
         className="fixed inset-0 z-40"
         style={{
@@ -86,7 +88,6 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes 
         aria-hidden
       />
 
-      {/* ── Desktop: right panel ─────────────────────────────── */}
       <div
         className="fixed top-0 right-0 h-full z-50 hidden sm:flex flex-col"
         style={{
@@ -106,11 +107,11 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes 
           onClose={onClose}
           onStatusChange={handleStatusChange}
           onSaveNotes={onSaveNotes}
+          onLeadUpdate={onLeadUpdate}
           updatingStatus={updatingStatus}
         />
       </div>
 
-      {/* ── Mobile: bottom sheet ─────────────────────────────── */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 flex flex-col sm:hidden"
         style={{
@@ -127,18 +128,15 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes 
         aria-modal="true"
         aria-label={`Lead: ${displayLead.name}`}
       >
-        {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div
-            className="w-9 h-1 rounded-full"
-            style={{ background: 'rgba(255,255,255,0.15)' }}
-          />
+          <div className="w-9 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
         </div>
         <DrawerContent
           lead={displayLead}
           onClose={onClose}
           onStatusChange={handleStatusChange}
           onSaveNotes={onSaveNotes}
+          onLeadUpdate={onLeadUpdate}
           updatingStatus={updatingStatus}
           isMobile
         />
@@ -147,12 +145,12 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes 
   );
 }
 
-// ── Shared drawer content ──────────────────────────────────────
 function DrawerContent({
   lead,
   onClose,
   onStatusChange,
   onSaveNotes,
+  onLeadUpdate,
   updatingStatus,
   isMobile = false,
 }: {
@@ -160,9 +158,65 @@ function DrawerContent({
   onClose: () => void;
   onStatusChange: (status: LeadStatus) => Promise<void>;
   onSaveNotes: (id: string, notes: string) => Promise<void>;
+  onLeadUpdate?: (lead: Lead) => void;
   updatingStatus: boolean;
   isMobile?: boolean;
 }) {
+  const { showToast } = useToast();
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [activityRefreshKey, setActivityRefreshKey] = useState(0);
+
+  const handleLogContact = async (channel: ContactChannel, notes: string) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const actor = userData.user?.email ?? null;
+    const now = new Date().toISOString();
+
+    const { error: contactError } = await supabase
+      .from('lead_contact_events')
+      .insert({ lead_id: lead.id, channel, notes, contacted_by: actor });
+
+    if (contactError) {
+      throw new Error(contactError.message);
+    }
+
+    const { error: leadError } = await supabase
+      .from('leads')
+      .update({ last_contacted_at: now })
+      .eq('id', lead.id);
+
+    if (leadError) {
+      throw new Error(leadError.message);
+    }
+
+    const channelLabel = channel === 'call' ? 'Call' : channel === 'text' ? 'Text' : 'Email';
+    const desc = notes ? `${channelLabel} logged: ${notes}` : `${channelLabel} logged`;
+
+    await supabase
+      .from('lead_activities')
+      .insert({ lead_id: lead.id, event_type: 'contact_logged', description: desc, actor });
+
+    const updatedLead = { ...lead, last_contacted_at: now };
+    onLeadUpdate?.(updatedLead);
+    setActivityRefreshKey(k => k + 1);
+    setShowLogModal(false);
+    showToast('Contact logged.');
+  };
+
+  const handleActivity = async (eventType: string, description: string) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const actor = userData.user?.email ?? null;
+
+    const { error } = await supabase
+      .from('lead_activities')
+      .insert({ lead_id: lead.id, event_type: eventType, description, actor });
+
+    if (error) {
+      // Non-fatal — activity logging should not block the primary action
+      console.error('[lead_activities] insert failed:', error.message);
+    }
+    setActivityRefreshKey(k => k + 1);
+  };
+
   return (
     <>
       {/* Header */}
@@ -173,20 +227,18 @@ function DrawerContent({
         <div className="min-w-0 flex-1">
           <h2
             className="text-xl font-semibold tracking-tight leading-tight truncate"
-            style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
-              color: 'var(--ds-text-primary)',
-            }}
+            style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ds-text-primary)' }}
           >
             {lead.name || 'Unknown'}
           </h2>
           <div className="flex items-center gap-2 mt-2">
-            <StatusSelect
-              status={lead.status}
-              disabled={updatingStatus}
-              onChange={onStatusChange}
-            />
+            <StatusSelect status={lead.status} disabled={updatingStatus} onChange={onStatusChange} />
           </div>
+          {lead.status !== 'closed' && lead.status !== 'archived' && (
+            <div className="mt-2">
+              <ContactTimer createdAt={lead.created_at} lastContactedAt={lead.last_contacted_at} status={lead.status} />
+            </div>
+          )}
         </div>
         <button
           onClick={onClose}
@@ -220,15 +272,38 @@ function DrawerContent({
           )}
         </div>
 
-        {/* Quick actions */}
+        {/* Quick actions + Log Contact */}
         {(lead.phone || lead.email) && (
           <div>
             <Label>Quick actions</Label>
-            <div className="mt-2">
+            <div className="mt-2 space-y-2">
               <QuickActionBar phone={lead.phone} email={lead.email} compact={false} />
+              <button
+                onClick={() => setShowLogModal(true)}
+                className="flex items-center justify-center gap-1.5 rounded-lg w-full h-10 text-[13px] font-medium transition-all duration-150"
+                style={{
+                  color: 'var(--ds-text-secondary)',
+                  background: 'var(--ds-bg-overlay)',
+                  boxShadow: '0 0 0 1px rgba(255,255,255,0.08)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.color = 'var(--ds-text-primary)';
+                  e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.18)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.color = 'var(--ds-text-secondary)';
+                  e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.08)';
+                }}
+              >
+                <ClipboardList size={14} />
+                Log Contact
+              </button>
             </div>
           </div>
         )}
+
+        {/* Follow-up section */}
+        <FollowUpSection leadId={lead.id} leadStatus={lead.status} onActivity={handleActivity} />
 
         {/* Contact details */}
         {(lead.email || lead.phone) && (
@@ -255,19 +330,21 @@ function DrawerContent({
         {lead.message && (
           <div>
             <Label icon={<MessageSquare size={11} />}>Message</Label>
-            <div
-              className="mt-2 rounded-xl p-4"
-              style={{ background: 'var(--ds-bg-overlay)' }}
-            >
-              <p
-                className="text-sm leading-relaxed whitespace-pre-wrap italic"
-                style={{ color: '#f0ede8' }}
-              >
+            <div className="mt-2 rounded-xl p-4" style={{ background: 'var(--ds-bg-overlay)' }}>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap italic" style={{ color: '#f0ede8' }}>
                 {lead.message}
               </p>
             </div>
           </div>
         )}
+
+        {/* Activity History */}
+        <ActivityHistory
+          leadId={lead.id}
+          createdAt={lead.created_at}
+          notesJson={lead.notes ?? ''}
+          refreshKey={activityRefreshKey}
+        />
 
         {/* Notes with integrated per-note attachments */}
         <div>
@@ -282,14 +359,20 @@ function DrawerContent({
           </div>
         </div>
 
-        {/* Bottom spacing so notes editor isn't flush with edge on mobile */}
         {isMobile && <div className="h-4" />}
       </div>
+
+      {showLogModal && (
+        <LogContactModal
+          leadName={lead.name}
+          onLog={handleLogContact}
+          onClose={() => setShowLogModal(false)}
+        />
+      )}
     </>
   );
 }
 
-// ── Small label helper ─────────────────────────────────────────
 function Label({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
     <div

@@ -24,6 +24,10 @@ const FILTER_TABS: { value: FilterValue; label: string }[] = [
 
 const VALID_FILTERS = new Set<FilterValue>(['all', 'new', 'contacted', 'qualified', 'closed', 'archived']);
 
+const STATUS_LABELS: Record<LeadStatus, string> = {
+  new: 'New', contacted: 'Contacted', qualified: 'Qualified', closed: 'Closed', archived: 'Archived',
+};
+
 export default function LeadsPage() {
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -212,6 +216,12 @@ export default function LeadsPage() {
 
     showToast('Status updated.');
 
+    // Log activity (non-fatal)
+    supabase
+      .from('lead_activities')
+      .insert({ lead_id: id, event_type: 'status_changed', description: `Status changed to ${STATUS_LABELS[next]}`, actor: null })
+      .then(({ error: actErr }) => { if (actErr) console.error('[lead_activities] insert failed:', actErr.message); });
+
     setLeads(prev => {
       const belongs = leadBelongsInFilter(next, filter);
       if (belongs) {
@@ -232,8 +242,20 @@ export default function LeadsPage() {
 
     if (error) throw error;
 
+    // Log activity (non-fatal)
+    const { data: userData } = await supabase.auth.getUser();
+    supabase
+      .from('lead_activities')
+      .insert({ lead_id: id, event_type: 'note_saved', description: 'Private note saved', actor: userData.user?.email ?? null })
+      .then(({ error: actErr }) => { if (actErr) console.error('[lead_activities] insert failed:', actErr.message); });
+
     setLeads(prev => prev.map(l => l.id === id ? { ...l, notes } : l));
     setDrawerLead(prev => prev?.id === id ? { ...prev, notes } : prev);
+  }, []);
+
+  const handleLeadUpdate = useCallback((updated: Lead) => {
+    setLeads(prev => prev.map(l => l.id === updated.id ? { ...l, ...updated } : l));
+    setDrawerLead(prev => prev?.id === updated.id ? { ...prev, ...updated } : prev);
   }, []);
 
   // ── Derived ───────────────────────────────────────────────
@@ -457,6 +479,7 @@ export default function LeadsPage() {
         onClose={handleCloseDrawer}
         onStatusChange={handleStatusChange}
         onSaveNotes={handleDrawerSaveNotes}
+        onLeadUpdate={handleLeadUpdate}
       />
     </>
   );

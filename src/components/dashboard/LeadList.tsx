@@ -3,6 +3,7 @@ import { Mail, Phone, Calendar, Users, Search } from 'lucide-react';
 import { LeadStatus } from './ui/StatusBadge';
 import StatusSelect from './ui/StatusSelect';
 import QuickActionBar from './ui/QuickActionBar';
+import ContactTimer from './ui/ContactTimer';
 import { formatDate } from '../../utils/formatDate';
 
 export interface Lead {
@@ -17,6 +18,7 @@ export interface Lead {
   listing_slug: string;
   status: LeadStatus;
   notes: string;
+  last_contacted_at?: string | null;
 }
 
 const STATUS_BORDER_COLOR: Record<LeadStatus, string> = {
@@ -101,9 +103,14 @@ function LeadTable({
 
               {/* Name */}
               <td className="px-4 py-4 align-top">
-                <span className="text-sm font-medium whitespace-nowrap" style={{ color: 'var(--ds-text-primary)' }}>
-                  {lead.name || '—'}
-                </span>
+                <div className="space-y-1">
+                  <span className="text-sm font-medium whitespace-nowrap" style={{ color: 'var(--ds-text-primary)' }}>
+                    {lead.name || '—'}
+                  </span>
+                  {lead.status !== 'closed' && lead.status !== 'archived' && (
+                    <ContactTimer compact createdAt={lead.created_at} lastContactedAt={lead.last_contacted_at} status={lead.status} />
+                  )}
+                </div>
               </td>
 
               {/* Contact — plain text; row click opens drawer */}
@@ -205,6 +212,9 @@ function LeadCard({
               <Calendar size={10} />
               {formatDate(lead.created_at)}
             </p>
+            {lead.status !== 'closed' && lead.status !== 'archived' && (
+              <ContactTimer compact createdAt={lead.created_at} lastContactedAt={lead.last_contacted_at} status={lead.status} />
+            )}
           </div>
           {/* Stop propagation so status select doesn't open drawer */}
           <div onClick={e => e.stopPropagation()}>
