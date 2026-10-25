@@ -587,7 +587,7 @@ function ReviewText({
         const prefix = mid === 1
           ? allWords[0] + '...'
           : allWords.slice(0, mid - 1).join(' ') + ' ' + allWords[mid - 1] + '...';
-        ellipsisEl2.textContent = prefix;
+        ellipsisEl2.textContent = '“' + prefix;
         if (ellipsisEl2.scrollHeight <= threshold) {
           lo = mid;
         } else {
@@ -661,9 +661,11 @@ function ReviewText({
           aria-hidden="true"
           className="text-sm md:text-[15px] leading-relaxed text-white w-full opacity-0 pointer-events-none absolute top-0 left-0"
         >
+          <span aria-hidden="true">“</span>
           {words.map((word, i) => (
             <span key={i} data-word="">{word}{' '}</span>
           ))}
+          <span aria-hidden="true">”</span>
         </p>
 
         {/* Hidden measurement paragraph for words + ellipsis binary search */}
@@ -676,8 +678,9 @@ function ReviewText({
         <p
           ref={fullRef}
           aria-hidden="true"
-          className="text-sm md:text-[15px] leading-relaxed text-white"
+          className="text-sm md:text-[15px] leading-relaxed text-white italic"
         >
+          <span aria-hidden="true">“</span>
           {showStaticCollapsedText ? (
             <>{collapsedText}{showEllipsis ? '...' : ''}</>
           ) : isFullyRevealed ? (
@@ -699,6 +702,9 @@ function ReviewText({
                 });
               })()}
             </>
+          )}
+          {(isExpanded || (!showEllipsis && (showStaticCollapsedText || isFullyRevealed || revealedCount >= words.length))) && (
+            <span aria-hidden="true">”</span>
           )}
         </p>
       </div>
