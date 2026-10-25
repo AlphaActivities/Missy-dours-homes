@@ -41,7 +41,7 @@ export default function AboutSection() {
               <div className="pointer-events-none absolute inset-x-10 -bottom-16 h-24 rounded-full bg-gradient-to-r from-[#f3d7a0]/70 via-[#f9e9c6]/40 to-[#c79b4b]/70 blur-2xl opacity-70"></div>
 
               {/* CAPTION STRIP */}
-              <div className="absolute left-6 bottom-6 rounded-full bg-black/65 px-4 py-1.5 text-[0.72rem] tracking-[0.18em] uppercase text-white/85 flex flex-wrap gap-x-2 gap-y-1">
+              <div className="absolute inset-x-6 bottom-6 rounded-2xl bg-black/65 px-4 py-2 text-center text-[0.72rem] tracking-[0.18em] uppercase text-white/85 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 lg:left-6 lg:right-auto lg:rounded-full lg:py-1.5 lg:text-left lg:justify-start">
                 <span>Missy Dours</span>
                 <span className="text-white/60">·</span>
                 <span>Dallas–Fort Worth Luxury Real Estate</span>
