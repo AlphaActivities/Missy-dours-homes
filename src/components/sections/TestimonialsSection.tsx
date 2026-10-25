@@ -525,6 +525,7 @@ function ReviewText({
 }) {
   const [needsTruncation, setNeedsTruncation] = useState(false);
   const [visibleWordCount, setVisibleWordCount] = useState(0);
+  const [hasCollapsedAfterExpansion, setHasCollapsedAfterExpansion] = useState(false);
   const fullRef = useRef<HTMLParagraphElement>(null);
   const measureRef = useRef<HTMLParagraphElement>(null);
   const ellipsisMeasureRef = useRef<HTMLParagraphElement>(null);
@@ -642,6 +643,10 @@ function ReviewText({
   const effectiveVisibleLimit = visibleWordCount || words.length;
   const showEllipsis = needsTruncation && !isExpanded;
   const isFullyRevealed = isExpanded || (revealedCount >= words.length && !showEllipsis) || prefersReducedMotion;
+  // After Show Less, render the measured excerpt as plain text rather than
+  // remounting opacity-animated word spans (which causes a visible flash).
+  const showStaticCollapsedText = !isExpanded && hasCollapsedAfterExpansion;
+  const collapsedText = words.slice(0, effectiveVisibleLimit).join(' ');
 
   return (
     <div className="flex flex-col">
@@ -673,7 +678,9 @@ function ReviewText({
           aria-hidden="true"
           className="text-sm md:text-[15px] leading-relaxed text-white"
         >
-          {isFullyRevealed ? (
+          {showStaticCollapsedText ? (
+            <>{collapsedText}{showEllipsis ? '...' : ''}</>
+          ) : isFullyRevealed ? (
             text
           ) : (
             <>
@@ -700,7 +707,10 @@ function ReviewText({
       <div className={isExpanded ? 'mt-3' : 'min-h-[28px] mt-2 md:h-[32px] md:min-h-[32px]'}>
         {(needsTruncation || Boolean(ownerReply)) && (
           <button
-            onClick={onToggle}
+            onClick={() => {
+              if (isExpanded) setHasCollapsedAfterExpansion(true);
+              onToggle();
+            }}
             aria-expanded={isExpanded}
             className={`inline-flex items-center gap-1.5 rounded-full border border-[#c29f63]/40 bg-[#c29f63]/10 px-3.5 py-1.5 text-[0.7rem] tracking-[0.12em] uppercase text-[#F5E6C8] font-medium hover:bg-[#c29f63]/20 hover:border-[#c29f63]/70 hover:-translate-y-0.5 hover:brightness-110 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/70 active:translate-y-0`}
           >
