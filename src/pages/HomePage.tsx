@@ -49,7 +49,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (pendingScrollTarget) {
-      scrollToSection(pendingScrollTarget);
+      scrollToSection(pendingScrollTarget, { categorySelection: true });
       setPendingScrollTarget(null);
     }
   }, [pendingScrollTarget]);
