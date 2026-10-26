@@ -48,21 +48,10 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    if (!pendingScrollTarget) return;
-
-    // Allow the newly selected showcase to mount and settle before measuring its heading.
-    let secondFrame = 0;
-    const firstFrame = window.requestAnimationFrame(() => {
-      secondFrame = window.requestAnimationFrame(() => {
-        scrollToSection(pendingScrollTarget, { alignToHeading: true });
-        setPendingScrollTarget(null);
-      });
-    });
-
-    return () => {
-      window.cancelAnimationFrame(firstFrame);
-      window.cancelAnimationFrame(secondFrame);
-    };
+    if (pendingScrollTarget) {
+      scrollToSection(pendingScrollTarget);
+      setPendingScrollTarget(null);
+    }
   }, [pendingScrollTarget]);
 
   return (
