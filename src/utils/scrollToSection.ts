@@ -1,4 +1,4 @@
-export const scrollToSection = (targetId: string, options?: { alignToHeading?: boolean }) => {
+export const scrollToSection = (targetId: string) => {
   if (typeof window === 'undefined') return;
 
   if (targetId === 'home') {
@@ -12,16 +12,13 @@ export const scrollToSection = (targetId: string, options?: { alignToHeading?: b
   const section = document.getElementById(targetId);
   if (!section) return;
 
-  // Category selections reveal a new section. Align its heading, not its padded outer edge.
-  const destination = options?.alignToHeading ? section.querySelector('h2') ?? section : section;
-  const rect = destination.getBoundingClientRect();
+  const rect = section.getBoundingClientRect();
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
 
   const header = document.querySelector('header') as HTMLElement | null;
   const headerHeight = header?.offsetHeight ?? 0;
 
-  // Preserve the existing offset for site navigation; selected category headings use a modest gap.
-  const offsetPadding = options?.alignToHeading ? 24 : -30;
+  const offsetPadding = -30;
   const targetPosition = Math.max(rect.top + scrollTop - headerHeight - offsetPadding, 0);
 
   window.scrollTo({
