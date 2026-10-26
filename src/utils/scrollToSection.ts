@@ -12,16 +12,26 @@ export const scrollToSection = (targetId: string, options?: { categorySelection?
   const section = document.getElementById(targetId);
   if (!section) return;
 
-  const rect = section.getBoundingClientRect();
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-
   const header = document.querySelector('header') as HTMLElement | null;
-  const headerHeight = header?.offsetHeight ?? 0;
+  const headerHeight = header?.getBoundingClientRect().height ?? 0;
 
-  // Scroll farther on desktop category selection only, moving content UP in the viewport.
-  // Small screens and other navbar navigation retain the original -30px offset.
+  // These navigation destinations contain slide-up Framer Motion children.
+  // Target the stable, untransformed section content wrapper instead of the
+  // animated heading or the padded outer section.
+  const isContentNavigation = !options?.categorySelection &&
+    ['about', 'communities', 'testimonials', 'contact'].includes(targetId);
+  const contentWrapper = isContentNavigation
+    ? section.firstElementChild as HTMLElement | null
+    : null;
+  const destination = contentWrapper ?? section;
+  const rect = destination.getBoundingClientRect();
+
+  // Maintain the existing, approved property-category scroll calculation.
   const desktopCategoryShift = options?.categorySelection && window.innerWidth >= 1024 ? 24 : 0;
-  const offsetPadding = -30 - desktopCategoryShift;
+  const originalPadding = -30 - desktopCategoryShift;
+  const clearance = window.innerWidth >= 1024 ? 36 : window.innerWidth >= 768 ? 28 : 24;
+  const offsetPadding = isContentNavigation ? clearance : originalPadding;
   const targetPosition = Math.max(rect.top + scrollTop - headerHeight - offsetPadding, 0);
 
   window.scrollTo({
