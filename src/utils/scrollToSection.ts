@@ -21,7 +21,7 @@ export const scrollToSection = (targetId: string, options?: { alignToHeading?: b
   const headerHeight = header?.offsetHeight ?? 0;
 
   // Preserve the existing offset for site navigation; selected category headings use a modest gap.
-  const offsetPadding = options?.alignToHeading ? 24 : 30;
+  const offsetPadding = options?.alignToHeading ? 24 : -30;
   const targetPosition = Math.max(rect.top + scrollTop - headerHeight - offsetPadding, 0);
 
   window.scrollTo({
