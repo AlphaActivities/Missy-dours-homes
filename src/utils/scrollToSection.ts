@@ -31,7 +31,10 @@ export const scrollToSection = (targetId: string, options?: { categorySelection?
   const desktopCategoryShift = options?.categorySelection && window.innerWidth >= 1024 ? 24 : 0;
   const originalPadding = -30 - desktopCategoryShift;
   const clearance = window.innerWidth >= 1024 ? 36 : window.innerWidth >= 768 ? 28 : 24;
-  const offsetPadding = isContentNavigation ? clearance : originalPadding;
+  // Desktop About only: stop slightly earlier so the portrait and biography sit lower.
+  // Mobile/tablet and all other navigation destinations remain unchanged.
+  const desktopAboutAdjustment = targetId === 'about' && !options?.categorySelection && window.innerWidth >= 1024 ? 46 : 0;
+  const offsetPadding = (isContentNavigation ? clearance : originalPadding) + desktopAboutAdjustment;
   const targetPosition = Math.max(rect.top + scrollTop - headerHeight - offsetPadding, 0);
 
   window.scrollTo({
