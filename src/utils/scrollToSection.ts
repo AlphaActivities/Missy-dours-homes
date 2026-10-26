@@ -1,4 +1,4 @@
-export const scrollToSection = (targetId: string) => {
+export const scrollToSection = (targetId: string, options?: { categorySelection?: boolean }) => {
   if (typeof window === 'undefined') return;
 
   if (targetId === 'home') {
@@ -18,7 +18,10 @@ export const scrollToSection = (targetId: string) => {
   const header = document.querySelector('header') as HTMLElement | null;
   const headerHeight = header?.offsetHeight ?? 0;
 
-  const offsetPadding = -30;
+  // Scroll farther on desktop category selection only, moving content UP in the viewport.
+  // Small screens and other navbar navigation retain the original -30px offset.
+  const desktopCategoryShift = options?.categorySelection && window.innerWidth >= 1024 ? 24 : 0;
+  const offsetPadding = -30 - desktopCategoryShift;
   const targetPosition = Math.max(rect.top + scrollTop - headerHeight - offsetPadding, 0);
 
   window.scrollTo({
