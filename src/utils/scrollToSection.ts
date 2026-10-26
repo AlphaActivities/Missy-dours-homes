@@ -1,4 +1,4 @@
-export const scrollToSection = (targetId: string, options?: { categorySelection?: boolean }) => {
+export const scrollToSection = (targetId: string) => {
   if (typeof window === 'undefined') return;
 
   if (targetId === 'home') {
@@ -18,9 +18,7 @@ export const scrollToSection = (targetId: string, options?: { categorySelection?
   const header = document.querySelector('header') as HTMLElement | null;
   const headerHeight = header?.offsetHeight ?? 0;
 
-  // Category selection only: add breathing room on desktop, preserving mobile/tablet and navbar navigation.
-  const desktopCategoryOffset = options?.categorySelection && window.innerWidth >= 1024 ? 42 : 0;
-  const offsetPadding = -30 + desktopCategoryOffset;
+  const offsetPadding = -30;
   const targetPosition = Math.max(rect.top + scrollTop - headerHeight - offsetPadding, 0);
 
   window.scrollTo({
