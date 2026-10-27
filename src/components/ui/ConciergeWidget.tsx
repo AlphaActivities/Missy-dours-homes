@@ -22,7 +22,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
   const [transportError, setTransportError] = useState<string | null>(null);
-  const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '');
+  const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '0x4AAAAAAFoyCod-DYcyxjUw');
   const sessionRef = useRef<VisitorSession | null>(null);
   // UI-only feature flag. This is not a security boundary.
   const chatEnabled = import.meta.env.VITE_CONCIERGE_CHAT_ENABLED === 'true' && Boolean(turnstileSiteKey); // Server additionally requires private enable flag.
