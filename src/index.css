@@ -543,32 +543,38 @@
   box-shadow: 0 0 0 2px rgba(196, 164, 106, 0.7) !important;
 }
 
-/* Fixed-thickness About accent with an unmistakable traveling metallic highlight. */
+/* About: narrow, high-contrast gold flash travels across a stationary 2px line. */
 @media (min-width: 1024px) {
   .about-gold-breathe {
     height: 2px;
     position: relative;
     overflow: hidden;
-    background: #8c601f;
+    background: linear-gradient(90deg, #704617, #a57422 48%, #704617);
   }
   .about-gold-breathe::after {
     content: "";
     position: absolute;
-    inset: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 42%;
     background: linear-gradient(90deg,
-      #634016 0%, #a16d20 12%, #f0bb31 26%,
-      #fff9de 36%, #ffe066 44%, #b57a20 57%,
-      #674216 71%, #f0bb31 86%, #634016 100%);
-    background-size: 100% 100%;
-    width: 200%;
-    animation: aboutGoldSweepStrong 2.4s linear infinite;
+      transparent 0%,
+      #d99512 20%,
+      #ffe15a 38%,
+      #ffffff 50%,
+      #ffe15a 62%,
+      #d99512 80%,
+      transparent 100%);
+    transform: translateX(-110%);
+    animation: aboutGoldFlash 1.6s linear infinite;
     pointer-events: none;
   }
 }
-@keyframes aboutGoldSweepStrong {
-  from { transform: translateX(-50%); }
-  to { transform: translateX(0%); }
+@keyframes aboutGoldFlash {
+  0% { left: 0; transform: translateX(-110%); }
+  100% { left: 100%; transform: translateX(0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .about-gold-breathe::after { animation: none; transform: translateX(-25%); }
+  .about-gold-breathe::after { animation: none; left: 30%; transform: none; }
 }
