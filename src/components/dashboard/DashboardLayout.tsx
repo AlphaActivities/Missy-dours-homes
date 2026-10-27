@@ -74,6 +74,12 @@ export default function DashboardLayout() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+    void navigator.serviceWorker.register('/missy-crm-sw.js', {scope:'/dashboard/'})
+      .catch(() => { /* Private CRM remains usable without notification support. */ });
+  }, []);
+
   // Close drawer on lg+ resize
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
