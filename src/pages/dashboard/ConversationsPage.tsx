@@ -23,7 +23,8 @@ export default function ConversationsPage() {
  const [taskBusy,setTaskBusy]=useState<string|null>(null);
  const [alertsEnabled,setAlertsEnabled]=useState(false);
  const seenPendingRef=useRef<Set<string>|null>(null);
- const enableAlerts=async()=>{if(!('Notification' in window)){setError('This browser does not support notifications.');return;}const status=await Notification.requestPermission();setAlertsEnabled(status==='granted');if(status!=='granted')setError('Notifications were not enabled. The CRM attention queue still works.');};
+ const alertsEnabledRef=useRef(false);
+ const enableAlerts=async()=>{if(!('Notification' in window)){setError('This browser does not support notifications.');return;}const status=await Notification.requestPermission();setAlertsEnabled(status==='granted');alertsEnabledRef.current=status==='granted';if(status!=='granted')setError('Notifications were not enabled. The CRM attention queue still works.');};
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
  const refresh=async()=>{setLoading(true);setError(null);try{
   const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
@@ -33,7 +34,7 @@ export default function ConversationsPage() {
   const waiting=(tasks.data??[]).filter(t=>t.status==='pending');
   if(seenPendingRef.current===null)seenPendingRef.current=new Set(waiting.map(t=>t.id));
   else {
-    if(alertsEnabled && document.visibilityState==='visible' && 'Notification' in window && Notification.permission==='granted') {
+    if(alertsEnabledRef.current && 'Notification' in window && Notification.permission==='granted') {
       for(const task of waiting) if(!seenPendingRef.current.has(task.id)) {
         new Notification('Missy Dours Concierge', {body:'A new visitor is waiting for a team member.',tag:'missy-concierge-'+task.id});
       }
