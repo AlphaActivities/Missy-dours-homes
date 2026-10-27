@@ -48,3 +48,19 @@ jobs:
             -H 'Content-Type: application/json' -d '{"challenge":"invalid-test-token"}')
           test "$status" = 403 -o "$status" = 401
           echo "API correctly rejected untrusted-origin request with HTTP $status"
+      - name: Confirm visitor chat remains disabled before launch
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-disabled.json -w '%{http_code}' -X POST \
+            'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-api/session' \
+            -H 'Content-Type: application/json' \
+            -H 'Origin: https://missydours.com' \
+            -d '{"challenge":"invalid-test-token"}')
+          test "$status" = 503
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/concierge-disabled.json'))
+          assert 'not available yet' in x.get('error',''), 'Unexpected error; feature flag may not be disabled'
+          print('PASS: server-side concierge flag is still disabled')
+          PY
