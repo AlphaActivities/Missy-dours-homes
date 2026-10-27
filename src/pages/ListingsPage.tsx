@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
-import { listings, ListingCategory, ListingStatus } from '../data/listings';
+import { listings, ListingCategory } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Home } from 'lucide-react';
 import SEO from '../components/SEO';
 import FooterSection from '../components/sections/FooterSection';
