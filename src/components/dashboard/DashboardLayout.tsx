@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
-import { LogOut, Users, LayoutDashboard, Menu, X } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle } from 'lucide-react';
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
 
 const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/leads', label: 'Leads',    icon: Users,            end: false },
+  { to: '/dashboard/conversations', label: 'Conversations', icon: MessageCircle, end: false },
 ];
 
 // Avatar that renders the authenticated Google profile picture when
