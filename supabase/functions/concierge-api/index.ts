@@ -24,7 +24,7 @@ Deno.serve(async req=>{
  // Feature flag fails CLOSED even for requests with valid credentials.
  if(!enabled) return answer({error:'Concierge messaging is not available yet.'},503,origin);
  const url=new URL(req.url);
- if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
+ if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
  const raw=await req.text();
  if(raw.length>6000) return answer({error:'Request too large'},413,origin);
  let body:Record<string,unknown>;
@@ -49,6 +49,30 @@ Deno.serve(async req=>{
   const {data,error}=await db.from('ai_conversations').insert({visitor_token_hash:hash,visitor_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),title:'New conversation',status:'ai'}).select('id').single();
   if(error||!data)return answer({error:'Could not start chat'},503,origin);
   return answer({conversation_id:data.id,token},201,origin);
+ }
+ if(url.pathname.endsWith('/staff-translate')) {
+  const jwt=authorization.startsWith('Bearer ')?authorization.slice(7):'';
+  if(!jwt)return answer({error:'Unauthorized'},401,origin);
+  const identity=await db.auth.getUser(jwt);
+  const email=identity.data.user?.email?.toLowerCase()??'';
+  if(identity.error||!['missydourshomes@gmail.com','yourcustomerflowguy@gmail.com','heberherrera92@gmail.com'].includes(email))return answer({error:'Unauthorized'},401,origin);
+  if(typeof body.conversation_id!=='string'||typeof body.message!=='string'||body.message.trim().length<1||body.message.length>2000)return answer({error:'Invalid request'},400,origin);
+  const assigned=await db.from('ai_conversations').select('status,assigned_to,language_code').eq('id',body.conversation_id).maybeSingle();
+  if(assigned.error||assigned.data?.status!=='human'||assigned.data.assigned_to!==email)return answer({error:'Not assigned to this conversation'},403,origin);
+  const language=assigned.data.language_code;
+  if(!['es','fr','pt','zh'].includes(language))return answer({error:'Translation not required'},400,origin);
+  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'staff-translation:'+email,p_max:40,p_window_seconds:3600});
+  if(limit.error||limit.data!==true)return answer({error:'Translation limit reached'},429,origin);
+  const aiUrl=Deno.env.get('MISSY_CLOUDFLARE_AI_URL'), aiSecret=Deno.env.get('MISSY_CLOUDFLARE_BRIDGE_SECRET');
+  if(!aiUrl||!aiSecret)return answer({error:'Translation unavailable'},503,origin);
+  try {
+   const response=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},
+    body:JSON.stringify({task:'translate',target:'visitor',language,source:body.message.trim(),messages:[{role:'user',content:body.message.trim()}]}),signal:AbortSignal.timeout(20000)});
+   if(!response.ok)return answer({error:'Translation unavailable'},503,origin);
+   const result=await response.json() as {translation?:unknown};
+   if(typeof result.translation!=='string'||!result.translation.trim())return answer({error:'Translation unavailable'},503,origin);
+   return answer({translation:result.translation.trim(),language},200,origin);
+  }catch{return answer({error:'Translation unavailable'},503,origin);}
  }
  const token=authorization.startsWith('Bearer ')?authorization.slice(7):'';
  if(!/^[a-f0-9]{64}$/.test(token))return answer({error:'Unauthorized'},401,origin);
