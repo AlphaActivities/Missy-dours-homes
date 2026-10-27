@@ -131,8 +131,8 @@ Deno.serve(async req=>{
 
  // Conservative, explainable internal triage only. Never assume budget or purchase readiness.
  const lower=message.toLowerCase();
- const urgent=/\\b(today|tomorrow|this week|asap|ready to tour|schedule a showing|make an offer|under contract|closing soon)\\b/i.test(lower);
- const activeIntent=/\\b(buy|buying|sell|selling|relocating|moving|looking for|searching for|view a home|list my home)\\b/i.test(lower);
+ const urgent=/\b(today|tomorrow|this week|asap|ready to tour|schedule a showing|make an offer|under contract|closing soon)\b/i.test(lower);
+ const activeIntent=/\b(buy|buying|sell|selling|relocating|moving|looking for|searching for|view a home|list my home)\b/i.test(lower);
  const priority=urgent?'hot':activeIntent?'warm':'unrated';
  const reason=urgent?'Visitor expressed a near-term property or appointment need':activeIntent?'Visitor discussed a real estate goal':'Insufficient signals to classify';
  const {data:existing}=await db.from('ai_conversations').select('summary,priority').eq('id',chat.id).single();
