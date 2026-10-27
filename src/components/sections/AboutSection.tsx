@@ -66,7 +66,8 @@ export default function AboutSection() {
 
               {/* SUBHEADLINE */}
               <p className="mt-1 text-sm sm:text-base leading-relaxed tracking-[0.12em] lg:tracking-[0.18em] uppercase text-[#6B5335]">
-                Dallas – Fort Worth Luxury Real Estate Specialist
+                <span className="block whitespace-nowrap">Dallas – Fort Worth</span>
+                <span className="block whitespace-nowrap text-[0.78rem] sm:text-base">Luxury Real Estate Specialist</span>
               </p>
 
               {/* BIO COPY */}
