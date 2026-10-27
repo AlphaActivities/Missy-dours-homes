@@ -25,7 +25,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '');
   const sessionRef = useRef<VisitorSession | null>(null);
   // UI-only feature flag. This is not a security boundary.
-  const chatEnabled = false; // Explicit OFF until authenticated integration and end-to-end tests pass.
+  const chatEnabled = import.meta.env.VITE_CONCIERGE_CHAT_ENABLED === 'true' && Boolean(turnstileSiteKey); // Server additionally requires private enable flag.
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -72,7 +72,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
       setTransportError(error instanceof Error ? error.message : 'Could not connect to the concierge.');
     } finally { setBusy(false); }
   };
-  void beginVerifiedSession; // Turnstile callback wiring is gated until site key is provisioned.
+
   const sendMessage = async () => {
     const message = draft.trim();
     if (!message || !chatEnabled || busy) return;
@@ -128,6 +128,8 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <a href="/#contact" className="mt-2 block font-semibold underline underline-offset-4">Contact Missy</a>
             </div>}
+            {chatEnabled && !session && <TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} />}
+            {busy && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
             <div ref={bottomRef}/>
           </div>
@@ -142,4 +144,22 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
       </div>}
     </>
   );
+}
+
+type TurnstileInstance = { render: (element: HTMLElement, options: { sitekey: string; callback: (token:string)=>void; 'error-callback':()=>void; 'expired-callback':()=>void }) => string; remove: (id:string)=>void };
+declare global { interface Window { turnstile?: TurnstileInstance } }
+function TurnstileVerifier({siteKey,onToken}:{siteKey:string;onToken:(token:string)=>void}) {
+ const root=useRef<HTMLDivElement>(null);
+ const tokenHandler=useRef(onToken);
+ useEffect(()=>{tokenHandler.current=onToken;},[onToken]);
+ useEffect(()=>{
+  let mounted=true;let widget:string|null=null;
+  const start=()=>{if(!mounted||!root.current||!window.turnstile||widget)return;widget=window.turnstile.render(root.current,{sitekey:siteKey,callback:(token)=>tokenHandler.current(token),'error-callback':()=>{},'expired-callback':()=>{}});};
+  const scriptId='missy-concierge-turnstile';
+  let script=document.getElementById(scriptId) as HTMLScriptElement|null;
+  if(!script){script=document.createElement('script');script.id=scriptId;script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;script.defer=true;document.head.appendChild(script);}
+  script.addEventListener('load',start);start();
+  return()=>{mounted=false;script?.removeEventListener('load',start);if(widget&&window.turnstile)window.turnstile.remove(widget);};
+ },[siteKey]);
+ return <div className="flex justify-center mb-3" ref={root} aria-label="Verify you are human"/>;
 }
