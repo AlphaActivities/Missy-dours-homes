@@ -60,6 +60,31 @@ Deno.serve(async req=>{
  if(typeof message!=='string'||message.trim().length<1||message.length>2000)return answer({error:'Message must be between 1 and 2000 characters'},400,origin);
  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'message:'+hash,p_max:20,p_window_seconds:3600});
  if(limit.error||limit.data!==true)return answer({error:'Message limit reached, please try later'},429,origin);
- // AI is not enabled yet; do not save a message until the reply transport is working.
- return answer({error:'AI response transport is not available yet.'},503,origin);
+ const aiUrl=Deno.env.get('MISSY_CLOUDFLARE_AI_URL');
+ const aiSecret=Deno.env.get('MISSY_CLOUDFLARE_BRIDGE_SECRET');
+ if(!aiUrl||!aiSecret) return answer({error:'AI service is not configured yet.'},503,origin);
+ const {data:history,error:historyError}=await db.from('ai_conversation_messages')
+  .select('sender,body').eq('conversation_id',chat.id).in('sender',['visitor','ai'])
+  .order('created_at',{ascending:false}).limit(10);
+ if(historyError)return answer({error:'Could not load conversation'},503,origin);
+ const messages=[...(history??[]).reverse().map(x=>({role:x.sender==='ai'?'assistant':'user',content:x.body})),{role:'user',content:message.trim()}];
+ let reply:string;
+ try {
+  const response=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},
+   body:JSON.stringify({messages}),signal:AbortSignal.timeout(25000)});
+  if(!response.ok) return answer({error:'AI service is temporarily unavailable'},503,origin);
+  const payload=await response.json() as {reply?:unknown};
+  if(typeof payload.reply!=='string'||!payload.reply.trim())return answer({error:'AI service is temporarily unavailable'},503,origin);
+  reply=payload.reply.trim().slice(0,5000);
+ } catch {return answer({error:'AI service is temporarily unavailable'},503,origin);}
+ // Do not let AI continue after a staff takeover during the inference call.
+ const {data:current}=await db.from('ai_conversations').select('status').eq('id',chat.id).single();
+ if(current?.status!=='ai')return answer({error:'Conversation is awaiting Missy’s team'},409,origin);
+ const {error:saveError}=await db.from('ai_conversation_messages').insert([
+  {conversation_id:chat.id,sender:'visitor',body:message.trim()},
+  {conversation_id:chat.id,sender:'ai',body:reply}
+ ]);
+ if(saveError)return answer({error:'Could not save chat. Please try again.'},503,origin);
+ await db.from('ai_conversations').update({last_message_at:new Date().toISOString(),title:message.trim().slice(0,90)}).eq('id',chat.id).eq('status','ai');
+ return answer({reply,conversation_id:chat.id},200,origin);
 });
