@@ -65,7 +65,7 @@ export default function AboutSection() {
               </h2>
 
               {/* SUBHEADLINE */}
-              <p className="text-sm sm:text-base tracking-[0.18em] uppercase text-[#9b8b6a] mt-1">
+              <p className="mt-1 text-sm sm:text-base leading-relaxed tracking-[0.12em] lg:tracking-[0.18em] uppercase text-[#6B5335]">
                 Dallas – Fort Worth Luxury Real Estate Specialist
               </p>
 
