@@ -98,7 +98,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
 
   const sendMessage = async () => {
     const message = draft.trim();
-    if (!message || !chatEnabled || busy) return;
+    if (!message || !chatEnabled || busy || mode === 'waiting_human' || mode === 'closed') return;
     const visitor = sessionRef.current ?? session;
     if (!visitor) {
       setTransportError('Please complete verification before sending a message.');
@@ -113,6 +113,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
         { id: Date.now(), role: 'visitor', text: message },
         ...(result.reply ? [{ id: Date.now() + 1, role: 'concierge' as const, text: result.reply }] : [])
       ]);
+      if (result.status === 'human') setMode('human');
       setDraft('');
     } catch (error) {
       setTransportError(error instanceof Error ? error.message : 'Message not sent. Please retry.');
@@ -180,7 +181,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
             </label>
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
               <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-sm text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
-              <button type="submit" disabled={!chatEnabled || busy || !session || !draft.trim()} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
+              <button type="submit" disabled={!chatEnabled || busy || !session || !draft.trim() || mode === 'waiting_human' || mode === 'closed'} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
             </form>
             <p className="mt-2 text-center text-[10px] text-[#988b77]">AI information may be incomplete. Missy confirms property availability and details.</p>
           </div>
