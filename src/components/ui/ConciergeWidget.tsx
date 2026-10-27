@@ -14,6 +14,7 @@ const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
+  const [language, setLanguage] = useState('en');
   const [messages, setMessages] = useState<Message[]>(INITIAL);
   const [invitation, setInvitation] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -106,7 +107,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
     setBusy(true);
     setTransportError(null);
     try {
-      const result = await conciergeTransport.send(visitor, message);
+      const result = await conciergeTransport.send(visitor, message, language);
       setMessages(previous => [
         ...previous,
         { id: Date.now(), role: 'visitor', text: message },
@@ -172,6 +173,11 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
             <div ref={bottomRef}/>
           </div>
           <div className="shrink-0 border-t border-[#b9945d]/25 p-4">
+            <label className="mb-2 flex items-center justify-end gap-2 text-xs text-[#c8ab79]">Chat language
+              <select aria-label="Chat language" value={language} onChange={e => setLanguage(e.target.value)} className="rounded-lg border border-[#b9945d]/35 bg-[#191611] px-2 py-1 text-[#f2eadc]">
+                <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="pt">Português</option><option value="zh">中文</option>
+              </select>
+            </label>
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
               <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-sm text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
               <button type="submit" disabled={!chatEnabled || busy || !session || !draft.trim()} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
