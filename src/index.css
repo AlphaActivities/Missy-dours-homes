@@ -543,20 +543,39 @@
   box-shadow: 0 0 0 2px rgba(196, 164, 106, 0.7) !important;
 }
 
-/* Desktop-only subtle metallic breathing for About accent rule. */
+/* About accent: a lively metallic highlight travels THROUGH a fixed 2px rule.
+   No filter, shadow, transform or height animation; width and thickness stay constant. */
 @media (min-width: 1024px) {
   .about-gold-breathe {
-    background-image: linear-gradient(90deg, #9e7028 0%, #d4af37 34%, #fff0b7 56%, #bd8b32 78%, transparent 100%);
-    background-size: 180% 100%;
-    animation: aboutGoldBreathing 5.5s ease-in-out infinite;
+    height: 2px;
+    overflow: hidden;
+    background-image: linear-gradient(
+      90deg,
+      #76501e 0%,
+      #a57929 12%,
+      #e2b84d 22%,
+      #fff5bd 28%,
+      #ffe07d 33%,
+      #ac7827 43%,
+      #6b481c 53%,
+      #d4a638 67%,
+      #fff1a2 74%,
+      #98691f 83%,
+      #76501e 100%
+    );
+    background-size: 240% 100%;
+    animation: aboutGoldTravel 3s linear infinite;
   }
 }
 
-@keyframes aboutGoldBreathing {
-  0%, 100% { background-position: 0% 50%; filter: brightness(0.85); }
-  50% { background-position: 100% 50%; filter: brightness(1.2); }
+@keyframes aboutGoldTravel {
+  from { background-position: 100% 50%; }
+  to { background-position: 0% 50%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .about-gold-breathe { animation: none; filter: none; }
+  .about-gold-breathe {
+    animation: none;
+    background-position: 50% 50%;
+  }
 }
