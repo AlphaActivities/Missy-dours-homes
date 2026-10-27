@@ -14,7 +14,9 @@ export default {
     const enc = new TextEncoder();
     const expected = enc.encode(secret);
     const presented = enc.encode(candidate);
-    if (expected.length !== presented.length || !crypto.subtle.timingSafeEqual(expected, presented)) return json({ error: 'Unauthorized' }, 401);
+    let mismatch = expected.length ^ presented.length;
+    for (let i = 0; i < Math.max(expected.length, presented.length); i++) mismatch |= (expected[i] || 0) ^ (presented[i] || 0);
+    if (mismatch !== 0) return json({ error: 'Unauthorized' }, 401);
     const raw = await request.text();
     if (raw.length > 10000) return json({ error: 'Too large' }, 413);
     let body;
