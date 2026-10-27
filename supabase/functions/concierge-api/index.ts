@@ -65,6 +65,8 @@ Deno.serve(async req=>{
   const {data:requested,error:requestError}=await db.rpc('ai_concierge_request_human',{p_conversation:chat.id,p_token_hash:hash,p_message:note});
   if(requestError)return answer({error:'Could not request a team member'},503,origin);
   if(requested!==true)return answer({error:'Conversation status changed'},409,origin);
+  const task=await db.rpc('ai_concierge_create_handoff_task',{p_conversation:chat.id});
+  if(task.error) console.error('Handoff task creation failed',task.error.code);
   return answer({status:'waiting_human',conversation_id:chat.id},200,origin);
  }
  if(url.pathname.endsWith('/sync')) {
