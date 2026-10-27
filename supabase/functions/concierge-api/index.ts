@@ -115,6 +115,20 @@ Deno.serve(async req=>{
  });
  if(saveError)return answer({error:'Could not save chat. Please try again.'},503,origin);
  if(saved!==true)return answer({error:'Session expired or the conversation was transferred to Missy’s team.'},409,origin);
+ if(language!=='en') {
+  try {
+    const translationResponse=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},
+      body:JSON.stringify({task:'translate',language,source:message.trim(),messages:[{role:'user',content:message.trim()}]}),signal:AbortSignal.timeout(12000)});
+    if(translationResponse.ok) {
+      const translated=await translationResponse.json() as {translation?:unknown};
+      if(typeof translated.translation==='string'&&translated.translation.trim()) {
+        const latest=await db.from('ai_conversation_messages').select('id').eq('conversation_id',chat.id).eq('sender','visitor').eq('body',message.trim()).order('created_at',{ascending:false}).limit(1).maybeSingle();
+        if(latest.data?.id) await db.rpc('ai_concierge_update_translation',{p_conversation:chat.id,p_message:latest.data.id,p_language:language,p_english:translated.translation});
+      }
+    }
+  } catch { /* Never block a successfully saved visitor conversation for translation. */ }
+ }
+
  // Conservative, explainable internal triage only. Never assume budget or purchase readiness.
  const lower=message.toLowerCase();
  const urgent=/\\b(today|tomorrow|this week|asap|ready to tour|schedule a showing|make an offer|under contract|closing soon)\\b/i.test(lower);
