@@ -22,6 +22,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
   const [transportError, setTransportError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'ai'|'human'|'waiting_human'|'closed'>('ai');
   const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '0x4AAAAAAFoyCod-DYcyxjUw');
   const sessionRef = useRef<VisitorSession | null>(null);
   // UI-only feature flag. This is not a security boundary.
@@ -45,6 +46,27 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   }, [open, onOpenChange]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ block: 'nearest' }); }, [messages, open]);
+  useEffect(() => {
+    if (!open || !session || !chatEnabled) return;
+    let current = true;
+    const refresh = async () => {
+      try {
+        const result = await conciergeTransport.sync(session);
+        if (!current) return;
+        setMode(result.status);
+        setMessages([
+          INITIAL[0],
+          ...result.messages.filter(m => m.sender !== 'system').map((m, i) => ({
+            id: i + 1, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const,
+            text: m.body,
+          })),
+        ]);
+      } catch { /* Keep current display on transient sync error. */ }
+    };
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 5000);
+    return () => { current = false; window.clearInterval(interval); };
+  }, [open, session, chatEnabled]);
 
   useEffect(() => {
     if (!open) return;
@@ -88,7 +110,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
       setMessages(previous => [
         ...previous,
         { id: Date.now(), role: 'visitor', text: message },
-        { id: Date.now() + 1, role: 'concierge', text: result.reply }
+        ...(result.reply ? [{ id: Date.now() + 1, role: 'concierge' as const, text: result.reply }] : [])
       ]);
       setDraft('');
     } catch (error) {
@@ -129,6 +151,8 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
               <a href="/#contact" className="mt-2 block font-semibold underline underline-offset-4">Contact Missy</a>
             </div>}
             {chatEnabled && !session && <TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} />}
+            {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation.</p>}
+            {mode === 'waiting_human' && <p className="text-xs text-[#eacb99]">Waiting for a team member.</p>}
             {busy && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
             <div ref={bottomRef}/>
