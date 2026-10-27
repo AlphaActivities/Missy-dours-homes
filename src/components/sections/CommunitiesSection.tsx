@@ -55,7 +55,7 @@ export default function CommunitiesSection() {
                 Explore The Areas
               </p>
               <h2 className="mt-3 text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight text-neutral-900">
-                Signature <span className="text-[#C4A46A]">Communities</span>
+                Signature <span className="text-[#C79B4B]">Communities</span>
               </h2>
             </div>
             <p className="max-w-xl text-sm md:text-base text-neutral-600">
