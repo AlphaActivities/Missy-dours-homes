@@ -56,6 +56,7 @@ Deno.serve(async req=>{
  const {data:chat,error:findErr}=await db.from('ai_conversations').select('id,status,visitor_expires_at').eq('visitor_token_hash',hash).maybeSingle();
  if(findErr||!chat)return answer({error:'Unauthorized'},401,origin);
  if(!chat.visitor_expires_at || new Date(chat.visitor_expires_at).getTime()<=Date.now())return answer({error:'Session expired. Please start a new conversation.'},401,origin);
+ const language=typeof body.language==='string' && ['en','es','fr','pt','zh'].includes(body.language)?body.language:'en';
  if(url.pathname.endsWith('/handoff')) {
   if(chat.status!=='ai')return answer({error:'This conversation has already been transferred.'},409,origin);
   const note=typeof body.message==='string'?body.message.trim():'I would like to speak with Missy’s team.';
@@ -82,6 +83,21 @@ Deno.serve(async req=>{
   const {data:committed,error:commitError}=await db.rpc('ai_concierge_commit_visitor_human',{p_conversation:chat.id,p_token_hash:hash,p_user:visitorMessage.trim()});
   if(commitError)return answer({error:'Could not save message'},503,origin);
   if(committed!==true)return answer({error:'Conversation changed. Refresh chat.'},409,origin);
+  if(language!=='en') {
+   try {
+    const aiUrl=Deno.env.get('MISSY_CLOUDFLARE_AI_URL'), aiSecret=Deno.env.get('MISSY_CLOUDFLARE_BRIDGE_SECRET');
+    if(aiUrl&&aiSecret) {
+     const tr=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},body:JSON.stringify({task:'translate',language,source:visitorMessage.trim(),messages:[{role:'user',content:visitorMessage.trim()}]}),signal:AbortSignal.timeout(12000)});
+     if(tr.ok) {
+      const payload=await tr.json() as {translation?:unknown};
+      if(typeof payload.translation==='string'&&payload.translation.trim()) {
+       const recent=await db.from('ai_conversation_messages').select('id').eq('conversation_id',chat.id).eq('sender','visitor').eq('body',visitorMessage.trim()).order('created_at',{ascending:false}).limit(1).maybeSingle();
+       if(recent.data?.id)await db.rpc('ai_concierge_update_translation',{p_conversation:chat.id,p_message:recent.data.id,p_language:language,p_english:payload.translation});
+      }
+     }
+    }
+   }catch {/* Keep human-mode message delivery independent of translation. */}
+  }
   return answer({status:'human',saved:true,conversation_id:chat.id},200,origin);
  }
  if(chat.status!=='ai')return answer({error:'Conversation is awaiting Missy’s team'},409,origin);
@@ -96,7 +112,7 @@ Deno.serve(async req=>{
   .select('sender,body').eq('conversation_id',chat.id).in('sender',['visitor','ai'])
   .order('created_at',{ascending:false}).limit(10);
  if(historyError)return answer({error:'Could not load conversation'},503,origin);
- const language=typeof body.language==='string' && ['en','es','fr','pt','zh'].includes(body.language)?body.language:'en';
+
  const messages=[...(history??[]).reverse().map(x=>({role:x.sender==='ai'?'assistant':'user',content:x.body})),{role:'user',content:message.trim()}];
  let reply:string;
  try {
