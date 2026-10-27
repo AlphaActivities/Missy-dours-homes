@@ -6,6 +6,7 @@ type Message = { id: number; role: 'concierge' | 'visitor'; text: string };
 const GREETING = 'Welcome to Missy Dours Homes. How can I help you imagine the life that awaits?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const SESSION_KEY = 'missy_concierge_visitor_session_v1';
+const LANGUAGE_KEY = 'missy_concierge_language_v1';
 const SESSION_LIFETIME = 24 * 60 * 60 * 1000;
 
 /**
@@ -16,7 +17,10 @@ const SESSION_LIFETIME = 24 * 60 * 60 * 1000;
 export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState(() => {
+    const saved = sessionStorage.getItem(LANGUAGE_KEY);
+    return saved && ['en','es','fr','pt','zh'].includes(saved) ? saved : 'en';
+  });
   const [messages, setMessages] = useState<Message[]>(INITIAL);
   const [invitation, setInvitation] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -30,6 +34,8 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   const sessionRef = useRef<VisitorSession | null>(null);
   // UI-only feature flag. This is not a security boundary.
   const chatEnabled = import.meta.env.VITE_CONCIERGE_CHAT_ENABLED === 'true' && Boolean(turnstileSiteKey); // Server additionally requires private enable flag.
+
+  useEffect(() => { sessionStorage.setItem(LANGUAGE_KEY, language); }, [language]);
 
   useEffect(() => {
     if (!chatEnabled) return;
