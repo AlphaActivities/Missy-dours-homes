@@ -4,6 +4,7 @@ import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
 import Navbar from './components/Navbar';
 import FloatingCallButton from './components/ui/FloatingCallButton';
 import BackToTopButton from './components/ui/BackToTopButton';
+import ConciergeWidget from './components/ui/ConciergeWidget';
 import ListingTransitionOverlay from './components/ui/ListingTransitionOverlay';
 import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
@@ -23,6 +24,7 @@ function Layout() {
   const isHomePage = location.pathname === '/';
   const csInitialPageViewSentRef = useRef(false);
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set());
+  const [conciergeOpen, setConciergeOpen] = useState(false);
 
   const transitionPreview = (location.state as any)?.transitionPreview;
   const isListingDetailRoute =
@@ -116,8 +118,9 @@ function Layout() {
       {isHomePage && <GlobalVideoBackground />}
       <Navbar />
       <Outlet context={outletContext} />
-      <FloatingCallButton />
-      <BackToTopButton />
+      {!conciergeOpen && <FloatingCallButton />}
+      {!conciergeOpen && <BackToTopButton />}
+      <ConciergeWidget onOpenChange={setConciergeOpen} />
       <ListingTransitionOverlay
         isVisible={showTransition}
         heroImage={transitionPreview?.heroImage}
