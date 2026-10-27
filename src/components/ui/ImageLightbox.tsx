@@ -22,6 +22,7 @@ export default function ImageLightbox({
   const [showControls, setShowControls] = useState(true);
   const [isSwiping, setIsSwiping] = useState(false);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+  const [, setLoadedImages] = useState<Set<number>>(new Set());
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
   const touchCurrentRef = useRef({ x: 0, y: 0 });
