@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MessageCircle, X, Send, ArrowLeft, Sparkles } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { conciergeTransport, type VisitorSession } from '../../lib/conciergeTransport';
 
 type Message = { id: number; role: 'concierge' | 'visitor'; text: string };
 const GREETING = 'Welcome to Missy Dours Homes. How can I help you imagine the life that awaits?';
@@ -19,9 +19,13 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   const [dismissed, setDismissed] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
+  const [session, setSession] = useState<VisitorSession | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [transportError, setTransportError] = useState<string | null>(null);
+  const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '');
+  const sessionRef = useRef<VisitorSession | null>(null);
   // UI-only feature flag. This is not a security boundary.
-  const chatEnabled = false; // Never activate until secure chat transport is deployed and verified.
+  const chatEnabled = false; // Explicit OFF until authenticated integration and end-to-end tests pass.
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -55,12 +59,41 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
     sessionStorage.setItem('missy_concierge_invite_dismissed', '1');
   };
 
-  const sendMessage = () => {
+  // Prepared transport. The UI stays fail-closed pending bot-verification setup.
+  const beginVerifiedSession = async (challenge: string) => {
+    if (!chatEnabled || !turnstileSiteKey || busy) return;
+    setBusy(true);
+    setTransportError(null);
+    try {
+      const visitor = await conciergeTransport.start(challenge);
+      sessionRef.current = visitor;
+      setSession(visitor);
+    } catch (error) {
+      setTransportError(error instanceof Error ? error.message : 'Could not connect to the concierge.');
+    } finally { setBusy(false); }
+  };
+  void beginVerifiedSession; // Turnstile callback wiring is gated until site key is provisioned.
+  const sendMessage = async () => {
     const message = draft.trim();
-    if (!message || !chatEnabled) return;
-    // No unverified backend calls. Until messaging is wired, the composer is disabled.
-    setMessages(previous => [...previous, { id: Date.now(), role: 'visitor', text: message }]);
-    setDraft('');
+    if (!message || !chatEnabled || busy) return;
+    const visitor = sessionRef.current ?? session;
+    if (!visitor) {
+      setTransportError('Please complete verification before sending a message.');
+      return;
+    }
+    setBusy(true);
+    setTransportError(null);
+    try {
+      const result = await conciergeTransport.send(visitor, message);
+      setMessages(previous => [
+        ...previous,
+        { id: Date.now(), role: 'visitor', text: message },
+        { id: Date.now() + 1, role: 'concierge', text: result.reply }
+      ]);
+      setDraft('');
+    } catch (error) {
+      setTransportError(error instanceof Error ? error.message : 'Message not sent. Please retry.');
+    } finally { setBusy(false); }
   };
 
   return (
@@ -95,12 +128,13 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <a href="/#contact" className="mt-2 block font-semibold underline underline-offset-4">Contact Missy</a>
             </div>}
+            {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
             <div ref={bottomRef}/>
           </div>
           <div className="shrink-0 border-t border-[#b9945d]/25 p-4">
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
-              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-sm text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
-              <button type="submit" disabled={!chatEnabled || !draft.trim()} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
+              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || busy || !session} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-sm text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
+              <button type="submit" disabled={!chatEnabled || busy || !session || !draft.trim()} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
             </form>
             <p className="mt-2 text-center text-[10px] text-[#988b77]">AI information may be incomplete. Missy confirms property availability and details.</p>
           </div>
