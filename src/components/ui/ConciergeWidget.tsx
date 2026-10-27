@@ -21,7 +21,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   const bottomRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   // UI-only feature flag. This is not a security boundary.
-  const chatEnabled = import.meta.env.VITE_CONCIERGE_CHAT_ENABLED === 'true';
+  const chatEnabled = false; // Never activate until secure chat transport is deployed and verified.
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
