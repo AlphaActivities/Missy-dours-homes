@@ -24,7 +24,7 @@ Deno.serve(async req=>{
  // Feature flag fails CLOSED even for requests with valid credentials.
  if(!enabled) return answer({error:'Concierge messaging is not available yet.'},503,origin);
  const url=new URL(req.url);
- if(!['/concierge-api/session','/concierge-api/message'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
+ if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
  const raw=await req.text();
  if(raw.length>6000) return answer({error:'Request too large'},413,origin);
  let body:Record<string,unknown>;
