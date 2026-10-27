@@ -60,6 +60,20 @@ export default function DashboardLayout() {
     document.body.classList.remove('overflow-hidden');
   }, []);
 
+  // Provide a separate installable identity for the staff CRM only.
+  useEffect(() => {
+    const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (!manifest) return;
+    const previous = manifest.href;
+    const originalTitle = document.title;
+    manifest.href = '/missy-crm.webmanifest';
+    document.title = 'Missy Dours Private CRM';
+    return () => {
+      manifest.href = previous;
+      document.title = originalTitle;
+    };
+  }, []);
+
   // Close drawer on lg+ resize
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
