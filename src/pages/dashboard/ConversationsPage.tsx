@@ -26,6 +26,7 @@ export default function ConversationsPage() {
  const [taskBusy,setTaskBusy]=useState<string|null>(null);
  const [alertsEnabled,setAlertsEnabled]=useState(false);
  const seenPendingRef=useRef<Set<string>|null>(null);
+ const seenEscalatedRef=useRef<Set<string>|null>(null);
  const alertsEnabledRef=useRef(false);
  const enableAlerts=async()=>{if(!('Notification' in window)){setError('This browser does not support notifications.');return;}const status=await Notification.requestPermission();setAlertsEnabled(status==='granted');alertsEnabledRef.current=status==='granted';if(status!=='granted')setError('Notifications were not enabled. The CRM attention queue still works.');};
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
@@ -43,6 +44,16 @@ export default function ConversationsPage() {
       }
     }
     seenPendingRef.current=new Set(waiting.map(t=>t.id));
+  }
+  const escalated=(tasks.data??[]).filter(t=>t.status==='pending' && Boolean(t.escalated_at));
+  if(seenEscalatedRef.current===null)seenEscalatedRef.current=new Set(escalated.map(t=>t.id));
+  else {
+   if(alertsEnabledRef.current && 'Notification' in window && Notification.permission==='granted') {
+    for(const task of escalated) if(!seenEscalatedRef.current.has(task.id)) {
+     new Notification('Missy Dours Concierge · Overdue request',{body:'An urgent visitor request is overdue.',tag:'missy-concierge-overdue-'+task.id});
+    }
+   }
+   seenEscalatedRef.current=new Set(escalated.map(t=>t.id));
   }
   setPendingTasks(tasks.data??[]);
  }catch(e){setError(e instanceof Error?e.message:'Could not load conversations');}finally{setLoading(false);}};
