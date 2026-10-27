@@ -5,6 +5,8 @@ import { conciergeTransport, type VisitorSession } from '../../lib/conciergeTran
 type Message = { id: number; role: 'concierge' | 'visitor'; text: string };
 const GREETING = 'Welcome to Missy Dours Homes. How can I help you imagine the life that awaits?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
+const SESSION_KEY = 'missy_concierge_visitor_session_v1';
+const SESSION_LIFETIME = 24 * 60 * 60 * 1000;
 
 /**
  * Website-native concierge interface. Messaging remains intentionally disabled
@@ -28,6 +30,23 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   const sessionRef = useRef<VisitorSession | null>(null);
   // UI-only feature flag. This is not a security boundary.
   const chatEnabled = import.meta.env.VITE_CONCIERGE_CHAT_ENABLED === 'true' && Boolean(turnstileSiteKey); // Server additionally requires private enable flag.
+
+  useEffect(() => {
+    if (!chatEnabled) return;
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as {conversation_id?:string;token?:string;created_at?:number};
+      if (typeof saved.conversation_id !== 'string' || !/^[0-9a-f-]{36}$/i.test(saved.conversation_id)
+        || typeof saved.token !== 'string' || !/^[a-f0-9]{64}$/.test(saved.token)
+        || typeof saved.created_at !== 'number' || Date.now()-saved.created_at >= SESSION_LIFETIME || saved.created_at>Date.now()) {
+        sessionStorage.removeItem(SESSION_KEY);return;
+      }
+      const recovered = {conversation_id:saved.conversation_id,token:saved.token};
+      sessionRef.current = recovered;
+      setSession(recovered);
+    } catch {sessionStorage.removeItem(SESSION_KEY); }
+  }, [chatEnabled]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -62,7 +81,15 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
             text: m.body,
           })),
         ]);
-      } catch { /* Keep current display on transient sync error. */ }
+      } catch (error) {
+        if(error instanceof Error && /unauthorized|session expired/i.test(error.message)){
+          sessionStorage.removeItem(SESSION_KEY);
+          sessionRef.current=null;
+          setSession(null);
+          setMode('ai');
+          setMessages(INITIAL);
+        }
+      }
     };
     void refresh();
     const interval = window.setInterval(() => void refresh(), 5000);
@@ -90,6 +117,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
     try {
       const visitor = await conciergeTransport.start(challenge);
       sessionRef.current = visitor;
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({...visitor,created_at:Date.now()}));
       setSession(visitor);
     } catch (error) {
       setTransportError(error instanceof Error ? error.message : 'Could not connect to the concierge.');
