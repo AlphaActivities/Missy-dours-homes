@@ -44,9 +44,22 @@ export default function ConversationsPage() {
   setPendingTasks(tasks.data??[]);
  }catch(e){setError(e instanceof Error?e.message:'Could not load conversations');}finally{setLoading(false);}};
  useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(),15000);return()=>window.clearInterval(timer);},[]);
- useEffect(()=>{if(!selected){setMessages([]);return;}let active=true;setLoadingMessages(true);
-  void supabase.from('ai_conversation_messages').select('id,sender,body,translated_body,original_language,created_at,sender_actor').eq('conversation_id',selected).order('created_at',{ascending:true}).limit(500).then(({data,error})=>{if(!active)return;setMessages((data??[]) as Message[]);setError(error?.message??null);setLoadingMessages(false);});
-  return()=>{active=false;};
+ useEffect(()=>{
+  if(!selected){setMessages([]);return;}
+  let active=true;
+  const fetchTranscript=async()=>{
+   const {data,error}=await supabase.from('ai_conversation_messages')
+    .select('id,sender,body,translated_body,original_language,created_at,sender_actor')
+    .eq('conversation_id',selected).order('created_at',{ascending:false}).limit(500);
+   if(!active)return;
+   if(error)setError(error.message);
+   else setMessages(((data??[]) as Message[]).reverse());
+   setLoadingMessages(false);
+  };
+  setLoadingMessages(true);
+  void fetchTranscript();
+  const interval=window.setInterval(()=>void fetchTranscript(),5000);
+  return()=>{active=false;window.clearInterval(interval);};
  },[selected]);
  const active=items.find(c=>c.id===selected);
  const claim=async()=>{if(!selected||actionBusy)return;setActionBusy(true);setError(null);try{const {data,error}=await supabase.rpc('ai_concierge_claim',{p_conversation:selected});if(error)throw error;if(data!==true)throw new Error('Conversation was already claimed by another team member. Refresh to see the latest status.');await refresh();}catch(e){setError(e instanceof Error?e.message:'Could not claim conversation');}finally{setActionBusy(false);}};
