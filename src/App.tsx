@@ -1,3 +1,4 @@
+declare global { interface Window { _uxa?: unknown[] } }
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
