@@ -1,5 +1,6 @@
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import SecondaryActiveListingsCTA from "../ui/SecondaryActiveListingsCTA";
+import { motion, useReducedMotion } from "framer-motion";
 
 const listings = [
   {
@@ -29,6 +30,7 @@ const listings = [
 ];
 
 export default function FeaturedListingsSection() {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <section
       id="featured-listings"
@@ -107,9 +109,13 @@ export default function FeaturedListingsSection() {
         </div>
 
         {/* SECONDARY CTA */}
-        <LuxFadeIn delay={0.35}>
+        <motion.div
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.9, ease: "easeOut", delay: prefersReducedMotion ? 0 : 0.35 }}
+        >
           <SecondaryActiveListingsCTA tier="luxury" />
-        </LuxFadeIn>
+        </motion.div>
       </div>
     </section>
   );
