@@ -46,15 +46,16 @@ Deno.serve(async req=>{
   const limited=await db.rpc('ai_concierge_consume_limit',{p_bucket:'session:'+ipKey,p_max:8,p_window_seconds:3600});
   if(limited.error||limited.data!==true)return answer({error:'Please try again later'},429,origin);
   const token=randomToken(), hash=await digest(token);
-  const {data,error}=await db.from('ai_conversations').insert({visitor_token_hash:hash,title:'New conversation',status:'ai'}).select('id').single();
+  const {data,error}=await db.from('ai_conversations').insert({visitor_token_hash:hash,visitor_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),title:'New conversation',status:'ai'}).select('id').single();
   if(error||!data)return answer({error:'Could not start chat'},503,origin);
   return answer({conversation_id:data.id,token},201,origin);
  }
  const token=authorization.startsWith('Bearer ')?authorization.slice(7):'';
  if(!/^[a-f0-9]{64}$/.test(token))return answer({error:'Unauthorized'},401,origin);
  const hash=await digest(token);
- const {data:chat,error:findErr}=await db.from('ai_conversations').select('id,status').eq('visitor_token_hash',hash).maybeSingle();
+ const {data:chat,error:findErr}=await db.from('ai_conversations').select('id,status,visitor_expires_at').eq('visitor_token_hash',hash).maybeSingle();
  if(findErr||!chat)return answer({error:'Unauthorized'},401,origin);
+ if(!chat.visitor_expires_at || new Date(chat.visitor_expires_at).getTime()<=Date.now())return answer({error:'Session expired. Please start a new conversation.'},401,origin);
  if(chat.status!=='ai')return answer({error:'Conversation is awaiting Missy’s team'},409,origin);
  const message=body.message;
  if(typeof message!=='string'||message.trim().length<1||message.length>2000)return answer({error:'Message must be between 1 and 2000 characters'},400,origin);
@@ -77,14 +78,11 @@ Deno.serve(async req=>{
   if(typeof payload.reply!=='string'||!payload.reply.trim())return answer({error:'AI service is temporarily unavailable'},503,origin);
   reply=payload.reply.trim().slice(0,5000);
  } catch {return answer({error:'AI service is temporarily unavailable'},503,origin);}
- // Do not let AI continue after a staff takeover during the inference call.
- const {data:current}=await db.from('ai_conversations').select('status').eq('id',chat.id).single();
- if(current?.status!=='ai')return answer({error:'Conversation is awaiting Missy’s team'},409,origin);
- const {error:saveError}=await db.from('ai_conversation_messages').insert([
-  {conversation_id:chat.id,sender:'visitor',body:message.trim()},
-  {conversation_id:chat.id,sender:'ai',body:reply}
- ]);
+ // Transactional row lock prevents AI from saving after staff takeover.
+ const {data:saved,error:saveError}=await db.rpc('ai_concierge_commit_exchange',{
+  p_conversation:chat.id,p_token_hash:hash,p_user:message.trim(),p_reply:reply
+ });
  if(saveError)return answer({error:'Could not save chat. Please try again.'},503,origin);
- await db.from('ai_conversations').update({last_message_at:new Date().toISOString(),title:message.trim().slice(0,90)}).eq('id',chat.id).eq('status','ai');
+ if(saved!==true)return answer({error:'Session expired or the conversation was transferred to Missy’s team.'},409,origin);
  return answer({reply,conversation_id:chat.id},200,origin);
 });
