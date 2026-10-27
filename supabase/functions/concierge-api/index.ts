@@ -98,11 +98,12 @@ Deno.serve(async req=>{
   .select('sender,body').eq('conversation_id',chat.id).in('sender',['visitor','ai'])
   .order('created_at',{ascending:false}).limit(10);
  if(historyError)return answer({error:'Could not load conversation'},503,origin);
+ const language=typeof body.language==='string' && ['en','es','fr','pt','zh'].includes(body.language)?body.language:'en';
  const messages=[...(history??[]).reverse().map(x=>({role:x.sender==='ai'?'assistant':'user',content:x.body})),{role:'user',content:message.trim()}];
  let reply:string;
  try {
   const response=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},
-   body:JSON.stringify({messages}),signal:AbortSignal.timeout(25000)});
+   body:JSON.stringify({messages,language}),signal:AbortSignal.timeout(25000)});
   if(!response.ok) return answer({error:'AI service is temporarily unavailable'},503,origin);
   const payload=await response.json() as {reply?:unknown};
   if(typeof payload.reply!=='string'||!payload.reply.trim())return answer({error:'AI service is temporarily unavailable'},503,origin);
@@ -125,6 +126,6 @@ Deno.serve(async req=>{
  const rank:Record<string,number>={unrated:0,cold:1,warm:2,hot:3};
  const finalPriority=(rank[priority]??0)>=(rank[currentPriority]??0)?priority:currentPriority;
  const summary=[existing?.summary, 'Visitor: '+message.trim().slice(0,220)].filter(Boolean).join(' | ').slice(-1350);
- await db.rpc('ai_concierge_set_intelligence',{p_conversation:chat.id,p_summary:summary,p_priority:finalPriority,p_reason:finalPriority===priority?reason:'Previous priority retained',p_language:'en'});
+ await db.rpc('ai_concierge_set_intelligence',{p_conversation:chat.id,p_summary:summary,p_priority:finalPriority,p_reason:finalPriority===priority?reason:'Previous priority retained',p_language:language});
  return answer({reply,conversation_id:chat.id},200,origin);
 });
