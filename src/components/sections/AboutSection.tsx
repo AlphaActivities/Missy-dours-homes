@@ -59,7 +59,7 @@ export default function AboutSection() {
               {/* HEADING */}
               <h2 className="text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold tracking-tight text-[#111111]">
                 Meet{' '}
-                <span className="block text-[2.6rem] sm:text-[2.8rem] lg:text-[3rem] font-semibold text-[#f1d598]">
+                <span className="block text-[2.6rem] sm:text-[2.8rem] lg:text-[3rem] font-semibold text-[#B88A35]">
                   Missy Dours
                 </span>
               </h2>
