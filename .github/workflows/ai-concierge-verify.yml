@@ -22,4 +22,5 @@ jobs:
       - name: TypeScript typecheck
         run: npm run typecheck
       - name: Production build
+        if: always()
         run: npm run build
