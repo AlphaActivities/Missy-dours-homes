@@ -45,15 +45,15 @@ export default function BackToTopButton() {
       onClick={handleClick}
       tabIndex={visible ? 0 : -1}
       aria-hidden={!visible}
-      className={`md:hidden fixed bottom-7 left-6 z-50 flex h-14 w-14 items-center justify-center
-        rounded-full border border-[#e6c98e]/70 bg-black/90 text-[#f5e3b6]
-        shadow-[0_10px_35px_rgba(0,0,0,0.55),0_0_14px_rgba(196,164,106,0.22)]
+      className={`md:hidden fixed bottom-6 left-6 z-50 flex h-16 w-16 items-center justify-center
+        rounded-full border-2 border-[#D5B16D] bg-gradient-to-br from-[#2B251C]/95 to-[#080808]/95 text-[#EBCB83]
+        shadow-[0_10px_35px_rgba(0,0,0,0.58),0_0_20px_rgba(213,177,109,0.30)]
         backdrop-blur-xl transition-all duration-300
-        hover:border-[#f5e3b6] hover:bg-[#302617] active:scale-95
+        hover:border-[#F0D69D] hover:shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_25px_rgba(213,177,109,0.43)] active:scale-95
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]
         ${visible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-3 pointer-events-none'}`}
     >
-      <ArrowUp className="h-6 w-6" strokeWidth={2.25} aria-hidden="true" />
+      <ArrowUp className="h-7 w-7" strokeWidth={2.25} aria-hidden="true" />
     </button>
   );
 }
