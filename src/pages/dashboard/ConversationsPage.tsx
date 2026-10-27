@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MessageCircle, RefreshCw, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -21,12 +21,26 @@ export default function ConversationsPage() {
  const [actionBusy,setActionBusy]=useState(false);
  const [reply,setReply]=useState('');
  const [taskBusy,setTaskBusy]=useState<string|null>(null);
+ const [alertsEnabled,setAlertsEnabled]=useState(false);
+ const seenPendingRef=useRef<Set<string>|null>(null);
+ const enableAlerts=async()=>{if(!('Notification' in window)){setError('This browser does not support notifications.');return;}const status=await Notification.requestPermission();setAlertsEnabled(status==='granted');if(status!=='granted')setError('Notifications were not enabled. The CRM attention queue still works.');};
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
  const refresh=async()=>{setLoading(true);setError(null);try{
   const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
   if(error)throw error;setItems((data??[]) as Conversation[]);
   const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,escalation_due_at,escalated_at,urgency,status').in('status',['pending','claimed']).order('due_at',{ascending:true}).limit(50);
-  if(tasks.error)throw tasks.error;setPendingTasks(tasks.data??[]);
+  if(tasks.error)throw tasks.error;
+  const waiting=(tasks.data??[]).filter(t=>t.status==='pending');
+  if(seenPendingRef.current===null)seenPendingRef.current=new Set(waiting.map(t=>t.id));
+  else {
+    if(alertsEnabled && document.visibilityState==='visible' && 'Notification' in window && Notification.permission==='granted') {
+      for(const task of waiting) if(!seenPendingRef.current.has(task.id)) {
+        new Notification('Missy Dours Concierge', {body:'A new visitor is waiting for a team member.',tag:'missy-concierge-'+task.id});
+      }
+    }
+    seenPendingRef.current=new Set(waiting.map(t=>t.id));
+  }
+  setPendingTasks(tasks.data??[]);
  }catch(e){setError(e instanceof Error?e.message:'Could not load conversations');}finally{setLoading(false);}};
  useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(),15000);return()=>window.clearInterval(timer);},[]);
  useEffect(()=>{if(!selected){setMessages([]);return;}let active=true;setLoadingMessages(true);
@@ -43,6 +57,7 @@ export default function ConversationsPage() {
  return <div className="px-4 py-7 md:px-8 md:py-9 max-w-7xl mx-auto" style={{color:'var(--ds-text-primary)'}}>
   <div className="flex flex-wrap gap-3 items-center justify-between mb-6">
    <div><div className="flex items-center gap-2 mb-1"><MessageCircle size={19} style={{color:'var(--ds-gold)'}}/><h1 className="text-2xl" style={{fontFamily:"'Playfair Display', Georgia, serif"}}>Conversations</h1></div><p className="text-sm" style={{color:'var(--ds-text-secondary)'}}>Private concierge inbox · Staff messaging · Development preview</p></div>
+   <button type="button" onClick={()=>void enableAlerts()} className="rounded-lg border border-[#c8a96e]/40 px-3 py-2 text-sm" aria-label="Enable new handoff notifications">{alertsEnabled?'Alerts enabled':'Enable alerts'}</button>
    <button onClick={()=>void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15}/>{loading?'Loading…':'Refresh'}</button>
   </div>
   {error&&<p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
