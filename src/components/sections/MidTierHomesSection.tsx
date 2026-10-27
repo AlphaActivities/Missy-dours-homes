@@ -1,5 +1,6 @@
 import { LuxFadeIn } from "../ui/LuxFadeIn";
 import SecondaryActiveListingsCTA from "../ui/SecondaryActiveListingsCTA";
+import { motion, useReducedMotion } from "framer-motion";
 
 const midTierListings = [
   {
@@ -29,6 +30,7 @@ const midTierListings = [
 ];
 
 export default function MidTierHomesSection() {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <section
       id="mid-tier-homes"
@@ -106,9 +108,13 @@ export default function MidTierHomesSection() {
         </div>
 
         {/* SECONDARY CTA */}
-        <LuxFadeIn delay={0.35}>
+        <motion.div
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.9, ease: "easeOut", delay: prefersReducedMotion ? 0 : 0.35 }}
+        >
           <SecondaryActiveListingsCTA tier="mid" />
-        </LuxFadeIn>
+        </motion.div>
       </div>
     </section>
   );
