@@ -24,7 +24,7 @@ Deno.serve(async req=>{
  // Feature flag fails CLOSED even for requests with valid credentials.
  if(!enabled) return answer({error:'Concierge messaging is not available yet.'},503,origin);
  const url=new URL(req.url);
- if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
+ if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
  const raw=await req.text();
  if(raw.length>6000) return answer({error:'Request too large'},413,origin);
  let body:Record<string,unknown>;
@@ -56,6 +56,23 @@ Deno.serve(async req=>{
  const {data:chat,error:findErr}=await db.from('ai_conversations').select('id,status,visitor_expires_at').eq('visitor_token_hash',hash).maybeSingle();
  if(findErr||!chat)return answer({error:'Unauthorized'},401,origin);
  if(!chat.visitor_expires_at || new Date(chat.visitor_expires_at).getTime()<=Date.now())return answer({error:'Session expired. Please start a new conversation.'},401,origin);
+ if(url.pathname.endsWith('/sync')) {
+  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'sync:'+hash,p_max:120,p_window_seconds:3600});
+  if(limit.error||limit.data!==true)return answer({error:'Refresh limit reached'},429,origin);
+  const {data:recent,error:syncError}=await db.from('ai_conversation_messages').select('id,sender,body,created_at,sender_actor').eq('conversation_id',chat.id).order('created_at',{ascending:true}).limit(150);
+  if(syncError)return answer({error:'Could not refresh conversation'},503,origin);
+  return answer({status:chat.status,messages:recent??[]},200,origin);
+ }
+ if(chat.status==='human') {
+  const visitorMessage=body.message;
+  if(typeof visitorMessage!=='string'||visitorMessage.trim().length<1||visitorMessage.length>2000)return answer({error:'Invalid message'},400,origin);
+  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'human:'+hash,p_max:20,p_window_seconds:3600});
+  if(limit.error||limit.data!==true)return answer({error:'Message limit reached'},429,origin);
+  const {data:committed,error:commitError}=await db.rpc('ai_concierge_commit_visitor_human',{p_conversation:chat.id,p_token_hash:hash,p_user:visitorMessage.trim()});
+  if(commitError)return answer({error:'Could not save message'},503,origin);
+  if(committed!==true)return answer({error:'Conversation changed. Refresh chat.'},409,origin);
+  return answer({status:'human',saved:true,conversation_id:chat.id},200,origin);
+ }
  if(chat.status!=='ai')return answer({error:'Conversation is awaiting Missy’s team'},409,origin);
  const message=body.message;
  if(typeof message!=='string'||message.trim().length<1||message.length>2000)return answer({error:'Message must be between 1 and 2000 characters'},400,origin);
