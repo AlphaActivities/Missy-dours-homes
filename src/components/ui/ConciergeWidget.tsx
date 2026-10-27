@@ -53,7 +53,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
     const refresh = async () => {
       try {
         const result = await conciergeTransport.sync(session);
-        if (!current) return;
+        if (!current || busy) return;
         setMode(result.status);
         setMessages([
           INITIAL[0],
@@ -67,7 +67,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
     void refresh();
     const interval = window.setInterval(() => void refresh(), 5000);
     return () => { current = false; window.clearInterval(interval); };
-  }, [open, session, chatEnabled]);
+  }, [open, session, chatEnabled, busy]);
 
   useEffect(() => {
     if (!open) return;
