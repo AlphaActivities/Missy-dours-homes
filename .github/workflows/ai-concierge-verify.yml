@@ -24,3 +24,27 @@ jobs:
       - name: Production build
         if: always()
         run: npm run build
+      - name: External Cloudflare health smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 2 --max-time 20 \
+            'https://missy-concierge-foundation.gta-alpha-activities.workers.dev/health' \
+            -o /tmp/concierge-health.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/concierge-health.json'))
+          assert x.get('status')=='ready'
+          assert x.get('ai') is True
+          assert x.get('messageEndpointConfigured') is True
+          print('Worker health and bindings verified')
+          PY
+      - name: Reject origin-less Supabase requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-api.json -w '%{http_code}' -X POST \
+            'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-api/session' \
+            -H 'Content-Type: application/json' -d '{"challenge":"invalid-test-token"}')
+          test "$status" = 403 -o "$status" = 401
+          echo "API correctly rejected untrusted-origin request with HTTP $status"
