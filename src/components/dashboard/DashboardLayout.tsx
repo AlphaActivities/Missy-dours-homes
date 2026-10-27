@@ -48,7 +48,7 @@ function UserAvatar({
 }
 
 export default function DashboardLayout() {
-  const { user, signOut, avatarUrl } = useAuth();
+  const { signOut, avatarUrl } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isLoginRoute = pathname === '/dashboard/login';
