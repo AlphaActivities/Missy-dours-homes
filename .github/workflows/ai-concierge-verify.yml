@@ -64,3 +64,13 @@ jobs:
           assert 'not available yet' in x.get('error',''), 'Unexpected error; feature flag may not be disabled'
           print('PASS: server-side concierge flag is still disabled')
           PY
+      - name: Reject unauthorized AI Worker requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/worker-denied.json -w '%{http_code}' -X POST \
+            'https://missy-concierge-foundation.gta-alpha-activities.workers.dev/internal/reply' \
+            -H 'Content-Type: application/json' \
+            -d '{"messages":[{"role":"user","content":"security check"}]}')
+          test "$status" = 401
+          echo "PASS: Worker rejects unauthenticated AI inference"
