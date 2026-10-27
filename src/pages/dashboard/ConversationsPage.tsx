@@ -24,7 +24,7 @@ export default function ConversationsPage() {
   const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
   if(error)throw error;setItems((data??[]) as Conversation[]);
  }catch(e){setError(e instanceof Error?e.message:'Could not load conversations');}finally{setLoading(false);}};
- useEffect(()=>{void refresh();},[]);
+ useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(),15000);return()=>window.clearInterval(timer);},[]);
  useEffect(()=>{if(!selected){setMessages([]);return;}let active=true;setLoadingMessages(true);
   void supabase.from('ai_conversation_messages').select('id,sender,body,translated_body,original_language,created_at,sender_actor').eq('conversation_id',selected).order('created_at',{ascending:true}).limit(500).then(({data,error})=>{if(!active)return;setMessages((data??[]) as Message[]);setError(error?.message??null);setLoadingMessages(false);});
   return()=>{active=false;};
@@ -34,6 +34,7 @@ export default function ConversationsPage() {
  const sendHuman=async()=>{if(!selected||!reply.trim()||actionBusy)return;setActionBusy(true);setError(null);try{const {data,error}=await supabase.rpc('ai_concierge_send_human',{p_conversation:selected,p_message:reply.trim()});if(error)throw error;if(data!==true)throw new Error('You are not the assigned agent. Refresh the conversation.');setReply('');const result=await supabase.from('ai_conversation_messages').select('id,sender,body,translated_body,original_language,created_at,sender_actor').eq('conversation_id',selected).order('created_at',{ascending:true}).limit(500);if(result.error)throw result.error;setMessages((result.data??[]) as Message[]);}catch(e){setError(e instanceof Error?e.message:'Unable to send');}finally{setActionBusy(false);}};
  const returnToAi=async()=>{if(!selected||actionBusy)return;setActionBusy(true);try{const {data,error}=await supabase.rpc('ai_concierge_return_to_ai',{p_conversation:selected});if(error)throw error;if(data!==true)throw new Error('Only the assigned agent can return the chat to AI');await refresh();}catch(e){setError(e instanceof Error?e.message:'Unable to return to AI');}finally{setActionBusy(false);}};
  useEffect(()=>{if(!selected)return;let alive=true;const poll=async()=>{const {data,error}=await supabase.from('ai_conversation_messages').select('id,sender,body,translated_body,original_language,created_at,sender_actor').eq('conversation_id',selected).order('created_at',{ascending:true}).limit(500);if(alive&&!error)setMessages((data??[]) as Message[]);};const timer=setInterval(()=>void poll(),5000);return()=>{alive=false;clearInterval(timer);};},[selected]);
+ const waitingCount=items.filter(c=>c.status==='waiting_human').length;
  const filtered=items.filter(c=>(filter==='all'||c.status===filter)&&[c.title,c.summary??'',c.priority,c.language_code].join(' ').toLowerCase().includes(search.toLowerCase()));
  return <div className="px-4 py-7 md:px-8 md:py-9 max-w-7xl mx-auto" style={{color:'var(--ds-text-primary)'}}>
   <div className="flex flex-wrap gap-3 items-center justify-between mb-6">
