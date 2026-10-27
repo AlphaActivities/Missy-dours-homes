@@ -543,38 +543,48 @@
   box-shadow: 0 0 0 2px rgba(196, 164, 106, 0.7) !important;
 }
 
-/* About: narrow, high-contrast gold flash travels across a stationary 2px line. */
+/* Desktop-only stationary luxury gold line with traveling sheen and contained halo. */
 @media (min-width: 1024px) {
-  .about-gold-breathe {
-    height: 2px;
+  .about-gold-luxury {
     position: relative;
-    overflow: hidden;
-    background: linear-gradient(90deg, #704617, #a57422 48%, #704617);
+    isolation: isolate;
+    overflow: visible;
+    height: 2px;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #704617 0%, #ac7724 25%, #d5a43a 50%, #a57225 75%, #704617 100%);
+    box-shadow: 0 0 7px rgba(166, 112, 30, 0.35);
   }
-  .about-gold-breathe::after {
+  .about-gold-luxury::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #8d5d1f, #f4c451, #8d5d1f);
+    opacity: 0.35;
+    transform: scaleY(2);
+    filter: blur(3px);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .about-gold-luxury::after {
     content: "";
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 0;
+    left: -42%;
     width: 42%;
-    background: linear-gradient(90deg,
-      transparent 0%,
-      #d99512 20%,
-      #ffe15a 38%,
-      #ffffff 50%,
-      #ffe15a 62%,
-      #d99512 80%,
-      transparent 100%);
-    transform: translateX(-110%);
-    animation: aboutGoldFlash 1.6s linear infinite;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent 0%, #ffdc72 22%, #fff2be 42%, #ffffff 50%, #fff2be 58%, #ffdc72 78%, transparent 100%);
+    box-shadow: 0 0 6px rgba(255, 211, 96, 0.7), 0 0 11px rgba(227, 171, 51, 0.3);
+    animation: aboutLuxurySweep 1.35s linear infinite;
     pointer-events: none;
+    z-index: 1;
   }
 }
-@keyframes aboutGoldFlash {
-  0% { left: 0; transform: translateX(-110%); }
-  100% { left: 100%; transform: translateX(0); }
+@keyframes aboutLuxurySweep {
+  from { left: -42%; }
+  to { left: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .about-gold-breathe::after { animation: none; left: 30%; transform: none; }
+  .about-gold-luxury::after { animation: none; left: 29%; }
 }
