@@ -14,6 +14,7 @@ import ProtectedRoute from './components/dashboard/ProtectedRoute';
 import LoginPage from './pages/dashboard/LoginPage';
 import DashboardOverviewPage from './pages/dashboard/DashboardOverviewPage';
 import LeadsPage from './pages/dashboard/LeadsPage';
+import ConversationsPage from './pages/dashboard/ConversationsPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 
@@ -160,6 +161,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/dashboard/conversations" element={<ProtectedRoute><ConversationsPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </AuthProvider>
