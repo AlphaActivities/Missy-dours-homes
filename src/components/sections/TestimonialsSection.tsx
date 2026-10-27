@@ -342,20 +342,26 @@ export default function TestimonialsSection() {
                   </button>
 
                   {/* DOTS */}
-                  <div className="flex items-center gap-2" role="tablist" aria-label="Review navigation">
+                  <div className="flex items-center gap-0 max-w-[calc(100vw-8rem)] overflow-x-auto" role="tablist" aria-label="Review navigation">
                     {reviews.map((review, index) => (
                       <button
                         key={review.id}
+                        type="button"
                         onClick={() => goToReview(index)}
                         role="tab"
                         aria-selected={index === activeIndex}
                         aria-label={`Go to review ${index + 1}`}
-                        className={`transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60 ${
-                          index === activeIndex
-                            ? 'w-6 h-[6px] bg-[#F5E6C8]'
-                            : 'w-[6px] h-[6px] bg-white/25 hover:bg-white/40'
-                        }`}
-                      />
+                        className="group flex h-10 min-w-8 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`block h-2 rounded-full transition-all duration-300 ${
+                            index === activeIndex
+                              ? 'w-6 bg-[#F5E6C8]'
+                              : 'w-2 bg-white/30 group-hover:bg-white/50'
+                          }`}
+                        />
+                      </button>
                     ))}
                   </div>
 
