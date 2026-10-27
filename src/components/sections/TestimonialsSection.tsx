@@ -336,7 +336,7 @@ export default function TestimonialsSection() {
                   <button
                     onClick={goPrev}
                     aria-label="Previous review"
-                    className="md:hidden flex w-9 h-9 items-center justify-center rounded-full border border-[#c29f63]/30 bg-white/[0.04] backdrop-blur-md text-[#F5E6C8]/70 hover:text-[#F5E6C8] hover:border-[#c29f63]/60 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60"
+                    className="md:hidden flex w-9 h-9 items-center justify-center rounded-full border-2 border-[#D5B16D] bg-gradient-to-br from-[#2B251C]/95 to-[#080808]/95 backdrop-blur-xl text-[#EBCB83] shadow-[0_10px_35px_rgba(0,0,0,0.58),0_0_20px_rgba(213,177,109,0.30)] hover:border-[#F0D69D] hover:shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_25px_rgba(213,177,109,0.43)] active:scale-95 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]"
                   >
                     <ChevronLeft size={18} strokeWidth={1.5} />
                   </button>
@@ -368,7 +368,7 @@ export default function TestimonialsSection() {
                   <button
                     onClick={goNext}
                     aria-label="Next review"
-                    className="md:hidden flex w-9 h-9 items-center justify-center rounded-full border border-[#c29f63]/30 bg-white/[0.04] backdrop-blur-md text-[#F5E6C8]/70 hover:text-[#F5E6C8] hover:border-[#c29f63]/60 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/60"
+                    className="md:hidden flex w-9 h-9 items-center justify-center rounded-full border-2 border-[#D5B16D] bg-gradient-to-br from-[#2B251C]/95 to-[#080808]/95 backdrop-blur-xl text-[#EBCB83] shadow-[0_10px_35px_rgba(0,0,0,0.58),0_0_20px_rgba(213,177,109,0.30)] hover:border-[#F0D69D] hover:shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_25px_rgba(213,177,109,0.43)] active:scale-95 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]"
                   >
                     <ChevronRight size={18} strokeWidth={1.5} />
                   </button>
