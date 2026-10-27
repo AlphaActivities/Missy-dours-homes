@@ -93,13 +93,6 @@ export default function ListingsPage() {
 
   const currentContent = filterContent[activeFilter];
 
-  const filters: { label: string; value: FilterType }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Active', value: 'active' },
-    { label: 'Luxury', value: 'luxury' },
-    { label: 'Mid-Tier', value: 'mid' },
-    { label: 'First-Time', value: 'first' },
-  ];
 
   return (
     <div className="min-h-screen bg-[#f7f3ea]">
