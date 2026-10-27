@@ -118,6 +118,19 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
     } finally { setBusy(false); }
   };
 
+  const requestHuman = async () => {
+    if (!session || busy || mode !== 'ai') return;
+    setBusy(true);
+    setTransportError(null);
+    try {
+      await conciergeTransport.handoff(session, 'I would like to speak with Missy’s team.');
+      setMode('waiting_human');
+      setMessages(previous => [...previous, { id: Date.now(), role: 'visitor', text: 'I would like to speak with Missy’s team.' }]);
+    } catch (error) {
+      setTransportError(error instanceof Error ? error.message : 'Could not request a team member.');
+    } finally { setBusy(false); }
+  };
+
   return (
     <>
       {!open && (
@@ -151,6 +164,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
               <a href="/#contact" className="mt-2 block font-semibold underline underline-offset-4">Contact Missy</a>
             </div>}
             {chatEnabled && !session && <TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} />}
+            {chatEnabled && session && mode === 'ai' && <button type="button" onClick={() => void requestHuman()} disabled={busy} className="rounded-lg border border-[#c6a16c]/50 px-3 py-2 text-xs text-[#ebca90] disabled:opacity-50">Speak with Missy’s team</button>}
             {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation.</p>}
             {mode === 'waiting_human' && <p className="text-xs text-[#eacb99]">Waiting for a team member.</p>}
             {busy && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
@@ -159,7 +173,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
           </div>
           <div className="shrink-0 border-t border-[#b9945d]/25 p-4">
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
-              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || busy || !session} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-sm text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
+              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-sm text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
               <button type="submit" disabled={!chatEnabled || busy || !session || !draft.trim()} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
             </form>
             <p className="mt-2 text-center text-[10px] text-[#988b77]">AI information may be incomplete. Missy confirms property availability and details.</p>
