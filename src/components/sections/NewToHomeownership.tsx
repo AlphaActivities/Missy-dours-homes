@@ -50,9 +50,7 @@ export default function NewToHomeownershipSection() {
               </h2>
             </div>
             <p className="max-w-xl text-sm md:text-base text-neutral-200">
-              These properties showcase the type of approachable,
-              well-located homes Missy curates for clients who are purchasing
-              their first home or re-entering the market with a fresh start.
+              Well-located homes for first-time buyers and those starting fresh.
             </p>
           </div>
         </LuxFadeIn>
