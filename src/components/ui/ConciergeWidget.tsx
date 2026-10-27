@@ -153,9 +153,13 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
     setBusy(true);
     setTransportError(null);
     try {
-      await conciergeTransport.handoff(session, 'I would like to speak with Missy’s team.');
+      const note = draft.trim()
+        ? 'Please connect me with Missy’s team. ' + draft.trim().slice(0, 440)
+        : 'I would like to speak with Missy’s team.';
+      await conciergeTransport.handoff(session, note);
       setMode('waiting_human');
-      setMessages(previous => [...previous, { id: Date.now(), role: 'visitor', text: 'I would like to speak with Missy’s team.' }]);
+      setMessages(previous => [...previous, { id: Date.now(), role: 'visitor', text: note }]);
+      setDraft('');
     } catch (error) {
       setTransportError(error instanceof Error ? error.message : 'Could not request a team member.');
     } finally { setBusy(false); }
@@ -196,7 +200,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
             {chatEnabled && !session && <TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} />}
             {chatEnabled && session && mode === 'ai' && <button type="button" onClick={() => void requestHuman()} disabled={busy} className="rounded-lg border border-[#c6a16c]/50 px-3 py-2 text-xs text-[#ebca90] disabled:opacity-50">Speak with Missy’s team</button>}
             {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation.</p>}
-            {mode === 'waiting_human' && <p className="text-xs text-[#eacb99]">Waiting for a team member.</p>}
+            {mode === 'waiting_human' && <p className="text-xs text-[#eacb99]">Waiting for a team member. For a time-sensitive request, you can also <a href="/#contact" className="underline underline-offset-2">contact Missy directly</a>.</p>}
             {busy && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
             <div ref={bottomRef}/>
