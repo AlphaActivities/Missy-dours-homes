@@ -184,8 +184,24 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
       setMode('waiting_human');
       setMessages(previous => [...previous, { id: Date.now(), role: 'visitor', text: note }]);
       setDraft('');
-    } catch (error) {
-      setTransportError(error instanceof Error ? error.message : 'Could not request a team member.');
+    } catch {
+      // The handoff may have committed before the network connection failed.
+      // Reconcile status before inviting another request.
+      try {
+        const latest = await conciergeTransport.sync(session);
+        setMode(latest.status);
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map((m, i) => ({
+          id: i + 1, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
+        }))]);
+        if (latest.status === 'waiting_human' || latest.status === 'human') {
+          setDraft('');
+          setTransportError(null);
+        } else {
+          setTransportError('Could not confirm the handoff. Please check the conversation before requesting again.');
+        }
+      } catch {
+        setTransportError('Handoff status could not be confirmed. Please reopen the chat and check before trying again.');
+      }
     } finally { setBusy(false); }
   };
 
