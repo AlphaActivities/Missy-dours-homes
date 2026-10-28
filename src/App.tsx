@@ -4,6 +4,7 @@ import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
 import Navbar from './components/Navbar';
 import FloatingCallButton from './components/ui/FloatingCallButton';
 import BackToTopButton from './components/ui/BackToTopButton';
+import ConciergeWidget from './components/ui/ConciergeWidget';
 import ListingTransitionOverlay from './components/ui/ListingTransitionOverlay';
 import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
@@ -117,6 +118,7 @@ function Layout() {
       <Outlet context={outletContext} />
       <FloatingCallButton />
       <BackToTopButton />
+      <ConciergeWidget />
       <ListingTransitionOverlay
         isVisible={showTransition}
         heroImage={transitionPreview?.heroImage}
