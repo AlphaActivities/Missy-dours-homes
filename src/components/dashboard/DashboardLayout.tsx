@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
 import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle } from 'lucide-react';
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
+import { supabase } from '../../lib/supabase';
 
 const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
@@ -89,6 +90,19 @@ export default function DashboardLayout() {
   }, []);
 
   const handleSignOut = async () => {
+    // Remove this browser's private push endpoint before ending its staff session.
+    // Keep sign-out functional even when browser push is unavailable or offline.
+    try {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration('/dashboard/');
+        const subscription = await registration?.pushManager?.getSubscription();
+        if (subscription) {
+          const { error } = await supabase.from('ai_concierge_push_subscriptions')
+            .delete().eq('endpoint', subscription.endpoint);
+          if (!error) await subscription.unsubscribe();
+        }
+      }
+    } catch { /* Signing out must not depend on notification cleanup. */ }
     await signOut();
     navigate('/dashboard/login', { replace: true });
   };
