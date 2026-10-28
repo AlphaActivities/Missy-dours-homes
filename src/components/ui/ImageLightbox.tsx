@@ -22,7 +22,7 @@ export default function ImageLightbox({
   const [showControls, setShowControls] = useState(true);
   const [isSwiping, setIsSwiping] = useState(false);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
-  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  const [, setLoadedImages] = useState<Set<number>>(new Set());
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
   const touchCurrentRef = useRef({ x: 0, y: 0 });
@@ -353,22 +353,22 @@ export default function ImageLightbox({
               src={images[currentIndex]}
               alt={`${title} - Image ${currentIndex + 1}`}
               custom={slideDirection}
-              initial={(direction) => ({
+              initial={{
                 opacity: 0,
-                x: direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
+                x: slideDirection === 'left' ? -300 : slideDirection === 'right' ? 300 : 0,
                 scale: 0.96,
-              })}
+              }}
               animate={{
                 opacity: 1,
                 x: 0,
                 scale: 1,
               }}
-              exit={(direction) => ({
+              exit={{
                 opacity: 0,
-                x: direction === 'left' ? 300 : direction === 'right' ? -300 : 0,
+                x: slideDirection === 'left' ? 300 : slideDirection === 'right' ? -300 : 0,
                 scale: 0.96,
                 position: 'absolute',
-              })}
+              }}
               transition={{
                 duration: 0.5,
                 ease: [0.25, 0.46, 0.45, 0.94],

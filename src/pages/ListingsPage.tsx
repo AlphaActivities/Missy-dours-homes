@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
-import { listings, ListingCategory, ListingStatus } from '../data/listings';
+import { listings, ListingCategory } from '../data/listings';
 import { Bed, Bath, Maximize, ArrowLeft, Home } from 'lucide-react';
 import SEO from '../components/SEO';
 import FooterSection from '../components/sections/FooterSection';
@@ -93,13 +93,6 @@ export default function ListingsPage() {
 
   const currentContent = filterContent[activeFilter];
 
-  const filters: { label: string; value: FilterType }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Active', value: 'active' },
-    { label: 'Luxury', value: 'luxury' },
-    { label: 'Mid-Tier', value: 'mid' },
-    { label: 'First-Time', value: 'first' },
-  ];
 
   return (
     <div className="min-h-screen bg-[#f7f3ea]">

@@ -1,0 +1,23 @@
+{
+  "name": "Missy Dours Private CRM",
+  "short_name": "Missy CRM",
+  "description": "Private staff dashboard for Missy Dours Homes",
+  "id": "/dashboard/",
+  "start_url": "/dashboard/conversations",
+  "scope": "/dashboard/",
+  "display": "standalone",
+  "background_color": "#0b0a09",
+  "theme_color": "#c4a46a",
+  "icons": [
+    {
+      "src": "/images/Favicons/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/Favicons/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

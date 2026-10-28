@@ -414,7 +414,7 @@ export default function TestimonialsSection() {
                   onClick={() => trackCTA('Leave Missy a Google Review', 'testimonials')}
                   className="group relative inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-gradient-to-r from-[#f5e3b6] via-[#e7c78a] to-[#c89c4f] px-5 sm:px-8 py-3 text-[0.7rem] sm:text-[0.82rem] font-semibold tracking-[0.14em] sm:tracking-[0.18em] uppercase text-[#1b1b1b] whitespace-nowrap shadow-[0_14px_40px_rgba(0,0,0,0.55)] hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_22px_55px_rgba(0,0,0,0.7),0_0_28px_rgba(245,230,200,0.35)] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/80 active:translate-y-px ring-1 ring-[#f5e3b6]/25"
                 >
-                  <Star size={13} sm:size={15} fill="#1b1b1b" stroke="#1b1b1b" strokeWidth={1.5} />
+                  <Star size={13} fill="#1b1b1b" stroke="#1b1b1b" strokeWidth={1.5} />
                   <span>Review Missy on Google</span>
                 </a>
               </div>

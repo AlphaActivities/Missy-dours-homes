@@ -6,18 +6,8 @@ import { trackCTA } from '../utils/analytics';
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -32,7 +22,6 @@ const Navbar: React.FC = () => {
 
   const shellClasses = 'bg-[#f9f7f3]/95 shadow-[0_0_40px_rgba(234,200,108,0.45)] backdrop-blur-2xl';
 
-  const textTone = 'text-slate-900';
 
   const navItems = [
     { label: 'Home', target: 'home' },

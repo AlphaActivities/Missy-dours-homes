@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Save, Check, Paperclip, Download, Trash2, FileText, Image as ImageIcon, Loader2, X } from 'lucide-react';
+import { Save, Check, Paperclip, Download, Trash2, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import { supabase } from '../../../lib/supabase';
 

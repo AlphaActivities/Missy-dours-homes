@@ -29,7 +29,7 @@ function getFollowupStatus(fu: LeadFollowup): 'upcoming' | 'today' | 'overdue' |
   return 'upcoming';
 }
 
-export default function FollowUpSection({ leadId, leadStatus, onActivity }: FollowUpSectionProps) {
+export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionProps) {
   const { showToast } = useToast();
   const [followups, setFollowups] = useState<LeadFollowup[]>([]);
   const [loading, setLoading] = useState(true);

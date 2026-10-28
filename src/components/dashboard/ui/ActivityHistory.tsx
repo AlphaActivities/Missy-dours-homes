@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Phone, MessageSquare, Mail, Calendar, FileText, CheckCircle2, Clock, StickyNote, Paperclip, Trash2, AlertCircle } from 'lucide-react';
+import { Phone, Calendar, FileText, CheckCircle2, Clock, StickyNote, Paperclip, Trash2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { LeadActivity } from '../types';
 
