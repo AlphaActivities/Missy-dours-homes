@@ -86,6 +86,7 @@ export default function ConversationsPage() {
  useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(false),15000);return()=>window.clearInterval(timer);},[]);
  useEffect(()=>{
   previewGeneration.current++;
+  setPreviewBusy(false);
   setTranslatedDraft(null);
   setReply('');
   if(!selected){setMessages([]);return;}
@@ -127,7 +128,7 @@ export default function ConversationsPage() {
    if(!result.ok||!payload.translation)throw new Error(payload.error||'Translation unavailable.');
    if(previewGeneration.current!==generation)return;
    setTranslatedDraft({text:payload.translation,conversation,original:source,language});
-  }catch(e){setError(e instanceof Error?e.message:'Translation unavailable');}finally{setPreviewBusy(false);}
+  }catch(e){if(previewGeneration.current===generation)setError(e instanceof Error?e.message:'Translation unavailable');}finally{if(previewGeneration.current===generation)setPreviewBusy(false);}
  };
  const sendHuman=async()=>{
   if(!selected||!reply.trim()||actionBusy||active?.assigned_to!==staffEmail)return;
