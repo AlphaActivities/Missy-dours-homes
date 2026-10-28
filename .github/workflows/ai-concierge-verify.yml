@@ -2,6 +2,7 @@ name: AI Concierge branch verification
 on:
   push:
     branches:
+      - main
       - feature/ai-concierge-foundation
   pull_request:
     branches:
