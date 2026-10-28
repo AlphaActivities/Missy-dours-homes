@@ -151,7 +151,24 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
       if (result.status === 'human') setMode('human');
       setDraft('');
     } catch (error) {
-      setTransportError(error instanceof Error ? error.message : 'Message not sent. Please retry.');
+      // A network timeout does not prove that the server failed to save the message.
+      // Reconcile the transcript before offering a retry to avoid duplicate sends.
+      try {
+        const latest = await conciergeTransport.sync(visitor);
+        const lastVisitor = [...latest.messages].reverse().find(m => m.sender === 'visitor');
+        setMode(latest.status);
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map((m, i) => ({
+          id: i + 1, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
+        }))]);
+        if (lastVisitor?.body === message) {
+          setDraft('');
+          setTransportError(null);
+        } else {
+          setTransportError('Could not confirm delivery. Check the conversation before resending.');
+        }
+      } catch {
+        setTransportError('Delivery could not be confirmed. Reopen the chat and check for your message before resending.');
+      }
     } finally { setBusy(false); }
   };
 
