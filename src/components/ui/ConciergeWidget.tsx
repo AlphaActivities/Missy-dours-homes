@@ -98,7 +98,8 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
       }
     };
     void refresh();
-    const interval = window.setInterval(() => void refresh(), 5000);
+    // Keep long-running chats below the server's 120 sync requests/hour allowance.
+    const interval = window.setInterval(() => void refresh(), 35000);
     return () => { current = false; window.clearInterval(interval); };
   }, [open, session, chatEnabled, busy]);
 
