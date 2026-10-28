@@ -30,19 +30,23 @@ Deno.serve(async request=>{
     failed++;continue;
    }
    let deliveryFailures=0;
+   let successfulDevices=0;
    const payload=JSON.stringify({kind:event.event_type==='handoff_escalated'?'handoff_escalated':'handoff_created',id:event.task_id});
    for(const device of devices) {
     try {
      await webpush.sendNotification({endpoint:device.endpoint,keys:{p256dh:device.p256dh,auth:device.auth_key}},payload,{TTL:900});
+     successfulDevices++;
     }catch(e) {
      const status=(e as {statusCode?:number})?.statusCode;
-     if(status===404||status===410)await client.from('ai_concierge_push_subscriptions').delete().eq('id',device.id);
-     else deliveryFailures++;
+     if(status===404||status===410) {
+      const removed=await client.from('ai_concierge_push_subscriptions').delete().eq('id',device.id);
+      if(removed.error)deliveryFailures++;
+     } else deliveryFailures++;
     }
    }
-   const {error:finishError}=await client.rpc('ai_concierge_finish_push',{p_id:event.id,p_success:deliveryFailures===0,p_error_code:deliveryFailures?'device_delivery_failed':null});
+   const {error:finishError}=await client.rpc('ai_concierge_finish_push',{p_id:event.id,p_success:deliveryFailures===0&&successfulDevices>0,p_error_code:deliveryFailures?'device_delivery_failed':successfulDevices===0?'no_valid_devices':null});
    if(finishError)throw finishError;
-   if(deliveryFailures)failed++;else delivered++;
+   if(deliveryFailures||successfulDevices===0)failed++;else delivered++;
   }catch {
    await client.rpc('ai_concierge_finish_push',{p_id:event.id,p_success:false,p_error_code:'processing_failed'});
    failed++;
