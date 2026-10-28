@@ -21,16 +21,17 @@ Deno.serve(async req=>{
   return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'content-type, authorization, apikey','Access-Control-Max-Age':'600','Vary':'Origin'}});
  }
  if(req.method!=='POST'||!origin) return answer({error:'Forbidden'},403,origin);
- // Feature flag fails CLOSED even for requests with valid credentials.
- if(!enabled) return answer({error:'Concierge messaging is not available yet.'},503,origin);
  const url=new URL(req.url);
+ const staffTranslationRoute=url.pathname.endsWith('/staff-translate');
+ // Visitor messaging fails closed; authenticated staff-only translation is separate.
+ if(!enabled && !staffTranslationRoute) return answer({error:'Concierge messaging is not available yet.'},503,origin);
  if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
  const raw=await req.text();
  if(raw.length>6000) return answer({error:'Request too large'},413,origin);
  let body:Record<string,unknown>;
  try {body=JSON.parse(raw);if(!body||Array.isArray(body)||typeof body!=='object')throw Error('invalid');} catch {return answer({error:'Invalid JSON'},400,origin);}
  // An origin check is not bot protection. Require verified Turnstile before enabling this endpoint.
- if(Deno.env.get('MISSY_TURNSTILE_READY')!=='true')return answer({error:'Service not ready'},503,origin);
+ if(!staffTranslationRoute && Deno.env.get('MISSY_TURNSTILE_READY')!=='true')return answer({error:'Service not ready'},503,origin);
  const authorization=req.headers.get('authorization')??'';
  if(url.pathname.endsWith('/session')) {
   const challenge=body.challenge;
