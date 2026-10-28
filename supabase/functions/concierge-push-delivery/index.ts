@@ -29,12 +29,18 @@ Deno.serve(async request=>{
     await client.rpc('ai_concierge_finish_push',{p_id:event.id,p_success:false,p_error_code:'no_registered_devices'});
     failed++;continue;
    }
+   const existing=await client.from('ai_concierge_push_receipts').select('device_id').eq('event_id',event.id);
+   if(existing.error)throw existing.error;
+   const accepted=new Set((existing.data??[]).map(x=>x.device_id));
    let deliveryFailures=0;
-   let successfulDevices=0;
+   let successfulDevices=accepted.size;
    const payload=JSON.stringify({kind:event.event_type==='handoff_escalated'?'handoff_escalated':'handoff_created',id:event.task_id});
    for(const device of devices) {
+    if(accepted.has(device.id))continue;
     try {
      await webpush.sendNotification({endpoint:device.endpoint,keys:{p256dh:device.p256dh,auth:device.auth_key}},payload,{TTL:900});
+     const receipt=await client.rpc('ai_concierge_record_push_receipt',{p_event:event.id,p_device:device.id});
+     if(receipt.error||receipt.data!==true)throw new Error('Receipt persistence failed');
      successfulDevices++;
     }catch(e) {
      const status=(e as {statusCode?:number})?.statusCode;
