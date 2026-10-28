@@ -1,3 +1,4 @@
+declare global { interface Window { _uxa?: unknown[] } }
 import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GlobalVideoBackground } from './components/ui/GlobalVideoBackground';
@@ -15,6 +16,7 @@ import ProtectedRoute from './components/dashboard/ProtectedRoute';
 import LoginPage from './pages/dashboard/LoginPage';
 import DashboardOverviewPage from './pages/dashboard/DashboardOverviewPage';
 import LeadsPage from './pages/dashboard/LeadsPage';
+import ConversationsPage from './pages/dashboard/ConversationsPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 
@@ -23,6 +25,7 @@ function Layout() {
   const isHomePage = location.pathname === '/';
   const csInitialPageViewSentRef = useRef(false);
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set());
+  const [conciergeOpen, setConciergeOpen] = useState(false);
 
   const transitionPreview = (location.state as any)?.transitionPreview;
   const isListingDetailRoute =
@@ -116,9 +119,9 @@ function Layout() {
       {isHomePage && <GlobalVideoBackground />}
       <Navbar />
       <Outlet context={outletContext} />
-      <FloatingCallButton />
-      <BackToTopButton />
-      <ConciergeWidget />
+      {!conciergeOpen && <FloatingCallButton />}
+      {!conciergeOpen && <BackToTopButton />}
+      <ConciergeWidget onOpenChange={setConciergeOpen} />
       <ListingTransitionOverlay
         isVisible={showTransition}
         heroImage={transitionPreview?.heroImage}
@@ -162,6 +165,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/dashboard/conversations" element={<ProtectedRoute><ConversationsPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </AuthProvider>

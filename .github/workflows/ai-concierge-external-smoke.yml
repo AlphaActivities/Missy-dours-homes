@@ -1,0 +1,39 @@
+name: AI Concierge external smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/ai-concierge-foundation]
+    paths: [.github/workflows/ai-concierge-external-smoke.yml]
+jobs:
+  external-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check Cloudflare Worker health and bindings
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 2 --max-time 20 \
+            'https://missy-concierge-foundation.gta-alpha-activities.workers.dev/health' \
+            -o /tmp/concierge-health.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/concierge-health.json'))
+          assert x.get('status')=='ready', 'Worker health not ready'
+          assert x.get('ai') is True, 'AI binding missing'
+          assert x.get('messageEndpointConfigured') is True, 'Worker secret missing'
+          print('PASS: Worker reachable; AI binding and secret configured')
+          PY
+      - name: Verify API rejects requests without allowed Origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-api.json \
+            -w '%{http_code}' -X POST \
+            'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-api/session' \
+            -H 'Content-Type: application/json' \
+            -d '{"challenge":"invalid-test-token"}')
+          if [ "$status" != 403 ] && [ "$status" != 401 ]; then
+            echo "FAIL: anonymous request without Origin returned HTTP $status"; exit 1
+          fi
+          echo "PASS: API rejects request without permitted origin (HTTP $status)"

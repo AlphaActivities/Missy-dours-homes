@@ -1,0 +1,90 @@
+name: AI Concierge branch verification
+on:
+  push:
+    branches:
+      - feature/ai-concierge-foundation
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: TypeScript typecheck
+        run: npm run typecheck
+      - name: Production build
+        if: always()
+        run: npm run build
+      - name: External Cloudflare health smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 2 --max-time 20 \
+            'https://missy-concierge-foundation.gta-alpha-activities.workers.dev/health' \
+            -o /tmp/concierge-health.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/concierge-health.json'))
+          assert x.get('status')=='ready'
+          assert x.get('ai') is True
+          assert x.get('messageEndpointConfigured') is True
+          print('Worker health and bindings verified')
+          PY
+      - name: Reject origin-less Supabase requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-api.json -w '%{http_code}' -X POST \
+            'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-api/session' \
+            -H 'Content-Type: application/json' -d '{"challenge":"invalid-test-token"}')
+          test "$status" = 403 -o "$status" = 401
+          echo "API correctly rejected untrusted-origin request with HTTP $status"
+      - name: Confirm visitor chat remains disabled before launch
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-disabled.json -w '%{http_code}' -X POST \
+            'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-api/session' \
+            -H 'Content-Type: application/json' \
+            -H 'Origin: https://missydours.com' \
+            -d '{"challenge":"invalid-test-token"}')
+          test "$status" = 503
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/concierge-disabled.json'))
+          assert 'not available yet' in x.get('error',''), 'Unexpected error; feature flag may not be disabled'
+          print('PASS: server-side concierge flag is still disabled')
+          PY
+      - name: Reject unauthorized AI Worker requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/worker-denied.json -w '%{http_code}' -X POST \
+            'https://missy-concierge-foundation.gta-alpha-activities.workers.dev/internal/reply' \
+            -H 'Content-Type: application/json' \
+            -d '{"messages":[{"role":"user","content":"security check"}]}')
+          test "$status" = 401
+          echo "PASS: Worker rejects unauthenticated AI inference"
+      - name: Confirm background push sender is disabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/push-disabled.json -w '%{http_code}' -X POST \
+            'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-push-delivery' \
+            -H 'Content-Type: application/json' -d '{}')
+          test "$status" = 503
+          python3 - <<'PY'
+          import json
+          response=json.load(open('/tmp/push-disabled.json'))
+          assert response.get('status')=='disabled', 'Background push must remain disabled'
+          print('PASS: background push delivery remains disabled')
+          PY

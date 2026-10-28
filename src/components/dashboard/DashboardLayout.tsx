@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
-import { LogOut, Users, LayoutDashboard, Menu, X } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle } from 'lucide-react';
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
 
 const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/leads', label: 'Leads',    icon: Users,            end: false },
+  { to: '/dashboard/conversations', label: 'Conversations', icon: MessageCircle, end: false },
 ];
 
 // Avatar that renders the authenticated Google profile picture when
@@ -47,7 +48,7 @@ function UserAvatar({
 }
 
 export default function DashboardLayout() {
-  const { user, signOut, avatarUrl } = useAuth();
+  const { signOut, avatarUrl } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isLoginRoute = pathname === '/dashboard/login';
@@ -57,6 +58,26 @@ export default function DashboardLayout() {
   // Remove any overflow-hidden the public site may leave on body
   useEffect(() => {
     document.body.classList.remove('overflow-hidden');
+  }, []);
+
+  // Provide a separate installable identity for the staff CRM only.
+  useEffect(() => {
+    const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    if (!manifest) return;
+    const previous = manifest.href;
+    const originalTitle = document.title;
+    manifest.href = '/missy-crm.webmanifest';
+    document.title = 'Missy Dours Private CRM';
+    return () => {
+      manifest.href = previous;
+      document.title = originalTitle;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+    void navigator.serviceWorker.register('/missy-crm-sw.js', {scope:'/dashboard/'})
+      .catch(() => { /* Private CRM remains usable without notification support. */ });
   }, []);
 
   // Close drawer on lg+ resize

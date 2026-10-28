@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Paperclip, Download, Trash2, FileText, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
+import { Paperclip, Download, Trash2, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 const BUCKET = 'lead-attachments';
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
