@@ -56,7 +56,7 @@ export default function ConversationsPage() {
  };
  const enableAlerts=async()=>{if(!('Notification' in window)){setError('This browser does not support notifications.');return;}const status=await Notification.requestPermission();setAlertsEnabled(status==='granted');alertsEnabledRef.current=status==='granted';if(status!=='granted')setError('Notifications were not enabled. The CRM attention queue still works.');};
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
- const refresh=async()=>{setLoading(true);setError(null);try{
+ const refresh=async(showLoading=true)=>{if(showLoading){setLoading(true);setError(null);}try{
   const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
   if(error)throw error;setItems((data??[]) as Conversation[]);
   const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,escalation_due_at,escalated_at,urgency,status').in('status',['pending','claimed']).order('due_at',{ascending:true}).limit(50);
@@ -82,8 +82,8 @@ export default function ConversationsPage() {
    seenEscalatedRef.current=new Set(escalated.map(t=>t.id));
   }
   setPendingTasks(tasks.data??[]);
- }catch(e){setError(e instanceof Error?e.message:'Could not load conversations');}finally{setLoading(false);}};
- useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(),15000);return()=>window.clearInterval(timer);},[]);
+ }catch(e){if(showLoading)setError(e instanceof Error?e.message:'Could not load conversations');}finally{if(showLoading)setLoading(false);}};
+ useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(false),15000);return()=>window.clearInterval(timer);},[]);
  useEffect(()=>{
   previewGeneration.current++;
   setTranslatedDraft(null);
