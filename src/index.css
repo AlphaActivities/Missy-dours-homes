@@ -542,3 +542,22 @@
   outline: none;
   box-shadow: 0 0 0 2px rgba(196, 164, 106, 0.7) !important;
 }
+
+
+/* Premium concierge entrance, scoped to the private preview widget. */
+@keyframes missy-concierge-reveal {
+  from { opacity: 0; transform: translateY(22px) scale(.975); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes missy-concierge-dim {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.missy-concierge-backdrop { animation: missy-concierge-dim 260ms ease-out both; backdrop-filter: blur(5px); }
+.missy-concierge-dialog {
+  animation: missy-concierge-reveal 480ms cubic-bezier(.18,.85,.25,1) both;
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(190,151,83,.095), transparent 49%);
+}
+@media (prefers-reduced-motion: reduce) {
+ .missy-concierge-backdrop, .missy-concierge-dialog { animation: none !important; }
+}
