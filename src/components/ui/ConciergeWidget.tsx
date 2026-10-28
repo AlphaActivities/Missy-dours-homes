@@ -221,19 +221,19 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
       )}
       {open && <div className="missy-concierge-backdrop fixed inset-0 z-[100] flex items-end justify-center bg-black/70 md:items-center md:p-6" role="presentation">
         <section aria-label="Missy Dours private concierge" role="dialog" aria-modal="true" className="missy-concierge-dialog flex h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] border border-[#d1ad72]/45 bg-[#0b0a09] text-[#f2eadc] shadow-[0_30px_90px_rgba(0,0,0,.75)] md:h-[min(740px,88dvh)] md:rounded-[28px]">
-          <header className="flex shrink-0 items-center gap-3 border-b border-[#b9945d]/30 bg-gradient-to-r from-[#17120c] to-[#0a0908] px-5 py-4">
+          <header className="relative flex shrink-0 items-center gap-3 border-b border-[#b9945d]/30 bg-gradient-to-r from-[#21190f] via-[#14100b] to-[#0a0908] px-5 py-5">
             <button type="button" onClick={() => setOpen(false)} aria-label="Close concierge" className="rounded-lg p-2 hover:bg-white/10"><ArrowLeft size={19}/></button>
             <img src="/images/md-logo.png" alt="Missy Dours" className="h-9 w-9 rounded-lg bg-[#f5eddc] object-contain p-1" />
             <div className="min-w-0 flex-1"><p className="font-serif text-[17px] text-[#f1d39a]">Missy Dours Concierge</p><p className="text-[11px] tracking-[.11em] text-[#c7bba6]">IMAGINE THE LIFE THAT AWAITS</p></div>
             <Sparkles size={17} className="text-[#c8a56b]" aria-hidden="true"/>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="rounded-lg p-2 hover:bg-white/10"><X size={18}/></button>
           </header>
-          <div className="min-h-0 flex-1 overflow-y-auto space-y-4 p-5" aria-live="polite">
-            <p className="mx-auto max-w-xs text-center font-serif text-sm text-[#c8ab79]">Imagine the Life That Awaits.</p>
+          <div className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 py-6 md:px-7" aria-live="polite">
+            <div className="mx-auto max-w-sm py-4 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 font-serif text-lg tracking-wide text-[#ebd5ae]">Imagine the Life That Awaits.</p></div>
             {messages.map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
-              <p className={`max-w-[87%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#a68858]/30 bg-white/[.055] text-[#f3ebdf]'}`}>{m.text}</p>
+              <p className={`max-w-[87%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf] shadow-[0_8px_24px_rgba(0,0,0,.22)]'}`}>{m.text}</p>
             </div>)}
-            {!chatEnabled && <div className="rounded-xl border border-[#bd995e]/35 bg-[#ba9455]/10 px-4 py-3 text-xs leading-relaxed text-[#f0dbb4]">
+            {!chatEnabled && <div className="rounded-2xl border border-[#c7a568]/35 bg-gradient-to-br from-[#3a2c17]/55 to-[#18140f] px-5 py-4 text-xs leading-relaxed text-[#f0dbb4] shadow-[inset_0_1px_0_rgba(255,231,180,.07)]">
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <a href="/#contact" className="mt-2 block font-semibold underline underline-offset-4">Contact Missy</a>
             </div>}
@@ -245,7 +245,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
             <div ref={bottomRef}/>
           </div>
-          <div className="shrink-0 border-t border-[#b9945d]/25 p-4">
+          <div className="shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] p-4 md:px-6">
             <label className="mb-2 flex items-center justify-end gap-2 text-xs text-[#c8ab79]">Chat language
               <select aria-label="Chat language" value={language} onChange={e => setLanguage(e.target.value)} className="rounded-lg border border-[#b9945d]/35 bg-[#191611] px-2 py-1 text-[#f2eadc]">
                 <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="pt">Português</option><option value="zh">中文</option>
