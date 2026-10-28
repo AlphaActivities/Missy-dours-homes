@@ -544,45 +544,36 @@
 }
 
 
-/* Concierge: jewel-box reveal. Scoped exclusively to the concierge overlay. */
+/* Mobile-first concierge motion: compositor-only opacity/transform. No blur filters. */
+@keyframes missy-launcher-enter {
+  0% { opacity:0; transform:translate3d(0,18px,0) scale(.82); }
+  70% { opacity:1; transform:translate3d(0,-2px,0) scale(1.025); }
+  100% { opacity:1; transform:translate3d(0,0,0) scale(1); }
+}
+@keyframes missy-launcher-halo {
+  0%,100% { opacity:.18; transform:scale(.98); }
+  50% { opacity:.48; transform:scale(1.07); }
+}
 @keyframes missy-concierge-reveal {
-  0% { opacity: 0; transform: translate3d(44px, 45px, 0) scale(.79); filter: blur(10px); }
-  56% { opacity: 1; filter: blur(0); }
-  78% { transform: translate3d(-3px, -4px, 0) scale(1.012); }
-  100% { opacity: 1; transform: translate3d(0,0,0) scale(1); filter: blur(0); }
+  from { opacity:0; transform:translate3d(0,10px,0); }
+  to { opacity:1; transform:translate3d(0,0,0); }
 }
 @keyframes missy-concierge-dim { from {opacity:0} to {opacity:1} }
-@keyframes missy-concierge-shine {
-  0% { transform: translateX(-100%); opacity: 0; }
-  18% { opacity: 1; }
-  85%,100% { transform: translateX(100%); opacity: 0; }
+.missy-concierge-launcher { animation: missy-launcher-enter 520ms cubic-bezier(.2,.75,.2,1) both; }
+.missy-concierge-launcher-glow {
+  border:1px solid rgba(229,188,113,.5);
+  box-shadow:0 0 16px rgba(206,162,84,.17);
+  animation:missy-launcher-halo 4s ease-in-out 600ms infinite;
 }
-@keyframes missy-concierge-rise {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.missy-concierge-backdrop {
-  animation: missy-concierge-dim 320ms ease-out both;
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
-}
+.missy-concierge-backdrop { animation:missy-concierge-dim 150ms ease-out both; }
 .missy-concierge-dialog {
-  transform-origin: 92% 95%;
-  animation: missy-concierge-reveal 720ms cubic-bezier(.19,1,.22,1) both;
-  background-image: radial-gradient(ellipse at 62% 0%, rgba(197,161,106,.14), transparent 62%);
-  box-shadow: 0 0 0 1px rgba(245,211,153,.08), 0 32px 110px rgba(0,0,0,.82), 0 0 65px rgba(176,128,59,.12);
+  animation:missy-concierge-reveal 190ms ease-out both;
+  background-image:radial-gradient(ellipse at 62% 0%,rgba(197,161,106,.08),transparent 60%);
 }
-.missy-concierge-scanline {
-  background: linear-gradient(90deg,transparent 0%,rgba(255,228,171,.15) 15%,#ffe1a2 50%,rgba(255,228,171,.15) 85%,transparent 100%);
-  transform: translateX(-100%);
-  animation: missy-concierge-shine 1050ms ease-out 180ms both;
-}
-.missy-concierge-intro { animation: missy-concierge-rise 520ms ease-out 290ms both; }
-.missy-concierge-fallback { animation: missy-concierge-rise 540ms ease-out 400ms both; }
-.missy-concierge-composer { animation: missy-concierge-rise 520ms ease-out 460ms both; }
-.missy-concierge-body { scrollbar-width: thin; scrollbar-color: rgba(198,163,106,.5) transparent; }
-@media (prefers-reduced-motion: reduce) {
- .missy-concierge-backdrop, .missy-concierge-dialog, .missy-concierge-scanline,
- .missy-concierge-intro, .missy-concierge-fallback, .missy-concierge-composer { animation: none !important; }
- .missy-concierge-dialog { filter: none; }
+.missy-concierge-scanline { display:none; }
+.missy-concierge-intro,.missy-concierge-fallback,.missy-concierge-composer { animation:none; }
+.missy-concierge-body { scrollbar-width:thin; scrollbar-color:rgba(198,163,106,.5) transparent; }
+@media (prefers-reduced-motion:reduce) {
+ .missy-concierge-launcher,.missy-concierge-launcher-glow,
+ .missy-concierge-backdrop,.missy-concierge-dialog { animation:none !important; }
 }
