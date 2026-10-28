@@ -219,8 +219,8 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
           </button>
         </div>
       )}
-      {open && <div className="missy-concierge-backdrop fixed inset-0 z-[100] flex items-end justify-center bg-black/70 md:items-center md:p-6" role="presentation">
-        <section aria-label="Missy Dours private concierge" role="dialog" aria-modal="true" className={`missy-concierge-dialog relative flex w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] border border-[#d1ad72]/45 bg-[#0b0a09] text-[#f2eadc] shadow-[0_30px_90px_rgba(0,0,0,.75)] md:rounded-[28px] ${messages.length <= 1 && !session ? "h-auto max-h-[94dvh] md:max-h-[88dvh]" : "h-[90dvh] md:h-[min(740px,88dvh)]"}`}>
+      {open && <div className="missy-concierge-backdrop fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 sm:p-4 md:p-6" role="presentation">
+        <section aria-label="Missy Dours private concierge" role="dialog" aria-modal="true" className="missy-concierge-dialog relative flex h-auto max-h-[calc(100dvh-24px)] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-[#d1ad72]/45 bg-[#0b0a09] text-[#f2eadc] shadow-[0_30px_90px_rgba(0,0,0,.75)] sm:max-h-[calc(100dvh-32px)] md:max-h-[min(740px,calc(100dvh-48px))] md:rounded-[28px]">
           <div className="missy-concierge-scanline pointer-events-none absolute inset-x-0 top-0 z-20 h-px" aria-hidden="true" />
           <header className="relative flex shrink-0 items-center gap-3 border-b border-[#b9945d]/30 bg-gradient-to-r from-[#21190f] via-[#14100b] to-[#0a0908] px-5 py-5">
             <button type="button" onClick={() => setOpen(false)} aria-label="Close concierge" className="rounded-lg p-2 hover:bg-white/10"><ArrowLeft size={19}/></button>
@@ -229,7 +229,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
             <Sparkles size={17} className="text-[#c8a56b]" aria-hidden="true"/>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="rounded-lg p-2 hover:bg-white/10"><X size={18}/></button>
           </header>
-          <div className={`missy-concierge-body min-h-0 space-y-4 px-5 py-5 md:px-7 ${messages.length <= 1 && !session ? "flex-none overflow-visible" : "flex-1 overflow-y-auto"}`} aria-live="polite">
+          <div className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-4 px-5 py-4 md:px-7" aria-live="polite">
             <div className="missy-concierge-intro mx-auto max-w-sm py-2 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 font-serif text-lg tracking-wide text-[#ebd5ae]">Imagine the Life That Awaits.</p></div>
             {messages.map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <p className={`max-w-[87%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf] shadow-[0_8px_24px_rgba(0,0,0,.22)]'}`}>{m.text}</p>
