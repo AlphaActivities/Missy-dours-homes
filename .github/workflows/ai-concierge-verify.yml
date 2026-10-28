@@ -74,3 +74,17 @@ jobs:
             -d '{"messages":[{"role":"user","content":"security check"}]}')
           test "$status" = 401
           echo "PASS: Worker rejects unauthenticated AI inference"
+      - name: Confirm background push sender is disabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/push-disabled.json -w '%{http_code}' -X POST \
+            'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-push-delivery' \
+            -H 'Content-Type: application/json' -d '{}')
+          test "$status" = 503
+          python3 - <<'PY'
+          import json
+          response=json.load(open('/tmp/push-disabled.json'))
+          assert response.get('status')=='disabled', 'Background push must remain disabled'
+          print('PASS: background push delivery remains disabled')
+          PY
