@@ -23,7 +23,7 @@ export default function ConversationsPage() {
  const [error,setError]=useState<string|null>(null);
  const [actionBusy,setActionBusy]=useState(false);
  const [reply,setReply]=useState('');
- const [translatedDraft,setTranslatedDraft]=useState<string|null>(null);
+ const [translatedDraft,setTranslatedDraft]=useState<{text:string;conversation:string;original:string;language:string}|null>(null);
  const [previewBusy,setPreviewBusy]=useState(false);
  const [taskBusy,setTaskBusy]=useState<string|null>(null);
  const [alertsEnabled,setAlertsEnabled]=useState(false);
@@ -84,6 +84,8 @@ export default function ConversationsPage() {
  }catch(e){setError(e instanceof Error?e.message:'Could not load conversations');}finally{setLoading(false);}};
  useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(),15000);return()=>window.clearInterval(timer);},[]);
  useEffect(()=>{
+  setTranslatedDraft(null);
+  setReply('');
   if(!selected){setMessages([]);return;}
   let active=true;
   const fetchTranscript=async()=>{
@@ -104,6 +106,9 @@ export default function ConversationsPage() {
  const claim=async()=>{if(!selected||actionBusy)return;setActionBusy(true);setError(null);try{const {data,error}=await supabase.rpc('ai_concierge_claim',{p_conversation:selected});if(error)throw error;if(data!==true)throw new Error('Conversation was already claimed by another team member. Refresh to see the latest status.');await refresh();}catch(e){setError(e instanceof Error?e.message:'Could not claim conversation');}finally{setActionBusy(false);}};
  const previewTranslation=async()=>{
   if(!selected||!reply.trim()||previewBusy||active?.assigned_to!==staffEmail)return;
+  const source=reply.trim();
+  const conversation=selected;
+  const language=active.language_code;
   setPreviewBusy(true);setError(null);
   try {
    const auth=await supabase.auth.getSession();
@@ -114,20 +119,22 @@ export default function ConversationsPage() {
    if(!url||!key)throw new Error('Translation is not configured.');
    const result=await fetch(url+'/functions/v1/concierge-api/staff-translate',{method:'POST',
     headers:{'Content-Type':'application/json','apikey':key,'Authorization':'Bearer '+jwt},
-    body:JSON.stringify({conversation_id:selected,message:reply.trim()}),signal:AbortSignal.timeout(25000)});
+    body:JSON.stringify({conversation_id:conversation,message:source}),signal:AbortSignal.timeout(25000)});
    const payload=await result.json() as {translation?:string;error?:string};
    if(!result.ok||!payload.translation)throw new Error(payload.error||'Translation unavailable.');
-   setTranslatedDraft(payload.translation);
+   if(selected!==conversation)return;
+   setTranslatedDraft({text:payload.translation,conversation,original:source,language});
   }catch(e){setError(e instanceof Error?e.message:'Translation unavailable');}finally{setPreviewBusy(false);}
  };
  const sendHuman=async()=>{
   if(!selected||!reply.trim()||actionBusy||active?.assigned_to!==staffEmail)return;
   const multilingual=active.language_code!=='en';
-  if(multilingual&&!translatedDraft){setError('Review a translated reply before sending.');return;}
+  const validPreview=translatedDraft?.conversation===selected && translatedDraft?.original===reply.trim() && translatedDraft?.language===active.language_code;
+  if(multilingual&&!validPreview){setError('Review a translated reply before sending.');return;}
   setActionBusy(true);setError(null);
   try {
    const call=multilingual
-    ?supabase.rpc('ai_concierge_send_human_translated',{p_conversation:selected,p_original:reply.trim(),p_translation:translatedDraft!,p_language:active.language_code})
+    ?supabase.rpc('ai_concierge_send_human_translated',{p_conversation:selected,p_original:reply.trim(),p_translation:translatedDraft!.text,p_language:active.language_code})
     :supabase.rpc('ai_concierge_send_human',{p_conversation:selected,p_message:reply.trim()});
    const {data,error}=await call;
    if(error)throw error;
@@ -161,8 +168,8 @@ export default function ConversationsPage() {
     <div className="flex justify-between gap-2 mb-1"><strong className="text-sm truncate">{c.title}</strong><span className="text-xs uppercase" style={{color:'var(--ds-gold)'}}>{c.priority}</span></div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p><div className="flex gap-2 mt-2 text-xs opacity-60"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div>
    </button>)}</section>
    <section aria-label="Conversation transcript" className="rounded-xl border border-white/10 bg-black/20 min-h-80 p-5">
-   {!selected?<p className="text-sm opacity-60">Choose a conversation to view its transcript.</p>:<><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div><h2 className="font-semibold">Conversation transcript</h2><p className="text-xs opacity-65">{active?.assigned_to ? `Claimed by ${active.assigned_to}` : 'No human assigned'}</p></div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>void returnToAi()} className="rounded-lg border border-white/20 px-3 py-2 text-sm disabled:opacity-50">Return to AI</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <button type="button" disabled={actionBusy} onClick={()=>void claim()} className="rounded-lg border border-[#c7a466] px-3 py-2 text-sm text-[#e7c789] disabled:opacity-50">{actionBusy?'Claiming…':'Take Over from AI'}</button>}</div>{loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-3">{messages.map(m=><article key={m.id} className="p-3 rounded-lg border border-white/10"><div className="flex justify-between gap-2 text-xs opacity-65 mb-2"><strong className="uppercase">{m.sender_actor||m.sender}</strong><span>{time(m.created_at)}</span></div><p className="whitespace-pre-wrap text-sm break-words">{m.body}</p>{m.translated_body&&<div className="mt-2 pt-2 border-t border-white/10"><span className="text-xs" style={{color:'var(--ds-gold)'}}>Translated</span><p className="text-sm whitespace-pre-wrap">{m.translated_body}</p></div>}</article>)}</div>}{translatedDraft&&active?.status==='human'&&<div className="mt-3 rounded-lg border border-[#c5a16a]/40 p-3 text-sm"><strong>Visitor-language preview, review before sending:</strong><p className="mt-2 whitespace-pre-wrap">{translatedDraft}</p></div>}
-   {active?.status==='human'&&active.assigned_to===staffEmail&&<form className="mt-5 flex gap-2" onSubmit={e=>{e.preventDefault();void sendHuman();}}><textarea aria-label="Reply to visitor" className="flex-1 min-h-16 rounded-lg bg-white/5 border border-white/15 p-3 text-sm" maxLength={2000} value={reply} onChange={e=>{setReply(e.target.value);setTranslatedDraft(null);}} placeholder="Write a message as the assigned agent"/>{active.language_code!=='en'&&<button type="button" onClick={()=>void previewTranslation()} disabled={previewBusy||actionBusy||!reply.trim()} className="self-end rounded-lg border border-[#c5a16a] px-3 py-3 text-sm disabled:opacity-50">{previewBusy?'Translating…':'Preview translation'}</button>}<button type="submit" disabled={actionBusy||!reply.trim()||(active.language_code!=='en'&&!translatedDraft)} className="self-end rounded-lg bg-[#c5a16a] text-black px-4 py-3 disabled:opacity-50">Send</button></form>}</>}
+   {!selected?<p className="text-sm opacity-60">Choose a conversation to view its transcript.</p>:<><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div><h2 className="font-semibold">Conversation transcript</h2><p className="text-xs opacity-65">{active?.assigned_to ? `Claimed by ${active.assigned_to}` : 'No human assigned'}</p></div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>void returnToAi()} className="rounded-lg border border-white/20 px-3 py-2 text-sm disabled:opacity-50">Return to AI</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <button type="button" disabled={actionBusy} onClick={()=>void claim()} className="rounded-lg border border-[#c7a466] px-3 py-2 text-sm text-[#e7c789] disabled:opacity-50">{actionBusy?'Claiming…':'Take Over from AI'}</button>}</div>{loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-3">{messages.map(m=><article key={m.id} className="p-3 rounded-lg border border-white/10"><div className="flex justify-between gap-2 text-xs opacity-65 mb-2"><strong className="uppercase">{m.sender_actor||m.sender}</strong><span>{time(m.created_at)}</span></div><p className="whitespace-pre-wrap text-sm break-words">{m.body}</p>{m.translated_body&&<div className="mt-2 pt-2 border-t border-white/10"><span className="text-xs" style={{color:'var(--ds-gold)'}}>Translated</span><p className="text-sm whitespace-pre-wrap">{m.translated_body}</p></div>}</article>)}</div>}{translatedDraft&&active?.status==='human'&&<div className="mt-3 rounded-lg border border-[#c5a16a]/40 p-3 text-sm"><strong>Visitor-language preview, review before sending:</strong><p className="mt-2 whitespace-pre-wrap">{translatedDraft.text}</p></div>}
+   {active?.status==='human'&&active.assigned_to===staffEmail&&<form className="mt-5 flex gap-2" onSubmit={e=>{e.preventDefault();void sendHuman();}}><textarea aria-label="Reply to visitor" className="flex-1 min-h-16 rounded-lg bg-white/5 border border-white/15 p-3 text-sm" maxLength={2000} value={reply} onChange={e=>{setReply(e.target.value);setTranslatedDraft(null);}} placeholder="Write a message as the assigned agent"/>{active.language_code!=='en'&&<button type="button" onClick={()=>void previewTranslation()} disabled={previewBusy||actionBusy||!reply.trim()} className="self-end rounded-lg border border-[#c5a16a] px-3 py-3 text-sm disabled:opacity-50">{previewBusy?'Translating…':'Preview translation'}</button>}<button type="submit" disabled={actionBusy||!reply.trim()||(active.language_code!=='en'&&!(translatedDraft?.conversation===selected&&translatedDraft?.original===reply.trim()&&translatedDraft?.language===active.language_code))} className="self-end rounded-lg bg-[#c5a16a] text-black px-4 py-3 disabled:opacity-50">Send</button></form>}</>}
    </section>
   </div>
  </div>;
