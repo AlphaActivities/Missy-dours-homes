@@ -542,3 +542,37 @@
   outline: none;
   box-shadow: 0 0 0 2px rgba(196, 164, 106, 0.7) !important;
 }
+
+/* Mobile-first concierge motion: compositor-only opacity/transform. No blur filters. */
+@keyframes missy-launcher-enter {
+  0% { opacity:0; transform:translate3d(0,18px,0) scale(.82); }
+  70% { opacity:1; transform:translate3d(0,-2px,0) scale(1.025); }
+  100% { opacity:1; transform:translate3d(0,0,0) scale(1); }
+}
+@keyframes missy-launcher-halo {
+  0%,100% { opacity:.18; transform:scale(.98); }
+  50% { opacity:.48; transform:scale(1.07); }
+}
+@keyframes missy-concierge-reveal {
+  from { opacity:0; transform:translate3d(0,10px,0); }
+  to { opacity:1; transform:translate3d(0,0,0); }
+}
+@keyframes missy-concierge-dim { from {opacity:0} to {opacity:1} }
+.missy-concierge-launcher { animation: missy-launcher-enter 520ms cubic-bezier(.2,.75,.2,1) both; }
+.missy-concierge-launcher-glow {
+  border:1px solid rgba(229,188,113,.5);
+  box-shadow:0 0 16px rgba(206,162,84,.17);
+  animation:missy-launcher-halo 4s ease-in-out 600ms infinite;
+}
+.missy-concierge-backdrop { animation:missy-concierge-dim 150ms ease-out both; }
+.missy-concierge-dialog {
+  animation:missy-concierge-reveal 190ms ease-out both;
+  background-image:radial-gradient(ellipse at 62% 0%,rgba(197,161,106,.08),transparent 60%);
+}
+.missy-concierge-scanline { display:none; }
+.missy-concierge-intro,.missy-concierge-fallback,.missy-concierge-composer { animation:none; }
+.missy-concierge-body { scrollbar-width:thin; scrollbar-color:rgba(198,163,106,.5) transparent; }
+@media (prefers-reduced-motion:reduce) {
+ .missy-concierge-launcher,.missy-concierge-launcher-glow,
+ .missy-concierge-backdrop,.missy-concierge-dialog { animation:none !important; }
+}
