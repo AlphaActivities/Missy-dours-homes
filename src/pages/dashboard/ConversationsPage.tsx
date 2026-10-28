@@ -30,6 +30,29 @@ export default function ConversationsPage() {
  const seenPendingRef=useRef<Set<string>|null>(null);
  const seenEscalatedRef=useRef<Set<string>|null>(null);
  const alertsEnabledRef=useRef(false);
+ const [pushState,setPushState]=useState<'idle'|'working'|'enabled'|'unavailable'>('idle');
+ const enableBackgroundPush=async()=>{
+  const key=String(import.meta.env.VITE_MISSY_VAPID_PUBLIC_KEY||'').trim();
+  if(!key){setError('Background push delivery is not configured yet. Browser alerts remain available.');setPushState('unavailable');return;}
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){setError('Background push is not supported in this browser. On iPhone, install the CRM on the Home Screen first.');return;}
+  setPushState('working');setError(null);
+  try{
+   if(await Notification.requestPermission()!=='granted')throw new Error('Notification permission was not granted.');
+   const registration=await navigator.serviceWorker.ready;
+   const urlSafe=key.replace(/-/g,'+').replace(/_/g,'/');
+   const decoded=atob(urlSafe.padEnd(Math.ceil(urlSafe.length/4)*4,'='));
+   const applicationServerKey=Uint8Array.from(decoded,c=>c.charCodeAt(0));
+   const subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey});
+   const json=subscription.toJSON();
+   if(!json.endpoint||!json.keys?.p256dh||!json.keys?.auth)throw new Error('Browser did not provide a valid push subscription.');
+   const {error}=await supabase.from('ai_concierge_push_subscriptions').upsert({
+    staff_email:staffEmail,endpoint:json.endpoint,p256dh:json.keys.p256dh,auth_key:json.keys.auth,
+    user_agent:navigator.userAgent,updated_at:new Date().toISOString()
+   },{onConflict:'endpoint'});
+   if(error)throw error;
+   setPushState('enabled');
+  }catch(e){setError(e instanceof Error?e.message:'Could not enable background push.');setPushState('idle');}
+ };
  const enableAlerts=async()=>{if(!('Notification' in window)){setError('This browser does not support notifications.');return;}const status=await Notification.requestPermission();setAlertsEnabled(status==='granted');alertsEnabledRef.current=status==='granted';if(status!=='granted')setError('Notifications were not enabled. The CRM attention queue still works.');};
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
  const refresh=async()=>{setLoading(true);setError(null);try{
@@ -123,6 +146,7 @@ export default function ConversationsPage() {
  return <div className="px-4 py-7 md:px-8 md:py-9 max-w-7xl mx-auto" style={{color:'var(--ds-text-primary)'}}>
   <div className="flex flex-wrap gap-3 items-center justify-between mb-6">
    <div><div className="flex items-center gap-2 mb-1"><MessageCircle size={19} style={{color:'var(--ds-gold)'}}/><h1 className="text-2xl" style={{fontFamily:"'Playfair Display', Georgia, serif"}}>Conversations</h1></div><p className="text-sm" style={{color:'var(--ds-text-secondary)'}}>Private concierge inbox · Staff messaging · Development preview</p></div>
+   <button type="button" disabled={pushState==='working'} onClick={()=>void enableBackgroundPush()} className="rounded-lg border border-[#c8a96e]/40 px-3 py-2 text-sm disabled:opacity-50">{pushState==='enabled'?'Background push registered':pushState==='working'?'Registering push…':'Enable background push'}</button>
    <button type="button" onClick={()=>void enableAlerts()} className="rounded-lg border border-[#c8a96e]/40 px-3 py-2 text-sm" aria-label="Enable new handoff notifications">{alertsEnabled?'Alerts enabled':'Enable alerts'}</button>
    <button onClick={()=>void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15}/>{loading?'Loading…':'Refresh'}</button>
   </div>
