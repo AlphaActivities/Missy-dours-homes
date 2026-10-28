@@ -219,8 +219,8 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
           </button>
         </div>
       )}
-      {open && <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 md:items-center md:p-6" role="presentation">
-        <section aria-label="Missy Dours private concierge" role="dialog" aria-modal="true" className="flex h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] border border-[#d1ad72]/45 bg-[#0b0a09] text-[#f2eadc] shadow-[0_30px_90px_rgba(0,0,0,.75)] md:h-[min(740px,88dvh)] md:rounded-[28px]">
+      {open && <div className="missy-concierge-backdrop fixed inset-0 z-[100] flex items-end justify-center bg-black/70 md:items-center md:p-6" role="presentation">
+        <section aria-label="Missy Dours private concierge" role="dialog" aria-modal="true" className="missy-concierge-dialog flex h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] border border-[#d1ad72]/45 bg-[#0b0a09] text-[#f2eadc] shadow-[0_30px_90px_rgba(0,0,0,.75)] md:h-[min(740px,88dvh)] md:rounded-[28px]">
           <header className="flex shrink-0 items-center gap-3 border-b border-[#b9945d]/30 bg-gradient-to-r from-[#17120c] to-[#0a0908] px-5 py-4">
             <button type="button" onClick={() => setOpen(false)} aria-label="Close concierge" className="rounded-lg p-2 hover:bg-white/10"><ArrowLeft size={19}/></button>
             <img src="/images/md-logo.png" alt="Missy Dours" className="h-9 w-9 rounded-lg bg-[#f5eddc] object-contain p-1" />
