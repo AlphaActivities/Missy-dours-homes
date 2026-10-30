@@ -17,7 +17,12 @@ export default function ConciergeSignatureEntrance() {
   // The logo moves to the real, measured header destination, not fixed pixels.
   const locate=()=>{
    const candidates=[...document.querySelectorAll<HTMLElement>('[data-crm-brand-target]')];
-   const el=candidates.find(node=>node.getBoundingClientRect().width>0);
+   const mobile=window.matchMedia('(max-width: 1023px)').matches;
+   const el=candidates.find(node=>{
+    const rect=node.getBoundingClientRect();
+    return rect.width>0 && rect.height>0 && rect.left>=0 && rect.right<=window.innerWidth &&
+      (mobile?Boolean(node.closest('.ds-dash-topbar')):Boolean(node.closest('.ds-dash-sidebar')));
+   });
    if(!el)return;
    const rect=el.getBoundingClientRect();
    setTarget({x:rect.left+rect.width/2-window.innerWidth/2,
@@ -25,7 +30,7 @@ export default function ConciergeSignatureEntrance() {
     scale:Math.min(1,rect.width/90)});
   };
   const frame=requestAnimationFrame(locate);
-  const move=window.setTimeout(()=>{locate();setPhase('fly');},560);
+  const move=window.setTimeout(()=>{locate();setPhase('fly');},650);
   const leave=window.setTimeout(()=>setPhase('leave'),1240);
   const finish=window.setTimeout(()=>setVisible(false),1530);
   return()=>{cancelAnimationFrame(frame);clearTimeout(move);clearTimeout(leave);clearTimeout(finish);};
@@ -42,7 +47,7 @@ export default function ConciergeSignatureEntrance() {
      animate={phase==='welcome'?{x:'-50%',y:'-50%',scale:1,opacity:1}:{
       x:`calc(-50% + ${target.x}px)`,y:`calc(-50% + ${target.y}px)`,
       scale:target.scale,opacity:phase==='leave'?0:1}}
-     transition={{duration:phase==='welcome'?.2:.7,ease:[.22,1,.36,1]}}>
+     transition={{duration:phase==='welcome'?.2:1.15,ease:[.22,1,.36,1]}}>
      <img src="/images/md-logo.png" alt="Missy Dours" className="h-[90px] w-[90px] rounded-xl bg-[#eee2c8] p-2 object-contain shadow-[0_0_45px_rgba(196,164,106,.22)]"/>
    </motion.div>
    <motion.div className="absolute left-1/2 flex flex-col items-center gap-3"
