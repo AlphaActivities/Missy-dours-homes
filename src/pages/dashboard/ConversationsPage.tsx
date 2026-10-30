@@ -181,7 +181,7 @@ export default function ConversationsPage() {
    <div><div className="flex items-center gap-2 mb-1"><MessageCircle size={19} style={{color:'var(--ds-gold)'}}/><h1 className="text-2xl" style={{fontFamily:"'Playfair Display', Georgia, serif"}}>Conversations</h1></div><p className="text-sm" style={{color:'var(--ds-text-secondary)'}}>Private concierge inbox · Staff messaging</p></div>
    <button onClick={()=>void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15}/>{loading?'Loading…':'Refresh'}</button>
   </div>
-  <div className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 px-3 py-2.5 sm:px-4" aria-label="Notification settings">
+  <div className="mb-5 flex w-full items-center justify-between gap-2 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 px-3 py-2.5 sm:px-4" aria-label="Notification settings">
     <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Notifications</p><p className="text-xs text-[#bdb0a0]">{pushState==='enabled'&&alertsEnabled?'Permission granted':alertsEnabled?'Permission granted':'Stay informed about new concierge requests'}</p></div>
     {pushState==='enabled'&&alertsEnabled
      ? <span className="shrink-0 rounded-full border border-emerald-700/50 bg-emerald-950/35 px-2.5 py-2 text-[11px] font-medium text-emerald-200 sm:px-3 sm:text-xs" role="status">✓ Notifications enabled</span>
