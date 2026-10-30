@@ -17,16 +17,6 @@ import { useEffect, useRef, useState } from 'react';
 export default function DashboardVideoBackground() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoEnabled, setVideoEnabled] = useState(true);
-  const [flightStarted, setFlightStarted] = useState(() => document.documentElement.dataset.crmWallpaperStarted === 'true');
-
-  useEffect(() => {
-    const begin = () => setFlightStarted(true);
-    window.addEventListener('missy-crm-logo-flight-start', begin);
-    // Reduced-motion users skip the entrance, so don't delay their wallpaper.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) begin();
-    return () => window.removeEventListener('missy-crm-logo-flight-start', begin);
-  }, []);
-
   useEffect(() => {
     const mqMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     // Best-effort data-saver detection (Connection API is not everywhere).
@@ -36,12 +26,20 @@ export default function DashboardVideoBackground() {
     const enabled = !mqMotion.matches && !isDataSaving;
     setVideoEnabled(enabled);
 
-    if (!enabled || !flightStarted) return;
+    if (!enabled) return;
 
     const video = videoRef.current;
     if (!video) return;
 
     const shouldPlay = () => !mqMotion.matches && !document.hidden;
+
+    // Seek once on initial load only. Native loop still repeats from the video's real start.
+    const seekInitial = () => {
+      if (video.readyState < 1 || !Number.isFinite(video.duration) || video.duration <= 1) return;
+      if (video.currentTime < 0.5) video.currentTime = 1;
+    };
+    video.addEventListener('loadedmetadata', seekInitial);
+    seekInitial();
 
     const sync = () => {
       if (!video) return;
@@ -64,17 +62,18 @@ export default function DashboardVideoBackground() {
     sync();
 
     return () => {
+      video.removeEventListener('loadedmetadata', seekInitial);
       document.removeEventListener('visibilitychange', onVisibility);
       mqMotion.removeEventListener('change', onMotion);
     };
-  }, [flightStarted]);
+  }, []);
 
   return (
     <div
       className="ds-dash-bg fixed inset-0 -z-10 overflow-hidden pointer-events-none"
       aria-hidden="true"
     >
-      {videoEnabled && flightStarted && (
+      {videoEnabled && (
         <video
           ref={videoRef}
           src="/videos/herobackground.mp4"
