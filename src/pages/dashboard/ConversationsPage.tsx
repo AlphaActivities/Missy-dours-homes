@@ -179,14 +179,14 @@ export default function ConversationsPage() {
  return <div className="px-4 py-7 md:px-8 md:py-9 max-w-7xl mx-auto" style={{color:'var(--ds-text-primary)'}}>
   <div className="flex flex-wrap gap-3 items-center justify-between mb-6">
    <div><div className="flex items-center gap-2 mb-1"><MessageCircle size={19} style={{color:'var(--ds-gold)'}}/><h1 className="text-2xl" style={{fontFamily:"'Playfair Display', Georgia, serif"}}>Conversations</h1></div><p className="text-sm" style={{color:'var(--ds-text-secondary)'}}>Private concierge inbox · Staff messaging</p></div>
-   <div className="flex items-center justify-between gap-2 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 px-3 py-2.5 sm:px-4" aria-label="Notification settings">
+   <button onClick={()=>void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15}/>{loading?'Loading…':'Refresh'}</button>
+  </div>
+  <div className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 px-3 py-2.5 sm:px-4" aria-label="Notification settings">
     <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Notifications</p><p className="text-xs text-[#bdb0a0]">{pushState==='enabled'&&alertsEnabled?'Permission granted':alertsEnabled?'Permission granted':'Stay informed about new concierge requests'}</p></div>
     {pushState==='enabled'&&alertsEnabled
      ? <span className="shrink-0 rounded-full border border-emerald-700/50 bg-emerald-950/35 px-2.5 py-2 text-[11px] font-medium text-emerald-200 sm:px-3 sm:text-xs" role="status">✓ Notifications enabled</span>
      : <button type="button" disabled={pushState==='working'} onClick={()=>void enableNotifications()} className="shrink-0 rounded-lg border border-[#c8a96e]/65 bg-gradient-to-r from-[#57442a] to-[#312516] px-3 py-2 text-xs font-medium text-[#f4e6ce] disabled:opacity-60 sm:px-4 sm:text-sm">{pushState==='working'?'Setting up…':'Enable Notifications'}</button>}
    </div>
-   <button onClick={()=>void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15}/>{loading?'Loading…':'Refresh'}</button>
-  </div>
   {error&&<p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
   {escalatedCount>0&&<p role="status" className="mb-3 rounded-lg border border-amber-400/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{escalatedCount} overdue visitor request{escalatedCount===1?'':'s'} need attention.</p>}
   {pendingTasks.length>0&&<section className="mb-5 rounded-xl border border-[#c8a96e]/35 bg-[#c8a96e]/10 p-4" aria-label="Handoff tasks"><h2 className="text-sm font-semibold mb-2 text-[#e5c486]">Pending concierge callbacks ({pendingTasks.length})</h2><div className="flex flex-wrap gap-2">{pendingTasks.map(t=><div key={t.id} className="flex items-center gap-2 rounded-lg border border-[#c8a96e]/30 px-2 py-1"><button onClick={()=>setSelected(t.conversation_id)} type="button" className="px-2 py-1 text-xs text-[#f1dec1]">{t.escalated_at ? 'ESCALATED' : t.escalation_due_at && new Date(t.escalation_due_at).getTime() < Date.now() ? 'OVERDUE' : t.urgency.toUpperCase()} · {time(t.due_at)} · View</button><button type="button" disabled={taskBusy===t.id} onClick={()=>void completeTask(t.id)} className="rounded-md bg-[#c8a96e] px-2 py-1 text-xs text-black disabled:opacity-50">Complete</button></div>)}</div></section>}
