@@ -17,6 +17,15 @@ import { useEffect, useRef, useState } from 'react';
 export default function DashboardVideoBackground() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoEnabled, setVideoEnabled] = useState(true);
+  const [flightStarted, setFlightStarted] = useState(() => document.documentElement.dataset.crmWallpaperStarted === 'true');
+
+  useEffect(() => {
+    const begin = () => setFlightStarted(true);
+    window.addEventListener('missy-crm-logo-flight-start', begin);
+    // Reduced-motion users skip the entrance, so don't delay their wallpaper.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) begin();
+    return () => window.removeEventListener('missy-crm-logo-flight-start', begin);
+  }, []);
 
   useEffect(() => {
     const mqMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -27,7 +36,7 @@ export default function DashboardVideoBackground() {
     const enabled = !mqMotion.matches && !isDataSaving;
     setVideoEnabled(enabled);
 
-    if (!enabled) return;
+    if (!enabled || !flightStarted) return;
 
     const video = videoRef.current;
     if (!video) return;
@@ -58,14 +67,14 @@ export default function DashboardVideoBackground() {
       document.removeEventListener('visibilitychange', onVisibility);
       mqMotion.removeEventListener('change', onMotion);
     };
-  }, []);
+  }, [flightStarted]);
 
   return (
     <div
       className="ds-dash-bg fixed inset-0 -z-10 overflow-hidden pointer-events-none"
       aria-hidden="true"
     >
-      {videoEnabled && (
+      {videoEnabled && flightStarted && (
         <video
           ref={videoRef}
           src="/videos/herobackground.mp4"

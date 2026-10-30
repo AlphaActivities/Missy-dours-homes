@@ -41,7 +41,7 @@ export default function ConciergeSignatureEntrance() {
   // Do not fly until the exact visible destination has been measured.
   const begin=()=>{
    if(!locate()){frame=requestAnimationFrame(begin);return;}
-   start=setTimeout(()=>setPhase('fly'),HOLD_MS);
+   start=setTimeout(()=>{document.documentElement.dataset.crmWallpaperStarted='true';window.dispatchEvent(new Event('missy-crm-logo-flight-start'));setPhase('fly');},HOLD_MS);
    fade=setTimeout(()=>setPhase('leave'),HOLD_MS+FLIGHT_MS+100);
    finish=setTimeout(()=>setVisible(false),HOLD_MS+FLIGHT_MS+100+FADE_MS);
   };
