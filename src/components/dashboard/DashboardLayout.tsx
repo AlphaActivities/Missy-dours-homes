@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
 import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle } from 'lucide-react';
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
+import ConciergeSignatureEntrance from './ui/ConciergeSignatureEntrance';
 import { supabase } from '../../lib/supabase';
 
 const NAV_ITEMS = [
@@ -148,6 +149,7 @@ export default function DashboardLayout() {
         >
           <div className="flex items-center gap-3">
             <div
+              data-crm-brand-target
               className="flex items-center justify-center rounded-xl shrink-0"
               style={{
                 width: '40px',
@@ -272,6 +274,7 @@ export default function DashboardLayout() {
 
           <div className="flex items-center gap-2.5">
             <div
+              data-crm-brand-target
               className="flex items-center justify-center rounded-lg shrink-0"
               style={{
                 width: '32px',
@@ -305,6 +308,7 @@ export default function DashboardLayout() {
         </main>
       </div>
     </div>
+    {!isLoginRoute && <ConciergeSignatureEntrance />}
     </ToastProvider>
   );
 }
