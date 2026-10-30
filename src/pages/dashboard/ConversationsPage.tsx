@@ -179,11 +179,11 @@ export default function ConversationsPage() {
  return <div className="px-4 py-7 md:px-8 md:py-9 max-w-7xl mx-auto" style={{color:'var(--ds-text-primary)'}}>
   <div className="flex flex-wrap gap-3 items-center justify-between mb-6">
    <div><div className="flex items-center gap-2 mb-1"><MessageCircle size={19} style={{color:'var(--ds-gold)'}}/><h1 className="text-2xl" style={{fontFamily:"'Playfair Display', Georgia, serif"}}>Conversations</h1></div><p className="text-sm" style={{color:'var(--ds-text-secondary)'}}>Private concierge inbox · Staff messaging</p></div>
-   <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 px-4 py-3" aria-label="Notification settings">
-    <div className="min-w-[165px] flex-1"><p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Notifications</p><p className="text-xs text-[#bdb0a0]">{pushState==='enabled'&&alertsEnabled?'Permission granted · Device registered':alertsEnabled?'Permission granted · Registration needed':'Stay informed about new concierge requests'}</p></div>
+   <div className="flex items-center justify-between gap-2 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 px-3 py-2.5 sm:px-4" aria-label="Notification settings">
+    <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Notifications</p><p className="text-xs text-[#bdb0a0]">{pushState==='enabled'&&alertsEnabled?'Permission granted':alertsEnabled?'Permission granted':'Stay informed about new concierge requests'}</p></div>
     {pushState==='enabled'&&alertsEnabled
-     ? <span className="rounded-full border border-emerald-700/50 bg-emerald-950/35 px-3 py-2 text-xs font-medium text-emerald-200" role="status">✓ Notifications enabled</span>
-     : <button type="button" disabled={pushState==='working'} onClick={()=>void enableNotifications()} className="rounded-lg border border-[#c8a96e]/65 bg-gradient-to-r from-[#57442a] to-[#312516] px-4 py-2 text-sm font-medium text-[#f4e6ce] disabled:opacity-60">{pushState==='working'?'Setting up…':'Enable Notifications'}</button>}
+     ? <span className="shrink-0 rounded-full border border-emerald-700/50 bg-emerald-950/35 px-2.5 py-2 text-[11px] font-medium text-emerald-200 sm:px-3 sm:text-xs" role="status">✓ Notifications enabled</span>
+     : <button type="button" disabled={pushState==='working'} onClick={()=>void enableNotifications()} className="shrink-0 rounded-lg border border-[#c8a96e]/65 bg-gradient-to-r from-[#57442a] to-[#312516] px-3 py-2 text-xs font-medium text-[#f4e6ce] disabled:opacity-60 sm:px-4 sm:text-sm">{pushState==='working'?'Setting up…':'Enable Notifications'}</button>}
    </div>
    <button onClick={()=>void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15}/>{loading?'Loading…':'Refresh'}</button>
   </div>
