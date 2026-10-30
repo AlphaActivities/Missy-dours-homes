@@ -32,29 +32,51 @@ export default function ConversationsPage() {
  const seenEscalatedRef=useRef<Set<string>|null>(null);
  const alertsEnabledRef=useRef(false);
  const [pushState,setPushState]=useState<'idle'|'working'|'enabled'|'unavailable'>('idle');
- const enableBackgroundPush=async()=>{
-  const key=String(import.meta.env.VITE_MISSY_VAPID_PUBLIC_KEY||'').trim();
-  if(!key){setError('Background push delivery is not configured yet. Browser alerts remain available.');setPushState('unavailable');return;}
-  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){setError('Background push is not supported in this browser. On iPhone, install the CRM on the Home Screen first.');return;}
+ useEffect(()=>{
+  let active=true;
+  const restore=async()=>{
+   if(!('Notification' in window))return;
+   const granted=Notification.permission==='granted';
+   if(active){setAlertsEnabled(granted);alertsEnabledRef.current=granted;}
+   if(!granted||!('serviceWorker' in navigator))return;
+   try{
+    const registration=await navigator.serviceWorker.getRegistration('/dashboard/');
+    const subscription=await registration?.pushManager?.getSubscription();
+    if(!subscription||!active)return;
+    const {data,error}=await supabase.from('ai_concierge_push_subscriptions').select('id').eq('endpoint',subscription.endpoint).eq('staff_email',staffEmail).maybeSingle();
+    if(active&&!error&&data)setPushState('enabled');
+   }catch{/* The user can retry registration manually. */}
+  };
+  if(staffEmail)void restore();
+  return()=>{active=false;};
+ },[staffEmail]);
+ const enableNotifications=async()=>{
+  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window)){
+   setError('Background notifications require a supported browser. On iPhone, open the installed CRM Home Screen app.');return;
+  }
+  // Permission request must run directly from the tap, before network operations.
   setPushState('working');setError(null);
   try{
-   if(await Notification.requestPermission()!=='granted')throw new Error('Notification permission was not granted.');
+   const permission=await Notification.requestPermission();
+   const granted=permission==='granted';
+   setAlertsEnabled(granted);alertsEnabledRef.current=granted;
+   if(!granted)throw new Error('Notifications are not allowed. Enable them in your device settings and try again.');
+   const key=String(import.meta.env.VITE_MISSY_VAPID_PUBLIC_KEY||'').trim();
+   if(!key)throw new Error('Background notification configuration is not ready yet.');
    const registration=await navigator.serviceWorker.ready;
-   const urlSafe=key.replace(/-/g,'+').replace(/_/g,'/');
-   const decoded=atob(urlSafe.padEnd(Math.ceil(urlSafe.length/4)*4,'='));
+   const decoded=atob(key.replace(/-/g,'+').replace(/_/g,'/').padEnd(Math.ceil(key.length/4)*4,'='));
    const applicationServerKey=Uint8Array.from(decoded,c=>c.charCodeAt(0));
    const subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey});
    const json=subscription.toJSON();
-   if(!json.endpoint||!json.keys?.p256dh||!json.keys?.auth)throw new Error('Browser did not provide a valid push subscription.');
+   if(!json.endpoint||!json.keys?.p256dh||!json.keys?.auth)throw new Error('This device could not register for background notifications.');
    const {error}=await supabase.from('ai_concierge_push_subscriptions').upsert({
     staff_email:staffEmail,endpoint:json.endpoint,p256dh:json.keys.p256dh,auth_key:json.keys.auth,
     user_agent:navigator.userAgent,updated_at:new Date().toISOString()
    },{onConflict:'endpoint'});
    if(error)throw error;
    setPushState('enabled');
-  }catch(e){setError(e instanceof Error?e.message:'Could not enable background push.');setPushState('idle');}
+  }catch(e){setError(e instanceof Error?e.message:'Could not enable notifications.');setPushState('idle');}
  };
- const enableAlerts=async()=>{if(!('Notification' in window)){setError('This browser does not support notifications.');return;}const status=await Notification.requestPermission();setAlertsEnabled(status==='granted');alertsEnabledRef.current=status==='granted';if(status!=='granted')setError('Notifications were not enabled. The CRM attention queue still works.');};
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
  const refresh=async(showLoading=true)=>{if(showLoading){setLoading(true);setError(null);}try{
   const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
@@ -156,9 +178,13 @@ export default function ConversationsPage() {
  const filtered=items.filter(c=>(filter==='all'||c.status===filter)&&[c.title,c.summary??'',c.priority,c.language_code].join(' ').toLowerCase().includes(search.toLowerCase()));
  return <div className="px-4 py-7 md:px-8 md:py-9 max-w-7xl mx-auto" style={{color:'var(--ds-text-primary)'}}>
   <div className="flex flex-wrap gap-3 items-center justify-between mb-6">
-   <div><div className="flex items-center gap-2 mb-1"><MessageCircle size={19} style={{color:'var(--ds-gold)'}}/><h1 className="text-2xl" style={{fontFamily:"'Playfair Display', Georgia, serif"}}>Conversations</h1></div><p className="text-sm" style={{color:'var(--ds-text-secondary)'}}>Private concierge inbox · Staff messaging · Development preview</p></div>
-   <button type="button" disabled={pushState==='working'} onClick={()=>void enableBackgroundPush()} className="rounded-lg border border-[#c8a96e]/40 px-3 py-2 text-sm disabled:opacity-50">{pushState==='enabled'?'Background push registered':pushState==='working'?'Registering push…':'Enable background push'}</button>
-   <button type="button" onClick={()=>void enableAlerts()} className="rounded-lg border border-[#c8a96e]/40 px-3 py-2 text-sm" aria-label="Enable new handoff notifications">{alertsEnabled?'Alerts enabled':'Enable alerts'}</button>
+   <div><div className="flex items-center gap-2 mb-1"><MessageCircle size={19} style={{color:'var(--ds-gold)'}}/><h1 className="text-2xl" style={{fontFamily:"'Playfair Display', Georgia, serif"}}>Conversations</h1></div><p className="text-sm" style={{color:'var(--ds-text-secondary)'}}>Private concierge inbox · Staff messaging</p></div>
+   <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 px-4 py-3" aria-label="Notification settings">
+    <div className="min-w-[165px] flex-1"><p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Notifications</p><p className="text-xs text-[#bdb0a0]">{pushState==='enabled'&&alertsEnabled?'Permission granted · Device registered':alertsEnabled?'Permission granted · Registration needed':'Stay informed about new concierge requests'}</p></div>
+    {pushState==='enabled'&&alertsEnabled
+     ? <span className="rounded-full border border-emerald-700/50 bg-emerald-950/35 px-3 py-2 text-xs font-medium text-emerald-200" role="status">✓ Notifications enabled</span>
+     : <button type="button" disabled={pushState==='working'} onClick={()=>void enableNotifications()} className="rounded-lg border border-[#c8a96e]/65 bg-gradient-to-r from-[#57442a] to-[#312516] px-4 py-2 text-sm font-medium text-[#f4e6ce] disabled:opacity-60">{pushState==='working'?'Setting up…':'Enable Notifications'}</button>}
+   </div>
    <button onClick={()=>void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15}/>{loading?'Loading…':'Refresh'}</button>
   </div>
   {error&&<p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
