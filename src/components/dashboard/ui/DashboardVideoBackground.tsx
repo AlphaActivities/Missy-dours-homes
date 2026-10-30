@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 export default function DashboardVideoBackground() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoEnabled, setVideoEnabled] = useState(true);
-  const [flightStarted, setFlightStarted] = useState(false);
+  const [flightStarted, setFlightStarted] = useState(() => document.documentElement.dataset.crmWallpaperStarted === 'true');
 
   useEffect(() => {
     const begin = () => setFlightStarted(true);
