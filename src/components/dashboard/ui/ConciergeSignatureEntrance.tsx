@@ -8,12 +8,27 @@ const CENTER_Y = 0.38;
 const HOLD_MS = 2000;
 const FLIGHT_MS = 1250;
 const FADE_MS = 320;
+const formatDeviceDate = () => new Intl.DateTimeFormat(navigator.language || 'en-US', {
+ weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+}).format(new Date());
 
 export default function ConciergeSignatureEntrance() {
  const [visible,setVisible]=useState(()=>!entrancePlayed);
  const [phase,setPhase]=useState<'welcome'|'fly'|'leave'>('welcome');
  const [target,setTarget]=useState<Target>({x:0,y:0,scale:1});
  const [reduced,setReduced]=useState(false);
+ const [deviceDate,setDeviceDate]=useState(formatDeviceDate);
+ useEffect(()=>{
+  const updateDate=()=>setDeviceDate(formatDeviceDate());
+  const interval=window.setInterval(updateDate,60_000);
+  window.addEventListener('focus',updateDate);
+  document.addEventListener('visibilitychange',updateDate);
+  return()=>{
+   window.clearInterval(interval);
+   window.removeEventListener('focus',updateDate);
+   document.removeEventListener('visibilitychange',updateDate);
+  };
+ },[]);
  useEffect(()=>{
   if(entrancePlayed)return;
   entrancePlayed=true;
@@ -62,11 +77,15 @@ export default function ConciergeSignatureEntrance() {
      transition={{duration:FLIGHT_MS/1000,ease:[.32,.04,.25,1]}}
      style={{transformOrigin:'center center'}}/>
    </div>
-   <motion.div className="absolute left-1/2 flex flex-col items-center gap-3"
+   <motion.div className="absolute left-1/2 flex w-[min(94vw,520px)] flex-col items-center gap-3 px-2"
      style={{top:`calc(${CENTER_Y*100}% + 88px)`,transform:'translateX(-50%)'}}
      animate={{opacity:phase==='welcome'?1:0}} transition={{duration:.22}}>
      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#c4a46a]/20 border-t-[#c4a46a]" aria-hidden="true"/>
-     <p className="whitespace-nowrap text-center text-[10px] uppercase tracking-[.25em] text-[#dfc58e]">Entering your<br/>Executive dashboard</p>
+     <div className="flex flex-col items-center gap-3 text-center">
+      <p className="text-[15px] sm:text-[18px] font-medium uppercase leading-[1.65] tracking-[.17em] sm:tracking-[.22em] text-[#dfc58e]">Entering your<br/>Executive dashboard</p>
+      <div className="h-px w-16 bg-gradient-to-r from-transparent via-[#c4a46a]/70 to-transparent" aria-hidden="true"/>
+      <p className="text-[12px] sm:text-[14px] leading-relaxed tracking-[.09em] text-[#dfc58e]/85" aria-label={`Device date: ${deviceDate}`}>{deviceDate}</p>
+     </div>
    </motion.div>
   </motion.div>}</AnimatePresence>;
 }
