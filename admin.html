@@ -10,13 +10,18 @@
       gtag('config', '%VITE_GA_ID%', { send_page_view: false });
     </script>
     <meta charset="UTF-8" />
+    <!-- CRM first paint: dark before React and its styles load. -->
+    <meta name="theme-color" content="#0b0a09" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <style>html,body,#root{margin:0;min-height:100%;background-color:#0b0a09}html{color-scheme:dark}</style>
     <!-- Favicons -->
     <link rel="icon" type="image/png" href="/images/Favicons/favicon-96x96.png?v=3" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/images/Favicons/favicon.svg?v=3" />
     <link rel="shortcut icon" href="/images/Favicons/favicon.ico?v=3" />
     <link rel="apple-touch-icon" sizes="180x180" href="/images/Favicons/apple-touch-icon.png?v=3" />
     <meta name="apple-mobile-web-app-title" content="Missy Dours" />
-    <link rel="manifest" href="/images/Favicons/site.webmanifest?v=3" />
+    <link rel="manifest" href="/missy-crm.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
     <title>Missy Dours | Private Admin Access</title>
