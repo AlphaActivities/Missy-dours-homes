@@ -83,7 +83,7 @@ export default function ConciergeSignatureEntrance() {
      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#c4a46a]/20 border-t-[#c4a46a]" aria-hidden="true"/>
      <div className="flex flex-col items-center gap-3 text-center">
       <p className="text-[15px] sm:text-[18px] font-medium uppercase leading-[1.65] tracking-[.17em] sm:tracking-[.22em] text-[#dfc58e]">Entering your<br/>Executive dashboard</p>
-      <p className="text-[12px] sm:text-[14px] leading-relaxed tracking-[.09em] text-[#dfc58e]/85" aria-label={`Device date: ${deviceDate}`}>{deviceDate}</p>
+      <p className="mt-9 sm:mt-10 text-[12px] sm:text-[14px] leading-relaxed tracking-[.09em] text-[#dfc58e]/85" aria-label={`Device date: ${deviceDate}`}>{deviceDate}</p>
      </div>
    </motion.div>
   </motion.div>}</AnimatePresence>;
