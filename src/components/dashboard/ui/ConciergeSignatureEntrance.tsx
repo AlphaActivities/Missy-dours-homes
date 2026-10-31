@@ -24,7 +24,6 @@ export default function ConciergeSignatureEntrance() {
   }, []);
 
   useEffect(() => {
-    if (entrancePlayed) return;
     entrancePlayed = true;
     const timer = window.setTimeout(() => setVisible(false), HOLD_MS);
     return () => window.clearTimeout(timer);
