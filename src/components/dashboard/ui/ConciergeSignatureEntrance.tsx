@@ -66,7 +66,7 @@ export default function ConciergeSignatureEntrance() {
      style={{top:`calc(${CENTER_Y*100}% + 88px)`,transform:'translateX(-50%)'}}
      animate={{opacity:phase==='welcome'?1:0}} transition={{duration:.22}}>
      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#c4a46a]/20 border-t-[#c4a46a]" aria-hidden="true"/>
-     <p className="whitespace-nowrap text-[10px] uppercase tracking-[.25em] text-[#dfc58e]">Preparing your concierge</p>
+     <p className="whitespace-nowrap text-center text-[10px] uppercase tracking-[.25em] text-[#dfc58e]">Entering your<br/>Executive dashboard</p>
    </motion.div>
   </motion.div>}</AnimatePresence>;
 }
