@@ -481,7 +481,7 @@
 
 /* ── Cinematic dashboard background ──────────────────────────── */
 .ds-dash-bg {
-  z-index: -10;
+  z-index: 0;
 }
 /* Single global 60% black overlay over the video */
 .ds-dash-overlay {
