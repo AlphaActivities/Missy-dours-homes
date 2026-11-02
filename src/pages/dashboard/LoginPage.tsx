@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
@@ -9,6 +9,9 @@ export default function LoginPage() {
   const { session, loading, isApproved, signIn } = useAuth();
   const navigate = useNavigate();
 
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const autoSignInAttempted = useRef(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +24,36 @@ export default function LoginPage() {
       navigate('/dashboard', { replace: true });
     }
   }, [loading, session, isApproved, navigate]);
+
+  // Safari's password manager may fill native DOM fields without dispatching
+  // React onChange events. Sign in once when both fields are genuinely autofilled;
+  // ordinary manual typing must still require the Sign in button.
+  useEffect(() => {
+    if (loading || session || submitting || error || autoSignInAttempted.current) return;
+    const check = () => {
+      const username = emailRef.current;
+      const secret = passwordRef.current;
+      if (!username?.value.trim() || !secret?.value || autoSignInAttempted.current) return;
+      const isAutofilled = (field: HTMLInputElement) => {
+        try { return field.matches(':autofill, :-webkit-autofill'); }
+        catch { return false; }
+      };
+      if (!isAutofilled(secret)) return;
+      autoSignInAttempted.current = true;
+      setEmail(username.value);
+      setPassword(secret.value);
+      setSubmitting(true);
+      void signIn(username.value.trim(), secret.value).then(({ error: signInError }) => {
+        if (signInError) {
+          setError('Invalid email or password.');
+          setSubmitting(false);
+        }
+      });
+    };
+    const interval = window.setInterval(check, 150);
+    check();
+    return () => window.clearInterval(interval);
+  }, [loading, session, submitting, error, signIn]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -93,9 +126,10 @@ export default function LoginPage() {
                 Email
               </label>
               <input
+                ref={emailRef}
                 id="email"
                 type="email"
-                autoComplete="email"
+                autoComplete="username"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -123,6 +157,7 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <input
+                  ref={passwordRef}
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
