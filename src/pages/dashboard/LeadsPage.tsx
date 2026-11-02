@@ -277,7 +277,7 @@ export default function LeadsPage() {
         style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
       >
         {/* ── Page header ──────────────────────────────────── */}
-        <div className="ds-dash-scrim ds-page-reveal ds-page-reveal-0 rounded-2xl px-4 py-3 -mx-4 sm:mx-0 mb-6">
+        <div className="ds-dash-scrim ds-page-reveal ds-page-reveal-0 ds-stat-living-gold relative overflow-hidden rounded-2xl px-4 py-3 mb-6">
         <SectionHeader
           title="Leads"
           subtitle={subtitle}
