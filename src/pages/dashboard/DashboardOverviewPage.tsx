@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowRight, TrendingUp, Users, Zap, AlertCircle, Clock, Calendar } from 'lucide-react';
@@ -273,6 +274,29 @@ export default function DashboardOverviewPage() {
   const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([]);
   const [attentionLoading, setAttentionLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
+  const reducedMotion = useReducedMotion();
+  const [entranceComplete, setEntranceComplete] = useState(
+    () => document.documentElement.dataset.crmEntranceComplete === 'true'
+  );
+
+  useEffect(() => {
+    if (entranceComplete) return;
+    const onComplete = () => setEntranceComplete(true);
+    window.addEventListener('missy-crm-entrance-complete', onComplete);
+    // The event may have fired before this page mounted.
+    if (document.documentElement.dataset.crmEntranceComplete === 'true') onComplete();
+    return () => window.removeEventListener('missy-crm-entrance-complete', onComplete);
+  }, [entranceComplete]);
+
+  const reveal = (index: number) => reducedMotion ? { opacity: 1, y: 0 } : {
+    opacity: entranceComplete ? 1 : 0,
+    y: entranceComplete ? 0 : 12,
+  };
+  const revealTransition = (index: number) => ({
+    duration: reducedMotion ? 0 : 0.42,
+    delay: reducedMotion ? 0 : index * 0.11,
+    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+  });
 
   useEffect(() => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -382,7 +406,7 @@ export default function DashboardOverviewPage() {
       style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
     >
       {/* ── Greeting ─────────────────────────────────────── */}
-      <div className="mb-10">
+      <motion.div initial={false} animate={reveal(0)} transition={revealTransition(0)} className="mb-10">
         <h1
           className="text-3xl sm:text-4xl font-light tracking-tight"
           style={{
@@ -406,7 +430,7 @@ export default function DashboardOverviewPage() {
             Signed in as {user.email}
           </p>
         )}
-      </div>
+      </motion.div>
 
       {/* ── Stat cards ───────────────────────────────────── */}
       {statsLoading ? (
@@ -417,38 +441,40 @@ export default function DashboardOverviewPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <StatCard
+          <motion.div initial={false} animate={reveal(1)} transition={revealTransition(1)}><StatCard
             label="Total leads"
             value={totalLeads}
             icon={<Users size={15} />}
             onClick={() => navigate('/dashboard/leads?filter=all')}
-          />
-          <StatCard
+          /></motion.div>
+          <motion.div initial={false} animate={reveal(2)} transition={revealTransition(2)}><StatCard
             label="This week"
             value={weekLeads}
             icon={<TrendingUp size={15} />}
             onClick={() => navigate('/dashboard/leads?filter=all')}
-          />
-          <StatCard
+          /></motion.div>
+          <motion.div initial={false} animate={reveal(3)} transition={revealTransition(3)}><StatCard
             label="New and Uncontacted"
             value={newLeads}
             icon={<Zap size={15} />}
             accent={!!newLeads && newLeads > 0}
             animated={!!newLeads && newLeads > 0}
             onClick={() => navigate('/dashboard/leads?filter=new')}
-          />
+          /></motion.div>
         </div>
       )}
 
       {/* ── Needs Attention ──────────────────────────────── */}
-      <NeedsAttentionSection
-        items={attentionItems}
-        loading={attentionLoading}
-        onOpen={handleOpenRecent}
-      />
+      <motion.div initial={false} animate={reveal(4)} transition={revealTransition(4)}>
+        <NeedsAttentionSection
+          items={attentionItems}
+          loading={attentionLoading}
+          onOpen={handleOpenRecent}
+        />
+      </motion.div>
 
       {/* ── Recent leads ─────────────────────────────────── */}
-      <div>
+      <motion.div initial={false} animate={reveal(5)} transition={revealTransition(5)}>
         <div className="flex items-center justify-between mb-4">
           <h2
             className="text-sm font-semibold tracking-tight"
@@ -518,7 +544,7 @@ export default function DashboardOverviewPage() {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
