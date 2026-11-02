@@ -114,7 +114,7 @@ export default function DashboardLayout() {
 
   return (
     <ToastProvider>
-    <div className="ds-shell min-h-screen flex ds-dash-shell" style={{ background: 'var(--ds-bg-base)' }}>
+    <div className="ds-shell isolate min-h-screen flex ds-dash-shell" style={{ background: 'var(--ds-bg-base)' }}>
 
       {/* ── Cinematic background (desktop only) ──────────── */}
       <DashboardVideoBackground />
@@ -135,7 +135,7 @@ export default function DashboardLayout() {
 
       {/* ── Sidebar ───────────────────────────────────────── */}
       <aside
-        className="ds-dash-sidebar fixed top-0 left-0 h-full z-30 w-64 flex flex-col lg:z-auto lg:!translate-x-0"
+        className="ds-dash-sidebar fixed top-0 left-0 h-full z-30 w-64 flex flex-col lg:!translate-x-0"
         style={{
           boxShadow: 'var(--ds-shadow-card), 1px 0 0 rgba(255,255,255,0.04)',
           transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
@@ -253,7 +253,7 @@ export default function DashboardLayout() {
       <div className="hidden lg:block w-64 shrink-0" />
 
       {/* ── Main content ──────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="relative z-10 flex-1 flex flex-col min-w-0">
 
         {/* Mobile top bar — hidden on login route, which has its own full-screen layout */}
         <header
