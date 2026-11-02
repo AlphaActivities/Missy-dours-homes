@@ -279,6 +279,7 @@ export default function LeadsPage() {
         {/* ── Page header ──────────────────────────────────── */}
         <div className="ds-dash-scrim ds-page-reveal ds-page-reveal-0 ds-stat-living-gold relative overflow-hidden rounded-2xl px-4 py-3 mb-6">
         <SectionHeader
+          compact
           title="Leads"
           subtitle={subtitle}
           action={
@@ -296,7 +297,7 @@ export default function LeadsPage() {
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
                   placeholder="Search Customer..."
-                  className="h-9 pl-8 pr-8 rounded-xl text-[16px] sm:text-xs outline-none transition-all duration-200 w-48 sm:w-64"
+                  className="h-9 pl-8 pr-8 rounded-xl text-[16px] sm:text-xs outline-none transition-all duration-200 w-36 sm:w-64"
                   style={{
                     background: 'var(--ds-bg-raised)',
                     color: 'var(--ds-text-primary)',
