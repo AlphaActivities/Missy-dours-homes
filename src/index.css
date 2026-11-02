@@ -577,3 +577,12 @@
  .missy-concierge-launcher,.missy-concierge-launcher-glow,
  .missy-concierge-backdrop,.missy-concierge-dialog { animation:none !important; }
 }
+
+/* iOS Safari zooms focused form fields smaller than 16px. Scope fix to private CRM. */
+@media screen and (max-width: 1023px) {
+  .ds-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  .ds-shell textarea,
+  .ds-shell select {
+    font-size: 16px !important;
+  }
+}
