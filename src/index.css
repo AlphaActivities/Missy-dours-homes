@@ -586,3 +586,21 @@
     font-size: 16px !important;
   }
 }
+
+/* Scoped luxury entrance, runs only when a Leads/Conversations page mounts.
+   Static DOM classes ensure searches, polling and live messages never replay it. */
+@keyframes ds-page-reveal-in {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.ds-shell .ds-page-reveal {
+  animation: ds-page-reveal-in 420ms cubic-bezier(.22, 1, .36, 1) both;
+}
+.ds-shell .ds-page-reveal-0 { animation-delay: 0ms; }
+.ds-shell .ds-page-reveal-1 { animation-delay: 110ms; }
+.ds-shell .ds-page-reveal-2 { animation-delay: 220ms; }
+.ds-shell .ds-page-reveal-3 { animation-delay: 330ms; }
+.ds-shell .ds-page-reveal-4 { animation-delay: 440ms; }
+@media (prefers-reduced-motion: reduce) {
+  .ds-shell .ds-page-reveal { animation: none !important; }
+}
