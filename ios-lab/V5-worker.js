@@ -1,0 +1,17 @@
+addEventListener('fetch',event=>event.respondWith((async()=>{
+ const url=new URL(event.request.url),path=url.pathname;
+ const logo='https://missydours.com/images/md-logo.png';
+ // Use the same actual rendered bitmap for Apple's native launch and first HTML frame.
+ if(path==='/startup.png'){
+   const upstream=await fetch(logo,{cf:{image:{fit:'pad',width:1170,height:2532,background:'#0c0a08',format:'png'}}});
+   return new Response(upstream.body,{status:upstream.status,headers:{'content-type':upstream.headers.get('content-type')||'image/png','cache-control':'public,max-age=600'}});
+ }
+ if(path==='/logo.png'){const upstream=await fetch(logo);return new Response(upstream.body,{status:upstream.status,headers:{'content-type':upstream.headers.get('content-type')||'image/png','cache-control':'public,max-age=600'}})}
+ if(path==='/manifest.webmanifest')return new Response(JSON.stringify({id:'/v5/',name:'Missy Apple Startup V5',short_name:'V5 Startup',start_url:'/v5/',scope:'/v5/',display:'standalone',background_color:'#0c0a08',theme_color:'#0c0a08',icons:[{src:'/logo.png',sizes:'any',type:'image/png'}]}),{headers:{'content-type':'application/manifest+json','cache-control':'no-store'}});
+ if(path==='/')return Response.redirect(url.origin+'/v5/',302);
+ if(path==='/v5/'){
+  const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0c0a08"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="V5 Startup"><link rel="apple-touch-icon" href="/logo.png"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-startup-image" href="/startup.png" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"><link rel="preload" as="image" href="/startup.png" fetchpriority="high"><style>html,body{margin:0;width:100%;height:100%;background:#0c0a08;color-scheme:dark}body{overflow:hidden}.startup{position:fixed;inset:0;width:100%;height:100%;object-fit:fill;display:block}.hold{position:fixed;inset:0;background:transparent;pointer-events:none}.ready{position:fixed;bottom:38px;left:0;right:0;text-align:center;font:12px system-ui;color:#b69a61;opacity:0;transition:opacity 320ms ease}.ready.on{opacity:1}@media(prefers-reduced-motion:reduce){.ready{transition:none}}</style></head><body><img id="startup" class="startup" src="/startup.png" alt="Clancy Realty startup"><div class="hold"></div><div id="ready" class="ready">Startup frame held for one second</div><script>const image=document.getElementById("startup");let started=false;function after(){if(started)return;started=true;setTimeout(()=>document.getElementById("ready").classList.add("on"),1000)}if(image.complete&&image.naturalWidth)after();else image.addEventListener("load",after,{once:true});</script></body></html>';
+  return new Response(html,{headers:{'content-type':'text/html;charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex'}});
+ }
+ return new Response('Not found',{status:404});
+})()))
