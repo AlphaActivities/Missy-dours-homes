@@ -275,18 +275,21 @@ export default function DashboardOverviewPage() {
   const [attentionLoading, setAttentionLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const reducedMotion = useReducedMotion();
-  const [entranceComplete, setEntranceComplete] = useState(
-    () => document.documentElement.dataset.crmEntranceComplete === 'true'
-  );
-
+  // Reset each time Overview mounts. On the first launch wait for the logo
+  // flight; on later visits start a fresh reveal on the next animation frame.
+  const [entranceComplete, setEntranceComplete] = useState(false);
   useEffect(() => {
-    if (entranceComplete) return;
     const onComplete = () => setEntranceComplete(true);
     window.addEventListener('missy-crm-entrance-complete', onComplete);
-    // The event may have fired before this page mounted.
-    if (document.documentElement.dataset.crmEntranceComplete === 'true') onComplete();
-    return () => window.removeEventListener('missy-crm-entrance-complete', onComplete);
-  }, [entranceComplete]);
+    let frame = 0;
+    if (document.documentElement.dataset.crmEntranceComplete === 'true') {
+      frame = requestAnimationFrame(onComplete);
+    }
+    return () => {
+      window.removeEventListener('missy-crm-entrance-complete', onComplete);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
 
   const reveal = () => reducedMotion ? { opacity: 1, y: 0 } : {
     opacity: entranceComplete ? 1 : 0,
