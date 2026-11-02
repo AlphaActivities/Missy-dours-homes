@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import LoadingSpinner, { LoadingScreen } from '../../components/dashboard/ui/LoadingSpinner';
+import { resetConciergeEntranceForLogin } from '../../components/dashboard/ui/ConciergeSignatureEntrance';
 
 export default function LoginPage() {
   const { session, loading, isApproved, signIn } = useAuth();
@@ -16,6 +17,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && session && isApproved) {
+      resetConciergeEntranceForLogin();
       navigate('/dashboard', { replace: true });
     }
   }, [loading, session, isApproved, navigate]);
@@ -46,18 +48,18 @@ export default function LoginPage() {
         }}
       />
 
-      <div className="relative w-full max-w-sm animate-ds-fade-up">
+      <div className="relative w-full max-w-sm animate-ds-fade-up pt-6">
 
         {/* Brand mark */}
-        <div className="flex flex-col items-center mb-10">
+        <div className="flex flex-col items-center mb-12">
           <div
-            className="mb-5 p-3 rounded-2xl"
+            className="mb-5 p-2.5 rounded-2xl h-[124px] w-[124px] flex items-center justify-center"
             style={{ background: 'rgba(245,237,220,0.92)', boxShadow: '0 0 0 1px rgba(196,164,106,0.3)' }}
           >
             <img
               src="/images/md-logo.png"
               alt="Missy Dours"
-              className="h-12 w-auto object-contain"
+              className="h-full w-full object-contain"
             />
           </div>
           <h1
