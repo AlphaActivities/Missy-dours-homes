@@ -1,0 +1,11 @@
+addEventListener('fetch',event=>event.respondWith((async()=>{
+ const u=new URL(event.request.url),p=u.pathname;
+ if(p==='/startup.png'){
+  const r=await fetch('https://missy-ios-v7-lab.gta-alpha-activities.workers.dev/startup.png');
+  return new Response(r.body,{status:r.status,headers:{'content-type':r.headers.get('content-type')||'image/png','cache-control':'public,max-age=600'}});
+ }
+ if(p==='/manifest.webmanifest')return new Response(JSON.stringify({id:'/v8/',name:'Missy Startup Alignment V8',short_name:'V8 Align',start_url:'/v8/',scope:'/v8/',display:'standalone',background_color:'#0c0a08',theme_color:'#0c0a08',icons:[{src:'/startup.png',sizes:'1170x2532',type:'image/png'}]}),{headers:{'content-type':'application/manifest+json','cache-control':'no-store'}});
+ if(p==='/')return Response.redirect(u.origin+'/v8/',302);
+ if(p==='/v8/')return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0c0a08"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="V8 Align"><link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/startup.png"><link rel="apple-touch-startup-image" href="/startup.png" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"><link rel="preload" as="image" href="/startup.png" fetchpriority="high"><style>html,body{margin:0;width:100%;height:100%;background:#0c0a08;color-scheme:dark}body{overflow:hidden}.startup{display:block;position:fixed;inset:0;width:100%;height:100%;object-fit:fill;transform:translate3d(0,-33px,0)}@media(prefers-reduced-motion:reduce){.startup{transition:none}}</style></head><body><img class="startup" src="/startup.png" alt="Clancy Realty launch"></body></html>`,{headers:{'content-type':'text/html;charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex'}});
+ return new Response('Not found',{status:404});
+})()))
