@@ -1,0 +1,10 @@
+{
+  "name": "Missy Startup V7",
+  "short_name": "V7 Startup",
+  "id": "/ios-lab/v7/",
+  "start_url": "/ios-lab/v7/",
+  "scope": "/ios-lab/v7/",
+  "display": "standalone",
+  "background_color": "#0c0a08",
+  "theme_color": "#0c0a08"
+}
