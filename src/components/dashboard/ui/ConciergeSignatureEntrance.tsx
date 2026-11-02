@@ -70,7 +70,7 @@ export default function ConciergeSignatureEntrance() {
    role="status" aria-label="Opening Missy Dours private CRM" aria-live="polite">
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
    <div className="absolute left-1/2" style={{top:`${CENTER_Y*100}%`,transform:'translate(-50%, -50%)'}}>
-    <motion.img src="/images/md-logo.png" alt="Missy Dours" decoding="sync"
+    <motion.img src="/images/md-logo.png" alt="Missy Dours" decoding="sync" loading="eager" fetchPriority="high"
      className="block h-[124px] w-[124px] rounded-2xl bg-[#eee2c8] p-2.5 object-contain shadow-[0_0_48px_rgba(196,164,106,.24)]"
      initial={{x:0,y:0,scale:1}}
      animate={phase==='welcome'?{x:0,y:0,scale:1}:{x:target.x,y:target.y,scale:target.scale}}
