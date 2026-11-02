@@ -288,7 +288,7 @@ export default function DashboardOverviewPage() {
     return () => window.removeEventListener('missy-crm-entrance-complete', onComplete);
   }, [entranceComplete]);
 
-  const reveal = (index: number) => reducedMotion ? { opacity: 1, y: 0 } : {
+  const reveal = () => reducedMotion ? { opacity: 1, y: 0 } : {
     opacity: entranceComplete ? 1 : 0,
     y: entranceComplete ? 0 : 12,
   };
@@ -406,7 +406,7 @@ export default function DashboardOverviewPage() {
       style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
     >
       {/* ── Greeting ─────────────────────────────────────── */}
-      <motion.div initial={false} animate={reveal(0)} transition={revealTransition(0)} className="mb-10">
+      <motion.div initial={false} animate={reveal()} transition={revealTransition(0)} className="mb-10">
         <h1
           className="text-3xl sm:text-4xl font-light tracking-tight"
           style={{
@@ -441,19 +441,19 @@ export default function DashboardOverviewPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <motion.div initial={false} animate={reveal(1)} transition={revealTransition(1)}><StatCard
+          <motion.div initial={false} animate={reveal()} transition={revealTransition(1)}><StatCard
             label="Total leads"
             value={totalLeads}
             icon={<Users size={15} />}
             onClick={() => navigate('/dashboard/leads?filter=all')}
           /></motion.div>
-          <motion.div initial={false} animate={reveal(2)} transition={revealTransition(2)}><StatCard
+          <motion.div initial={false} animate={reveal()} transition={revealTransition(2)}><StatCard
             label="This week"
             value={weekLeads}
             icon={<TrendingUp size={15} />}
             onClick={() => navigate('/dashboard/leads?filter=all')}
           /></motion.div>
-          <motion.div initial={false} animate={reveal(3)} transition={revealTransition(3)}><StatCard
+          <motion.div initial={false} animate={reveal()} transition={revealTransition(3)}><StatCard
             label="New and Uncontacted"
             value={newLeads}
             icon={<Zap size={15} />}
@@ -465,7 +465,7 @@ export default function DashboardOverviewPage() {
       )}
 
       {/* ── Needs Attention ──────────────────────────────── */}
-      <motion.div initial={false} animate={reveal(4)} transition={revealTransition(4)}>
+      <motion.div initial={false} animate={reveal()} transition={revealTransition(4)}>
         <NeedsAttentionSection
           items={attentionItems}
           loading={attentionLoading}
@@ -474,7 +474,7 @@ export default function DashboardOverviewPage() {
       </motion.div>
 
       {/* ── Recent leads ─────────────────────────────────── */}
-      <motion.div initial={false} animate={reveal(5)} transition={revealTransition(5)}>
+      <motion.div initial={false} animate={reveal()} transition={revealTransition(5)}>
         <div className="flex items-center justify-between mb-4">
           <h2
             className="text-sm font-semibold tracking-tight"
