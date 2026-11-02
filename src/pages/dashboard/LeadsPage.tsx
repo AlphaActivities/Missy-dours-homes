@@ -277,7 +277,7 @@ export default function LeadsPage() {
         style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
       >
         {/* ── Page header ──────────────────────────────────── */}
-        <div className="ds-dash-scrim rounded-2xl px-4 py-3 -mx-4 sm:mx-0 mb-6">
+        <div className="ds-dash-scrim ds-page-reveal ds-page-reveal-0 rounded-2xl px-4 py-3 -mx-4 sm:mx-0 mb-6">
         <SectionHeader
           title="Leads"
           subtitle={subtitle}
@@ -342,7 +342,7 @@ export default function LeadsPage() {
 
         {/* ── Filter tabs ───────────────────────────────────── */}
         <div
-          className="flex items-center gap-1 mb-4 overflow-x-auto py-1 px-1 -mx-1"
+          className="ds-page-reveal ds-page-reveal-1 flex items-center gap-1 mb-4 overflow-x-auto py-1 px-1 -mx-1"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {FILTER_TABS.map(tab => {
@@ -383,7 +383,7 @@ export default function LeadsPage() {
 
         {/* ── Main content card ─────────────────────────────── */}
         <div
-          className="rounded-2xl flex flex-col"
+          className="ds-page-reveal ds-page-reveal-2 rounded-2xl flex flex-col"
           style={{
             background: 'var(--ds-bg-raised)',
             boxShadow: 'var(--ds-shadow-card)',
@@ -433,7 +433,7 @@ export default function LeadsPage() {
 
         {/* ── Pagination ────────────────────────────────────── */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4 px-1">
+          <div className="ds-page-reveal ds-page-reveal-3 flex items-center justify-between mt-4 px-1">
             <p className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
               Page {page + 1} of {totalPages}
             </p>
