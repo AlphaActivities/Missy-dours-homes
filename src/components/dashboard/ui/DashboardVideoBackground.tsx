@@ -70,7 +70,7 @@ export default function DashboardVideoBackground() {
 
   return (
     <div
-      className="ds-dash-bg fixed inset-0 -z-10 overflow-hidden pointer-events-none"
+      className="ds-dash-bg fixed inset-0 z-0 overflow-hidden pointer-events-none"
       aria-hidden="true"
     >
       {videoEnabled && (
