@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 let entrancePlayed = false;
+// A new successful login should replay the same entrance, even after signing out
+// and signing back in without closing the installed app.
+export function resetConciergeEntranceForLogin() {
+ entrancePlayed = false;
+}
 type Target = { x: number; y: number; scale: number };
 const LOGO_SIZE = 124;
 const CENTER_Y = 0.38;
