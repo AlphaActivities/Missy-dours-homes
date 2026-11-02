@@ -296,8 +296,8 @@ export default function LeadsPage() {
                   type="text"
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
-                  placeholder="Search Customer..."
-                  className="h-9 pl-8 pr-8 rounded-xl text-[16px] sm:text-xs outline-none transition-all duration-200 w-36 sm:w-64"
+                  placeholder="Search Customer"
+                  className={`h-9 pl-8 ${searchInput ? "pr-8" : "pr-2"} rounded-xl text-[16px] sm:text-xs outline-none transition-all duration-200 w-44 sm:w-64`}
                   style={{
                     background: 'var(--ds-bg-raised)',
                     color: 'var(--ds-text-primary)',
