@@ -283,9 +283,9 @@ export default function LeadsPage() {
           title="Leads"
           subtitle={subtitle}
           action={
-            <div className="flex items-center gap-2">
+            <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
               {/* Search input */}
-              <div className="relative">
+              <div className="relative min-w-0 flex-1 sm:flex-none">
                 <Search
                   size={13}
                   className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -297,7 +297,7 @@ export default function LeadsPage() {
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
                   placeholder="Search Customer"
-                  className={`h-9 pl-8 ${searchInput ? "pr-8" : "pr-2"} rounded-xl text-[16px] sm:text-xs outline-none transition-all duration-200 w-44 sm:w-64`}
+                  className={`h-9 pl-8 ${searchInput ? "pr-8" : "pr-2"} rounded-xl text-[16px] sm:text-xs outline-none transition-all duration-200 w-full sm:w-64`}
                   style={{
                     background: 'var(--ds-bg-raised)',
                     color: 'var(--ds-text-primary)',
@@ -324,7 +324,7 @@ export default function LeadsPage() {
               <button
                 onClick={handleRefresh}
                 disabled={loading}
-                className="flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-xl transition-all duration-150 disabled:opacity-40 h-9"
+                className="shrink-0 flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-xl transition-all duration-150 disabled:opacity-40 h-9"
                 style={{
                   color: 'var(--ds-text-secondary)',
                   background: 'var(--ds-bg-raised)',
