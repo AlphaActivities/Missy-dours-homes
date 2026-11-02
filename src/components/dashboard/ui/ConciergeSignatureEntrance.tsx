@@ -6,6 +6,7 @@ let entrancePlayed = false;
 // and signing back in without closing the installed app.
 export function resetConciergeEntranceForLogin() {
  entrancePlayed = false;
+ document.documentElement.dataset.crmEntranceComplete = 'false';
 }
 type Target = { x: number; y: number; scale: number };
 const LOGO_SIZE = 124;
@@ -37,7 +38,7 @@ export default function ConciergeSignatureEntrance() {
  useEffect(()=>{
   if(entrancePlayed)return;
   entrancePlayed=true;
-  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){setReduced(true);setVisible(false);return;}
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){setReduced(true);setVisible(false);document.documentElement.dataset.crmEntranceComplete='true';window.dispatchEvent(new Event('missy-crm-entrance-complete'));return;}
   const locate=()=>{
    const mobile=window.matchMedia('(max-width: 1023px)').matches;
    const el=[...document.querySelectorAll<HTMLElement>('[data-crm-brand-target]')].find(node=>{
@@ -63,7 +64,7 @@ export default function ConciergeSignatureEntrance() {
    if(!locate()){frame=requestAnimationFrame(begin);return;}
    start=setTimeout(()=>setPhase('fly'),HOLD_MS);
    fade=setTimeout(()=>setPhase('leave'),HOLD_MS+FLIGHT_MS+100);
-   finish=setTimeout(()=>setVisible(false),HOLD_MS+FLIGHT_MS+100+FADE_MS);
+   finish=setTimeout(()=>{setVisible(false);document.documentElement.dataset.crmEntranceComplete='true';window.dispatchEvent(new Event('missy-crm-entrance-complete'));},HOLD_MS+FLIGHT_MS+100+FADE_MS);
   };
   frame=requestAnimationFrame(begin);
   return()=>{cancelAnimationFrame(frame);clearTimeout(start);clearTimeout(fade);clearTimeout(finish);};
