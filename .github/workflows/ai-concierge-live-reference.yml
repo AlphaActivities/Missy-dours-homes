@@ -1,0 +1,43 @@
+name: Concierge live reference health audit
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 14 * * *'
+permissions:
+  contents: read
+jobs:
+  verify-live-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require live website listing reference to be valid
+        run: node scripts/probe-concierge-production.mjs
+      - name: Require AI Worker health bindings
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 20 \
+            'https://missy-concierge-foundation.gta-alpha-activities.workers.dev/health' \
+            -o /tmp/missy-worker-health.json
+          python3 - <<'PY'
+          import json
+          data=json.load(open('/tmp/missy-worker-health.json'))
+          assert data.get('status')=='ready'
+          assert data.get('ai') is True
+          assert data.get('messageEndpointConfigured') is True
+          print('PASS: AI Worker health and secret binding configured')
+          PY
+      - name: Verify unauthorized model access is blocked
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -w '%{http_code}' -o /tmp/missy-worker-unauthorized.json \
+            -X POST 'https://missy-concierge-foundation.gta-alpha-activities.workers.dev/internal/reply' \
+            -H 'Content-Type: application/json' \
+            -d '{"messages":[{"role":"user","content":"health check"}]}')
+          test "$status" = 401
+          echo "PASS: unauthenticated model requests remain blocked"
