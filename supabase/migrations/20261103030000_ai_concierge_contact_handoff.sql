@@ -45,11 +45,16 @@ BEGIN
   FROM (
     SELECT id FROM public.leads
     WHERE right(regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g'), 10) = v_digits
-      AND length(regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g')) IN (10,11)
+      AND (length(regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g')) = 10
+        OR (length(regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g')) = 11
+        AND left(regexp_replace(coalesce(phone,''), '[^0-9]', '', 'g'),1)='1'))
     LIMIT 2
   ) AS candidate;
   IF coalesce(array_length(v_existing, 1), 0) = 1 THEN
-    v_lead := v_existing[1];
+    -- Require the name as well as the phone to agree. A reused or shared
+    -- number must never silently attach a conversation to someone else's lead.
+    SELECT id INTO v_lead FROM public.leads
+      WHERE id = v_existing[1] AND lower(btrim(name)) = lower(v_name);
   ELSIF coalesce(array_length(v_existing, 1), 0) = 0 THEN
     INSERT INTO public.leads(name, phone, email, message, source_page, status)
       VALUES(v_name, v_phone, '', v_note, 'AI Concierge', 'new')
