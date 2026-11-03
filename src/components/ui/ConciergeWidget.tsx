@@ -28,6 +28,8 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   const bottomRef = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState<string|null>(null);
   const [handoffOpen, setHandoffOpen] = useState(false);
   const [callbackName, setCallbackName] = useState('');
   const [callbackPhone, setCallbackPhone] = useState('');
@@ -177,6 +179,19 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
     } finally { setBusy(false); }
   };
 
+  const uploadAttachment = async (file: File) => {
+    const visitor = sessionRef.current ?? session;
+    if (!visitor || mode !== 'human' || uploadBusy || !chatEnabled) return;
+    setUploadBusy(true);
+    setUploadFeedback(null);
+    try {
+      const response = await conciergeTransport.uploadAttachment(visitor, file);
+      setUploadFeedback('Securely received ' + (response.filename || 'your attachment') + '. Missy’s team can review it.');
+    } catch (error) {
+      setUploadFeedback(error instanceof Error ? error.message : 'Could not upload attachment.');
+    } finally {setUploadBusy(false);}
+  };
+
   const requestHuman = async () => {
     if (!session || busy || mode !== 'ai' || !callbackConsent || callbackName.trim().length<2) return;
     setBusy(true);
@@ -264,7 +279,14 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
                 <button type="button" onClick={()=>setHandoffOpen(false)} className="text-xs text-[#e5d4ba] underline">Keep chatting</button>
               </div>
             </form>}
-            {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation.</p>}
+            {mode === 'human' && <div className="space-y-2"><p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation.</p>
+              <label className="inline-flex cursor-pointer items-center rounded-lg border border-[#c6a16c]/50 px-3 py-2 text-xs text-[#ebca90]">
+                {uploadBusy ? 'Uploading attachment…' : 'Share a photo or PDF with Missy’s team'}
+                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={uploadBusy||!chatEnabled} className="sr-only" onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAttachment(file);e.target.value='';}}/>
+              </label>
+              <p className="text-[11px] text-[#ae9b7f]">Human assistance only · Max 10 MB · JPG, PNG, WEBP, or PDF</p>
+              {uploadFeedback && <p role="status" className="text-xs text-[#eedab5]">{uploadFeedback}</p>}
+            </div>}
             {mode === 'waiting_human' && <p className="text-xs text-[#eacb99]">Waiting for a team member. For a time-sensitive request, you can also <a href="/#contact" className="underline underline-offset-2">contact Missy directly</a>.</p>}
             {busy && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
