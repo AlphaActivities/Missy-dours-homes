@@ -78,10 +78,10 @@ Deno.serve(async req=>{
  const token=authorization.startsWith('Bearer ')?authorization.slice(7):'';
  if(!/^[a-f0-9]{64}$/.test(token))return answer({error:'Unauthorized'},401,origin);
  const hash=await digest(token);
- const {data:chat,error:findErr}=await db.from('ai_conversations').select('id,status,visitor_expires_at').eq('visitor_token_hash',hash).maybeSingle();
+ const {data:chat,error:findErr}=await db.from('ai_conversations').select('id,status,visitor_expires_at,language_code').eq('visitor_token_hash',hash).maybeSingle();
  if(findErr||!chat)return answer({error:'Unauthorized'},401,origin);
  if(!chat.visitor_expires_at || new Date(chat.visitor_expires_at).getTime()<=Date.now())return answer({error:'Session expired. Please start a new conversation.'},401,origin);
- const language=typeof body.language==='string' && ['en','es','fr','pt','zh'].includes(body.language)?body.language:'en';
+ let language=typeof body.language==='string' && ['en','es','fr','pt','zh'].includes(body.language)?body.language:'en';
  if(url.pathname.endsWith('/handoff')) {
   if(chat.status!=='ai')return answer({error:'This conversation has already been transferred.'},409,origin);
   const note=typeof body.message==='string'?body.message.trim():'I would like to speak with Missy’s team.';
@@ -111,6 +111,7 @@ Deno.serve(async req=>{
   return answer({status:chat.status,messages:(recent??[]).reverse()},200,origin);
  }
  if(chat.status==='human') {
+  language=['en','es','fr','pt','zh'].includes(chat.language_code)?chat.language_code:'en';
   const visitorMessage=body.message;
   if(typeof visitorMessage!=='string'||visitorMessage.trim().length<1||visitorMessage.length>2000)return answer({error:'Invalid message'},400,origin);
   const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'human:'+hash,p_max:20,p_window_seconds:3600});
@@ -152,9 +153,10 @@ Deno.serve(async req=>{
  let reply:string;
  try {
   const response=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},
-   body:JSON.stringify({messages,language}),signal:AbortSignal.timeout(25000)});
+   body:JSON.stringify({messages,language:'auto'}),signal:AbortSignal.timeout(25000)});
   if(!response.ok) return answer({error:'AI service is temporarily unavailable'},503,origin);
-  const payload=await response.json() as {reply?:unknown};
+  const payload=await response.json() as {reply?:unknown;language?:unknown};
+   if(typeof payload.language==='string' && ['en','es','fr','pt','zh'].includes(payload.language)) language=payload.language;
   if(typeof payload.reply!=='string'||!payload.reply.trim())return answer({error:'AI service is temporarily unavailable'},503,origin);
   reply=payload.reply.trim().slice(0,5000);
  } catch {return answer({error:'AI service is temporarily unavailable'},503,origin);}
@@ -190,5 +192,5 @@ Deno.serve(async req=>{
  const finalPriority=(rank[priority]??0)>=(rank[currentPriority]??0)?priority:currentPriority;
  const summary=[existing?.summary, 'Visitor: '+message.trim().slice(0,220)].filter(Boolean).join(' | ').slice(-1350);
  await db.rpc('ai_concierge_set_intelligence',{p_conversation:chat.id,p_summary:summary,p_priority:finalPriority,p_reason:finalPriority===priority?reason:'Previous priority retained',p_language:language});
- return answer({reply,conversation_id:chat.id},200,origin);
+ return answer({reply,language,conversation_id:chat.id},200,origin);
 });
