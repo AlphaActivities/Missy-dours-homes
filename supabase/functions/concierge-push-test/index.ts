@@ -49,8 +49,17 @@ Deno.serve(async req=>{
  const publicKey=Deno.env.get('MISSY_VAPID_PUBLIC_KEY');
  const privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY');
  const contact=Deno.env.get('MISSY_VAPID_CONTACT');
- if(!publicKey||!privateKey||!contact)
-  return json({error:'Server push keys are not configured. Registration alone is not delivery readiness.'},503,origin);
+ const missing=[
+  ...(!publicKey?['MISSY_VAPID_PUBLIC_KEY']:[]),
+  ...(!privateKey?['MISSY_VAPID_PRIVATE_KEY']:[]),
+  ...(!contact?['MISSY_VAPID_CONTACT']:[])
+ ];
+ if(missing.length)
+  return json({
+   error:'Push delivery is not configured. Missing server settings: '+missing.join(', ')+'.',
+   missing_settings:missing,
+   delivery_confirmed:false
+  },503,origin);
  try {
   webpush.setVapidDetails(contact,publicKey,privateKey);
   const payload=JSON.stringify({kind:'device_test',id:crypto.randomUUID()});
