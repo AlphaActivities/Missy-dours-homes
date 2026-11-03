@@ -1,5 +1,6 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.57.4';
 import webpush from 'npm:web-push@3.6.7';
+import {createECDH} from 'node:crypto';
 
 // Explicitly separate from the normal handoff sender: no queue processing,
 // event notifications, leads, or public chat activation in this route.
@@ -40,7 +41,7 @@ Deno.serve(async req=>{
  if(devicesError)return json({error:'Could not locate the registered device'},503,origin);
  const device=devices?.[0];
  if(!device)return json({error:'No registered device. Enable notifications first.'},409,origin);
- const publicKey=(Deno.env.get('MISSY_VAPID_PUBLIC_KEY')??'').trim();
+ const configuredPublicKey=(Deno.env.get('MISSY_VAPID_PUBLIC_KEY')??'').trim();
  let privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY')?.trim();
  if(!privateKey) {
   // The original key is encrypted at rest in Supabase Vault. Only the
@@ -85,11 +86,31 @@ Deno.serve(async req=>{
     !parsed.username && !parsed.password;
   }catch{validContact=false;}
  }
+ // The server private key is the source of truth for the VAPID pair.
+ // Derive its P-256 public point in memory, rather than trusting a stale
+ // independently configured server public key. Neither key is logged.
+ let derivedPublicKey='';
+ if(b64Length(privateKey??'')===32){
+  try{
+   const scalar=(privateKey??'').replace(/-/g,'+').replace(/_/g,'/');
+   const bytes=Uint8Array.from(atob(scalar.padEnd(Math.ceil(scalar.length/4)*4,'=')),c=>c.charCodeAt(0));
+   const ecdh=createECDH('prime256v1');
+   ecdh.setPrivateKey(bytes);
+   derivedPublicKey=ecdh.getPublicKey('base64url','uncompressed');
+  }catch{
+   derivedPublicKey='';
+  }
+ }
+ const publicKey=derivedPublicKey;
  const invalidSettings=[
   ...(!validContact?['MISSY_VAPID_CONTACT']:[]),
-  ...(b64Length(publicKey)!==65?['MISSY_VAPID_PUBLIC_KEY']:[]),
-  ...(b64Length(privateKey??'')!==32?['MISSY_VAPID_PRIVATE_KEY']:[])
+  ...(b64Length(privateKey??'')!==32||b64Length(derivedPublicKey)!==65?['MISSY_VAPID_PRIVATE_KEY']:[])
  ];
+ // If the existing server setting is wrong, do not log or reveal its value.
+ // A public key regenerated from the same private scalar remains stable.
+ if(b64Length(configuredPublicKey)!==65 || configuredPublicKey!==derivedPublicKey){
+  console.info('Concierge push test using VAPID public point derived from verified private key');
+ }
  if(invalidSettings.length)return json({
   error:'Push configuration has an invalid setting: '+invalidSettings.join(', ')+'.',
   invalid_settings:invalidSettings,delivery_confirmed:false
