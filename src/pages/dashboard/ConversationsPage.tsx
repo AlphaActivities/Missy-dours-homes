@@ -44,9 +44,10 @@ export default function ConversationsPage() {
  const [pushTestMessage,setPushTestMessage]=useState('');
  const [aiSmokeBusy,setAiSmokeBusy]=useState(false);
  const [aiSmokeReport,setAiSmokeReport]=useState('');
+ const [aiSmokeResults,setAiSmokeResults]=useState<string[]>([]);
  const runOwnerAiSmoke=async()=>{
   if(!canViewTeamReadiness||aiSmokeBusy)return;
-  setAiSmokeBusy(true);setAiSmokeReport('');
+  setAiSmokeBusy(true);setAiSmokeReport('');setAiSmokeResults([]);
   try {
    const session=await supabase.auth.getSession();
    const token=session.data.session?.access_token;
@@ -61,9 +62,10 @@ export default function ConversationsPage() {
     });
     const payload=await response.json().catch(()=>({})) as {reply?:string;language?:string;error?:string;saved?:boolean;upstream_status?:number;upstream_code?:string;diagnostic_code?:string};
     if(!response.ok||!payload.reply)throw new Error(scenario+': '+(payload.error||'AI returned no response')+(payload.upstream_status?' (upstream '+payload.upstream_status+', '+(payload.upstream_code||'unknown')+')':payload.diagnostic_code?' ('+payload.diagnostic_code+')':''));
-    reports.push(scenario.toUpperCase()+' ('+(payload.language||'?')+'): '+payload.reply.slice(0,400));
+    reports.push(scenario.toUpperCase()+' ('+(payload.language||'?')+'): '+payload.reply);
    }
-   setAiSmokeReport('Live AI bridge replied to all three prompts. No CRM records were created.\n\n'+reports.join('\n\n'));
+   setAiSmokeReport('Live AI bridge replied to all three prompts. No CRM records were created.');
+   setAiSmokeResults(reports);
   }catch(e){setAiSmokeReport('AI diagnostic not complete: '+(e instanceof Error?e.message:'Unknown failure'));}
   finally{setAiSmokeBusy(false);}
  };
@@ -308,6 +310,12 @@ export default function ConversationsPage() {
        </button>
        <p className="mt-2 text-xs text-[#bdb0a0]">Tests property facts, Spanish, and pricing guarantees. Available only to you; no live conversations created.</p>
        {aiSmokeReport&&<p role="status" className="mt-3 whitespace-pre-wrap break-words text-xs text-[#d5d0c6]">{aiSmokeReport}</p>}
+       {aiSmokeResults.length>0&&<details className="mt-3 rounded-md border border-white/10 bg-black/20 px-3 py-2 text-xs text-[#d5d0c6]">
+        <summary className="cursor-pointer font-medium text-[#e6cb98]">View full AI responses ({aiSmokeResults.length})</summary>
+        <div className="mt-3 space-y-4">
+         {aiSmokeResults.map((result,index)=><p key={index} className="whitespace-pre-wrap break-words">{result}</p>)}
+        </div>
+       </details>}
      </div>
      {teamReadinessError&&<p role="status" className="mt-2 text-xs text-amber-200">Device readiness unavailable; try refreshing your signed-in session.</p>}
      {teamReadiness.length>0&&<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
