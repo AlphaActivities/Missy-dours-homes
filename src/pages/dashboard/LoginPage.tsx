@@ -81,7 +81,7 @@ export default function LoginPage() {
         }}
       />
 
-      <div className="relative w-full max-w-sm animate-ds-fade-up pt-6">
+      <div className="relative w-full max-w-sm animate-ds-fade-up pt-6 -top-[30px] lg:top-0">
 
         {/* Brand mark */}
         <div className="flex flex-col items-center mb-12">

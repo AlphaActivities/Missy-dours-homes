@@ -11,6 +11,7 @@ export function resetConciergeEntranceForLogin() {
 type Target = { x: number; y: number; scale: number };
 const LOGO_SIZE = 124;
 const CENTER_Y = 0.38;
+const MOBILE_START_OFFSET_PX = -30; // Align mobile live entrance with approved iOS launch image.
 const HOLD_MS = 2000;
 const FLIGHT_MS = 1250;
 const FADE_MS = 320;
@@ -50,7 +51,7 @@ export default function ConciergeSignatureEntrance() {
    const rect=el.getBoundingClientRect();
    setTarget({
     x:rect.left+rect.width/2-window.innerWidth/2,
-    y:rect.top+rect.height/2-window.innerHeight*CENTER_Y,
+    y:rect.top+rect.height/2-(window.innerHeight*CENTER_Y+(mobile?MOBILE_START_OFFSET_PX:0)),
     scale:rect.width/LOGO_SIZE
    });
    return true;
@@ -75,7 +76,7 @@ export default function ConciergeSignatureEntrance() {
    exit={{opacity:0}} transition={{duration:FADE_MS/1000,ease:'easeOut'}}
    role="status" aria-label="Opening Missy Dours private CRM" aria-live="polite">
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
-   <div className="absolute left-1/2" style={{top:`${CENTER_Y*100}%`,transform:'translate(-50%, -50%)'}}>
+   <div className="absolute left-1/2 top-[38%] max-lg:top-[calc(38%-30px)]" style={{transform:'translate(-50%, -50%)'}}>
     <motion.img src="/images/md-logo.png" alt="Missy Dours" decoding="sync" loading="eager" fetchPriority="high"
      className="block h-[124px] w-[124px] rounded-2xl bg-[#eee2c8] p-2.5 object-contain shadow-[0_0_48px_rgba(196,164,106,.24)]"
      initial={{x:0,y:0,scale:1}}
@@ -83,8 +84,8 @@ export default function ConciergeSignatureEntrance() {
      transition={{duration:FLIGHT_MS/1000,ease:[.32,.04,.25,1]}}
      style={{transformOrigin:'center center'}}/>
    </div>
-   <motion.div className="absolute left-1/2 flex w-[min(94vw,520px)] flex-col items-center gap-3 px-2"
-     style={{top:`calc(${CENTER_Y*100}% + 88px)`,transform:'translateX(-50%)'}}
+   <motion.div className="absolute left-1/2 top-[calc(38%+88px)] max-lg:top-[calc(38%+58px)] flex w-[min(94vw,520px)] flex-col items-center gap-3 px-2"
+     style={{transform:'translateX(-50%)'}}
      animate={{opacity:phase==='welcome'?1:0}} transition={{duration:.22}}>
      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#c4a46a]/20 border-t-[#c4a46a]" aria-hidden="true"/>
      <div className="flex flex-col items-center gap-3 text-center">
