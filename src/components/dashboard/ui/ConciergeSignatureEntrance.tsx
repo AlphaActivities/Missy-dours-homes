@@ -75,14 +75,23 @@ export default function ConciergeSignatureEntrance() {
    initial={{opacity:1}} animate={{opacity:phase==='leave'?0:1}}
    exit={{opacity:0}} transition={{duration:FADE_MS/1000,ease:'easeOut'}}
    role="status" aria-label="Opening Missy Dours private CRM" aria-live="polite">
+   <style>{`@keyframes crmGoldSheen { 0% { transform: translate3d(-155px,-170px,0) rotate(35deg); opacity:0; } 12% {opacity:1;} 72% {opacity:1;} 100% {transform:translate3d(210px,195px,0) rotate(35deg);opacity:0;} } @keyframes crmGoldRim { 0%,100% {opacity:0;} 30% {opacity:.15;} 55% {opacity:.75;} 80% {opacity:.08;} } .crm-logo-sheen {animation:crmGoldSheen 1100ms cubic-bezier(.22,.56,.26,1) 140ms 1 both;} .crm-logo-sheen-rim {animation:crmGoldRim 1100ms ease-out 140ms 1 both;} @media (prefers-reduced-motion:reduce) {.crm-logo-sheen,.crm-logo-sheen-rim{animation:none;opacity:0;}}`}</style>
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
    <div className="absolute left-1/2 top-[38%] max-lg:top-[calc(38%-30px)]" style={{transform:'translate(-50%, -50%)'}}>
-    <motion.img src="/images/md-logo.png" alt="Missy Dours" decoding="sync" loading="eager" fetchPriority="high"
-     className="block h-[124px] w-[124px] rounded-2xl bg-[#eee2c8] p-2.5 object-contain shadow-[0_0_48px_rgba(196,164,106,.24)]"
+    <motion.div
+     className="relative h-[124px] w-[124px] rounded-2xl bg-[#eee2c8] p-2.5 shadow-[0_0_48px_rgba(196,164,106,.24)]"
      initial={{x:0,y:0,scale:1}}
      animate={phase==='welcome'?{x:0,y:0,scale:1}:{x:target.x,y:target.y,scale:target.scale}}
      transition={{duration:FLIGHT_MS/1000,ease:[.32,.04,.25,1]}}
-     style={{transformOrigin:'center center'}}/>
+     style={{transformOrigin:'center center'}}>
+     <img src="/images/md-logo.png" alt="Missy Dours" decoding="sync" loading="eager" fetchPriority="high"
+      className="block h-full w-full object-contain"/>
+     {/* Single cinematic champagne-gold glint, clipped to the logo card and completed before flight. */}
+     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden="true">
+      <span className="crm-logo-sheen absolute left-0 top-0 h-[320px] w-[68px] bg-[linear-gradient(90deg,transparent_0%,rgba(255,223,143,.12)_19%,rgba(255,246,211,.88)_48%,rgba(255,203,89,.38)_64%,transparent_100%)] mix-blend-screen"/>
+      <span className="crm-logo-sheen-rim absolute inset-0 rounded-2xl ring-1 ring-inset ring-[#f5cf7d]"/>
+     </div>
+    </motion.div>
    </div>
    <motion.div className="absolute left-1/2 top-[calc(38%+88px)] max-lg:top-[calc(38%+58px)] flex w-[min(94vw,520px)] flex-col items-center gap-3 px-2"
      style={{transform:'translateX(-50%)'}}
