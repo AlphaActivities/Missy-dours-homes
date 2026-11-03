@@ -40,6 +40,30 @@ export default function ConversationsPage() {
  const [pushState,setPushState]=useState<'idle'|'working'|'enabled'|'unavailable'>('idle');
  const [teamReadiness,setTeamReadiness]=useState<TeamPushReadiness[]>([]);
  const [teamReadinessError,setTeamReadinessError]=useState(false);
+ const [pushTestState,setPushTestState]=useState<'idle'|'sending'|'accepted'|'error'>('idle');
+ const [pushTestMessage,setPushTestMessage]=useState('');
+ const sendPrivateTestAlert=async()=>{
+  if(!canViewTeamReadiness||pushTestState==='sending')return;
+  setPushTestState('sending');setPushTestMessage('');
+  try{
+   const session=await supabase.auth.getSession();
+   const token=session.data.session?.access_token;
+   const base=String(import.meta.env.VITE_MISSY_SUPABASE_URL||'').replace(/\/$/,'');
+   const key=String(import.meta.env.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY||'');
+   if(!token||!base||!key)throw new Error('Your signed-in session is unavailable.');
+   const response=await fetch(base+'/functions/v1/concierge-push-test',{
+    method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+token},
+    body:'{}',signal:AbortSignal.timeout(20000)
+   });
+   const payload=await response.json().catch(()=>({})) as {accepted?:boolean;error?:string};
+   if(!response.ok||payload.accepted!==true)throw new Error(payload.error||'Test could not be sent.');
+   setPushTestState('accepted');
+   setPushTestMessage('Push provider accepted the test. Check your iPhone for a Concierge test notification. Delivery is not yet confirmed.');
+  }catch(e){
+   setPushTestState('error');
+   setPushTestMessage(e instanceof Error?e.message:'Could not send a test alert.');
+  }
+ };
  const refreshTeamReadiness=async()=>{
   try{
    const session=await supabase.auth.getSession();
@@ -244,6 +268,14 @@ export default function ConversationsPage() {
        <button type="button" onClick={()=>void refreshTeamReadiness()} className="rounded-md border border-white/15 px-2.5 py-1.5 text-xs text-[#e6cb98]">Refresh devices</button>
      </div>
      <p className="mt-1 text-xs text-[#bdb0a0]">Registration is not proof of delivery. Each staff member must verify a real device alert before launch.</p>
+     {pushState==='enabled'&&alertsEnabled&&<div className="mt-3 flex flex-wrap items-center gap-3">
+       <button type="button" disabled={pushTestState==='sending'} onClick={()=>void sendPrivateTestAlert()}
+        className="rounded-md border border-[#c8a96e]/60 px-3 py-2 text-xs font-medium text-[#e6cb98] disabled:opacity-50">
+        {pushTestState==='sending'?'Sending test…':'Send test alert to my iPhone'}
+       </button>
+       <span className="text-xs text-[#bdb0a0]">Only your registered device · Maximum 3 per hour</span>
+      </div>}
+     {pushTestMessage&&<p role="status" className={pushTestState==='error'?'mt-2 text-xs text-red-300':'mt-2 text-xs text-[#c3dfc8]'}>{pushTestMessage}</p>}
      {teamReadinessError&&<p role="status" className="mt-2 text-xs text-amber-200">Device readiness unavailable; try refreshing your signed-in session.</p>}
      {teamReadiness.length>0&&<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
        {teamReadiness.map(member=><div key={member.staff_name} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs">
