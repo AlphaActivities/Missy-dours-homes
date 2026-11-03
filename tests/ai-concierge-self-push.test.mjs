@@ -97,6 +97,9 @@ test('Missing server keys never triggers any push delivery',async()=>{
  const {handler,calls}=await scenario({hasKeys:false});
  const result=await request(handler);
  assert.equal(result.status,503);
+ assert.deepEqual(result.data.missing_settings,[
+  'MISSY_VAPID_PUBLIC_KEY','MISSY_VAPID_PRIVATE_KEY','MISSY_VAPID_CONTACT'
+ ]);
  assert.ok(!calls.some(x=>x.kind==='sent'));
 });
 test('Owner may send exactly one test push, without activating the normal queue',async()=>{
