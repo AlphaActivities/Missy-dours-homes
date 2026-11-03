@@ -12,7 +12,7 @@ const code=ts.transpileModule(rewritten,{compilerOptions:{module:ts.ModuleKind.E
 let counter=0;
 const owner='yourcustomerflowguy@gmail.com';
 
-async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPrivateOnly=false,vaultKey=null}={}){
+async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPrivateOnly=false,vaultKey=null,sendError=null}={}){
  const calls=[];let handler;
  const subscriptions=devices>0?[{id:'device-1',endpoint:'https://push.invalid/device',
   p256dh:'mock-p256dh',auth_key:'mock-auth'}]:[];
@@ -39,6 +39,7 @@ async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPr
   setVapidDetails(...args){calls.push({kind:'vapid',args});},
   sendNotification:async(subscription,payload,options)=>{
    calls.push({kind:'sent',subscription,payload:JSON.parse(payload),options});
+   if(sendError)throw sendError;
    return {statusCode:201};
   }
  };
@@ -133,4 +134,31 @@ test('Missing Vault key is reported without consuming hourly test quota',async()
  assert.equal(result.status,503);
  assert.deepEqual(result.data.missing_settings,['MISSY_VAPID_PRIVATE_KEY']);
  assert.ok(!calls.some(x=>x.name==='ai_concierge_consume_limit'||x.kind==='sent'));
+});
+
+test('Apple 403 response is reported as VAPID authorization rejection without secrets',async()=>{
+ const err=Object.assign(new Error('https://web.push.apple.com/private-user-endpoint'),{statusCode:403});
+ const {handler}=await scenario({sendError:err});
+ const result=await request(handler);
+ assert.equal(result.status,502);
+ assert.equal(result.data.failure_stage,'provider_response');
+ assert.equal(result.data.provider_status,403);
+ assert.match(result.data.error,/VAPID authorization/);
+ assert.ok(!JSON.stringify(result.data).includes('private-user-endpoint'));
+});
+test('Local signing errors are distinguished from Apple service response',async()=>{
+ const err=Object.assign(new Error('secret text that must not leak'),{code:'ERR_OSSL_EVP_UNSUPPORTED'});
+ const {handler}=await scenario({sendError:err});
+ const result=await request(handler);
+ assert.equal(result.status,502);
+ assert.equal(result.data.failure_stage,'local_send');
+ assert.equal(result.data.error_code,'ERR_OSSL_EVP_UNSUPPORTED');
+ assert.ok(!JSON.stringify(result.data).includes('secret text'));
+});
+test('Expired Apple subscription returns actionable 409 code',async()=>{
+ const err=Object.assign(new Error('gone'),{statusCode:410});
+ const {handler}=await scenario({sendError:err});
+ const result=await request(handler);
+ assert.equal(result.status,409);
+ assert.equal(result.data.provider_status,410);
 });
