@@ -12,7 +12,7 @@ const code=ts.transpileModule(rewritten,{compilerOptions:{module:ts.ModuleKind.E
 let counter=0;
 const owner='yourcustomerflowguy@gmail.com';
 
-async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPrivateOnly=false,vaultKey=null,sendError=null}={}){
+async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPrivateOnly=false,vaultKey=null,sendError=null,prepareError=null,vapidError=null}={}){
  const calls=[];let handler;
  const subscriptions=devices>0?[{id:'device-1',endpoint:'https://web.push.apple.com/device',
   p256dh:'mock-p256dh',auth_key:'mock-auth'}]:[];
@@ -37,8 +37,9 @@ async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPr
  });
  let signedPayload=null;
  globalThis.__testWebPush={
-  setVapidDetails(...args){calls.push({kind:'vapid',args});},
+  setVapidDetails(...args){calls.push({kind:'vapid',args});if(vapidError)throw vapidError;},
   generateRequestDetails(subscription,payload,options){
+   if(prepareError)throw prepareError;
    signedPayload={subscription,payload:JSON.parse(payload),options};
    calls.push({kind:'prepared',options});
    return {
@@ -188,4 +189,27 @@ test('Native fetch transports an encrypted payload and keeps it off plain HTTP',
  assert.equal(sent.endpoint,'https://web.push.apple.com/device');
  assert.ok(sent.bodyLength>0,'Encrypted payload must be forwarded to native fetch');
  assert.equal(sent.payload.kind,'device_test');
+});
+
+test('VAPID setup errors are isolated before encryption or network requests',async()=>{
+ const {handler,calls}=await scenario({vapidError:new Error('generic signing setup failed')});
+ const result=await request(handler);
+ assert.equal(result.status,502);
+ assert.equal(result.data.failure_step,'vapid_setup');
+ assert.ok(!calls.some(x=>x.kind==='sent'||x.kind==='prepared'));
+});
+test('Encryption preparation errors are isolated before networking',async()=>{
+ const {handler,calls}=await scenario({prepareError:new Error('crypto operation unsupported')});
+ const result=await request(handler);
+ assert.equal(result.status,502);
+ assert.equal(result.data.failure_step,'request_encryption');
+ assert.ok(!calls.some(x=>x.kind==='sent'));
+});
+test('Network transport failures are isolated after encryption',async()=>{
+ const {handler,calls}=await scenario({sendError:new TypeError('fetch failed')});
+ const result=await request(handler);
+ assert.equal(result.status,502);
+ assert.equal(result.data.failure_step,'provider_fetch');
+ assert.equal(result.data.failure_stage,'local_send');
+ assert.ok(calls.some(x=>x.kind==='prepared'));
 });
