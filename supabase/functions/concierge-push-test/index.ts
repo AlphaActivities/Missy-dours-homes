@@ -69,10 +69,32 @@ Deno.serve(async req=>{
  try {
   webpush.setVapidDetails(contact,publicKey,privateKey);
   const payload=JSON.stringify({kind:'device_test',id:crypto.randomUUID()});
-  await webpush.sendNotification({
+  // The npm web-push package signs and encrypts the payload, but its
+  // sendNotification() uses Node's https.request transport. Supabase Edge
+  // Functions run on Deno, where native fetch is the supported transport.
+  // Generate the same RFC-compliant signed request, then send via fetch.
+  const subscription={
    endpoint:device.endpoint,keys:{p256dh:device.p256dh,auth:device.auth_key}
-  },payload,{TTL:120,urgency:'high'});
-  // The provider accepted the notification; only the user can confirm display.
+  };
+  const endpoint=new URL(device.endpoint);
+  if(endpoint.protocol!=='https:'||endpoint.hostname!=='web.push.apple.com'
+   ||endpoint.username||endpoint.password||endpoint.port)
+   return json({error:'The registered iPhone push endpoint is not valid.'},409,origin);
+  const prepared=webpush.generateRequestDetails(subscription,payload,{TTL:120,urgency:'high'});
+  if(prepared.endpoint!==device.endpoint)
+   throw new Error('InvalidPreparedEndpoint');
+  const signedBody=prepared.body
+   ? new Uint8Array(prepared.body)
+   : undefined;
+  const provider=await fetch(prepared.endpoint,{
+   method:'POST',headers:prepared.headers,body:signedBody,
+   signal:AbortSignal.timeout(12000)
+  });
+  if(!provider.ok){
+   // Keep provider response body and its potentially sensitive data private.
+   throw Object.assign(new Error('PushProviderHttpError'),{statusCode:provider.status});
+  }
+  // Provider acceptance does not imply the phone displayed an alert.
   return json({accepted:true,delivery_confirmed:false},200,origin);
  }catch(err){
   const details=err && typeof err==='object' ? err as {statusCode?:unknown;code?:unknown;name?:unknown} : {};
