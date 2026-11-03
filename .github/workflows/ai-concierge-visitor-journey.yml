@@ -1,0 +1,40 @@
+name: Concierge isolated visitor journey
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visitor-journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build isolated preview with mock client configuration
+        env:
+          VITE_CONCIERGE_CHAT_ENABLED: 'true'
+          VITE_MISSY_SUPABASE_URL: https://concierge.test.invalid
+          VITE_MISSY_SUPABASE_PUBLISHABLE_KEY: local-test-only
+          VITE_MISSY_TURNSTILE_SITE_KEY: test-local-only
+        run: npm run build
+      - name: Install mobile WebKit
+        run: npx playwright install --with-deps webkit
+      - name: Run isolated visitor conversation test
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx vite preview --host 127.0.0.1 --port 4173 --strictPort >/tmp/concierge-journey-preview.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4173/ >/dev/null
+          node scripts/test-concierge-full-journey-webkit.mjs
