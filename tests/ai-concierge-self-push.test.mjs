@@ -14,7 +14,7 @@ const owner='yourcustomerflowguy@gmail.com';
 
 async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPrivateOnly=false,vaultKey=null,sendError=null}={}){
  const calls=[];let handler;
- const subscriptions=devices>0?[{id:'device-1',endpoint:'https://push.invalid/device',
+ const subscriptions=devices>0?[{id:'device-1',endpoint:'https://web.push.apple.com/device',
   p256dh:'mock-p256dh',auth_key:'mock-auth'}]:[];
  globalThis.__testCreateClient=()=>({
   auth:{getUser:async jwt=>{
@@ -35,13 +35,27 @@ async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPr
    return query;
   }
  });
+ let signedPayload=null;
  globalThis.__testWebPush={
   setVapidDetails(...args){calls.push({kind:'vapid',args});},
-  sendNotification:async(subscription,payload,options)=>{
-   calls.push({kind:'sent',subscription,payload:JSON.parse(payload),options});
-   if(sendError)throw sendError;
-   return {statusCode:201};
+  generateRequestDetails(subscription,payload,options){
+   signedPayload={subscription,payload:JSON.parse(payload),options};
+   calls.push({kind:'prepared',options});
+   return {
+    endpoint:subscription.endpoint,
+    method:'POST',
+    headers:{'Content-Encoding':'aes128gcm','Authorization':'vapid mock-token'},
+    body:Buffer.from('encrypted-fixture-payload')
+   };
   }
+ };
+ globalThis.fetch=async (url,options)=>{
+  calls.push({kind:'sent',endpoint:url,payload:signedPayload?.payload,options:signedPayload?.options,method:options.method,bodyLength:options.body?.byteLength});
+  if(sendError){
+   if(typeof sendError.statusCode==='number')return new Response('',{status:sendError.statusCode});
+   throw sendError;
+  }
+  return new Response('',{status:201});
  };
  globalThis.Deno={
   env:{get:name=>({
@@ -136,7 +150,7 @@ test('Missing Vault key is reported without consuming hourly test quota',async()
  assert.ok(!calls.some(x=>x.name==='ai_concierge_consume_limit'||x.kind==='sent'));
 });
 
-test('Apple 403 response is reported as VAPID authorization rejection without secrets',async()=>{
+test('Apple 403 response through native fetch is reported without secrets',async()=>{
  const err=Object.assign(new Error('https://web.push.apple.com/private-user-endpoint'),{statusCode:403});
  const {handler}=await scenario({sendError:err});
  const result=await request(handler);
@@ -146,7 +160,7 @@ test('Apple 403 response is reported as VAPID authorization rejection without se
  assert.match(result.data.error,/VAPID authorization/);
  assert.ok(!JSON.stringify(result.data).includes('private-user-endpoint'));
 });
-test('Local signing errors are distinguished from Apple service response',async()=>{
+test('Native fetch errors are distinguished from Apple service response',async()=>{
  const err=Object.assign(new Error('secret text that must not leak'),{code:'ERR_OSSL_EVP_UNSUPPORTED'});
  const {handler}=await scenario({sendError:err});
  const result=await request(handler);
@@ -161,4 +175,17 @@ test('Expired Apple subscription returns actionable 409 code',async()=>{
  const result=await request(handler);
  assert.equal(result.status,409);
  assert.equal(result.data.provider_status,410);
+});
+
+test('Native fetch transports an encrypted payload and keeps it off plain HTTP',async()=>{
+ const {handler,calls}=await scenario();
+ const result=await request(handler);
+ assert.equal(result.status,200);
+ const prepared=calls.find(x=>x.kind==='prepared');
+ const sent=calls.find(x=>x.kind==='sent');
+ assert.equal(prepared.options.urgency,'high');
+ assert.equal(sent.method,'POST');
+ assert.equal(sent.endpoint,'https://web.push.apple.com/device');
+ assert.ok(sent.bodyLength>0,'Encrypted payload must be forwarded to native fetch');
+ assert.equal(sent.payload.kind,'device_test');
 });
