@@ -237,6 +237,7 @@ test('Authenticated owner can run live bridge diagnostic without creating CRM da
     assert.equal(upstream.length,1);
     assert.equal(upstream[0].url,'https://worker.invalid/internal/reply');
     assert.equal(upstream[0].options.headers.Authorization,'Bearer mock-private-secret');
+    assert.equal(JSON.parse(upstream[0].options.body).language,'en');
     assert.ok(!calls.some(c=>c.kind==='insert'||c.kind==='storage-upload'));
   }finally {globalThis.fetch=originalFetch;}
 });
@@ -259,5 +260,51 @@ test('Owner-only AI smoke reveals only safe upstream status/code for model error
   assert.equal(response.body.upstream_status,503);
   assert.equal(response.body.upstream_code,'empty_model_reply');
   assert.doesNotMatch(JSON.stringify(response.body),/DO-NOT-LEAK|private message/);
+ }finally{globalThis.fetch=savedFetch;}
+});
+
+test('Owner Spanish smoke uses one explicit-language bridge request and writes no CRM data',async()=>{
+ const {handler,calls}=await scenario();
+ const savedFetch=globalThis.fetch;
+ const upstream=[];
+ try{
+  globalThis.fetch=async (_url,options)=>{
+   upstream.push(options);
+   return new Response(JSON.stringify({reply:'Sí, puedo ayudarle en Dallas.',language:'es'}),{status:200,headers:{'content-type':'application/json'}});
+  };
+  const response=await result(handler,req('staff-ai-smoke',{scenario:'spanish'},{authorization:'Bearer valid-staff-session'}));
+  assert.equal(response.status,200);
+  assert.equal(response.body.language,'es');
+  assert.equal(response.body.saved,false);
+  assert.equal(upstream.length,1);
+  assert.equal(JSON.parse(upstream[0].body).language,'es');
+  assert.ok(!calls.some(x=>x.kind==='insert'||x.kind==='storage-upload'));
+ }finally{globalThis.fetch=savedFetch;}
+});
+test('Timeout returns a safe bridge_timeout code without recording customer data',async()=>{
+ const {handler,calls}=await scenario();
+ const savedFetch=globalThis.fetch;
+ try{
+  globalThis.fetch=async()=>{
+   const e=new Error('this private provider response should not leak');
+   e.name='TimeoutError';
+   throw e;
+  };
+  const response=await result(handler,req('staff-ai-smoke',{scenario:'listing'},{authorization:'Bearer valid-staff-session'}));
+  assert.equal(response.status,503);
+  assert.equal(response.body.diagnostic_code,'bridge_timeout');
+  assert.doesNotMatch(JSON.stringify(response.body),/private provider/);
+  assert.ok(!calls.some(x=>x.kind==='insert'||x.kind==='storage-upload'));
+ }finally{globalThis.fetch=savedFetch;}
+});
+test('Network rejection returns a separate safe bridge_network_failure code',async()=>{
+ const {handler}=await scenario();
+ const savedFetch=globalThis.fetch;
+ try{
+  globalThis.fetch=async()=>{throw new TypeError('secret DNS information');};
+  const response=await result(handler,req('staff-ai-smoke',{scenario:'safety'},{authorization:'Bearer valid-staff-session'}));
+  assert.equal(response.status,503);
+  assert.equal(response.body.diagnostic_code,'bridge_network_failure');
+  assert.doesNotMatch(JSON.stringify(response.body),/secret DNS information/);
  }finally{globalThis.fetch=savedFetch;}
 });
