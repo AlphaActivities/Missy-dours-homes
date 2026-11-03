@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, getDashboardGreeting } from '../../contexts/AuthContext';
 import { ArrowRight, TrendingUp, Users, Zap, AlertCircle, Clock, Calendar } from 'lucide-react';
 import StatusBadge, { LeadStatus } from '../../components/dashboard/ui/StatusBadge';
 import { SkeletonRecentRow } from '../../components/dashboard/ui/LeadSkeleton';
@@ -25,23 +25,6 @@ interface AttentionItem {
   reasonLabel: string;
   detail: string;
   sortPriority: number;
-}
-
-const EMAIL_TO_NAME: Record<string, string> = {
-  'yourcustomerflowguy@gmail.com': 'Josh',
-  'missydourshomes@gmail.com':     'Missy',
-  'heberherrera92@gmail.com':      'Heber',
-};
-
-function getFirstName(email: string | undefined): string {
-  if (!email) return 'there';
-  return EMAIL_TO_NAME[email.toLowerCase()] ?? 'there';
-}
-
-function getGreeting(name: string): string {
-  const h = new Date().getHours();
-  const salutation = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-  return `${salutation}, ${name}.`;
 }
 
 // ── Needs Attention ────────────────────────────────────────────
@@ -396,8 +379,7 @@ export default function DashboardOverviewPage() {
     });
   }, []);
 
-  const firstName = getFirstName(user?.email);
-  const greeting = getGreeting(firstName);
+  const greeting = getDashboardGreeting(user?.email) ?? 'Welcome.';
 
   const handleOpenRecent = useCallback((id: string) => {
     navigate(`/dashboard/leads?lead=${id}`);

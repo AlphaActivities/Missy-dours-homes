@@ -8,6 +8,20 @@ const APPROVED_EMAILS = [
   'heberherrera92@gmail.com',
 ];
 
+// Keep the personalized greeting consistent between overview and entry animation.
+export function getDashboardGreeting(email: string | undefined): string | null {
+  const names: Record<string,string> = {
+    'yourcustomerflowguy@gmail.com': 'Josh',
+    'missydourshomes@gmail.com': 'Missy',
+    'heberherrera92@gmail.com': 'Heber',
+  };
+  const name = email ? names[email.toLowerCase()] : undefined;
+  if (!name) return null;
+  const hour = new Date().getHours();
+  const salutation = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  return `${salutation}, ${name}.`;
+}
+
 interface AuthContextValue {
   session: Session | null;
   user: User | null;

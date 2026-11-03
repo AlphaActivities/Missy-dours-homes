@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useAuth, getDashboardGreeting } from '../../../contexts/AuthContext';
 
 let entrancePlayed = false;
 // A new successful login should replay the same entrance, even after signing out
@@ -20,6 +21,8 @@ const formatDeviceDate = () => new Intl.DateTimeFormat(navigator.language || 'en
 }).format(new Date());
 
 export default function ConciergeSignatureEntrance() {
+ const { user } = useAuth();
+ const greeting = getDashboardGreeting(user?.email);
  const [visible,setVisible]=useState(()=>!entrancePlayed);
  const [phase,setPhase]=useState<'welcome'|'fly'|'leave'>('welcome');
  const [target,setTarget]=useState<Target>({x:0,y:0,scale:1});
@@ -75,8 +78,10 @@ export default function ConciergeSignatureEntrance() {
    initial={{opacity:1}} animate={{opacity:phase==='leave'?0:1}}
    exit={{opacity:0}} transition={{duration:FADE_MS/1000,ease:'easeOut'}}
    role="status" aria-label="Opening Missy Dours private CRM" aria-live="polite">
-   <style>{`@keyframes crmGoldSheen { 0% { transform: translate3d(-155px,-170px,0) rotate(35deg); opacity:0; } 12% {opacity:1;} 72% {opacity:1;} 100% {transform:translate3d(210px,195px,0) rotate(35deg);opacity:0;} } @keyframes crmGoldRim { 0%,100% {opacity:0;} 30% {opacity:.15;} 55% {opacity:.75;} 80% {opacity:.08;} } .crm-logo-sheen {animation:crmGoldSheen 2850ms linear 90ms 1 both;} .crm-logo-sheen-rim {animation:crmGoldRim 2850ms ease-in-out 90ms 1 both;} @keyframes crmLuxurySpin {to{transform:rotate(360deg)}} @keyframes crmLuxuryType {from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}} @keyframes crmLuxuryCursor {0%,49%{opacity:1}50%,100%{opacity:0}} .crm-date-type {animation:crmLuxuryType 1.15s steps(31,end) .55s both;} .crm-date-cursor {animation:crmLuxuryCursor .5s steps(1,end) 3;} .crm-luxury-ring {animation:crmLuxurySpin 2s linear infinite;filter:drop-shadow(0 0 5px rgba(255,212,122,.65));} @media (prefers-reduced-motion:reduce) {.crm-luxury-ring{animation:none;} .crm-logo-sheen,.crm-logo-sheen-rim{animation:none;opacity:0;}}`}</style>
+   <style>{`@keyframes crmGoldSheen { 0% { transform: translate3d(-155px,-170px,0) rotate(35deg); opacity:0; } 12% {opacity:1;} 72% {opacity:1;} 100% {transform:translate3d(210px,195px,0) rotate(35deg);opacity:0;} } @keyframes crmGoldRim { 0%,100% {opacity:0;} 30% {opacity:.15;} 55% {opacity:.75;} 80% {opacity:.08;} } .crm-logo-sheen {animation:crmGoldSheen 2850ms linear 90ms 1 both;} .crm-logo-sheen-rim {animation:crmGoldRim 2850ms ease-in-out 90ms 1 both;} @keyframes crmLuxurySpin {to{transform:rotate(360deg)}} @keyframes crmLuxuryType {from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}} @keyframes crmLuxuryCursor {0%,49%{opacity:1}50%,100%{opacity:0}} .crm-date-type {animation:crmLuxuryType 1.15s steps(31,end) .55s both;} .crm-date-cursor {animation:crmLuxuryCursor .5s steps(1,end) 3;} .crm-luxury-ring {animation:crmLuxurySpin 1.667s linear infinite;filter:drop-shadow(0 0 5px rgba(255,212,122,.65));} @media (prefers-reduced-motion:reduce) {.crm-luxury-ring{animation:none;} .crm-logo-sheen,.crm-logo-sheen-rim{animation:none;opacity:0;}}`}</style>
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
+   {greeting && <motion.p className="pointer-events-none absolute left-1/2 top-[calc(38%-112px)] max-lg:top-[calc(38%-142px)] w-[min(92vw,480px)] -translate-x-1/2 text-center text-[18px] sm:text-[21px] font-medium tracking-[.09em] text-[#f0d8a0] drop-shadow-[0_0_14px_rgba(196,164,106,.2)]"
+     initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}} transition={{duration:.55,delay:.35,ease:[.22,1,.36,1]}}>{greeting}</motion.p>}
    <div className="absolute left-1/2 top-[38%] max-lg:top-[calc(38%-30px)]" style={{transform:'translate(-50%, -50%)'}}>
     <motion.div
      className="relative h-[124px] w-[124px] rounded-2xl bg-[#eee2c8] p-2.5 shadow-[0_0_48px_rgba(196,164,106,.24)]"
