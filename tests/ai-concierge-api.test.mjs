@@ -124,6 +124,19 @@ test('Staff readiness rejects identities outside the approved staff roster',asyn
   assert.equal(response.status,401);
 });
 
+test('Missy and Heber cannot retrieve owner-only team device counts',async()=>{
+  for(const email of ['missydourshomes@gmail.com','heberherrera92@gmail.com']){
+    const {handler,calls}=await scenario({staffEmail:email});
+    const response=await result(handler,req('staff-readiness',{},{
+      authorization:'Bearer valid-staff-jwt'
+    }));
+    assert.equal(response.status,401);
+    assert.deepEqual(response.body,{error:'Unauthorized'});
+    assert.ok(!calls.some(c=>c.kind==='from'&&c.table==='ai_concierge_push_subscriptions'),
+      'Unauthorized agents must not query any device subscriptions');
+  }
+});
+
 test('Visitor callbacks require explicit consent and a validated phone',async()=>{
   const {handler,calls}=await scenario({enabled:true,turnstile:true});
   const denied=await result(handler,req('handoff',{
