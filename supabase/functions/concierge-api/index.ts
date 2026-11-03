@@ -148,7 +148,19 @@ Deno.serve(async req=>{
     body:JSON.stringify({messages:[{role:'user',content:prompts[scenario]}],language:'auto'}),
     signal:AbortSignal.timeout(25000)
    });
-   if(!upstream.ok)return answer({error:'AI service returned a non-success response'},503,origin);
+   if(!upstream.ok){
+    // Owner-only read-only diagnostic. Do not include headers, token, URL,
+    // raw provider response or visitor content in this failure report.
+    let safeCode='upstream_http_error';
+    try{
+     const errorBody=await upstream.json() as {code?:unknown};
+     const allowedCodes=['empty_model_reply','model_execution_failed'];
+     if(typeof errorBody.code==='string'&&allowedCodes.includes(errorBody.code))
+       safeCode=errorBody.code;
+    }catch{/* Non-JSON response; status still identifies failure class. */}
+    return answer({error:'AI service returned a non-success response',
+     upstream_status:upstream.status,upstream_code:safeCode},503,origin);
+   }
    const data=await upstream.json() as {reply?:unknown;language?:unknown};
    if(typeof data.reply!=='string'||!data.reply.trim())
     return answer({error:'AI returned no usable response'},503,origin);
