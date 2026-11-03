@@ -42,6 +42,7 @@ test('Automatic Spanish detection grounds replies in website facts without claim
   assert.equal(body.language, 'es');
   assert.equal(body.reply, 'Puedes consultar el sitio web.');
   assert.equal(calls.length, 2);
+  assert.ok(calls.every(call=>call.chat_template_kwargs?.enable_thinking===false));
   assert.match(calls[1].messages[0].content, /^Reply in Spanish\./);
   assert.match(calls[1].messages[1].content, /14636 Southern Pines Dr/);
   assert.match(calls[1].messages[1].content, /do not assert them as current/i);
@@ -89,4 +90,25 @@ test('Published website feed remains a non-authoritative reference', async () =>
     assert.match(context,/UNVERIFIED CURRENT/);
     assert.doesNotMatch(context,/Fake example/);
   } finally {globalThis.fetch=savedFetch;}
+});
+
+test('AI reply with no visible content fails with safe diagnostic and no leaked details',async()=>{
+ const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'hi'}]}),{
+  CONCIERGE_BRIDGE_SECRET:secret,
+  AI:{run:async()=>({choices:[{message:{content:'',reasoning_content:'private chain'}}]})}
+ });
+ assert.equal(response.status,503);
+ const data=await response.json();
+ assert.equal(data.code,'empty_model_reply');
+ assert.doesNotMatch(JSON.stringify(data),/private chain/);
+});
+test('Model rejection returns a safe code without exposing internal errors',async()=>{
+ const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'hi'}]}),{
+  CONCIERGE_BRIDGE_SECRET:secret,
+  AI:{run:async()=>{throw new Error('Sensitive provider details');}}
+ });
+ assert.equal(response.status,503);
+ const data=await response.json();
+ assert.equal(data.code,'model_execution_failed');
+ assert.doesNotMatch(JSON.stringify(data),/Sensitive provider details/);
 });
