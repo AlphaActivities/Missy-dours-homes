@@ -41,3 +41,25 @@ jobs:
             -d '{"messages":[{"role":"user","content":"health check"}]}')
           test "$status" = 401
           echo "PASS: unauthenticated model requests remain blocked"
+
+      - name: Enforce public chat OFF, Josh-only AI smoke and push sender OFF
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1'
+          for path in concierge-api/session concierge-api/staff-ai-smoke concierge-push-delivery; do
+            status=$(curl --silent --show-error --max-time 20 -o /tmp/missy-guard.json -w '%{http_code}' \
+              -X POST "$base/$path" \
+              -H 'Content-Type: application/json' \
+              -H 'Origin: https://missydours.com' -d '{"scenario":"listing"}')
+            case "$path" in
+              concierge-api/session) expected=503 ;;
+              concierge-api/staff-ai-smoke) expected=401 ;;
+              concierge-push-delivery) expected=503 ;;
+            esac
+            if [ "$status" != "$expected" ]; then
+              echo "Unexpected status $status on $path (expected $expected)"
+              exit 1
+            fi
+            echo "PASS: $path fails closed ($status)"
+          done
