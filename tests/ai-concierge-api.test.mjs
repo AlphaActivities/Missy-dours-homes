@@ -248,3 +248,16 @@ test('AI diagnostic rejects arbitrary prompts and does not access the AI service
   assert.equal(denied.status,400);
   assert.equal(calls.length,0);
 });
+
+test('Owner-only AI smoke reveals only safe upstream status/code for model error',async()=>{
+ const {handler}=await scenario();
+ const savedFetch=globalThis.fetch;
+ try{
+  globalThis.fetch=async()=>new Response(JSON.stringify({error:'private message',code:'empty_model_reply',secrets:'DO-NOT-LEAK'}),{status:503,headers:{'content-type':'application/json'}});
+  const response=await result(handler,req('staff-ai-smoke',{scenario:'listing'},{authorization:'Bearer valid-staff-session'}));
+  assert.equal(response.status,503);
+  assert.equal(response.body.upstream_status,503);
+  assert.equal(response.body.upstream_code,'empty_model_reply');
+  assert.doesNotMatch(JSON.stringify(response.body),/DO-NOT-LEAK|private message/);
+ }finally{globalThis.fetch=savedFetch;}
+});
