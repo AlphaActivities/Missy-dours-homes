@@ -27,6 +27,17 @@ jobs:
       - name: Production build
         if: always()
         run: npm run build
+      - name: Verify build contains the public property reference feed
+        shell: bash
+        run: |
+          node --input-type=module -e "
+          import fs from 'node:fs';
+          const data=JSON.parse(fs.readFileSync('dist/concierge-knowledge.json','utf8'));
+          if(data.schema_version!==1 || !Array.isArray(data.listings) || !data.listings.length)throw Error('Missing listing reference feed');
+          if(data.listings.some(x=>x.status==='placeholder'))throw Error('Illustrative listing entered reference feed');
+          if(data.listings.some(x=>!x.url.startsWith('https://missydours.com/listings/')))throw Error('Untrusted listing URL');
+          console.log('Verified published build includes',data.listings.length,'non-placeholder listing records');
+          "
       - name: External Cloudflare health smoke test
         shell: bash
         run: |
@@ -66,6 +77,24 @@ jobs:
           x=json.load(open('/tmp/concierge-disabled.json'))
           assert 'not available yet' in x.get('error',''), 'Unexpected error; feature flag may not be disabled'
           print('PASS: server-side concierge flag is still disabled')
+          PY
+      - name: Confirm visitor file uploads are disabled before launch
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-upload-disabled.json -w '%{http_code}' -X POST \
+            'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-api/attachment-upload' \
+            -H 'Content-Type: application/octet-stream' \
+            -H 'Origin: https://missydours.com' \
+            -H 'X-File-Name: sample.pdf' \
+            -H 'X-File-Type: application/pdf' \
+            --data-binary '%PDF-')
+          test "$status" = 503
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/concierge-upload-disabled.json'))
+          assert 'not available yet' in x.get('error','')
+          print('PASS: private attachments remain inaccessible while public chat is off')
           PY
       - name: Reject unauthenticated staff translation while visitor chat is disabled
         shell: bash
