@@ -24,6 +24,16 @@ jobs:
         run: npm run typecheck
       - name: Concierge offline worker behavior tests
         run: node --test tests/ai-concierge-worker.test.mjs
+      - name: Check publishing uses the canonical knowledge-generating build
+        run: |
+          node --input-type=module -e "
+          import fs from 'node:fs';
+          const config=fs.readFileSync('netlify.toml','utf8');
+          const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+          if(!config.includes('command = '+String.fromCharCode(34)+'npm run build'+String.fromCharCode(34)))throw Error('Site publishing bypasses the canonical build script');
+          if(!pkg.scripts.build?.includes('build-concierge-knowledge.mjs'))throw Error('Concierge knowledge generator is not in canonical build');
+          console.log('PASS: publishing uses the canonical build and generates the listing feed');
+          "
       - name: Production build
         if: always()
         run: npm run build
@@ -38,6 +48,9 @@ jobs:
           if(data.listings.some(x=>!x.url.startsWith('https://missydours.com/listings/')))throw Error('Untrusted listing URL');
           console.log('Verified published build includes',data.listings.length,'non-placeholder listing records');
           "
+      - name: Audit published Concierge knowledge URL (read-only, report-only)
+        continue-on-error: true
+        run: node scripts/probe-concierge-production.mjs
       - name: External Cloudflare health smoke test
         shell: bash
         run: |
