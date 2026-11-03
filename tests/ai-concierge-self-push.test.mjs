@@ -85,7 +85,8 @@ test('The per-account rate limit prevents delivery',async()=>{
  const {handler,calls}=await scenario({limit:false});
  const result=await request(handler);
  assert.equal(result.status,429);
- assert.ok(!calls.some(x=>x.kind==='sent'||x.kind==='from'));
+ assert.ok(!calls.some(x=>x.kind==='sent'),
+  'Rate-limited tests must never reach the push provider');
 });
 test('No registered device results in a safe error with no push',async()=>{
  const {handler,calls}=await scenario({devices:0});
@@ -97,7 +98,11 @@ test('Missing server keys never triggers any push delivery',async()=>{
  const {handler,calls}=await scenario({hasKeys:false});
  const result=await request(handler);
  assert.equal(result.status,503);
- assert.ok(!calls.some(x=>x.kind==='sent'));
+ assert.deepEqual(result.data.missing_settings,[
+  'MISSY_VAPID_PUBLIC_KEY','MISSY_VAPID_PRIVATE_KEY','MISSY_VAPID_CONTACT'
+ ]);
+ assert.ok(!calls.some(x=>x.kind==='sent'||x.kind==='rpc'),
+   'Missing configuration must not consume the hourly test quota');
 });
 test('Owner may send exactly one test push, without activating the normal queue',async()=>{
  const {handler,calls}=await scenario();

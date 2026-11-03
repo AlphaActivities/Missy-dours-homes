@@ -34,12 +34,6 @@ Deno.serve(async req=>{
  const {data:identity,error:authError}=await db.auth.getUser(jwt);
  if(authError||identity.user?.email?.toLowerCase()!==owner)
   return json({error:'Unauthorized'},401,origin);
- // Strict shared database rate limit across devices/sessions.
- const {data:allowed,error:limitError}=await db.rpc('ai_concierge_consume_limit',{
-  p_bucket:'push-self-test:'+owner,p_max:3,p_window_seconds:3600
- });
- if(limitError)return json({error:'Test temporarily unavailable'},503,origin);
- if(allowed!==true)return json({error:'Test limit reached. Try again later.'},429,origin);
  const {data:devices,error:devicesError}=await db.from('ai_concierge_push_subscriptions')
   .select('id,endpoint,p256dh,auth_key')
   .eq('staff_email',owner).order('updated_at',{ascending:false}).limit(1);
@@ -49,8 +43,23 @@ Deno.serve(async req=>{
  const publicKey=Deno.env.get('MISSY_VAPID_PUBLIC_KEY');
  const privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY');
  const contact=Deno.env.get('MISSY_VAPID_CONTACT');
- if(!publicKey||!privateKey||!contact)
-  return json({error:'Server push keys are not configured. Registration alone is not delivery readiness.'},503,origin);
+ const missing=[
+  ...(!publicKey?['MISSY_VAPID_PUBLIC_KEY']:[]),
+  ...(!privateKey?['MISSY_VAPID_PRIVATE_KEY']:[]),
+  ...(!contact?['MISSY_VAPID_CONTACT']:[])
+ ];
+ if(missing.length)
+  return json({
+   error:'Push delivery is not configured. Missing server settings: '+missing.join(', ')+'.',
+   missing_settings:missing,
+   delivery_confirmed:false
+  },503,origin);
+ // Strict shared database rate limit across devices/sessions.
+ const {data:allowed,error:limitError}=await db.rpc('ai_concierge_consume_limit',{
+  p_bucket:'push-self-test:'+owner,p_max:3,p_window_seconds:3600
+ });
+ if(limitError)return json({error:'Test temporarily unavailable'},503,origin);
+ if(allowed!==true)return json({error:'Test limit reached. Try again later.'},429,origin);
  try {
   webpush.setVapidDetails(contact,publicKey,privateKey);
   const payload=JSON.stringify({kind:'device_test',id:crypto.randomUUID()});
