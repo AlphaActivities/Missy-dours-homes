@@ -100,7 +100,8 @@ test('Missing server keys never triggers any push delivery',async()=>{
  assert.deepEqual(result.data.missing_settings,[
   'MISSY_VAPID_PUBLIC_KEY','MISSY_VAPID_PRIVATE_KEY','MISSY_VAPID_CONTACT'
  ]);
- assert.ok(!calls.some(x=>x.kind==='sent'));
+ assert.ok(!calls.some(x=>x.kind==='sent'||x.kind==='rpc'),
+   'Missing configuration must not consume the hourly test quota');
 });
 test('Owner may send exactly one test push, without activating the normal queue',async()=>{
  const {handler,calls}=await scenario();
