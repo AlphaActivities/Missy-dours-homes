@@ -55,7 +55,7 @@ Deno.serve(async req=>{
  const contact=/^[^\s@:/]+@[^\s@:/]+\.[^\s@:/]+$/.test(rawContact)
   ? 'mailto:'+rawContact : rawContact;
  const missing=[
-  ...(!publicKey?['MISSY_VAPID_PUBLIC_KEY']:[]),
+
   ...(!privateKey?['MISSY_VAPID_PRIVATE_KEY']:[]),
   ...(!contact?['MISSY_VAPID_CONTACT']:[])
  ];
