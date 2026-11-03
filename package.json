@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/build-concierge-knowledge.mjs && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "test:concierge": "node --test tests/ai-concierge-worker.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
