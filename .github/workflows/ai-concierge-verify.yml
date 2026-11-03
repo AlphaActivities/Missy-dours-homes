@@ -113,6 +113,22 @@ jobs:
           assert 'not available yet' in x.get('error','')
           print('PASS: private attachments remain inaccessible while public chat is off')
           PY
+      - name: Reject anonymous iPhone push self-test against deployed API
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/missy-push-selftest-denied.json -w '%{http_code}' -X POST \
+            'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-push-test' \
+            -H 'Content-Type: application/json' \
+            -H 'Origin: https://missydours.com' \
+            -d '{}')
+          test "$status" = 401
+          python3 - <<'PY'
+          import json
+          payload=json.load(open('/tmp/missy-push-selftest-denied.json'))
+          assert payload.get('error') == 'Unauthorized'
+          print('PASS: anonymous users cannot trigger a test push')
+          PY
       - name: Reject anonymous staff device readiness while visitor chat is disabled
         shell: bash
         run: |
