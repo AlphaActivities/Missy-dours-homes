@@ -21,7 +21,7 @@ Deno.serve(async request=>{
   if(!stored.error&&typeof stored.data==='string')privateKey=stored.data.trim();
  }
  const rawContact=(Deno.env.get('MISSY_VAPID_CONTACT')??'').trim();
- const contact=/^[^\\s@:/]+@[^\\s@:/]+\\.[^\\s@:/]+$/.test(rawContact)
+ const contact=/^[^\s@:/]+@[^\s@:/]+\.[^\s@:/]+$/.test(rawContact)
   ? 'mailto:'+rawContact : rawContact;
  if(!privateKey||!contact)return json({error:'Push credentials unavailable'},503);
  let publicKey='';
