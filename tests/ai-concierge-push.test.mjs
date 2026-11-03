@@ -32,6 +32,7 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
   const db={
     rpc:async (method,args)=>{
       calls.push({kind:'rpc',method,args});
+      if(method==='ai_concierge_get_sender_secret')return {data:'mock-vault-secret-for-cron-1234567890123456',error:null};
       if(method==='ai_concierge_claim_push_batch')return {data:events,error:null};
       if(method==='ai_concierge_record_push_receipt')return {data:true,error:null};
       if(method==='ai_concierge_finish_push')return {data:true,error:null};
@@ -62,7 +63,7 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
   globalThis.Deno={
     env:{get:name=>({
       MISSY_PUSH_DELIVERY_ENABLED:pushEnabled?'true':'false',
-      MISSY_PUSH_DELIVERY_CRON_SECRET:'test-sender-secret',
+      MISSY_PUSH_DELIVERY_CRON_SECRET:'test-sender-secret-for-manual-calls-123456',
       MISSY_VAPID_PUBLIC_KEY:'invalid-server-public',
       MISSY_VAPID_PRIVATE_KEY:Buffer.alloc(32,3).toString('base64url'),
       MISSY_VAPID_CONTACT:'test@example.invalid',
@@ -75,7 +76,7 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
   assert.equal(typeof handler,'function');
   return {handler,calls,sent};
 }
-async function call(handler,authorization='Bearer test-sender-secret'){
+async function call(handler,authorization='Bearer test-sender-secret-for-manual-calls-123456'){
   const req=new Request('https://example.test/concierge-push-delivery',{
     method:'POST',headers:{authorization}
   });
@@ -148,4 +149,19 @@ test('Missing registered devices does not produce a false delivery receipt',asyn
   const finish=calls.find(x=>x.method==='ai_concierge_finish_push');
   assert.equal(finish.args.p_success,false);
   assert.equal(finish.args.p_error_code,'no_registered_devices');
+});
+
+test('Vault cron credential authorizes sender only when the push flag is enabled',async()=>{
+ const {handler,calls,sent}=await makeServer({pushEnabled:true,events:[event('handoff_created')]});
+ const response=await call(handler,'Bearer mock-vault-secret-for-cron-1234567890123456');
+ assert.equal(response.status,200);
+ assert.equal(sent.length,3);
+ assert.ok(calls.some(c=>c.method==='ai_concierge_get_sender_secret'));
+});
+test('An incorrect long cron credential never claims queue events',async()=>{
+ const {handler,calls,sent}=await makeServer({pushEnabled:true,events:[event('handoff_created')]});
+ const response=await call(handler,'Bearer incorrect-credential-that-is-over-32-characters');
+ assert.equal(response.status,401);
+ assert.equal(sent.length,0);
+ assert.ok(!calls.some(c=>c.method==='ai_concierge_claim_push_batch'));
 });

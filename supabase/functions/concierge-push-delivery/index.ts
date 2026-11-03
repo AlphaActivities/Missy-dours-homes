@@ -12,7 +12,14 @@ Deno.serve(async request=>{
  if(Deno.env.get('MISSY_PUSH_DELIVERY_ENABLED')!=='true')return json({status:'disabled'},503);
  const credential=Deno.env.get('MISSY_PUSH_DELIVERY_CRON_SECRET');
  const candidate=request.headers.get('authorization')?.replace(/^Bearer /,'')??'';
- if(!credential||candidate!==credential)return json({error:'Unauthorized'},401);
+ if(!candidate||candidate.length<32)return json({error:'Unauthorized'},401);
+ if(!credential||candidate!==credential) {
+   // Secondary credential is generated and encrypted in Vault for pg_cron,
+   // accessible only with the Edge Function's service role.
+   const stored=await client.rpc('ai_concierge_get_sender_secret');
+   if(stored.error||typeof stored.data!=='string'||candidate!==stored.data)
+     return json({error:'Unauthorized'},401);
+ }
  // Preserve the original VAPID pair that delivered a real iPhone self-test.
  // The separately configured server public variable may be outdated or malformed.
  let privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY')?.trim();
