@@ -88,7 +88,17 @@ Deno.serve(async req=>{
   if(note.length<1||note.length>500)return answer({error:'Invalid message'},400,origin);
   const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'handoff:'+hash,p_max:3,p_window_seconds:3600});
   if(limit.error||limit.data!==true)return answer({error:'Please try again later'},429,origin);
-  const {data:requested,error:requestError}=await db.rpc('ai_concierge_request_human',{p_conversation:chat.id,p_token_hash:hash,p_message:note});
+  const name=typeof body.name==='string'?body.name.trim():'';
+  const phone=typeof body.phone==='string'?body.phone.trim():'';
+  if(body.contact_consent!==true || name.length<2 || name.length>100 || phone.length<10 || phone.length>24 || !/^[+0-9 ()-]+$/.test(phone)){
+    return answer({error:'Please provide your name, a valid callback number, and consent to be contacted.'},400,origin);
+  }
+  const digits=phone.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
+  if(digits.length!==10)return answer({error:'Please enter a valid 10-digit US phone number.'},400,origin);
+  const {data:requested,error:requestError}=await db.rpc('ai_concierge_request_human_with_contact',{
+    p_conversation:chat.id,p_token_hash:hash,p_message:note,
+    p_name:name,p_phone:phone,p_consent:true
+  });
   if(requestError)return answer({error:'Could not request a team member'},503,origin);
   if(requested!==true)return answer({error:'Conversation status changed'},409,origin);
   return answer({status:'waiting_human',conversation_id:chat.id},200,origin);
