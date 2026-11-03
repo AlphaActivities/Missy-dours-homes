@@ -30,7 +30,7 @@ jobs:
           import fs from 'node:fs';
           const config=fs.readFileSync('netlify.toml','utf8');
           const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
-          if(!config.includes('command = \\"npm run build\\"'))throw Error('Site publishing bypasses the canonical build script');
+          if(!config.includes('command = '+String.fromCharCode(34)+'npm run build'+String.fromCharCode(34)))throw Error('Site publishing bypasses the canonical build script');
           if(!pkg.scripts.build?.includes('build-concierge-knowledge.mjs'))throw Error('Concierge knowledge generator is not in canonical build');
           console.log('PASS: publishing uses the canonical build and generates the listing feed');
           "
