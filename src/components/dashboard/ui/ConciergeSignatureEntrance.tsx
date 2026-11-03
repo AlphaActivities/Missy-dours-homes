@@ -75,7 +75,7 @@ export default function ConciergeSignatureEntrance() {
    initial={{opacity:1}} animate={{opacity:phase==='leave'?0:1}}
    exit={{opacity:0}} transition={{duration:FADE_MS/1000,ease:'easeOut'}}
    role="status" aria-label="Opening Missy Dours private CRM" aria-live="polite">
-   <style>{`@keyframes crmGoldSheen { 0% { transform: translate3d(-155px,-170px,0) rotate(35deg); opacity:0; } 12% {opacity:1;} 72% {opacity:1;} 100% {transform:translate3d(210px,195px,0) rotate(35deg);opacity:0;} } @keyframes crmGoldRim { 0%,100% {opacity:0;} 30% {opacity:.15;} 55% {opacity:.75;} 80% {opacity:.08;} } .crm-logo-sheen {animation:crmGoldSheen 2850ms linear 90ms 1 both;} .crm-logo-sheen-rim {animation:crmGoldRim 2850ms ease-in-out 90ms 1 both;} @media (prefers-reduced-motion:reduce) {.crm-logo-sheen,.crm-logo-sheen-rim{animation:none;opacity:0;}}`}</style>
+   <style>{`@keyframes crmGoldSheen { 0% { transform: translate3d(-155px,-170px,0) rotate(35deg); opacity:0; } 12% {opacity:1;} 72% {opacity:1;} 100% {transform:translate3d(210px,195px,0) rotate(35deg);opacity:0;} } @keyframes crmGoldRim { 0%,100% {opacity:0;} 30% {opacity:.15;} 55% {opacity:.75;} 80% {opacity:.08;} } .crm-logo-sheen {animation:crmGoldSheen 2850ms linear 90ms 1 both;} .crm-logo-sheen-rim {animation:crmGoldRim 2850ms ease-in-out 90ms 1 both;} @keyframes crmLuxurySpin {to{transform:rotate(360deg)}} @keyframes crmLuxuryReverse {to{transform:rotate(-360deg)}} .crm-luxury-ring {animation:crmLuxurySpin 2.4s linear infinite;filter:drop-shadow(0 0 3px rgba(239,216,160,.45));} .crm-luxury-ring-reverse {animation:crmLuxuryReverse 4s linear infinite;} @media (prefers-reduced-motion:reduce) {.crm-luxury-ring,.crm-luxury-ring-reverse{animation:none;} .crm-logo-sheen,.crm-logo-sheen-rim{animation:none;opacity:0;}}`}</style>
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
    <div className="absolute left-1/2 top-[38%] max-lg:top-[calc(38%-30px)]" style={{transform:'translate(-50%, -50%)'}}>
     <motion.div
@@ -96,10 +96,15 @@ export default function ConciergeSignatureEntrance() {
    <motion.div className="absolute left-1/2 top-[calc(38%+88px)] max-lg:top-[calc(38%+58px)] flex w-[min(94vw,520px)] flex-col items-center gap-3 px-2"
      style={{transform:'translateX(-50%)'}}
      animate={{opacity:phase==='welcome'?1:0}} transition={{duration:.22}}>
-     <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#c4a46a]/20 border-t-[#c4a46a]" aria-hidden="true"/>
+     <div className="relative h-10 w-10" aria-hidden="true">
+      <div className="absolute inset-[3px] rounded-full border border-[#bc9957]/30 shadow-[0_0_16px_rgba(196,164,106,.15)]"/>
+      <div className="absolute inset-0 rounded-full border border-[#efd8a0]/10"/>
+      <div className="crm-luxury-ring absolute inset-0 rounded-full" style={{background:'conic-gradient(from 0deg, transparent 0deg, rgba(128,89,35,.15) 95deg, #9d773a 205deg, #e0bd76 268deg, #fff4cf 315deg, transparent 355deg)',WebkitMask:'radial-gradient(farthest-side,transparent calc(100% - 3px),black calc(100% - 2.5px))',mask:'radial-gradient(farthest-side,transparent calc(100% - 3px),black calc(100% - 2.5px))'}}/>
+      <div className="crm-luxury-ring-reverse absolute inset-[7px] rounded-full" style={{background:'conic-gradient(from 180deg,transparent 0deg,rgba(196,164,106,.08) 140deg,#c4a46a 278deg,transparent 315deg)',WebkitMask:'radial-gradient(farthest-side,transparent calc(100% - 1.5px),black calc(100% - 1px))',mask:'radial-gradient(farthest-side,transparent calc(100% - 1.5px),black calc(100% - 1px))'}}/>
+     </div>
      <div className="flex flex-col items-center gap-3 text-center">
       <p className="text-[15px] sm:text-[18px] font-medium uppercase leading-[1.65] tracking-[.17em] sm:tracking-[.22em] text-[#dfc58e]">Entering your<br/>Executive dashboard</p>
-      <motion.p className="mt-9 sm:mt-10 text-[12px] sm:text-[14px] leading-relaxed tracking-[.09em] text-[#dfc58e]/85" aria-label={`Device date: ${deviceDate}`} initial={{opacity:0,y:5}} animate={{opacity:phase==='welcome'?1:0,y:phase==='welcome'?0:5}} transition={{opacity:{duration:0.62,delay:0.5,ease:[0.22,1,0.36,1]},y:{duration:0.62,delay:0.5,ease:[0.22,1,0.36,1]}}}>{deviceDate}</motion.p>
+      <motion.p className="mt-9 sm:mt-10 text-[15px] sm:text-[17px] leading-relaxed tracking-[.075em] text-[#dfc58e]/95" aria-label={`Device date: ${deviceDate}`} initial={{opacity:0,y:5}} animate={{opacity:phase==='welcome'?1:0,y:phase==='welcome'?0:5}} transition={{opacity:{duration:0.62,delay:0.5,ease:[0.22,1,0.36,1]},y:{duration:0.62,delay:0.5,ease:[0.22,1,0.36,1]}}}>{deviceDate}</motion.p>
      </div>
    </motion.div>
   </motion.div>}</AnimatePresence>;
