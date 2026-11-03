@@ -72,6 +72,12 @@ Deno.serve(async req=>{
   const isPng=bytes[0]===137&&bytes[1]===80&&bytes[2]===78&&bytes[3]===71&&bytes[4]===13&&bytes[5]===10&&bytes[6]===26&&bytes[7]===10;
   const isWebp=bytes[0]===82&&bytes[1]===73&&bytes[2]===70&&bytes[3]===70&&bytes[8]===87&&bytes[9]===69&&bytes[10]===66&&bytes[11]===80;
   if(!({'application/pdf':isPdf,'image/jpeg':isJpg,'image/png':isPng,'image/webp':isWebp}[type]))return answer({error:'File content does not match its type'},415,origin);
+  // Recheck ownership after reading the file, as a staff agent may return
+  // the conversation to AI while the visitor's upload is in flight.
+  const fresh=await db.from('ai_conversations').select('status,assigned_to')
+    .eq('id',chat.id).maybeSingle();
+  if(fresh.error||fresh.data?.status!=='human'||!fresh.data?.assigned_to)
+    return answer({error:'Human assistance has ended; attachment not saved'},409,origin);
   const bucket='missy-concierge-attachments';
   const storagePath=chat.id+'/'+crypto.randomUUID()+'-'+name;
   const upload=await db.storage.from(bucket).upload(storagePath,bytes,{contentType:type,upsert:false,cacheControl:'0'});
