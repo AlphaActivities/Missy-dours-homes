@@ -25,7 +25,31 @@ async function request<T>(path: string, data: unknown, token?: string): Promise<
   }
   return payload as T;
 }
+async function uploadAttachment(session: VisitorSession, file: File) {
+  if (!configured()) throw new Error('The concierge is not configured yet.');
+  if (file.size <= 0 || file.size > 10485760) throw new Error('Choose a file smaller than 10 MB.');
+  if (!['image/jpeg','image/png','image/webp','application/pdf'].includes(file.type)) {
+    throw new Error('Only JPG, PNG, WEBP, and PDF files are supported.');
+  }
+  const response = await fetch(endpoint + '/attachment-upload', {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      apikey: publicKey,
+      Authorization: 'Bearer ' + session.token,
+      'Content-Type':'application/octet-stream',
+      'X-File-Name': encodeURIComponent(file.name),
+      'X-File-Type': file.type
+    },
+    body: file,
+    signal: AbortSignal.timeout(60000)
+  });
+  const payload = await response.json().catch(() => ({})) as {id?:string;filename?:string;error?:string};
+  if (!response.ok) throw new Error(payload.error || 'Could not upload this file.');
+  return payload;
+}
 export const conciergeTransport = {
+  uploadAttachment,
   start: (challenge: string) => request<VisitorSession>('/session', { challenge }),
   send: (session: VisitorSession, message: string, language: string = 'en') =>
     request<{ reply?: string; language?: string; conversation_id: string; status?: string; saved?: boolean }>('/message', { message, language }, session.token),
