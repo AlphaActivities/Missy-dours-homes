@@ -75,10 +75,40 @@ Deno.serve(async req=>{
   // The provider accepted the notification; only the user can confirm display.
   return json({accepted:true,delivery_confirmed:false},200,origin);
  }catch(err){
-  const status=(err as {statusCode?:number}).statusCode;
-  if(status===404||status===410)return json({
-   error:'This subscription is expired. Please re-enable notifications on your iPhone.'
+  const details=err && typeof err==='object' ? err as {statusCode?:unknown;code?:unknown;name?:unknown} : {};
+  const httpStatus=typeof details.statusCode==='number' && Number.isInteger(details.statusCode)
+   && details.statusCode>=400 && details.statusCode<=599 ? details.statusCode : null;
+  const errorCode=typeof details.code==='string' && /^[A-Z_0-9]{2,50}$/.test(details.code)
+   ? details.code : null;
+  const errorName=typeof details.name==='string' && /^[a-zA-Z]{2,60}$/.test(details.name)
+   ? details.name : 'UnknownError';
+  // Never log the raw error, request, device endpoint, auth key or VAPID secret.
+  // Some web-push exceptions embed the provider URL and credentials in the message.
+  console.error('Concierge iPhone test push failure',{
+   stage:httpStatus!==null?'provider_response':'local_send',
+   provider_status:httpStatus,error_name:errorName,error_code:errorCode
+  });
+  if(httpStatus===404||httpStatus===410)return json({
+   error:'Apple says this push subscription is expired. Re-enable notifications on your iPhone.',
+   failure_stage:'provider_response',provider_status:httpStatus
   },409,origin);
-  return json({error:'The push provider did not accept the test. Check server push configuration.'},502,origin);
+  if(httpStatus===401||httpStatus===403)return json({
+   error:'The push service rejected VAPID authorization. The key pair or its contact setting needs review.',
+   failure_stage:'provider_response',provider_status:httpStatus
+  },502,origin);
+  if(httpStatus===400)return json({
+   error:'The push service rejected the request format or subscription details.',
+   failure_stage:'provider_response',provider_status:httpStatus
+  },502,origin);
+  if(httpStatus!==null)return json({
+   error:'The push service returned an unsuccessful HTTP response.',
+   failure_stage:'provider_response',provider_status:httpStatus
+  },502,origin);
+  return json({
+   error:'The notification server failed before receiving a push-provider response.',
+   failure_stage:'local_send',
+   error_type:errorName,
+   ...(errorCode?{error_code:errorCode}:{})
+  },502,origin);
  }
 });
