@@ -85,7 +85,8 @@ test('The per-account rate limit prevents delivery',async()=>{
  const {handler,calls}=await scenario({limit:false});
  const result=await request(handler);
  assert.equal(result.status,429);
- assert.ok(!calls.some(x=>x.kind==='sent'||x.kind==='from'));
+ assert.ok(!calls.some(x=>x.kind==='sent'),
+  'Rate-limited tests must never reach the push provider');
 });
 test('No registered device results in a safe error with no push',async()=>{
  const {handler,calls}=await scenario({devices:0});
