@@ -1,0 +1,37 @@
+name: AI Concierge mobile WebKit smoke
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  concierge-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Build website with public chat disabled
+        run: npm run build
+      - name: Install WebKit browser for iPhone viewport smoke test
+        run: npx playwright install --with-deps webkit
+      - name: Verify mobile visitor chat opens and closes safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx vite preview --host 127.0.0.1 --port 4173 --strictPort >/tmp/concierge-preview.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4173/ >/dev/null
+          node scripts/test-concierge-mobile-webkit.mjs
