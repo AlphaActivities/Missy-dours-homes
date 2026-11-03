@@ -1,0 +1,22 @@
+name: Concierge push routing security tests
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-push-routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Verify disabled sender, staff targeting, retries and no duplicate alerts
+        run: node --test tests/ai-concierge-push.test.mjs
