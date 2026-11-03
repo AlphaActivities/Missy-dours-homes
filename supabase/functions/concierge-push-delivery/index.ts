@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
 import webpush from 'npm:web-push@3.6.7';
+import {createECDH} from 'node:crypto';
 
 const json = (body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json','cache-control':'no-store'}});
 const client=createClient(Deno.env.get('SUPABASE_URL')??'',Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'',{auth:{persistSession:false,autoRefreshToken:false}});
@@ -12,17 +13,30 @@ Deno.serve(async request=>{
  const credential=Deno.env.get('MISSY_PUSH_DELIVERY_CRON_SECRET');
  const candidate=request.headers.get('authorization')?.replace(/^Bearer /,'')??'';
  if(!credential||candidate!==credential)return json({error:'Unauthorized'},401);
- const publicKey=Deno.env.get('MISSY_VAPID_PUBLIC_KEY');
- let privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY');
+ // Preserve the original VAPID pair that delivered a real iPhone self-test.
+ // The separately configured server public variable may be outdated or malformed.
+ let privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY')?.trim();
  if(!privateKey) {
-  // Server-only encrypted Vault fallback, preserving the public VAPID key.
-  // Runs exclusively after the sender flag and cron-secret authorization.
   const stored=await client.rpc('ai_concierge_get_vapid_private');
-  if(!stored.error&&typeof stored.data==='string')privateKey=stored.data;
+  if(!stored.error&&typeof stored.data==='string')privateKey=stored.data.trim();
  }
- const contact=Deno.env.get('MISSY_VAPID_CONTACT');
- if(!publicKey||!privateKey||!contact)return json({error:'Push keys not configured'},503);
- webpush.setVapidDetails(contact,publicKey,privateKey);
+ const rawContact=(Deno.env.get('MISSY_VAPID_CONTACT')??'').trim();
+ const contact=/^[^\\s@:/]+@[^\\s@:/]+\\.[^\\s@:/]+$/.test(rawContact)
+  ? 'mailto:'+rawContact : rawContact;
+ if(!privateKey||!contact)return json({error:'Push credentials unavailable'},503);
+ let publicKey='';
+ try {
+  if(!/^[A-Za-z0-9_-]{42,44}={0,2}$/.test(privateKey))throw new Error('Invalid private key');
+  const normalized=privateKey.replace(/-/g,'+').replace(/_/g,'/').replace(/=+$/,'');
+  const bytes=Uint8Array.from(atob(normalized.padEnd(Math.ceil(normalized.length/4)*4,'=')),c=>c.charCodeAt(0));
+  if(bytes.length!==32)throw new Error('Invalid private key length');
+  const pair=createECDH('prime256v1');
+  pair.setPrivateKey(bytes);
+  publicKey=pair.getPublicKey('base64url','uncompressed');
+  webpush.setVapidDetails(contact,publicKey,privateKey);
+ }catch{
+  return json({error:'Server push credentials invalid'},503);
+ }
  const {data:events,error:claimError}=await client.rpc('ai_concierge_claim_push_batch',{p_limit:10});
  if(claimError)return json({error:'Unable to claim events'},503);
  let delivered=0,failed=0;
@@ -47,7 +61,25 @@ Deno.serve(async request=>{
    for(const device of targetDevices) {
     if(accepted.has(device.id))continue;
     try {
-     await webpush.sendNotification({endpoint:device.endpoint,keys:{p256dh:device.p256dh,auth:device.auth_key}},payload,{TTL:900});
+     // Use the same signed and encrypted request + native Deno transport
+     // that was confirmed by the real iPhone device test.
+     const target=new URL(device.endpoint);
+     const allowed=(target.hostname==='web.push.apple.com'
+       ||target.hostname==='fcm.googleapis.com'
+       ||target.hostname==='updates.push.services.mozilla.com');
+     if(target.protocol!=='https:'||!allowed||target.username||target.password||target.port)
+       throw new Error('Untrusted push endpoint');
+     const prepared=webpush.generateRequestDetails(
+       {endpoint:device.endpoint,keys:{p256dh:device.p256dh,auth:device.auth_key}},
+       payload,{TTL:900}
+     );
+     if(prepared.endpoint!==device.endpoint)throw new Error('Unexpected push endpoint');
+     const provider=await fetch(prepared.endpoint,{
+       method:'POST',headers:prepared.headers,
+       body:prepared.body?new Uint8Array(prepared.body):undefined,
+       signal:AbortSignal.timeout(12000)
+     });
+     if(!provider.ok)throw Object.assign(new Error('Push provider rejected request'),{statusCode:provider.status});
      const receipt=await client.rpc('ai_concierge_record_push_receipt',{p_event:event.id,p_device:device.id});
      if(receipt.error||receipt.data!==true)throw new Error('Receipt persistence failed');
      successfulDevices++;
