@@ -29,6 +29,6 @@ export const conciergeTransport = {
   start: (challenge: string) => request<VisitorSession>('/session', { challenge }),
   send: (session: VisitorSession, message: string, language: string = 'en') =>
     request<{ reply?: string; conversation_id: string; status?: string; saved?: boolean }>('/message', { message, language }, session.token),
-  handoff: (session: VisitorSession, message: string) => request<{status:string;conversation_id:string}>('/handoff', {message}, session.token),
+  handoff: (session: VisitorSession, message: string, contact: {name:string;phone:string;contact_consent:boolean}) => request<{status:string;conversation_id:string}>('/handoff', {message,...contact}, session.token),
   sync: (session: VisitorSession) => request<{status: 'ai'|'human'|'waiting_human'|'closed';messages: Array<{id:string;sender:'visitor'|'ai'|'human'|'system';body:string;created_at:string;sender_actor:string|null}>}>('/sync', {}, session.token),
 };
