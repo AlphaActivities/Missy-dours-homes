@@ -66,6 +66,7 @@ Deno.serve(async req=>{
  });
  if(limitError)return json({error:'Test temporarily unavailable'},503,origin);
  if(allowed!==true)return json({error:'Test limit reached. Try again later.'},429,origin);
+ let failureStep:'vapid_setup'|'request_encryption'|'provider_fetch'='vapid_setup';
  try {
   webpush.setVapidDetails(contact,publicKey,privateKey);
   const payload=JSON.stringify({kind:'device_test',id:crypto.randomUUID()});
@@ -80,12 +81,14 @@ Deno.serve(async req=>{
   if(endpoint.protocol!=='https:'||endpoint.hostname!=='web.push.apple.com'
    ||endpoint.username||endpoint.password||endpoint.port)
    return json({error:'The registered iPhone push endpoint is not valid.'},409,origin);
+  failureStep='request_encryption';
   const prepared=webpush.generateRequestDetails(subscription,payload,{TTL:120,urgency:'high'});
   if(prepared.endpoint!==device.endpoint)
    throw new Error('InvalidPreparedEndpoint');
   const signedBody=prepared.body
    ? new Uint8Array(prepared.body)
    : undefined;
+  failureStep='provider_fetch';
   const provider=await fetch(prepared.endpoint,{
    method:'POST',headers:prepared.headers,body:signedBody,
    signal:AbortSignal.timeout(12000)
@@ -108,6 +111,7 @@ Deno.serve(async req=>{
   // Some web-push exceptions embed the provider URL and credentials in the message.
   console.error('Concierge iPhone test push failure',{
    stage:httpStatus!==null?'provider_response':'local_send',
+   failure_step:failureStep,
    provider_status:httpStatus,error_name:errorName,error_code:errorCode
   });
   if(httpStatus===404||httpStatus===410)return json({
@@ -129,6 +133,7 @@ Deno.serve(async req=>{
   return json({
    error:'The notification server failed before receiving a push-provider response.',
    failure_stage:'local_send',
+   failure_step:failureStep,
    error_type:errorName,
    ...(errorCode?{error_code:errorCode}:{})
   },502,origin);
