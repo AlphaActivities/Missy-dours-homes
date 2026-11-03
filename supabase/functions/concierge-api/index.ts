@@ -18,14 +18,81 @@ Deno.serve(async req=>{
  const origin = allowed(req.headers.get('origin'));
  if(req.method==='OPTIONS') {
   if(!origin) return answer({error:'Origin not allowed'},403);
-  return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'content-type, authorization, apikey','Access-Control-Max-Age':'600','Vary':'Origin'}});
+  return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'content-type, authorization, apikey, x-file-name, x-file-type','Access-Control-Max-Age':'600','Vary':'Origin'}});
  }
  if(req.method!=='POST'||!origin) return answer({error:'Forbidden'},403,origin);
  const url=new URL(req.url);
  const staffTranslationRoute=url.pathname.endsWith('/staff-translate');
  // Visitor messaging fails closed; authenticated staff-only translation is separate.
  if(!enabled && !staffTranslationRoute) return answer({error:'Concierge messaging is not available yet.'},503,origin);
- if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
+ if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate','/functions/v1/concierge-api/attachment-upload','/concierge-api/attachment-upload'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
+
+ if(url.pathname.endsWith('/attachment-upload')) {
+  if(Deno.env.get('MISSY_TURNSTILE_READY')!=='true')return answer({error:'Service not ready'},503,origin);
+  const token=(req.headers.get('authorization')??'').replace(/^Bearer /,'');
+  if(!/^[a-f0-9]{64}$/.test(token))return answer({error:'Unauthorized'},401,origin);
+  const hash=await digest(token);
+  const {data:chat,error:findError}=await db.from('ai_conversations')
+    .select('id,status,assigned_to,visitor_expires_at')
+    .eq('visitor_token_hash',hash).maybeSingle();
+  if(findError||!chat || !chat.visitor_expires_at || new Date(chat.visitor_expires_at).getTime()<=Date.now())return answer({error:'Unauthorized'},401,origin);
+  if(chat.status!=='human'||!chat.assigned_to)return answer({error:'File uploads require a connected team member'},409,origin);
+  const type=req.headers.get('x-file-type')??'';
+  const allowedTypes=['image/jpeg','image/png','image/webp','application/pdf'];
+  if(!allowedTypes.includes(type))return answer({error:'Only JPG, PNG, WEBP, and PDF files are accepted'},415,origin);
+  let name='';
+  try {name=decodeURIComponent(req.headers.get('x-file-name')??'');}catch{return answer({error:'Invalid filename'},400,origin);}
+  name=name.replace(/[^a-zA-Z0-9._-]/g,'_').replace(/^\.+/,'').slice(-100);
+  if(name.length<3||!name.includes('.'))return answer({error:'Invalid filename'},400,origin);
+  const extension=name.split('.').pop()?.toLowerCase()||'';
+  const validExt:Record<string,string[]>={'image/jpeg':['jpg','jpeg'],'image/png':['png'],'image/webp':['webp'],'application/pdf':['pdf']};
+  if(!validExt[type].includes(extension))return answer({error:'File extension does not match type'},415,origin);
+  const maxBytes=10485760;
+  const declared=Number(req.headers.get('content-length')||'0');
+  if(declared>maxBytes)return answer({error:'File exceeds 10 MB'},413,origin);
+  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'upload:'+hash,p_max:5,p_window_seconds:3600});
+  if(limit.error||limit.data!==true)return answer({error:'Upload limit reached'},429,origin);
+  if(!req.body)return answer({error:'Missing file'},400,origin);
+  const reader=req.body.getReader(),chunks:Uint8Array[]=[];
+  let total=0;
+  try {
+    for(;;) {
+      const {value,done}=await reader.read();
+      if(done)break;
+      total+=value.byteLength;
+      if(total>maxBytes){await reader.cancel();return answer({error:'File exceeds 10 MB'},413,origin);}
+      chunks.push(value);
+    }
+  }catch{return answer({error:'Upload interrupted'},400,origin);}
+  if(total<5)return answer({error:'File is empty'},400,origin);
+  const bytes=new Uint8Array(total);let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+  const isPdf=bytes[0]===37&&bytes[1]===80&&bytes[2]===68&&bytes[3]===70&&bytes[4]===45;
+  const isJpg=bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
+  const isPng=bytes[0]===137&&bytes[1]===80&&bytes[2]===78&&bytes[3]===71&&bytes[4]===13&&bytes[5]===10&&bytes[6]===26&&bytes[7]===10;
+  const isWebp=bytes[0]===82&&bytes[1]===73&&bytes[2]===70&&bytes[3]===70&&bytes[8]===87&&bytes[9]===69&&bytes[10]===66&&bytes[11]===80;
+  if(!({'application/pdf':isPdf,'image/jpeg':isJpg,'image/png':isPng,'image/webp':isWebp}[type]))return answer({error:'File content does not match its type'},415,origin);
+  // Recheck ownership after reading the file, as a staff agent may return
+  // the conversation to AI while the visitor's upload is in flight.
+  const fresh=await db.from('ai_conversations').select('status,assigned_to')
+    .eq('id',chat.id).maybeSingle();
+  if(fresh.error||fresh.data?.status!=='human'||!fresh.data?.assigned_to)
+    return answer({error:'Human assistance has ended; attachment not saved'},409,origin);
+  const bucket='missy-concierge-attachments';
+  const storagePath=chat.id+'/'+crypto.randomUUID()+'-'+name;
+  const upload=await db.storage.from(bucket).upload(storagePath,bytes,{contentType:type,upsert:false,cacheControl:'0'});
+  if(upload.error)return answer({error:'Could not securely store attachment'},503,origin);
+  const {data:attachment,error:insertError}=await db.from('ai_conversation_attachments').insert({
+    conversation_id:chat.id,storage_path:storagePath,original_filename:name,
+    mime_type:type,file_size_bytes:total,uploaded_by:'visitor'
+  }).select('id').single();
+  if(insertError||!attachment){
+    await db.storage.from(bucket).remove([storagePath]);
+    return answer({error:'Could not record attachment'},503,origin);
+  }
+  return answer({id:attachment.id,filename:name,bytes:total},201,origin);
+ }
+
  const raw=await req.text();
  if(raw.length>6000) return answer({error:'Request too large'},413,origin);
  let body:Record<string,unknown>;

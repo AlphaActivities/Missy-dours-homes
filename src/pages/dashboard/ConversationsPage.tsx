@@ -8,6 +8,7 @@ type Conversation = {
   priority:'unrated'|'hot'|'warm'|'cold'; priority_reason:string|null;
   language_code:string; last_message_at:string|null; started_at:string; lead_id:string|null; assigned_to:string|null; visitor_name:string|null; visitor_phone:string|null;
 };
+type Attachment = {id:string;original_filename:string;mime_type:string;file_size_bytes:number;storage_path:string;created_at:string};
 type Message = {id:string; sender:'visitor'|'ai'|'human'|'system';body:string;translated_body:string|null; original_language:string|null;created_at:string;sender_actor:string|null;};
 const time = (s:string|null) => s ? new Date(s).toLocaleString() : 'Not yet';
 export default function ConversationsPage() {
@@ -16,6 +17,9 @@ export default function ConversationsPage() {
  const [items,setItems]=useState<Conversation[]>([]);
  const [selected,setSelected]=useState<string|null>(null);
  const [messages,setMessages]=useState<Message[]>([]);
+ const [attachments,setAttachments]=useState<Attachment[]>([]);
+ const [signedAttachment,setSignedAttachment]=useState<{id:string;url:string}|null>(null);
+ const [attachmentBusy,setAttachmentBusy]=useState<string|null>(null);
  const [search,setSearch]=useState('');
  const [filter,setFilter]=useState('all');
  const [loading,setLoading]=useState(true);
@@ -111,6 +115,8 @@ export default function ConversationsPage() {
   setPreviewBusy(false);
   setTranslatedDraft(null);
   setReply('');
+  setAttachments([]);
+  setSignedAttachment(null);
   if(!selected){setMessages([]);return;}
   let active=true;
   const fetchTranscript=async()=>{
@@ -120,6 +126,8 @@ export default function ConversationsPage() {
    if(!active)return;
    if(error)setError(error.message);
    else setMessages(((data??[]) as Message[]).reverse());
+   const files=await supabase.from('ai_conversation_attachments').select('id,original_filename,mime_type,file_size_bytes,storage_path,created_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(50);
+   if(active && !files.error)setAttachments((files.data??[]) as Attachment[]);
    setLoadingMessages(false);
   };
   setLoadingMessages(true);
@@ -127,6 +135,16 @@ export default function ConversationsPage() {
   const interval=window.setInterval(()=>void fetchTranscript(),5000);
   return()=>{active=false;window.clearInterval(interval);};
  },[selected]);
+ const openAttachment=async(file:Attachment)=>{
+  if(attachmentBusy)return;
+  setAttachmentBusy(file.id);setSignedAttachment(null);setError(null);
+  try {
+    const {data,error}=await supabase.storage.from('missy-concierge-attachments').createSignedUrl(file.storage_path,60);
+    if(error||!data?.signedUrl)throw error||new Error('Could not prepare the private attachment.');
+    setSignedAttachment({id:file.id,url:data.signedUrl});
+  }catch(e){setError(e instanceof Error?e.message:'Unable to open attachment');}
+  finally{setAttachmentBusy(null);}
+ };
  const active=items.find(c=>c.id===selected);
  const claim=async()=>{if(!selected||actionBusy)return;setActionBusy(true);setError(null);try{const {data,error}=await supabase.rpc('ai_concierge_claim',{p_conversation:selected});if(error)throw error;if(data!==true)throw new Error('Conversation was already claimed by another team member. Refresh to see the latest status.');await refresh();}catch(e){setError(e instanceof Error?e.message:'Could not claim conversation');}finally{setActionBusy(false);}};
  const previewTranslation=async()=>{
@@ -198,7 +216,16 @@ export default function ConversationsPage() {
     <div className="flex justify-between gap-2 mb-1"><strong className="text-sm truncate">{c.title}</strong><span className="text-xs uppercase" style={{color:'var(--ds-gold)'}}>{c.priority}</span></div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p><div className="flex gap-2 mt-2 text-xs opacity-60"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div>
    </button>)}</section>
    <section aria-label="Conversation transcript" className="ds-page-reveal ds-page-reveal-4 rounded-xl border border-white/10 bg-black/20 min-h-80 p-5">
-   {!selected?<p className="text-sm opacity-60">Choose a conversation to view its transcript.</p>:<><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div><h2 className="font-semibold">Conversation transcript</h2><p className="text-xs opacity-65">{active?.assigned_to ? `Claimed by ${active.assigned_to}` : 'No human assigned'}{active?.visitor_name && <span className="mt-2 block text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a>{active.lead_id ? ' · CRM contact linked' : ' · Contact review needed'}</span>}</p></div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>void returnToAi()} className="rounded-lg border border-white/20 px-3 py-2 text-sm disabled:opacity-50">Return to AI</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <button type="button" disabled={actionBusy} onClick={()=>void claim()} className="rounded-lg border border-[#c7a466] px-3 py-2 text-sm text-[#e7c789] disabled:opacity-50">{actionBusy?'Claiming…':'Take Over from AI'}</button>}</div>{loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-3">{messages.map(m=><article key={m.id} className="p-3 rounded-lg border border-white/10"><div className="flex justify-between gap-2 text-xs opacity-65 mb-2"><strong className="uppercase">{m.sender_actor||m.sender}</strong><span>{time(m.created_at)}</span></div><p className="whitespace-pre-wrap text-sm break-words">{m.body}</p>{m.translated_body&&<div className="mt-2 pt-2 border-t border-white/10"><span className="text-xs" style={{color:'var(--ds-gold)'}}>{m.sender==='human' ? 'Staff English original' : 'English translation for staff'}</span><p className="text-sm whitespace-pre-wrap">{m.translated_body}</p></div>}</article>)}</div>}{translatedDraft&&active?.status==='human'&&<div className="mt-3 rounded-lg border border-[#c5a16a]/40 p-3 text-sm"><strong>Visitor-language preview, review before sending:</strong><p className="mt-2 whitespace-pre-wrap">{translatedDraft.text}</p></div>}
+   {!selected?<p className="text-sm opacity-60">Choose a conversation to view its transcript.</p>:<><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div><h2 className="font-semibold">Conversation transcript</h2><p className="text-xs opacity-65">{active?.assigned_to ? `Claimed by ${active.assigned_to}` : 'No human assigned'}{active?.visitor_name && <span className="mt-2 block text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a>{active.lead_id ? ' · CRM contact linked' : ' · Contact review needed'}</span>}</p></div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>void returnToAi()} className="rounded-lg border border-white/20 px-3 py-2 text-sm disabled:opacity-50">Return to AI</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <button type="button" disabled={actionBusy} onClick={()=>void claim()} className="rounded-lg border border-[#c7a466] px-3 py-2 text-sm text-[#e7c789] disabled:opacity-50">{actionBusy?'Claiming…':'Take Over from AI'}</button>}</div>{loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-3">{messages.map(m=><article key={m.id} className="p-3 rounded-lg border border-white/10"><div className="flex justify-between gap-2 text-xs opacity-65 mb-2"><strong className="uppercase">{m.sender_actor||m.sender}</strong><span>{time(m.created_at)}</span></div><p className="whitespace-pre-wrap text-sm break-words">{m.body}</p>{m.translated_body&&<div className="mt-2 pt-2 border-t border-white/10"><span className="text-xs" style={{color:'var(--ds-gold)'}}>{m.sender==='human' ? 'Staff English original' : 'English translation for staff'}</span><p className="text-sm whitespace-pre-wrap">{m.translated_body}</p></div>}</article>)}</div>}{attachments.length>0&&<div className="mt-4 rounded-lg border border-[#c8a96e]/30 p-3" aria-label="Private conversation attachments">
+     <h3 className="text-sm font-semibold text-[#e4c58b]">Private attachments</h3>
+     <p className="mt-1 text-xs opacity-65">Files provided during a human-assisted conversation. Download links expire automatically.</p>
+     <div className="mt-3 space-y-2">{attachments.map(file=><div key={file.id} className="flex flex-wrap items-center gap-2 text-xs">
+      <span className="break-all">{file.original_filename} · {Math.ceil(file.file_size_bytes/1024)} KB</span>
+      <button type="button" disabled={attachmentBusy===file.id} onClick={()=>void openAttachment(file)} className="rounded-md border border-[#c8a96e]/50 px-2 py-1 text-[#e4c58b] disabled:opacity-50">{attachmentBusy===file.id?'Preparing…':'Prepare secure link'}</button>
+      {signedAttachment?.id===file.id&&<a href={signedAttachment.url} target="_blank" rel="noopener noreferrer" className="underline text-[#e4c58b]">Open file</a>}
+     </div>)}</div>
+    </div>}
+   {translatedDraft&&active?.status==='human'&&<div className="mt-3 rounded-lg border border-[#c5a16a]/40 p-3 text-sm"><strong>Visitor-language preview, review before sending:</strong><p className="mt-2 whitespace-pre-wrap">{translatedDraft.text}</p></div>}
    {active?.status==='human'&&active.assigned_to===staffEmail&&<form className="mt-5 flex gap-2" onSubmit={e=>{e.preventDefault();void sendHuman();}}><textarea aria-label="Reply to visitor" className="flex-1 min-h-16 rounded-lg bg-white/5 border border-white/15 p-3 text-sm" maxLength={2000} value={reply} onChange={e=>{previewGeneration.current++;setReply(e.target.value);setTranslatedDraft(null);}} placeholder="Write a message as the assigned agent"/>{active.language_code!=='en'&&<button type="button" onClick={()=>void previewTranslation()} disabled={previewBusy||actionBusy||!reply.trim()} className="self-end rounded-lg border border-[#c5a16a] px-3 py-3 text-sm disabled:opacity-50">{previewBusy?'Translating…':'Preview translation'}</button>}<button type="submit" disabled={actionBusy||!reply.trim()||(active.language_code!=='en'&&!(translatedDraft?.conversation===selected&&translatedDraft?.original===reply.trim()&&translatedDraft?.language===active.language_code))} className="self-end rounded-lg bg-[#c5a16a] text-black px-4 py-3 disabled:opacity-50">Send</button></form>}</>}
    </section>
   </div>
