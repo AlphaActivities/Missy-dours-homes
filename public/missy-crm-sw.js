@@ -3,8 +3,10 @@ self.addEventListener('push', event => {
   let payload = {};
   try { payload = event.data ? event.data.json() : {}; } catch { payload = {}; }
   const title = 'Missy Dours Concierge';
-  const body = payload.kind === 'handoff_escalated'
-    ? 'An urgent concierge request needs attention.'
+  const body = payload.kind === 'device_test'
+    ? 'Test notification received. This iPhone can receive Concierge push alerts.'
+    : payload.kind === 'handoff_escalated'
+      ? 'An urgent concierge request needs attention.'
     : payload.kind === 'handoff_claimed'
       ? 'Missy has taken over a concierge conversation.'
       : 'A visitor is waiting for Missy’s team.';
