@@ -59,8 +59,8 @@ export default function ConversationsPage() {
       method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+token},
       body:JSON.stringify({scenario}),signal:AbortSignal.timeout(30000)
     });
-    const payload=await response.json().catch(()=>({})) as {reply?:string;language?:string;error?:string;saved?:boolean};
-    if(!response.ok||!payload.reply)throw new Error(scenario+': '+(payload.error||'AI returned no response'));
+    const payload=await response.json().catch(()=>({})) as {reply?:string;language?:string;error?:string;saved?:boolean;upstream_status?:number;upstream_code?:string};
+    if(!response.ok||!payload.reply)throw new Error(scenario+': '+(payload.error||'AI returned no response')+(payload.upstream_status?' (upstream '+payload.upstream_status+', '+(payload.upstream_code||'unknown')+')':''));
     reports.push(scenario.toUpperCase()+' ('+(payload.language||'?')+'): '+payload.reply.slice(0,400));
    }
    setAiSmokeReport('Live AI bridge replied to all three prompts. No CRM records were created.\n\n'+reports.join('\n\n'));
