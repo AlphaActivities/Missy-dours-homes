@@ -23,9 +23,11 @@ Deno.serve(async req=>{
  if(req.method!=='POST'||!origin) return answer({error:'Forbidden'},403,origin);
  const url=new URL(req.url);
  const staffTranslationRoute=url.pathname.endsWith('/staff-translate');
+ const staffReadinessRoute=url.pathname.endsWith('/staff-readiness');
+ const staffOnlyRoute=staffTranslationRoute||staffReadinessRoute;
  // Visitor messaging fails closed; authenticated staff-only translation is separate.
- if(!enabled && !staffTranslationRoute) return answer({error:'Concierge messaging is not available yet.'},503,origin);
- if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate','/functions/v1/concierge-api/attachment-upload','/concierge-api/attachment-upload'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
+ if(!enabled && !staffOnlyRoute) return answer({error:'Concierge messaging is not available yet.'},503,origin);
+ if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate','/functions/v1/concierge-api/attachment-upload','/concierge-api/attachment-upload','/functions/v1/concierge-api/staff-readiness','/concierge-api/staff-readiness'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
 
  if(url.pathname.endsWith('/attachment-upload')) {
   if(Deno.env.get('MISSY_TURNSTILE_READY')!=='true')return answer({error:'Service not ready'},503,origin);
@@ -98,7 +100,7 @@ Deno.serve(async req=>{
  let body:Record<string,unknown>;
  try {body=JSON.parse(raw);if(!body||Array.isArray(body)||typeof body!=='object')throw Error('invalid');} catch {return answer({error:'Invalid JSON'},400,origin);}
  // An origin check is not bot protection. Require verified Turnstile before enabling this endpoint.
- if(!staffTranslationRoute && Deno.env.get('MISSY_TURNSTILE_READY')!=='true')return answer({error:'Service not ready'},503,origin);
+ if(!staffOnlyRoute && Deno.env.get('MISSY_TURNSTILE_READY')!=='true')return answer({error:'Service not ready'},503,origin);
  const authorization=req.headers.get('authorization')??'';
  if(url.pathname.endsWith('/session')) {
   const challenge=body.challenge;
@@ -117,6 +119,28 @@ Deno.serve(async req=>{
   const {data,error}=await db.from('ai_conversations').insert({visitor_token_hash:hash,visitor_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),title:'New conversation',status:'ai'}).select('id').single();
   if(error||!data)return answer({error:'Could not start chat'},503,origin);
   return answer({conversation_id:data.id,token},201,origin);
+ }
+ if(staffReadinessRoute) {
+  const jwt=authorization.startsWith('Bearer ')?authorization.slice(7):'';
+  if(!jwt)return answer({error:'Unauthorized'},401,origin);
+  const identity=await db.auth.getUser(jwt);
+  const email=identity.data.user?.email?.toLowerCase()??'';
+  const staffEmails=['missydourshomes@gmail.com','yourcustomerflowguy@gmail.com','heberherrera92@gmail.com'];
+  if(identity.error||!staffEmails.includes(email))return answer({error:'Unauthorized'},401,origin);
+  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'staff-readiness:'+email,p_max:120,p_window_seconds:3600});
+  if(limit.error||limit.data!==true)return answer({error:'Readiness check limit reached'},429,origin);
+  const subscriptionResult=await db.from('ai_concierge_push_subscriptions').select('staff_email').limit(500);
+  if(subscriptionResult.error)return answer({error:'Could not check notification readiness'},503,origin);
+  const counts=new Map<string,number>();
+  for(const item of subscriptionResult.data??[]) {
+    const key=String(item.staff_email||'').toLowerCase();
+    if(staffEmails.includes(key))counts.set(key,(counts.get(key)||0)+1);
+  }
+  return answer({members:[
+    {staff_name:'Missy',device_count:counts.get('missydourshomes@gmail.com')||0},
+    {staff_name:'Josh',device_count:counts.get('yourcustomerflowguy@gmail.com')||0},
+    {staff_name:'Heber',device_count:counts.get('heberherrera92@gmail.com')||0}
+  ],delivery_enabled:Deno.env.get('MISSY_PUSH_DELIVERY_ENABLED')==='true'},200,origin);
  }
  if(url.pathname.endsWith('/staff-translate')) {
   const jwt=authorization.startsWith('Bearer ')?authorization.slice(7):'';

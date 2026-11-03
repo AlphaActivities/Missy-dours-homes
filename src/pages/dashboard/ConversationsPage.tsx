@@ -8,6 +8,7 @@ type Conversation = {
   priority:'unrated'|'hot'|'warm'|'cold'; priority_reason:string|null;
   language_code:string; last_message_at:string|null; started_at:string; lead_id:string|null; assigned_to:string|null; visitor_name:string|null; visitor_phone:string|null;
 };
+type TeamPushReadiness = {staff_name:string;device_count:number};
 type Attachment = {id:string;original_filename:string;mime_type:string;file_size_bytes:number;storage_path:string;created_at:string};
 type Message = {id:string; sender:'visitor'|'ai'|'human'|'system';body:string;translated_body:string|null; original_language:string|null;created_at:string;sender_actor:string|null;};
 const time = (s:string|null) => s ? new Date(s).toLocaleString() : 'Not yet';
@@ -36,6 +37,36 @@ export default function ConversationsPage() {
  const seenEscalatedRef=useRef<Set<string>|null>(null);
  const alertsEnabledRef=useRef(false);
  const [pushState,setPushState]=useState<'idle'|'working'|'enabled'|'unavailable'>('idle');
+ const [teamReadiness,setTeamReadiness]=useState<TeamPushReadiness[]>([]);
+ const [teamReadinessError,setTeamReadinessError]=useState(false);
+ const refreshTeamReadiness=async()=>{
+  try{
+   const session=await supabase.auth.getSession();
+   const token=session.data.session?.access_token;
+   const base=String(import.meta.env.VITE_MISSY_SUPABASE_URL||'').replace(/\/$/,'');
+   const key=String(import.meta.env.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY||'');
+   if(!token||!base||!key)throw new Error('Staff session unavailable');
+   const response=await fetch(base+'/functions/v1/concierge-api/staff-readiness',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+token},
+    body:'{}',
+    signal:AbortSignal.timeout(12000)
+   });
+   if(!response.ok)throw new Error('Could not check team registration');
+   const payload=await response.json() as {members?:TeamPushReadiness[]};
+   if(!Array.isArray(payload.members))throw new Error('Invalid readiness response');
+   setTeamReadiness(payload.members);
+   setTeamReadinessError(false);
+  }catch{
+   setTeamReadinessError(true);
+  }
+ };
+ useEffect(()=>{
+  if(!staffEmail)return;
+  void refreshTeamReadiness();
+  const interval=window.setInterval(()=>void refreshTeamReadiness(),60000);
+  return()=>window.clearInterval(interval);
+ },[staffEmail]);
  useEffect(()=>{
   let active=true;
   const restore=async()=>{
@@ -79,6 +110,7 @@ export default function ConversationsPage() {
    },{onConflict:'endpoint'});
    if(error)throw error;
    setPushState('enabled');
+   void refreshTeamReadiness();
   }catch(e){setError(e instanceof Error?e.message:'Could not enable notifications.');setPushState('idle');}
  };
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
@@ -200,12 +232,26 @@ export default function ConversationsPage() {
    <button onClick={()=>void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15}/>{loading?'Loading…':'Refresh'}</button>
   </div>
   <div className="ds-page-reveal ds-page-reveal-1 mb-5 flex w-full items-center justify-between gap-2 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 px-3 py-2.5 sm:px-4" aria-label="Notification settings">
-    <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Notifications</p><p className="text-xs text-[#bdb0a0]">{pushState==='enabled'&&alertsEnabled?'Permission granted':alertsEnabled?'Permission granted':'Stay informed about new concierge requests'}</p></div>
+    <div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Notifications</p><p className="text-xs text-[#bdb0a0]">{pushState==='enabled'&&alertsEnabled?'This device is registered; background delivery is pending launch.':alertsEnabled?'Permission granted; finish registration to receive push.':'Register this device for future concierge notifications.'}</p></div>
     {pushState==='enabled'&&alertsEnabled
-     ? <span className="shrink-0 rounded-full border border-emerald-700/50 bg-emerald-950/35 px-2.5 py-2 text-[11px] font-medium text-emerald-200 sm:px-3 sm:text-xs" role="status">✓ Notifications enabled</span>
+     ? <span className="shrink-0 rounded-full border border-emerald-700/50 bg-emerald-950/35 px-2.5 py-2 text-[11px] font-medium text-emerald-200 sm:px-3 sm:text-xs" role="status">✓ Device registered</span>
      : <button type="button" disabled={pushState==='working'} onClick={()=>void enableNotifications()} className="shrink-0 rounded-lg border border-[#c8a96e]/65 bg-gradient-to-r from-[#57442a] to-[#312516] px-3 py-2 text-xs font-medium text-[#f4e6ce] disabled:opacity-60 sm:px-4 sm:text-sm">{pushState==='working'?'Setting up…':'Enable Notifications'}</button>}
    </div>
-  {error&&<p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
+  <section className="ds-page-reveal ds-page-reveal-1 mb-5 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/50 px-3 py-3 sm:px-4" aria-label="Concierge staff push readiness">
+     <div className="flex flex-wrap items-center justify-between gap-2">
+       <p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Team device readiness</p>
+       <button type="button" onClick={()=>void refreshTeamReadiness()} className="rounded-md border border-white/15 px-2.5 py-1.5 text-xs text-[#e6cb98]">Refresh devices</button>
+     </div>
+     <p className="mt-1 text-xs text-[#bdb0a0]">Registration is not proof of delivery. Each staff member must verify a real device alert before launch.</p>
+     {teamReadinessError&&<p role="status" className="mt-2 text-xs text-amber-200">Device readiness unavailable; try refreshing your signed-in session.</p>}
+     {teamReadiness.length>0&&<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+       {teamReadiness.map(member=><div key={member.staff_name} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs">
+         <span>{member.staff_name}</span>
+         <span className={member.device_count>0?'text-emerald-300':'text-amber-200'}>{member.device_count>0?member.device_count+' registered':'Not registered'}</span>
+       </div>)}
+     </div>}
+   </section>
+   {error&&<p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
   {escalatedCount>0&&<p role="status" className="mb-3 rounded-lg border border-amber-400/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{escalatedCount} overdue visitor request{escalatedCount===1?'':'s'} need attention.</p>}
   {pendingTasks.length>0&&<section className="mb-5 rounded-xl border border-[#c8a96e]/35 bg-[#c8a96e]/10 p-4" aria-label="Handoff tasks"><h2 className="text-sm font-semibold mb-2 text-[#e5c486]">Pending concierge callbacks ({pendingTasks.length})</h2><div className="flex flex-wrap gap-2">{pendingTasks.map(t=><div key={t.id} className="flex items-center gap-2 rounded-lg border border-[#c8a96e]/30 px-2 py-1"><button onClick={()=>setSelected(t.conversation_id)} type="button" className="px-2 py-1 text-xs text-[#f1dec1]">{t.escalated_at ? 'ESCALATED' : t.escalation_due_at && new Date(t.escalation_due_at).getTime() < Date.now() ? 'OVERDUE' : t.urgency.toUpperCase()} · {time(t.due_at)} · View</button><button type="button" disabled={taskBusy===t.id} onClick={()=>void completeTask(t.id)} className="rounded-md bg-[#c8a96e] px-2 py-1 text-xs text-black disabled:opacity-50">Complete</button></div>)}</div></section>}
   <div className="ds-page-reveal ds-page-reveal-2 flex flex-wrap gap-3 mb-5"><label className="relative flex-1 min-w-48"><Search size={16} className="absolute left-3 top-3 opacity-60"/><input aria-label="Search conversations" className="w-full bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 py-2 outline-none" placeholder="Search conversations" value={search} onChange={e=>setSearch(e.target.value)}/></label>
