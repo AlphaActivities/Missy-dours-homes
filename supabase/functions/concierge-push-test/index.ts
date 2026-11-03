@@ -40,15 +40,19 @@ Deno.serve(async req=>{
  if(devicesError)return json({error:'Could not locate the registered device'},503,origin);
  const device=devices?.[0];
  if(!device)return json({error:'No registered device. Enable notifications first.'},409,origin);
- const publicKey=Deno.env.get('MISSY_VAPID_PUBLIC_KEY');
- let privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY');
+ const publicKey=(Deno.env.get('MISSY_VAPID_PUBLIC_KEY')??'').trim();
+ let privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY')?.trim();
  if(!privateKey) {
   // The original key is encrypted at rest in Supabase Vault. Only the
   // service-role server can call this restricted function.
   const stored=await db.rpc('ai_concierge_get_vapid_private');
-  if(!stored.error&&typeof stored.data==='string')privateKey=stored.data;
+  if(!stored.error&&typeof stored.data==='string')privateKey=stored.data.trim();
  }
- const contact=Deno.env.get('MISSY_VAPID_CONTACT');
+ const rawContact=(Deno.env.get('MISSY_VAPID_CONTACT')??'').trim();
+ // Historical setups may have entered a bare email instead of mailto:email.
+ // Convert only a syntactically plausible address; never invent a new contact.
+ const contact=/^[^\s@:/]+@[^\s@:/]+\.[^\s@:/]+$/.test(rawContact)
+  ? 'mailto:'+rawContact : rawContact;
  const missing=[
   ...(!publicKey?['MISSY_VAPID_PUBLIC_KEY']:[]),
   ...(!privateKey?['MISSY_VAPID_PRIVATE_KEY']:[]),
@@ -60,6 +64,36 @@ Deno.serve(async req=>{
    missing_settings:missing,
    delivery_confirmed:false
   },503,origin);
+ // Validate *before* charging the test-send rate limit. Report names only.
+ // The underlying web-push library requires URL-safe base64 for the P-256
+ // uncompressed 65-byte public key and 32-byte private scalar.
+ const b64Length=(key:string):number=>{
+  if(!/^[A-Za-z0-9_-]+={0,2}$/.test(key))return -1;
+  try{
+   const plain=key.replace(/-/g,'+').replace(/_/g,'/').replace(/=+$/,'');
+   if(plain.length%4===1)return -1;
+   return atob(plain.padEnd(Math.ceil(plain.length/4)*4,'=')).length;
+  }catch{return -1;}
+ };
+ let validContact=false;
+ if(contact.startsWith('mailto:')){
+  validContact=/^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact);
+ }else if(contact.startsWith('https://')){
+  try{
+   const parsed=new URL(contact);
+   validContact=parsed.protocol==='https:' && !!parsed.hostname &&
+    !parsed.username && !parsed.password;
+  }catch{validContact=false;}
+ }
+ const invalidSettings=[
+  ...(!validContact?['MISSY_VAPID_CONTACT']:[]),
+  ...(b64Length(publicKey)!==65?['MISSY_VAPID_PUBLIC_KEY']:[]),
+  ...(b64Length(privateKey??'')!==32?['MISSY_VAPID_PRIVATE_KEY']:[])
+ ];
+ if(invalidSettings.length)return json({
+  error:'Push configuration has an invalid setting: '+invalidSettings.join(', ')+'.',
+  invalid_settings:invalidSettings,delivery_confirmed:false
+ },503,origin);
  // Strict shared database rate limit across devices/sessions.
  const {data:allowed,error:limitError}=await db.rpc('ai_concierge_consume_limit',{
   p_bucket:'push-self-test:'+owner,p_max:3,p_window_seconds:3600

@@ -12,7 +12,7 @@ const code=ts.transpileModule(rewritten,{compilerOptions:{module:ts.ModuleKind.E
 let counter=0;
 const owner='yourcustomerflowguy@gmail.com';
 
-async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPrivateOnly=false,vaultKey=null,sendError=null,prepareError=null,vapidError=null}={}){
+async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPrivateOnly=false,vaultKey=null,sendError=null,prepareError=null,vapidError=null,contactOverride=null,publicOverride=null}={}){
  const calls=[];let handler;
  const subscriptions=devices>0?[{id:'device-1',endpoint:'https://web.push.apple.com/device',
   p256dh:'mock-p256dh',auth_key:'mock-auth'}]:[];
@@ -62,9 +62,9 @@ async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPr
   env:{get:name=>({
    SUPABASE_URL:'https://example.invalid',
    SUPABASE_SERVICE_ROLE_KEY:'never-live',
-   MISSY_VAPID_PUBLIC_KEY:hasKeys?'mock-public':undefined,
-   MISSY_VAPID_PRIVATE_KEY:hasKeys&&!missingPrivateOnly?'mock-private':undefined,
-   MISSY_VAPID_CONTACT:hasKeys?'mailto:test@example.invalid':undefined
+   MISSY_VAPID_PUBLIC_KEY:hasKeys?(publicOverride??Buffer.alloc(65,1).toString('base64url')):undefined,
+   MISSY_VAPID_PRIVATE_KEY:hasKeys&&!missingPrivateOnly?Buffer.alloc(32,2).toString('base64url'):undefined,
+   MISSY_VAPID_CONTACT:hasKeys?(contactOverride??'mailto:test@example.invalid'):undefined
   })[name]},serve(fn){handler=fn;}
  };
  await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64')+'#'+(++counter));
@@ -135,13 +135,13 @@ test('Owner may send exactly one test push, without activating the normal queue'
 });
 
 test('Server-only Vault recovers original private key and sends to one device',async()=>{
- const {handler,calls}=await scenario({missingPrivateOnly:true,vaultKey:'mock-original-private'});
+ const {handler,calls}=await scenario({missingPrivateOnly:true,vaultKey:Buffer.alloc(32,2).toString('base64url')});
  const result=await request(handler);
  assert.equal(result.status,200);
  assert.deepEqual(result.data,{accepted:true,delivery_confirmed:false});
  assert.ok(calls.some(x=>x.name==='ai_concierge_get_vapid_private'));
  assert.equal(calls.filter(x=>x.kind==='sent').length,1);
- assert.ok(!JSON.stringify(result.data).includes('mock-original-private'));
+ assert.equal(result.data.delivery_confirmed,false);
 });
 test('Missing Vault key is reported without consuming hourly test quota',async()=>{
  const {handler,calls}=await scenario({missingPrivateOnly:true,vaultKey:null});
@@ -212,4 +212,26 @@ test('Network transport failures are isolated after encryption',async()=>{
  assert.equal(result.data.failure_step,'provider_fetch');
  assert.equal(result.data.failure_stage,'local_send');
  assert.ok(calls.some(x=>x.kind==='prepared'));
+});
+
+test('Bare email contact is normalized to mailto before VAPID setup',async()=>{
+ const {handler,calls}=await scenario({contactOverride:'ops@example.invalid'});
+ const result=await request(handler);
+ assert.equal(result.status,200);
+ const vapid=calls.find(x=>x.kind==='vapid');
+ assert.equal(vapid.args[0],'mailto:ops@example.invalid');
+});
+test('Malformed public VAPID key is reported before rate limit or sender',async()=>{
+ const {handler,calls}=await scenario({publicOverride:'not-a-valid-key'});
+ const result=await request(handler);
+ assert.equal(result.status,503);
+ assert.deepEqual(result.data.invalid_settings,['MISSY_VAPID_PUBLIC_KEY']);
+ assert.ok(!calls.some(x=>x.name==='ai_concierge_consume_limit'||x.kind==='sent'));
+});
+test('Invalid VAPID subject is reported without quota consumption',async()=>{
+ const {handler,calls}=await scenario({contactOverride:'invalid-contact'});
+ const result=await request(handler);
+ assert.equal(result.status,503);
+ assert.deepEqual(result.data.invalid_settings,['MISSY_VAPID_CONTACT']);
+ assert.ok(!calls.some(x=>x.name==='ai_concierge_consume_limit'||x.kind==='sent'));
 });
