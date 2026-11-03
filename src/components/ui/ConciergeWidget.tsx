@@ -252,7 +252,7 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
                 <input required maxLength={100} minLength={2} autoComplete="name" value={callbackName} onChange={e=>setCallbackName(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-sm text-white" placeholder="Full name"/>
               </label>
               <label className="block text-xs text-[#e5d4ba]">Callback phone number
-                <input required type="tel" autoComplete="tel" minLength={10} maxLength={24} pattern="[+0-9 ()\\-]+" value={callbackPhone} onChange={e=>setCallbackPhone(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-sm text-white" placeholder="(555) 555-0123"/>
+                <input required type="tel" autoComplete="tel" minLength={10} maxLength={24} pattern="[+0-9 ()-]+" value={callbackPhone} onChange={e=>setCallbackPhone(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-sm text-white" placeholder="(555) 555-0123"/>
               </label>
               <label className="flex items-start gap-2 text-xs text-[#e5d4ba]">
                 <input type="checkbox" required checked={callbackConsent} onChange={e=>setCallbackConsent(e.target.checked)} className="mt-0.5"/>
