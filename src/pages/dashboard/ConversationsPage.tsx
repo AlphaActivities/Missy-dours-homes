@@ -42,6 +42,31 @@ export default function ConversationsPage() {
  const [teamReadinessError,setTeamReadinessError]=useState(false);
  const [pushTestState,setPushTestState]=useState<'idle'|'sending'|'accepted'|'error'>('idle');
  const [pushTestMessage,setPushTestMessage]=useState('');
+ const [aiSmokeBusy,setAiSmokeBusy]=useState(false);
+ const [aiSmokeReport,setAiSmokeReport]=useState('');
+ const runOwnerAiSmoke=async()=>{
+  if(!canViewTeamReadiness||aiSmokeBusy)return;
+  setAiSmokeBusy(true);setAiSmokeReport('');
+  try {
+   const session=await supabase.auth.getSession();
+   const token=session.data.session?.access_token;
+   const base=String(import.meta.env.VITE_MISSY_SUPABASE_URL||'').replace(/\/$/,'');
+   const key=String(import.meta.env.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY||'');
+   if(!token||!base||!key)throw new Error('Staff session unavailable');
+   const reports:string[]=[];
+   for(const scenario of ['listing','spanish','safety']){
+    const response=await fetch(base+'/functions/v1/concierge-api/staff-ai-smoke',{
+      method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+token},
+      body:JSON.stringify({scenario}),signal:AbortSignal.timeout(30000)
+    });
+    const payload=await response.json().catch(()=>({})) as {reply?:string;language?:string;error?:string;saved?:boolean};
+    if(!response.ok||!payload.reply)throw new Error(scenario+': '+(payload.error||'AI returned no response'));
+    reports.push(scenario.toUpperCase()+' ('+(payload.language||'?')+'): '+payload.reply.slice(0,400));
+   }
+   setAiSmokeReport('Live AI bridge replied to all three prompts. No CRM records were created.\n\n'+reports.join('\n\n'));
+  }catch(e){setAiSmokeReport('AI diagnostic not complete: '+(e instanceof Error?e.message:'Unknown failure'));}
+  finally{setAiSmokeBusy(false);}
+ };
  const sendPrivateTestAlert=async()=>{
   if(!canViewTeamReadiness||pushTestState==='sending')return;
   setPushTestState('sending');setPushTestMessage('');
@@ -276,6 +301,14 @@ export default function ConversationsPage() {
        <span className="text-xs text-[#bdb0a0]">Only your registered device · Maximum 3 per hour</span>
       </div>}
      {pushTestMessage&&<p role="status" className={pushTestState==='error'?'mt-2 text-xs text-red-300':'mt-2 text-xs text-[#c3dfc8]'}>{pushTestMessage}</p>}
+     <div className="mt-4 border-t border-white/10 pt-3">
+       <button type="button" disabled={aiSmokeBusy} onClick={()=>void runOwnerAiSmoke()}
+        className="rounded-md border border-[#c8a96e]/50 px-3 py-2 text-xs font-medium text-[#e6cb98] disabled:opacity-50">
+        {aiSmokeBusy?'Testing live AI…':'Run private AI Concierge checks'}
+       </button>
+       <p className="mt-2 text-xs text-[#bdb0a0]">Tests property facts, Spanish, and pricing guarantees. Available only to you; no live conversations created.</p>
+       {aiSmokeReport&&<p role="status" className="mt-3 whitespace-pre-wrap break-words text-xs text-[#d5d0c6]">{aiSmokeReport}</p>}
+     </div>
      {teamReadinessError&&<p role="status" className="mt-2 text-xs text-amber-200">Device readiness unavailable; try refreshing your signed-in session.</p>}
      {teamReadiness.length>0&&<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
        {teamReadiness.map(member=><div key={member.staff_name} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs">

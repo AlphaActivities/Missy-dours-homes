@@ -54,7 +54,9 @@ async function scenario({enabled=false,turnstile=false,chatStatus='ai',staffEmai
       MISSY_CONCIERGE_ENABLED:enabled?'true':'false',
       MISSY_TURNSTILE_READY:turnstile?'true':'false',
       SUPABASE_URL:'https://example.invalid',
-      SUPABASE_SERVICE_ROLE_KEY:'test-only'
+      SUPABASE_SERVICE_ROLE_KEY:'test-only',
+      MISSY_CLOUDFLARE_AI_URL:'https://worker.invalid/internal/reply',
+      MISSY_CLOUDFLARE_BRIDGE_SECRET:'mock-private-secret'
     })[name]},
     serve(fn){handler=fn;}
   };
@@ -200,4 +202,49 @@ test('Authenticated human-only PDF upload uses private storage',async()=>{
   assert.equal(store.bucket,'missy-concierge-attachments');
   assert.equal(store.options.upsert,false);
   assert.ok(calls.some(c=>c.kind==='insert'&&c.table==='ai_conversation_attachments'));
+});
+
+test('Owner-only AI diagnostic denies anonymous, Missy, and Heber while visitor chat is OFF',async()=>{
+  const anonymous=await scenario();
+  const noToken=await result(anonymous.handler,req('staff-ai-smoke',{scenario:'listing'}));
+  assert.equal(noToken.status,401);
+  for(const email of ['missydourshomes@gmail.com','heberherrera92@gmail.com']){
+    const {handler,calls}=await scenario({staffEmail:email});
+    const denied=await result(handler,req('staff-ai-smoke',{scenario:'listing'},{
+      authorization:'Bearer valid-staff-session'
+    }));
+    assert.equal(denied.status,401);
+    assert.equal(calls.length,0,'Non-owner cannot consume rate quota or call the AI service');
+  }
+});
+test('Authenticated owner can run live bridge diagnostic without creating CRM data',async()=>{
+  const {handler,calls}=await scenario();
+  const originalFetch=globalThis.fetch;
+  const upstream=[];
+  try {
+    globalThis.fetch=async (url,options)=>{
+      upstream.push({url,options});
+      return new Response(JSON.stringify({reply:'Missy can help. Listing status needs verification.',language:'en'}),
+        {status:200,headers:{'content-type':'application/json'}});
+    };
+    const resultData=await result(handler,req('staff-ai-smoke',{scenario:'listing'},{
+      authorization:'Bearer valid-staff-session'
+    }));
+    assert.equal(resultData.status,200);
+    assert.equal(resultData.body.saved,false);
+    assert.equal(resultData.body.scenario,'listing');
+    assert.ok(resultData.body.reply.includes('verification'));
+    assert.equal(upstream.length,1);
+    assert.equal(upstream[0].url,'https://worker.invalid/internal/reply');
+    assert.equal(upstream[0].options.headers.Authorization,'Bearer mock-private-secret');
+    assert.ok(!calls.some(c=>c.kind==='insert'||c.kind==='storage-upload'));
+  }finally {globalThis.fetch=originalFetch;}
+});
+test('AI diagnostic rejects arbitrary prompts and does not access the AI service',async()=>{
+  const {handler,calls}=await scenario();
+  const denied=await result(handler,req('staff-ai-smoke',{scenario:'custom-prompt'},{
+    authorization:'Bearer valid-staff-session'
+  }));
+  assert.equal(denied.status,400);
+  assert.equal(calls.length,0);
 });

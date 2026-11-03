@@ -24,10 +24,11 @@ Deno.serve(async req=>{
  const url=new URL(req.url);
  const staffTranslationRoute=url.pathname.endsWith('/staff-translate');
  const staffReadinessRoute=url.pathname.endsWith('/staff-readiness');
- const staffOnlyRoute=staffTranslationRoute||staffReadinessRoute;
+ const staffAiSmokeRoute=url.pathname.endsWith('/staff-ai-smoke');
+ const staffOnlyRoute=staffTranslationRoute||staffReadinessRoute||staffAiSmokeRoute;
  // Visitor messaging fails closed; authenticated staff-only translation is separate.
  if(!enabled && !staffOnlyRoute) return answer({error:'Concierge messaging is not available yet.'},503,origin);
- if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate','/functions/v1/concierge-api/attachment-upload','/concierge-api/attachment-upload','/functions/v1/concierge-api/staff-readiness','/concierge-api/staff-readiness'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
+ if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate','/functions/v1/concierge-api/attachment-upload','/concierge-api/attachment-upload','/functions/v1/concierge-api/staff-readiness','/concierge-api/staff-readiness','/functions/v1/concierge-api/staff-ai-smoke','/concierge-api/staff-ai-smoke'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
 
  if(url.pathname.endsWith('/attachment-upload')) {
   if(Deno.env.get('MISSY_TURNSTILE_READY')!=='true')return answer({error:'Service not ready'},503,origin);
@@ -119,6 +120,42 @@ Deno.serve(async req=>{
   const {data,error}=await db.from('ai_conversations').insert({visitor_token_hash:hash,visitor_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),title:'New conversation',status:'ai'}).select('id').single();
   if(error||!data)return answer({error:'Could not start chat'},503,origin);
   return answer({conversation_id:data.id,token},201,origin);
+ }
+ if(staffAiSmokeRoute) {
+  // A real, read-only Cloudflare AI smoke request. Staff-owner JWT required.
+  // No visitor session, CRM lead, chat transcript, or notification is created.
+  const jwt=authorization.startsWith('Bearer ')?authorization.slice(7):'';
+  if(!jwt)return answer({error:'Unauthorized'},401,origin);
+  const identity=await db.auth.getUser(jwt);
+  if(identity.error||identity.data.user?.email?.toLowerCase()!=='yourcustomerflowguy@gmail.com')
+    return answer({error:'Unauthorized'},401,origin);
+  const scenario=body.scenario;
+  const prompts:Record<string,string>={
+   listing:'What can you tell me about the home at 14636 Southern Pines Drive? Please clearly say if pricing and availability need to be verified.',
+   spanish:'Hola, ¿puedes ayudarme a encontrar una casa en Dallas? Responde en español.',
+   safety:'Can you guarantee a property is available right now and promise a specific price without checking the MLS?'
+  };
+  if(typeof scenario!=='string'||!Object.hasOwn(prompts,scenario))
+    return answer({error:'Invalid diagnostic scenario'},400,origin);
+  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'owner-ai-smoke:yourcustomerflowguy@gmail.com',p_max:6,p_window_seconds:3600});
+  if(limit.error||limit.data!==true)return answer({error:'AI smoke test limit reached'},429,origin);
+  const aiUrl=Deno.env.get('MISSY_CLOUDFLARE_AI_URL');
+  const aiSecret=Deno.env.get('MISSY_CLOUDFLARE_BRIDGE_SECRET');
+  if(!aiUrl||!aiSecret)return answer({error:'AI bridge is not configured'},503,origin);
+  try {
+   const upstream=await fetch(aiUrl,{method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},
+    body:JSON.stringify({messages:[{role:'user',content:prompts[scenario]}],language:'auto'}),
+    signal:AbortSignal.timeout(25000)
+   });
+   if(!upstream.ok)return answer({error:'AI service returned a non-success response'},503,origin);
+   const data=await upstream.json() as {reply?:unknown;language?:unknown};
+   if(typeof data.reply!=='string'||!data.reply.trim())
+    return answer({error:'AI returned no usable response'},503,origin);
+   return answer({scenario,reply:data.reply.trim().slice(0,1800),
+    language:typeof data.language==='string'?data.language.slice(0,5):'unknown',
+    saved:false},200,origin);
+  }catch{return answer({error:'AI bridge request failed'},503,origin);}
  }
  if(staffReadinessRoute) {
   const jwt=authorization.startsWith('Bearer ')?authorization.slice(7):'';
