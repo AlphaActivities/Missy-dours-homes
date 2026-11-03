@@ -6,7 +6,7 @@ import ts from 'typescript';
 const source=readFileSync(new URL('../supabase/functions/concierge-push-delivery/index.ts',import.meta.url),'utf8');
 const injected=source
   .replace(/^import \{ createClient \} from 'npm:@supabase\/supabase-js@2\.57\.4';\s*/, 'const createClient=globalThis.__pushTestCreateClient;\n')
-  .replace(/^import webpush from 'npm:web-push@3\.6\.7';\s*/, 'const webpush=globalThis.__pushTestWebPush;\n');
+  .replace(/^import webpush from 'npm:web-push@3\.6\.7';\s*/m, 'const webpush=globalThis.__pushTestWebPush;\n');
 assert.ok(!injected.includes("from 'npm:"),'All remote imports must be replaced with mocks');
 const script=ts.transpileModule(injected,{
   compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}
