@@ -115,8 +115,8 @@ export default {
       });
       const reply = typeof result?.response === 'string' ? result.response :
         typeof result?.choices?.[0]?.message?.content === 'string' ? result.choices[0].message.content : '';
-      if (!reply.trim()) return json({error:'AI temporarily unavailable'},503);
+      if (!reply.trim()) return json({error:'AI temporarily unavailable',code:'empty_model_reply'},503);
       return json({reply: reply.trim().slice(0,5000),language});
-    } catch { return json({error:'AI temporarily unavailable'},503); }
+    } catch { return json({error:'AI temporarily unavailable',code:'model_execution_failed'},503); }
   }
 };
