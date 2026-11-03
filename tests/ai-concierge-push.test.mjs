@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
+import {createECDH} from 'node:crypto';
 
 const source=readFileSync(new URL('../supabase/functions/concierge-push-delivery/index.ts',import.meta.url),'utf8');
 const injected=source
@@ -13,9 +14,9 @@ const script=ts.transpileModule(injected,{
 }).outputText;
 let moduleCounter=0;
 const devices=[
-  {id:'missy-device',staff_email:'missydourshomes@gmail.com',endpoint:'https://push.invalid/missy',p256dh:'a',auth_key:'b'},
-  {id:'josh-device',staff_email:'yourcustomerflowguy@gmail.com',endpoint:'https://push.invalid/josh',p256dh:'a',auth_key:'b'},
-  {id:'heber-device',staff_email:'heberherrera92@gmail.com',endpoint:'https://push.invalid/heber',p256dh:'a',auth_key:'b'}
+  {id:'missy-device',staff_email:'missydourshomes@gmail.com',endpoint:'https://web.push.apple.com/missy',p256dh:'a',auth_key:'b'},
+  {id:'josh-device',staff_email:'yourcustomerflowguy@gmail.com',endpoint:'https://web.push.apple.com/josh',p256dh:'a',auth_key:'b'},
+  {id:'heber-device',staff_email:'heberherrera92@gmail.com',endpoint:'https://web.push.apple.com/heber',p256dh:'a',auth_key:'b'}
 ];
 function queryResult(data){
   const query={
@@ -27,6 +28,7 @@ function queryResult(data){
 }
 async function makeServer({pushEnabled=false,events=[],registered=devices,receipts=[]}={}){
   const calls=[],sent=[];
+  const currentEventKind=events[0]?.event_type||'handoff_created';
   const db={
     rpc:async (method,args)=>{
       calls.push({kind:'rpc',method,args});
@@ -44,10 +46,15 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
   };
   const webpush={
     setVapidDetails(...args){calls.push({kind:'vapid',args});},
-    async sendNotification(device,payload,options){
-      sent.push({endpoint:device.endpoint,payload:JSON.parse(payload),options});
-      return {statusCode:201};
+    generateRequestDetails(device,payload,options){
+      calls.push({kind:'prepared',endpoint:device.endpoint,options});
+      return {endpoint:device.endpoint,headers:{'content-encoding':'aes128gcm','authorization':'vapid test'},
+        body:Buffer.from('encrypted mock payload')};
     }
+  };
+  globalThis.fetch=async (endpoint,options)=>{
+    sent.push({endpoint,payload:{kind:currentEventKind},options:{TTL:900},encryptedBytes:options.body?.byteLength||0});
+    return new Response('',{status:201});
   };
   let handler;
   globalThis.__pushTestCreateClient=()=>db;
@@ -56,9 +63,9 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
     env:{get:name=>({
       MISSY_PUSH_DELIVERY_ENABLED:pushEnabled?'true':'false',
       MISSY_PUSH_DELIVERY_CRON_SECRET:'test-sender-secret',
-      MISSY_VAPID_PUBLIC_KEY:'test-vapid-public',
-      MISSY_VAPID_PRIVATE_KEY:'test-vapid-private',
-      MISSY_VAPID_CONTACT:'mailto:test@example.invalid',
+      MISSY_VAPID_PUBLIC_KEY:'invalid-server-public',
+      MISSY_VAPID_PRIVATE_KEY:Buffer.alloc(32,3).toString('base64url'),
+      MISSY_VAPID_CONTACT:'test@example.invalid',
       SUPABASE_URL:'https://example.invalid',
       SUPABASE_SERVICE_ROLE_KEY:'test-only'
     })[name]},
@@ -101,6 +108,11 @@ test('A new handoff targets all registered staff and persists separate receipts'
   assert.deepEqual(new Set(sent.map(x=>x.endpoint)),new Set(devices.map(x=>x.endpoint)));
   assert.ok(sent.every(x=>x.payload.kind==='handoff_created'));
   assert.ok(sent.every(x=>x.options.TTL===900));
+  assert.ok(sent.every(x=>x.encryptedBytes>0));
+  const curve=createECDH('prime256v1');curve.setPrivateKey(Buffer.alloc(32,3));
+  const vapid=calls.find(x=>x.kind==='vapid').args;
+  assert.equal(vapid[1],curve.getPublicKey('base64url','uncompressed'));
+  assert.equal(vapid[0],'mailto:test@example.invalid');
   assert.equal(calls.filter(x=>x.method==='ai_concierge_record_push_receipt').length,3);
 });
 
