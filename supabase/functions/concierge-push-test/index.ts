@@ -41,7 +41,13 @@ Deno.serve(async req=>{
  const device=devices?.[0];
  if(!device)return json({error:'No registered device. Enable notifications first.'},409,origin);
  const publicKey=Deno.env.get('MISSY_VAPID_PUBLIC_KEY');
- const privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY');
+ let privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY');
+ if(!privateKey) {
+  // The original key is encrypted at rest in Supabase Vault. Only the
+  // service-role server can call this restricted function.
+  const stored=await db.rpc('ai_concierge_get_vapid_private');
+  if(!stored.error&&typeof stored.data==='string')privateKey=stored.data;
+ }
  const contact=Deno.env.get('MISSY_VAPID_CONTACT');
  const missing=[
   ...(!publicKey?['MISSY_VAPID_PUBLIC_KEY']:[]),

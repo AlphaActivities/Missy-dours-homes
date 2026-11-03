@@ -13,7 +13,13 @@ Deno.serve(async request=>{
  const candidate=request.headers.get('authorization')?.replace(/^Bearer /,'')??'';
  if(!credential||candidate!==credential)return json({error:'Unauthorized'},401);
  const publicKey=Deno.env.get('MISSY_VAPID_PUBLIC_KEY');
- const privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY');
+ let privateKey=Deno.env.get('MISSY_VAPID_PRIVATE_KEY');
+ if(!privateKey) {
+  // Server-only encrypted Vault fallback, preserving the public VAPID key.
+  // Runs exclusively after the sender flag and cron-secret authorization.
+  const stored=await client.rpc('ai_concierge_get_vapid_private');
+  if(!stored.error&&typeof stored.data==='string')privateKey=stored.data;
+ }
  const contact=Deno.env.get('MISSY_VAPID_CONTACT');
  if(!publicKey||!privateKey||!contact)return json({error:'Push keys not configured'},503);
  webpush.setVapidDetails(contact,publicKey,privateKey);
