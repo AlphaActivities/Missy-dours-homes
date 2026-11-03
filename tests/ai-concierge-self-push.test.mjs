@@ -117,7 +117,7 @@ test('Missing server keys never triggers any push delivery',async()=>{
  const result=await request(handler);
  assert.equal(result.status,503);
  assert.deepEqual(result.data.missing_settings,[
-  'MISSY_VAPID_PUBLIC_KEY','MISSY_VAPID_PRIVATE_KEY','MISSY_VAPID_CONTACT'
+  'MISSY_VAPID_PRIVATE_KEY','MISSY_VAPID_CONTACT'
  ]);
  assert.ok(!calls.some(x=>x.kind==='sent'||x.name==='ai_concierge_consume_limit'),
    'Missing configuration must not consume the hourly test quota');
@@ -238,4 +238,12 @@ test('Invalid VAPID subject is reported without quota consumption',async()=>{
  assert.equal(result.status,503);
  assert.deepEqual(result.data.invalid_settings,['MISSY_VAPID_CONTACT']);
  assert.ok(!calls.some(x=>x.name==='ai_concierge_consume_limit'||x.kind==='sent'));
+});
+
+test('Invalid stored private scalar prevents any signing and network send',async()=>{
+ const {handler,calls}=await scenario({missingPrivateOnly:true,vaultKey:'not-a-private-scalar'});
+ const response=await request(handler);
+ assert.equal(response.status,503);
+ assert.deepEqual(response.data.invalid_settings,['MISSY_VAPID_PRIVATE_KEY']);
+ assert.ok(!calls.some(x=>x.kind==='sent'||x.kind==='vapid'||x.name==='ai_concierge_consume_limit'));
 });
