@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
+import {createECDH} from 'node:crypto';
 
 const src=readFileSync(new URL('../supabase/functions/concierge-push-test/index.ts',import.meta.url),'utf8');
 const rewritten=src
@@ -116,7 +117,7 @@ test('Missing server keys never triggers any push delivery',async()=>{
  const result=await request(handler);
  assert.equal(result.status,503);
  assert.deepEqual(result.data.missing_settings,[
-  'MISSY_VAPID_PUBLIC_KEY','MISSY_VAPID_PRIVATE_KEY','MISSY_VAPID_CONTACT'
+  'MISSY_VAPID_PRIVATE_KEY','MISSY_VAPID_CONTACT'
  ]);
  assert.ok(!calls.some(x=>x.kind==='sent'||x.name==='ai_concierge_consume_limit'),
    'Missing configuration must not consume the hourly test quota');
@@ -221,12 +222,15 @@ test('Bare email contact is normalized to mailto before VAPID setup',async()=>{
  const vapid=calls.find(x=>x.kind==='vapid');
  assert.equal(vapid.args[0],'mailto:ops@example.invalid');
 });
-test('Malformed public VAPID key is reported before rate limit or sender',async()=>{
+test('Malformed configured public key is replaced by the mathematically matching public key',async()=>{
  const {handler,calls}=await scenario({publicOverride:'not-a-valid-key'});
  const result=await request(handler);
- assert.equal(result.status,503);
- assert.deepEqual(result.data.invalid_settings,['MISSY_VAPID_PUBLIC_KEY']);
- assert.ok(!calls.some(x=>x.name==='ai_concierge_consume_limit'||x.kind==='sent'));
+ assert.equal(result.status,200);
+ const curve=createECDH('prime256v1');
+ curve.setPrivateKey(Buffer.alloc(32,2));
+ const setup=calls.find(x=>x.kind==='vapid');
+ assert.equal(setup.args[1],curve.getPublicKey('base64url','uncompressed'));
+ assert.equal(calls.filter(x=>x.kind==='sent').length,1);
 });
 test('Invalid VAPID subject is reported without quota consumption',async()=>{
  const {handler,calls}=await scenario({contactOverride:'invalid-contact'});
@@ -234,4 +238,12 @@ test('Invalid VAPID subject is reported without quota consumption',async()=>{
  assert.equal(result.status,503);
  assert.deepEqual(result.data.invalid_settings,['MISSY_VAPID_CONTACT']);
  assert.ok(!calls.some(x=>x.name==='ai_concierge_consume_limit'||x.kind==='sent'));
+});
+
+test('Invalid stored private scalar prevents any signing and network send',async()=>{
+ const {handler,calls}=await scenario({missingPrivateOnly:true,vaultKey:'not-a-private-scalar'});
+ const response=await request(handler);
+ assert.equal(response.status,503);
+ assert.deepEqual(response.data.invalid_settings,['MISSY_VAPID_PRIVATE_KEY']);
+ assert.ok(!calls.some(x=>x.kind==='sent'||x.kind==='vapid'||x.name==='ai_concierge_consume_limit'));
 });
