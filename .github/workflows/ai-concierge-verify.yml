@@ -38,6 +38,9 @@ jobs:
           if(data.listings.some(x=>!x.url.startsWith('https://missydours.com/listings/')))throw Error('Untrusted listing URL');
           console.log('Verified published build includes',data.listings.length,'non-placeholder listing records');
           "
+      - name: Audit published Concierge knowledge URL (read-only, report-only)
+        continue-on-error: true
+        run: node scripts/probe-concierge-production.mjs
       - name: External Cloudflare health smoke test
         shell: bash
         run: |
