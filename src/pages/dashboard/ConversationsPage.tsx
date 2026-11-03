@@ -40,10 +40,26 @@ export default function ConversationsPage() {
  const [teamReadiness,setTeamReadiness]=useState<TeamPushReadiness[]>([]);
  const [teamReadinessError,setTeamReadinessError]=useState(false);
  const refreshTeamReadiness=async()=>{
-  const result=await supabase.rpc('ai_concierge_team_push_readiness');
-  if(result.error){setTeamReadinessError(true);return;}
-  setTeamReadinessError(false);
-  setTeamReadiness((result.data??[]) as TeamPushReadiness[]);
+  try{
+   const session=await supabase.auth.getSession();
+   const token=session.data.session?.access_token;
+   const base=String(import.meta.env.VITE_MISSY_SUPABASE_URL||'').replace(/\/$/,'');
+   const key=String(import.meta.env.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY||'');
+   if(!token||!base||!key)throw new Error('Staff session unavailable');
+   const response=await fetch(base+'/functions/v1/concierge-api/staff-readiness',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+token},
+    body:'{}',
+    signal:AbortSignal.timeout(12000)
+   });
+   if(!response.ok)throw new Error('Could not check team registration');
+   const payload=await response.json() as {members?:TeamPushReadiness[]};
+   if(!Array.isArray(payload.members))throw new Error('Invalid readiness response');
+   setTeamReadiness(payload.members);
+   setTeamReadinessError(false);
+  }catch{
+   setTeamReadinessError(true);
+  }
  };
  useEffect(()=>{
   if(!staffEmail)return;
@@ -226,7 +242,7 @@ export default function ConversationsPage() {
        <p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Team device readiness</p>
        <button type="button" onClick={()=>void refreshTeamReadiness()} className="rounded-md border border-white/15 px-2.5 py-1.5 text-xs text-[#e6cb98]">Refresh devices</button>
      </div>
-     <p className="mt-1 text-xs text-[#bdb0a0]">Registration does not confirm a delivered notification. Push delivery remains off until launch testing.</p>
+     <p className="mt-1 text-xs text-[#bdb0a0]">Registration is not proof of delivery. Each staff member must verify a real device alert before launch.</p>
      {teamReadinessError&&<p role="status" className="mt-2 text-xs text-amber-200">Device readiness unavailable; try refreshing your signed-in session.</p>}
      {teamReadiness.length>0&&<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
        {teamReadiness.map(member=><div key={member.staff_name} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs">
