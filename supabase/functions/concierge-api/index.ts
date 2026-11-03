@@ -145,8 +145,8 @@ Deno.serve(async req=>{
   try {
    const upstream=await fetch(aiUrl,{method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},
-    body:JSON.stringify({messages:[{role:'user',content:prompts[scenario]}],language:'auto'}),
-    signal:AbortSignal.timeout(25000)
+    body:JSON.stringify({messages:[{role:'user',content:prompts[scenario]}],language:scenario==='spanish'?'es':'en'}),
+    signal:AbortSignal.timeout(45000)
    });
    if(!upstream.ok){
     // Owner-only read-only diagnostic. Do not include headers, token, URL,
@@ -167,7 +167,11 @@ Deno.serve(async req=>{
    return answer({scenario,reply:data.reply.trim().slice(0,1800),
     language:typeof data.language==='string'?data.language.slice(0,5):'unknown',
     saved:false},200,origin);
-  }catch{return answer({error:'AI bridge request failed'},503,origin);}
+  }catch(error){
+   const isTimeout=error instanceof Error && (error.name==='TimeoutError'||error.name==='AbortError');
+   return answer({error:isTimeout?'AI bridge timed out':'AI bridge request failed',
+    diagnostic_code:isTimeout?'bridge_timeout':'bridge_network_failure'},503,origin);
+  }
  }
  if(staffReadinessRoute) {
   const jwt=authorization.startsWith('Bearer ')?authorization.slice(7):'';
@@ -296,7 +300,7 @@ Deno.serve(async req=>{
  let reply:string;
  try {
   const response=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},
-   body:JSON.stringify({messages,language:'auto'}),signal:AbortSignal.timeout(25000)});
+   body:JSON.stringify({messages,language:'auto'}),signal:AbortSignal.timeout(45000)});
   if(!response.ok) return answer({error:'AI service is temporarily unavailable'},503,origin);
   const payload=await response.json() as {reply?:unknown;language?:unknown};
    if(typeof payload.language==='string' && ['en','es','fr','pt','zh'].includes(payload.language)) language=payload.language;
