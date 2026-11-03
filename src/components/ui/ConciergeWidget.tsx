@@ -28,6 +28,10 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   const bottomRef = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
+  const [handoffOpen, setHandoffOpen] = useState(false);
+  const [callbackName, setCallbackName] = useState('');
+  const [callbackPhone, setCallbackPhone] = useState('');
+  const [callbackConsent, setCallbackConsent] = useState(false);
   const [transportError, setTransportError] = useState<string | null>(null);
   const [mode, setMode] = useState<'ai'|'human'|'waiting_human'|'closed'>('ai');
   const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '0x4AAAAAAFoyCod-DYcyxjUw');
@@ -173,15 +177,16 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
   };
 
   const requestHuman = async () => {
-    if (!session || busy || mode !== 'ai') return;
+    if (!session || busy || mode !== 'ai' || !callbackConsent || callbackName.trim().length<2) return;
     setBusy(true);
     setTransportError(null);
     try {
       const note = draft.trim()
         ? 'Please connect me with Missy’s team. ' + draft.trim().slice(0, 440)
         : 'I would like to speak with Missy’s team.';
-      await conciergeTransport.handoff(session, note);
+      await conciergeTransport.handoff(session, note, {name:callbackName.trim(),phone:callbackPhone.trim(),contact_consent:callbackConsent});
       setMode('waiting_human');
+      setHandoffOpen(false);
       setMessages(previous => [...previous, { id: Date.now(), role: 'visitor', text: note }]);
       setDraft('');
     } catch {
@@ -239,7 +244,25 @@ export default function ConciergeWidget({ onOpenChange }: { onOpenChange?: (open
               <a href="/#contact" className="mt-2 block font-semibold underline underline-offset-4">Contact Missy</a>
             </div>}
             {chatEnabled && !session && <TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} />}
-            {chatEnabled && session && mode === 'ai' && <button type="button" onClick={() => void requestHuman()} disabled={busy} className="rounded-lg border border-[#c6a16c]/50 px-3 py-2 text-xs text-[#ebca90] disabled:opacity-50">Speak with Missy’s team</button>}
+            {chatEnabled && session && mode === 'ai' && !handoffOpen && <button type="button" onClick={() => setHandoffOpen(true)} disabled={busy} className="rounded-lg border border-[#c6a16c]/50 px-3 py-2 text-xs text-[#ebca90] disabled:opacity-50">Speak with Missy’s team</button>}
+            {chatEnabled && session && mode === 'ai' && handoffOpen && <form onSubmit={e=>{e.preventDefault();void requestHuman();}} className="space-y-3 rounded-2xl border border-[#c6a16c]/45 bg-[#231a11]/80 p-4" aria-label="Request a callback">
+              <p className="font-serif text-base text-[#f1d39a]">Connect with Missy’s team</p>
+              <p className="text-xs text-[#e5d4ba]">In case we get disconnected, please leave a name and phone number where Missy can reach you. We’ll use it for this request.</p>
+              <label className="block text-xs text-[#e5d4ba]">Your name
+                <input required maxLength={100} minLength={2} autoComplete="name" value={callbackName} onChange={e=>setCallbackName(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-sm text-white" placeholder="Full name"/>
+              </label>
+              <label className="block text-xs text-[#e5d4ba]">Callback phone number
+                <input required type="tel" autoComplete="tel" minLength={10} maxLength={24} pattern="[+0-9 ()\\-]+" value={callbackPhone} onChange={e=>setCallbackPhone(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-sm text-white" placeholder="(555) 555-0123"/>
+              </label>
+              <label className="flex items-start gap-2 text-xs text-[#e5d4ba]">
+                <input type="checkbox" required checked={callbackConsent} onChange={e=>setCallbackConsent(e.target.checked)} className="mt-0.5"/>
+                <span>I agree to be contacted at this number about my request.</span>
+              </label>
+              <div className="flex items-center gap-3">
+                <button type="submit" disabled={busy||!callbackConsent||callbackName.trim().length<2} className="rounded-lg bg-[#c5a16a] px-4 py-2 text-xs font-semibold text-black disabled:opacity-40">Request a callback</button>
+                <button type="button" onClick={()=>setHandoffOpen(false)} className="text-xs text-[#e5d4ba] underline">Keep chatting</button>
+              </div>
+            </form>}
             {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation.</p>}
             {mode === 'waiting_human' && <p className="text-xs text-[#eacb99]">Waiting for a team member. For a time-sensitive request, you can also <a href="/#contact" className="underline underline-offset-2">contact Missy directly</a>.</p>}
             {busy && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
