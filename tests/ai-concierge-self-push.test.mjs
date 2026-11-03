@@ -12,7 +12,7 @@ const code=ts.transpileModule(rewritten,{compilerOptions:{module:ts.ModuleKind.E
 let counter=0;
 const owner='yourcustomerflowguy@gmail.com';
 
-async function scenario({email=owner,devices=1,limit=true,hasKeys=true}={}){
+async function scenario({email=owner,devices=1,limit=true,hasKeys=true,missingPrivateOnly=false,vaultKey=null}={}){
  const calls=[];let handler;
  const subscriptions=devices>0?[{id:'device-1',endpoint:'https://push.invalid/device',
   p256dh:'mock-p256dh',auth_key:'mock-auth'}]:[];
@@ -23,6 +23,7 @@ async function scenario({email=owner,devices=1,limit=true,hasKeys=true}={}){
   }},
   rpc:async(name,args)=>{
    calls.push({kind:'rpc',name,args});
+   if(name==='ai_concierge_get_vapid_private')return {data:vaultKey,error:null};
    assert.equal(name,'ai_concierge_consume_limit');
    return {data:limit,error:null};
   },
@@ -46,7 +47,7 @@ async function scenario({email=owner,devices=1,limit=true,hasKeys=true}={}){
    SUPABASE_URL:'https://example.invalid',
    SUPABASE_SERVICE_ROLE_KEY:'never-live',
    MISSY_VAPID_PUBLIC_KEY:hasKeys?'mock-public':undefined,
-   MISSY_VAPID_PRIVATE_KEY:hasKeys?'mock-private':undefined,
+   MISSY_VAPID_PRIVATE_KEY:hasKeys&&!missingPrivateOnly?'mock-private':undefined,
    MISSY_VAPID_CONTACT:hasKeys?'mailto:test@example.invalid':undefined
   })[name]},serve(fn){handler=fn;}
  };
@@ -101,7 +102,7 @@ test('Missing server keys never triggers any push delivery',async()=>{
  assert.deepEqual(result.data.missing_settings,[
   'MISSY_VAPID_PUBLIC_KEY','MISSY_VAPID_PRIVATE_KEY','MISSY_VAPID_CONTACT'
  ]);
- assert.ok(!calls.some(x=>x.kind==='sent'||x.kind==='rpc'),
+ assert.ok(!calls.some(x=>x.kind==='sent'||x.name==='ai_concierge_consume_limit'),
    'Missing configuration must not consume the hourly test quota');
 });
 test('Owner may send exactly one test push, without activating the normal queue',async()=>{
@@ -115,4 +116,21 @@ test('Owner may send exactly one test push, without activating the normal queue'
  assert.equal(sent[0].options.TTL,120);
  assert.equal(calls.filter(x=>x.kind==='rpc').length,1);
  assert.ok(calls.every(x=>x.name!=='ai_concierge_claim_push_batch'));
+});
+
+test('Server-only Vault recovers original private key and sends to one device',async()=>{
+ const {handler,calls}=await scenario({missingPrivateOnly:true,vaultKey:'mock-original-private'});
+ const result=await request(handler);
+ assert.equal(result.status,200);
+ assert.deepEqual(result.data,{accepted:true,delivery_confirmed:false});
+ assert.ok(calls.some(x=>x.name==='ai_concierge_get_vapid_private'));
+ assert.equal(calls.filter(x=>x.kind==='sent').length,1);
+ assert.ok(!JSON.stringify(result.data).includes('mock-original-private'));
+});
+test('Missing Vault key is reported without consuming hourly test quota',async()=>{
+ const {handler,calls}=await scenario({missingPrivateOnly:true,vaultKey:null});
+ const result=await request(handler);
+ assert.equal(result.status,503);
+ assert.deepEqual(result.data.missing_settings,['MISSY_VAPID_PRIVATE_KEY']);
+ assert.ok(!calls.some(x=>x.name==='ai_concierge_consume_limit'||x.kind==='sent'));
 });
