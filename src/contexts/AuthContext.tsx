@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -26,6 +26,8 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  authError: string | null;
+  retrySession: () => Promise<void>;
   isApproved: boolean;
   avatarUrl: string | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -37,22 +39,40 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const retrySession = useCallback(async () => {
+    setLoading(true);
+    setAuthError(null);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const result = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise<never>((_, reject) => {
+          timeout = setTimeout(() => reject(new Error('Session check timed out. Check your connection and retry.')), 12000);
+        }),
+      ]);
+      if (result.error) throw result.error;
+      setSession(result.data.session);
+    } catch {
+      // Do not erase a session received by the auth-change listener.
+      setAuthError('Unable to verify your session. Check your connection and try again.');
+    } finally {
+      clearTimeout(timeout);
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    let active = true;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!active) return;
+      setSession(newSession);
+      setAuthError(null);
       setLoading(false);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, newSession) => {
-      (async () => {
-        setSession(newSession);
-        setLoading(false);
-      })();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    void retrySession();
+    return () => { active = false; subscription.unsubscribe(); };
+  }, [retrySession]);
 
   const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -61,7 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    setSession(null);
+    setAuthError(null);
   };
 
   const user = session?.user ?? null;
@@ -86,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })();
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, isApproved, avatarUrl, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, authError, retrySession, isApproved, avatarUrl, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

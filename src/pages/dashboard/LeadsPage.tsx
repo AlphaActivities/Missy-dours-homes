@@ -234,13 +234,26 @@ export default function LeadsPage() {
     setDrawerLead(prev => prev?.id === id ? { ...prev, status: next } : prev);
   }, [filter, leadBelongsInFilter, showToast]);
 
-  const handleDrawerSaveNotes = useCallback(async (id: string, notes: string) => {
-    const { error } = await supabase
+  const handleDrawerSaveNotes = useCallback(async (id: string, notes: string, expectedNotes: string) => {
+    // Compare-and-swap: prevent one staff member overwriting another's notes.
+    // A conflict keeps the unsaved draft visible so the user can safely retry.
+    const { data, error } = await supabase
       .from('leads')
       .update({ notes })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('notes', expectedNotes)
+      .select('id')
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) {
+      const latest = await supabase.from('leads').select('notes').eq('id', id).single();
+      if (!latest.error && latest.data) {
+        setLeads(prev => prev.map(l => l.id === id ? { ...l, notes: latest.data.notes } : l));
+        setDrawerLead(prev => prev?.id === id ? { ...prev, notes: latest.data.notes } : prev);
+      }
+      throw new Error('Newer notes were saved by another staff member. Your draft is protected. Review the refreshed notes, then save again.');
+    }
 
     // Log activity (non-fatal)
     const { data: userData } = await supabase.auth.getUser();

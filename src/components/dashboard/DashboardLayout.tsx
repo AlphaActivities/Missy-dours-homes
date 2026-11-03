@@ -6,6 +6,7 @@ import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle } from 'lucide-r
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
 import ConciergeSignatureEntrance from './ui/ConciergeSignatureEntrance';
 import { supabase } from '../../lib/supabase';
+import { clearUserNoteDrafts } from '../../lib/crmNoteDrafts';
 
 const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
@@ -50,11 +51,14 @@ function UserAvatar({
 }
 
 export default function DashboardLayout() {
-  const { signOut, avatarUrl } = useAuth();
+  const { signOut, avatarUrl, user } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isLoginRoute = pathname === '/dashboard/login';
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+  useEffect(() => { if (isLoginRoute) setSigningOut(false); }, [isLoginRoute]);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   // Remove any overflow-hidden the public site may leave on body
@@ -91,6 +95,11 @@ export default function DashboardLayout() {
   }, []);
 
   const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutError(null);
+    const accountId = user?.id;
+    try {
     // Remove this browser's private push endpoint before ending its staff session.
     // Keep sign-out functional even when browser push is unavailable or offline.
     try {
@@ -105,12 +114,23 @@ export default function DashboardLayout() {
       }
     } catch { /* Signing out must not depend on notification cleanup. */ }
     await signOut();
+    if (accountId) clearUserNoteDrafts(accountId);
+    setSidebarOpen(false);
     navigate('/dashboard/login', { replace: true });
+    } catch {
+      setSignOutError('Sign out failed. Please check your connection and retry.');
+      setSigningOut(false);
+    }
   };
 
   const closeSidebar = () => setSidebarOpen(false);
 
-
+  // The login route is public. Never display dashboard sidebar, Overview,
+  // navigation, or stale private content after sign-out.
+  if (isLoginRoute) return <ToastProvider><Outlet /></ToastProvider>;
+  if (signingOut) return (
+    <div className="min-h-screen flex items-center justify-center text-sm" style={{background:'var(--ds-bg-base)',color:'var(--ds-gold-light)'}} role="status">Signing out…</div>
+  );
 
   return (
     <ToastProvider>
@@ -246,6 +266,7 @@ export default function DashboardLayout() {
             <LogOut size={14} style={{ color: 'var(--ds-text-tertiary)' }} />
             Sign out
           </button>
+          {signOutError && <p role="alert" className="px-3 mt-2 text-xs text-red-300">{signOutError}</p>}
         </div>
       </aside>
 

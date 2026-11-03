@@ -6,7 +6,7 @@ import LoadingSpinner, { LoadingScreen } from '../../components/dashboard/ui/Loa
 import { resetConciergeEntranceForLogin } from '../../components/dashboard/ui/ConciergeSignatureEntrance';
 
 export default function LoginPage() {
-  const { session, loading, isApproved, signIn } = useAuth();
+  const { session, loading, isApproved, authError, retrySession, signIn } = useAuth();
   const navigate = useNavigate();
 
   const emailRef = useRef<HTMLInputElement>(null);
@@ -115,6 +115,7 @@ export default function LoginPage() {
           style={{ background: 'var(--ds-bg-raised)', boxShadow: 'var(--ds-shadow-float)' }}
         >
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {authError && <div role="alert" className="text-sm text-amber-200">{authError} <button type="button" onClick={() => void retrySession()} className="underline">Retry</button></div>}
 
             {/* Email */}
             <div>

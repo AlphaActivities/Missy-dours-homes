@@ -18,7 +18,7 @@ interface LeadDrawerProps {
   lead: Lead | null;
   onClose: () => void;
   onStatusChange: (id: string, status: LeadStatus) => Promise<void>;
-  onSaveNotes: (id: string, notes: string) => Promise<void>;
+  onSaveNotes: (id: string, notes: string, expectedNotes: string) => Promise<void>;
   onLeadUpdate?: (lead: Lead) => void;
 }
 
@@ -157,7 +157,7 @@ function DrawerContent({
   lead: Lead;
   onClose: () => void;
   onStatusChange: (status: LeadStatus) => Promise<void>;
-  onSaveNotes: (id: string, notes: string) => Promise<void>;
+  onSaveNotes: (id: string, notes: string, expectedNotes: string) => Promise<void>;
   onLeadUpdate?: (lead: Lead) => void;
   updatingStatus: boolean;
   isMobile?: boolean;

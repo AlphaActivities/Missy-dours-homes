@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Save, Check, Paperclip, Download, Trash2, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
+import { readNoteDraft, writeNoteDraft, clearNoteDraft } from '../../../lib/crmNoteDrafts';
 
 const BUCKET = 'lead-attachments';
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -36,7 +38,7 @@ export interface SavedNote {
 interface NotesEditorProps {
   leadId: string;
   initialNotes: string;
-  onSave: (leadId: string, notes: string) => Promise<void>;
+  onSave: (leadId: string, notes: string, expectedNotes: string) => Promise<void>;
   onError?: (msg: string) => void;
 }
 
@@ -68,6 +70,9 @@ function serializeNotes(notes: SavedNote[]): string {
 }
 
 export default function NotesEditor({ leadId, initialNotes, onSave, onError }: NotesEditorProps) {
+  const { user } = useAuth();
+  const accountId = user?.id ?? '';
+  const expectedNotesRef = useRef(initialNotes ?? '');
   const [savedNotes, setSavedNotes] = useState<SavedNote[]>(() => parseNotes(initialNotes ?? ''));
   const [draftText, setDraftText] = useState('');
   const [draftAttachments, setDraftAttachments] = useState<NoteAttachment[]>([]);
@@ -84,11 +89,16 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
 
   useEffect(() => {
     setSavedNotes(parseNotes(initialNotes ?? ''));
-    setDraftText('');
+    expectedNotesRef.current = initialNotes ?? '';
+  }, [leadId, initialNotes]);
+
+  useEffect(() => {
+    setDraftText(readNoteDraft(accountId, leadId));
     setDraftAttachments([]);
     setError(null);
     setSavedFlash(false);
-  }, [leadId, initialNotes]);
+  }, [accountId, leadId]);
+
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -184,6 +194,7 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
 
   const handleSave = async () => {
     if ((!draftText.trim() && draftAttachments.length === 0) || saving) return;
+    if (!navigator.onLine) { setError('Offline. Your draft is kept on this device; reconnect to save.'); return; }
     setError(null);
     setSaving(true);
     try {
@@ -197,7 +208,10 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
         attachments: draftAttachments,
       };
       const updated = [newNote, ...savedNotes];
-      await onSave(leadId, serializeNotes(updated));
+      const nextNotes = serializeNotes(updated);
+      await onSave(leadId, nextNotes, expectedNotesRef.current);
+      expectedNotesRef.current = nextNotes;
+      clearNoteDraft(accountId, leadId);
       setSavedNotes(updated);
       setDraftText('');
       setDraftAttachments([]);
@@ -205,9 +219,9 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
       setSavedFlash(true);
       if (flashTimer.current) clearTimeout(flashTimer.current);
       flashTimer.current = setTimeout(() => setSavedFlash(false), 2000);
-    } catch {
+    } catch (e) {
       setSaving(false);
-      setError('Failed to save. Please try again.');
+      setError(e instanceof Error ? e.message : 'Unable to save. Your draft is preserved; retry when connected.');
     }
   };
 
@@ -216,16 +230,17 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
       setConfirmDeleteNote(note.id);
       return;
     }
-    // Delete attachment files from storage
-    if (note.attachments.length > 0) {
-      await supabase.storage.from(BUCKET).remove(note.attachments.map(a => a.storage_path));
-    }
     const updated = savedNotes.filter(n => n.id !== note.id);
     try {
-      await onSave(leadId, serializeNotes(updated));
+      const nextNotes = serializeNotes(updated);
+      await onSave(leadId, nextNotes, expectedNotesRef.current);
+      expectedNotesRef.current = nextNotes;
       setSavedNotes(updated);
-    } catch {
-      reportError('Failed to delete note.');
+      if (note.attachments.length > 0) {
+        await supabase.storage.from(BUCKET).remove(note.attachments.map(a => a.storage_path));
+      }
+    } catch (e) {
+      reportError(e instanceof Error ? e.message : 'Failed to delete note.');
     }
     setConfirmDeleteNote(null);
   };
@@ -235,17 +250,19 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
       setConfirmDeleteAtt(att.id);
       return;
     }
-    await supabase.storage.from(BUCKET).remove([att.storage_path]);
     const updated = savedNotes.map(n =>
       n.id === noteId
         ? { ...n, attachments: n.attachments.filter(a => a.id !== att.id) }
         : n
     );
     try {
-      await onSave(leadId, serializeNotes(updated));
+      const nextNotes = serializeNotes(updated);
+      await onSave(leadId, nextNotes, expectedNotesRef.current);
+      expectedNotesRef.current = nextNotes;
       setSavedNotes(updated);
-    } catch {
-      reportError('Failed to remove attachment.');
+      await supabase.storage.from(BUCKET).remove([att.storage_path]);
+    } catch (e) {
+      reportError(e instanceof Error ? e.message : 'Failed to remove attachment.');
     }
     setConfirmDeleteAtt(null);
   };
@@ -270,10 +287,18 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
         <textarea
           ref={textareaRef}
           value={draftText}
-          onChange={e => { setDraftText(e.target.value); setError(null); setSavedFlash(false); }}
+          onChange={e => {
+            const next = e.target.value;
+            setDraftText(next);
+            if (!writeNoteDraft(accountId, leadId, next) && next.trim()) {
+              setError('This device cannot preserve drafts offline. Keep this page open until saved.');
+            } else setError(null);
+            setSavedFlash(false);
+          }}
           disabled={saving}
           placeholder="Add a private note…"
           rows={3}
+          maxLength={25000}
           className="w-full resize-none rounded-xl px-3.5 py-3 text-[16px] sm:text-xs leading-relaxed outline-none transition-all duration-200 disabled:opacity-50"
           style={{
             background: 'var(--ds-bg-overlay)',
@@ -284,6 +309,8 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
           onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1.5px var(--ds-gold)')}
           onBlur={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.07)')}
         />
+
+        {draftText.trim() && <p className="text-[11px]" style={{color:'var(--ds-text-tertiary)'}}>Draft stored on this device until saved or signed out.</p>}
 
         {/* Draft attachments */}
         {draftAttachments.length > 0 && (
