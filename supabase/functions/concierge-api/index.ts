@@ -125,8 +125,11 @@ Deno.serve(async req=>{
   if(!jwt)return answer({error:'Unauthorized'},401,origin);
   const identity=await db.auth.getUser(jwt);
   const email=identity.data.user?.email?.toLowerCase()??'';
+  // This is an owner-only administrative summary, not an agent feature.
+  // Enforce access at the server as well as hiding the card in the UI.
+  const ownerEmail='yourcustomerflowguy@gmail.com';
   const staffEmails=['missydourshomes@gmail.com','yourcustomerflowguy@gmail.com','heberherrera92@gmail.com'];
-  if(identity.error||!staffEmails.includes(email))return answer({error:'Unauthorized'},401,origin);
+  if(identity.error||email!==ownerEmail)return answer({error:'Unauthorized'},401,origin);
   const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'staff-readiness:'+email,p_max:120,p_window_seconds:3600});
   if(limit.error||limit.data!==true)return answer({error:'Readiness check limit reached'},429,origin);
   const subscriptionResult=await db.from('ai_concierge_push_subscriptions').select('staff_email').limit(500);
