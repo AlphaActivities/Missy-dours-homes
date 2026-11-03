@@ -23,9 +23,12 @@ Deno.serve(async request=>{
  for(const event of events??[]) {
   try {
    const {data:devices,error:deviceError}=await client.from('ai_concierge_push_subscriptions')
-    .select('id,endpoint,p256dh,auth_key').limit(100);
+    .select('id,staff_email,endpoint,p256dh,auth_key').limit(100);
    if(deviceError)throw deviceError;
-   if(!devices?.length) {
+   const targetDevices = event.event_type === 'handoff_claimed'
+     ? (devices??[]).filter(d=>['yourcustomerflowguy@gmail.com','heberherrera92@gmail.com'].includes(d.staff_email))
+     : (devices??[]);
+   if(!targetDevices.length) {
     await client.rpc('ai_concierge_finish_push',{p_id:event.id,p_success:false,p_error_code:'no_registered_devices'});
     failed++;continue;
    }
@@ -34,8 +37,8 @@ Deno.serve(async request=>{
    const accepted=new Set((existing.data??[]).map(x=>x.device_id));
    let deliveryFailures=0;
    let successfulDevices=accepted.size;
-   const payload=JSON.stringify({kind:event.event_type==='handoff_escalated'?'handoff_escalated':'handoff_created',id:event.task_id});
-   for(const device of devices) {
+   const payload=JSON.stringify({kind:['handoff_escalated','handoff_claimed'].includes(event.event_type)?event.event_type:'handoff_created',id:event.task_id});
+   for(const device of targetDevices) {
     if(accepted.has(device.id))continue;
     try {
      await webpush.sendNotification({endpoint:device.endpoint,keys:{p256dh:device.p256dh,auth:device.auth_key}},payload,{TTL:900});
