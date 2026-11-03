@@ -64,3 +64,29 @@ test('Uncertain language detection fails back to English', async () => {
   assert.equal((await response.json()).language, 'en');
   assert.match(calls[1].messages[0].content,/^Reply in English\./);
 });
+
+
+test('Published website feed remains a non-authoritative reference', async () => {
+  const savedFetch=globalThis.fetch;
+  let prompt=[];
+  globalThis.fetch=async () => new Response(JSON.stringify({
+    schema_version:1,
+    source:'missydours.com website listings source',
+    generated_at:'2026-11-03T00:00:00Z',
+    listings:[
+      {address:'14636 Southern Pines Dr, Farmers Branch, TX',status:'active',price_display:'$2,487,000',beds:4,baths:3.5,sqft:6005,url:'https://missydours.com/listings/14636-southern-pines-dr'},
+      {address:'Fake example',status:'placeholder',url:'https://missydours.com/listings/fake'}
+    ]
+  }),{status:200});
+  try {
+    const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'Tell me about Southern Pines property'}]}),{
+      CONCIERGE_BRIDGE_SECRET:secret,
+      AI:{run:async (_model,opts)=>{prompt=opts.messages;return {response:'Please verify with Missy.'};}}
+    });
+    assert.equal(response.status,200);
+    const context=prompt.map(p=>p.content).join('\n');
+    assert.match(context,/Website record: 14636 Southern Pines Dr/);
+    assert.match(context,/UNVERIFIED CURRENT/);
+    assert.doesNotMatch(context,/Fake example/);
+  } finally {globalThis.fetch=savedFetch;}
+});
