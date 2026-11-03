@@ -5,7 +5,9 @@ self.addEventListener('push', event => {
   const title = 'Missy Dours Concierge';
   const body = payload.kind === 'handoff_escalated'
     ? 'An urgent concierge request needs attention.'
-    : 'A visitor is waiting for Missy’s team.';
+    : payload.kind === 'handoff_claimed'
+      ? 'Missy has taken over a concierge conversation.'
+      : 'A visitor is waiting for Missy’s team.';
   event.waitUntil(self.registration.showNotification(title, {
     body,
     tag: 'missy-crm-' + (typeof payload.id === 'string' ? payload.id.slice(0, 50) : 'attention'),
