@@ -34,6 +34,8 @@ jobs:
           if(!pkg.scripts.build?.includes('build-concierge-knowledge.mjs'))throw Error('Concierge knowledge generator is not in canonical build');
           console.log('PASS: publishing uses the canonical build and generates the listing feed');
           "
+      - name: Concierge owner-only push self-test security checks
+        run: node --test tests/ai-concierge-self-push.test.mjs
       - name: Concierge API integration tests (mock database; no production writes)
         run: node --test tests/ai-concierge-api.test.mjs
       - name: Production build
