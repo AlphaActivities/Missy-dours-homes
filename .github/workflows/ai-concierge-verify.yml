@@ -22,6 +22,8 @@ jobs:
       - run: npm ci
       - name: TypeScript typecheck
         run: npm run typecheck
+      - name: Concierge offline worker behavior tests
+        run: node --test tests/ai-concierge-worker.test.mjs
       - name: Production build
         if: always()
         run: npm run build
