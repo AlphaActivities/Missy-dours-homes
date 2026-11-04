@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
-import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle, Settings2 } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle, Settings2, ShieldCheck } from 'lucide-react';
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
 import ConciergeSignatureEntrance from './ui/ConciergeSignatureEntrance';
 import { supabase } from '../../lib/supabase';
@@ -12,7 +12,8 @@ const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/leads', label: 'Leads',    icon: Users,            end: false },
   { to: '/dashboard/conversations', label: 'Conversations', icon: MessageCircle, end: false },
-  { to: '/dashboard/admin', label: 'Admin', icon: Settings2, end: true, ownerOnly: true },
+  { to: '/dashboard/settings', label: 'Settings', icon: Settings2, end: true },
+  { to: '/dashboard/admin', label: 'Admin', icon: ShieldCheck, end: true, ownerOnly: true },
 ];
 
 // Avatar that renders the authenticated Google profile picture when
