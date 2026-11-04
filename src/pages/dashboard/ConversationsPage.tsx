@@ -313,7 +313,7 @@ export default function ConversationsPage() {
        {aiSmokeResults.length>0&&<details className="mt-3 rounded-md border border-white/10 bg-black/20 px-3 py-2 text-xs text-[#d5d0c6]">
         <summary className="cursor-pointer font-medium text-[#e6cb98]">View full AI responses ({aiSmokeResults.length})</summary>
         <div className="mt-3 space-y-4">
-         {aiSmokeResults.map((result,index)=><p key={index} className="whitespace-pre-wrap break-words">{result}</p>)}
+         {aiSmokeResults.map((result,index)=><p key={index} className="whitespace-pre-wrap break-words">{result.replace(/\*\*([^*\n]+)\*\*/g,'$1')}</p>)}
         </div>
        </details>}
      </div>
