@@ -56,3 +56,33 @@ export const conciergeTransport = {
   handoff: (session: VisitorSession, message: string, contact: {name:string;phone:string;contact_consent:boolean}) => request<{status:string;conversation_id:string}>('/handoff', {message,...contact}, session.token),
   sync: (session: VisitorSession) => request<{status: 'ai'|'human'|'waiting_human'|'closed';messages: Array<{id:string;sender:'visitor'|'ai'|'human'|'system';body:string;created_at:string;sender_actor:string|null}>}>('/sync', {}, session.token),
 };
+
+/** Owner-only private browser QA. An owner JWT is checked by the private Edge Function on every request. */
+export const PRIVATE_QA_SESSION_KEY = 'missy_concierge_private_qa_session_v1';
+const qaEndpoint = import.meta.env.VITE_MISSY_SUPABASE_URL
+  ? String(import.meta.env.VITE_MISSY_SUPABASE_URL).replace(/\/$/,'')+'/functions/v1/concierge-private-visitor'
+  : '';
+async function qaRequest<T>(path:string,data:unknown,visitorToken?:string):Promise<T>{
+  const {supabase}=await import('./supabase');
+  const {data:auth,error}=await supabase.auth.getSession();
+  const ownerToken=auth.session?.access_token;
+  if(error||!ownerToken||auth.session?.user?.email?.toLowerCase()!=='yourcustomerflowguy@gmail.com') throw new Error('Sign in as the owner on this browser before testing.');
+  if(!qaEndpoint||!publicKey)throw new Error('Private visitor test is not configured.');
+  const response=await fetch(qaEndpoint+path,{
+    method:'POST',mode:'cors',
+    headers:{'Content-Type':'application/json','apikey':publicKey,
+      'X-Concierge-QA-Authorization':'Bearer '+ownerToken,
+      ...(visitorToken?{'Authorization':'Bearer '+visitorToken}:{})},
+    body:JSON.stringify(data),signal:AbortSignal.timeout(55000)
+  });
+  const result=await response.json().catch(()=>({})) as T & {error?:string};
+  if(!response.ok)throw new Error(result.error||'Private visitor test failed.');
+  return result;
+}
+export const conciergeQaTransport={
+  start:(challenge:string)=>qaRequest<VisitorSession>('/session',{challenge}),
+  send:(session:VisitorSession,message:string,language='auto')=>qaRequest<{reply?:string;language?:string;conversation_id:string;status?:string}>('/message',{message,language},session.token),
+  handoff:(session:VisitorSession,message:string,contact:{name:string;phone:string;contact_consent:boolean})=>qaRequest<{status:string;conversation_id:string}>('/handoff',{message,...contact},session.token),
+  sync:(session:VisitorSession)=>qaRequest<{status:'ai'|'human'|'waiting_human'|'closed';messages:Array<{id:string;sender:'visitor'|'ai'|'human'|'system';body:string;created_at:string;sender_actor:string|null}>}>('/sync',{},session.token),
+  cleanup:(session:VisitorSession)=>qaRequest<{cleaned:boolean}>('/cleanup',{conversation_id:session.conversation_id})
+};
