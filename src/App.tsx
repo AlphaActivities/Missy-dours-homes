@@ -17,6 +17,7 @@ import LoginPage from './pages/dashboard/LoginPage';
 import DashboardOverviewPage from './pages/dashboard/DashboardOverviewPage';
 import LeadsPage from './pages/dashboard/LeadsPage';
 import ConversationsPage from './pages/dashboard/ConversationsPage';
+import OwnerAdminPage from './pages/dashboard/OwnerAdminPage';
 import ConciergePrivateQAPage from './pages/dashboard/ConciergePrivateQAPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
@@ -167,6 +168,7 @@ export default function App() {
             }
           />
           <Route path="/dashboard/conversations" element={<ProtectedRoute><ConversationsPage /></ProtectedRoute>} />
+          <Route path="/dashboard/admin" element={<ProtectedRoute><OwnerAdminPage /></ProtectedRoute>} />
           <Route path="/dashboard/concierge-qa" element={<ProtectedRoute><ConciergePrivateQAPage /></ProtectedRoute>} />
         </Route>
       </Routes>
