@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import LoadingSpinner, { LoadingScreen } from '../../components/dashboard/ui/LoadingSpinner';
@@ -8,6 +8,10 @@ import { resetConciergeEntranceForLogin } from '../../components/dashboard/ui/Co
 export default function LoginPage() {
   const { session, loading, isApproved, authError, retrySession, signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Only allow the explicitly approved QA return route; never redirect to an arbitrary URL.
+  const loginDestination = (location.state as {from?:unknown}|null)?.from === '/dashboard/concierge-qa'
+    ? '/dashboard/concierge-qa' : '/dashboard';
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -21,9 +25,9 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && session && isApproved) {
       resetConciergeEntranceForLogin();
-      navigate('/dashboard', { replace: true });
+      navigate(loginDestination, { replace: true });
     }
-  }, [loading, session, isApproved, navigate]);
+  }, [loading, session, isApproved, navigate, loginDestination]);
 
   // Safari's password manager may fill native DOM fields without dispatching
   // React onChange events. Sign in once when both fields are genuinely autofilled;

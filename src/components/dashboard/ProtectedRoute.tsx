@@ -1,10 +1,11 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { ReactNode } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoadingScreen } from './ui/LoadingSpinner';
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { session, loading, authError, retrySession, isApproved } = useAuth();
+  const location = useLocation();
 
   if (loading) return <LoadingScreen />;
 
@@ -16,7 +17,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   );
 
   if (!session || !isApproved) {
-    return <Navigate to="/dashboard/login" replace />;
+    return <Navigate to="/dashboard/login" state={{ from: location.pathname === "/dashboard/concierge-qa" ? "/dashboard/concierge-qa" : "/dashboard" }} replace />;
   }
 
   return <>{children}</>;
