@@ -45,6 +45,43 @@ export default function ConversationsPage() {
  const [aiSmokeBusy,setAiSmokeBusy]=useState(false);
  const [aiSmokeReport,setAiSmokeReport]=useState('');
  const [aiSmokeResults,setAiSmokeResults]=useState<string[]>([]);
+ const [handoffTestId,setHandoffTestId]=useState<string|null>(()=>{try{return window.localStorage.getItem('missy_private_handoff_qa_id')}catch{return null}});
+ const [handoffTestBusy,setHandoffTestBusy]=useState(false);
+ const [handoffTestResult,setHandoffTestResult]=useState('');
+ const runPrivateHandoffTest=async(action:'start'|'status'|'cleanup')=>{
+  if(!canViewTeamReadiness||handoffTestBusy)return;
+  setHandoffTestBusy(true);setHandoffTestResult('');
+  try{
+   const session=await supabase.auth.getSession();
+   const token=session.data.session?.access_token;
+   const base=String(import.meta.env.VITE_MISSY_SUPABASE_URL||'').replace(/\/$/,'');
+   const key=String(import.meta.env.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY||'');
+   if(!token||!base||!key)throw new Error('Your signed-in staff session is unavailable.');
+   if(action!=='start'&&!handoffTestId)throw new Error('No private test session selected.');
+   const response=await fetch(base+'/functions/v1/concierge-private-handoff-test',{
+    method:'POST',headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+token},
+    body:JSON.stringify({action,...(action!=='start'?{id:handoffTestId}:{})}),signal:AbortSignal.timeout(20000)
+   });
+   const data=await response.json().catch(()=>({})) as {error?:string;created?:boolean;id?:string;queued?:boolean;accepted_by_provider?:boolean;attempts?:number;events?:Array<{type:string;delivered:boolean;attempts:number;error:string|null}>;cleaned?:boolean};
+   if(!response.ok)throw new Error(data.error||'Could not complete private handoff test.');
+   if(action==='start'&&data.created&&data.id){
+    setHandoffTestId(data.id);
+    window.localStorage.setItem('missy_private_handoff_qa_id',data.id);
+    setHandoffTestResult('Private test handoff queued. Allow up to 90 seconds for the normal delivery worker. Check for an automatic Concierge handoff alert, then select Check delivery.');
+   }else if(action==='status'){
+    const event=data.events?.[0];
+    setHandoffTestResult(data.accepted_by_provider
+     ? 'The automatic handoff notification was accepted by the push provider. Please confirm whether it appeared on your iPhone before cleaning up.'
+     : 'Not yet delivered. '+(event?'Attempts: '+event.attempts+(event.error?' · '+event.error:''):'No queued event found. Please report this result.'));
+   }else if(action==='cleanup'&&data.cleaned){
+    setHandoffTestId(null);
+    window.localStorage.removeItem('missy_private_handoff_qa_id');
+    setHandoffTestResult('Private handoff test records cleared. No customer lead was created.');
+   }else throw new Error('Unexpected private test response.');
+  }catch(e){setHandoffTestResult(e instanceof Error?e.message:'Private test failed.');}
+  finally{setHandoffTestBusy(false);}
+ };
+
  const runOwnerAiSmoke=async()=>{
   if(!canViewTeamReadiness||aiSmokeBusy)return;
   setAiSmokeBusy(true);setAiSmokeReport('');setAiSmokeResults([]);
@@ -309,6 +346,16 @@ export default function ConversationsPage() {
         {aiSmokeBusy?'Testing live AI…':'Run private AI Concierge checks'}
        </button>
        <p className="mt-2 text-xs text-[#bdb0a0]">Tests property facts, Spanish, and pricing guarantees. Available only to you; no live conversations created.</p>
+       <div className="mt-4 border-t border-white/10 pt-4">
+        <p className="text-xs font-medium text-[#e6cb98]">Private automatic handoff test</p>
+        <p className="mt-1 text-xs text-[#bdb0a0]">Owner-only. Creates a clearly marked temporary task, uses the normal push queue, and does not create a customer lead or enable public chat.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+         {!handoffTestId&&<button type="button" disabled={handoffTestBusy} onClick={()=>void runPrivateHandoffTest('start')} className="rounded border border-[#bd9d65] px-3 py-2 text-xs text-[#e6cb98] disabled:opacity-50">Run handoff alert test</button>}
+         {handoffTestId&&<button type="button" disabled={handoffTestBusy} onClick={()=>void runPrivateHandoffTest('status')} className="rounded border border-[#bd9d65] px-3 py-2 text-xs text-[#e6cb98] disabled:opacity-50">Check delivery</button>}
+         {handoffTestId&&<button type="button" disabled={handoffTestBusy} onClick={()=>void runPrivateHandoffTest('cleanup')} className="rounded border border-white/20 px-3 py-2 text-xs text-[#d5d0c6] disabled:opacity-50">Clear test records</button>}
+        </div>
+        {handoffTestResult&&<p role="status" className="mt-2 whitespace-pre-wrap text-xs text-[#d5d0c6]">{handoffTestResult}</p>}
+       </div>
        {aiSmokeReport&&<p role="status" className="mt-3 whitespace-pre-wrap break-words text-xs text-[#d5d0c6]">{aiSmokeReport}</p>}
        {aiSmokeResults.length>0&&<details className="mt-3 rounded-md border border-white/10 bg-black/20 px-3 py-2 text-xs text-[#d5d0c6]">
         <summary className="cursor-pointer font-medium text-[#e6cb98]">View full AI responses ({aiSmokeResults.length})</summary>
