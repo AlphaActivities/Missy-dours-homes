@@ -41,7 +41,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const transport = privateQA ? conciergeQaTransport : conciergeTransport;
   const sessionKey = privateQA ? PRIVATE_QA_SESSION_KEY : SESSION_KEY;
   // UI-only feature flag. This is not a security boundary.
-  const chatEnabled = privateQA || (import.meta.env.VITE_CONCIERGE_CHAT_ENABLED === 'true' && Boolean(turnstileSiteKey)); // Private QA uses a separate owner-authorized API.
+  const chatEnabled = privateQA || Boolean(turnstileSiteKey); // Public launch approved; backend launch control enforces whether visitor API requests are accepted.
 
   useEffect(() => { sessionStorage.setItem(LANGUAGE_KEY, language); }, [language]);
 
