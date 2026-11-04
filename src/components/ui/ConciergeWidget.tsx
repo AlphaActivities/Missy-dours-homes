@@ -286,7 +286,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               {!privateQA && <label className="inline-flex cursor-pointer items-center rounded-lg border border-[#c6a16c]/50 px-3 py-2 text-xs text-[#ebca90]">
                 {uploadBusy ? 'Uploading attachment…' : 'Share a photo or PDF with Missy’s team'}
                 <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={uploadBusy||!chatEnabled} className="sr-only" onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAttachment(file);e.target.value='';}}/>
-              </label>
+              </label>}
               {!privateQA && <p className="text-[11px] text-[#ae9b7f]">Human assistance only · Max 10 MB · JPG, PNG, WEBP, or PDF</p>}
               {uploadFeedback && <p role="status" className="text-xs text-[#eedab5]">{uploadFeedback}</p>}
             </div>}
