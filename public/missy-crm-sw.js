@@ -4,7 +4,7 @@ self.addEventListener('push', event => {
   try { payload = event.data ? event.data.json() : {}; } catch { payload = {}; }
   const title = 'Missy Dours Concierge';
   const body = payload.kind === 'device_test'
-    ? 'Test notification received. This iPhone can receive Concierge push alerts.'
+    ? 'Test notification received. This device can receive Concierge push alerts.'
     : payload.kind === 'handoff_escalated'
       ? 'An urgent concierge request needs attention.'
     : payload.kind === 'handoff_claimed'
@@ -22,6 +22,11 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     const existing = list.find(client => new URL(client.url).pathname.startsWith('/dashboard/'));
-    return existing ? existing.focus() : clients.openWindow('/dashboard/conversations');
+    if (existing) {
+      return existing.navigate('/dashboard/conversations')
+        .then(tab => tab ? tab.focus() : existing.focus())
+        .catch(() => existing.focus());
+    }
+    return clients.openWindow('/dashboard/conversations');
   }));
 });
