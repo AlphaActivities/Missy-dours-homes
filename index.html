@@ -31,6 +31,14 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/images/Favicons/apple-touch-icon.png?v=3" />
     <meta name="apple-mobile-web-app-title" content="Missy Dours" />
     <link rel="manifest" href="/images/Favicons/site.webmanifest?v=3" />
+    <!-- Select the private CRM's standalone manifest before the app is hydrated.
+         Public marketing pages retain their separate manifest. -->
+    <script>
+      if (location.pathname === '/dashboard' || location.pathname.startsWith('/dashboard/')) {
+        document.querySelector('link[rel="manifest"]').setAttribute('href', '/missy-crm.webmanifest');
+        document.querySelector('meta[name="apple-mobile-web-app-title"]').setAttribute('content', 'Missy CRM');
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Missy Dours | Luxury Real Estate in Dallas & North Texas</title>
     <meta name="description" content="Premier luxury real estate advisor serving Dallas, Fort Worth, and North Texas. Specializing in exclusive properties in Highland Park, Preston Hollow, Southlake, and beyond." />
