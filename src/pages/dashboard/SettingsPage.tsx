@@ -2,6 +2,7 @@ import {useCallback,useEffect,useState} from 'react';
 import {BellRing,CheckCircle2,Monitor,Smartphone,RefreshCw,Trash2,Send,ShieldCheck,AlertTriangle} from 'lucide-react';
 import {useAuth} from '../../contexts/AuthContext';
 import {supabase} from '../../lib/supabase';
+import DesktopAppInstallCard from '../../components/dashboard/DesktopAppInstallCard';
 
 type Device={id:string;user_agent:string|null;device_label:string|null;created_at:string;updated_at:string;last_test_accepted_at:string|null;last_test_confirmed_at:string|null;endpoint:string};
 type Permission='granted'|'denied'|'default'|'unsupported';
@@ -163,12 +164,13 @@ export default function SettingsPage(){
    {testMessage&&<p role="status" className="mt-4 rounded-lg border border-[#c8a96e]/25 p-3 text-sm text-[#ebd3a4]">{testMessage}</p>}
    <p className="mt-4 text-xs text-[#bdb0a0]">A push-provider acceptance is not proof the notification appeared. Only mark receipt after seeing an alert on the selected device. Signing out unregisters this browser's push subscription.</p>
   </section>
+  <DesktopAppInstallCard/>
   <section className={label+' mt-5'}>
    <h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><ShieldCheck size={19}/> App & Browser Setup</h2>
    <div className="mt-3 space-y-3 text-sm text-[#d6c4aa]">
     <p><strong>iPhone or iPad:</strong> Open the CRM in Safari, Share → Add to Home Screen, launch the installed app, then enable notifications here. An ordinary Safari tab cannot receive iOS web push.</p>
     <p><strong>Android:</strong> Use a current supported browser, allow notifications, and keep browser notifications enabled in Android settings. Installing the CRM may improve access.</p>
-    <p><strong>Windows, macOS or Linux:</strong> Use current Chrome, Edge or Firefox where supported. Safari on macOS also supports web push on supported versions. Allow notifications in both the browser and operating system.</p>
+    <p><strong>Windows, macOS or Linux:</strong> Use a current browser with web push support. Chrome and Edge support standalone app installation on desktop; Safari on supported macOS versions offers Add to Dock. Firefox desktop supports push where available but not a standard native PWA install prompt. Allow notifications in both the browser and operating system.</p>
     <p>For every additional device, sign in to the CRM, open Settings and repeat registration and the test.</p>
    </div>
   </section>
