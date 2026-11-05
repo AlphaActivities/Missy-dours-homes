@@ -19,7 +19,6 @@ import LeadsPage from './pages/dashboard/LeadsPage';
 import ConversationsPage from './pages/dashboard/ConversationsPage';
 import OwnerAdminPage from './pages/dashboard/OwnerAdminPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
-import NotificationsPage from './pages/dashboard/NotificationsPage';
 import ConciergePrivateQAPage from './pages/dashboard/ConciergePrivateQAPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
@@ -172,7 +171,6 @@ export default function App() {
           <Route path="/dashboard/conversations" element={<ProtectedRoute><ConversationsPage /></ProtectedRoute>} />
           <Route path="/dashboard/admin" element={<ProtectedRoute><OwnerAdminPage /></ProtectedRoute>} />
           <Route path="/dashboard/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/dashboard/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/dashboard/concierge-qa" element={<ProtectedRoute><ConciergePrivateQAPage /></ProtectedRoute>} />
         </Route>
       </Routes>
