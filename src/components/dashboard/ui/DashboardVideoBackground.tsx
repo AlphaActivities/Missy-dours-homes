@@ -1,98 +1,94 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * Cinematic CRM wallpaper. Native autoplay + explicit recovery are both needed
- * after a PWA resumes from the iOS app switcher or an interrupted media load.
- * Reduced Motion and Data Saver remain honored; never force playback on iOS.
+ * Cinematic dashboard background.
+ *
+ * - Reuses the existing homepage hero video asset (single public file,
+ *   HTTP-cached, not duplicated).
+ * - Plays on both desktop and mobile when allowed.
+ * - Exactly 60% black overlay over the video.
+ * - pointer-events: none so it never blocks interaction.
+ * - Pauses while the tab is hidden; resumes on visibility.
+ * - Respects prefers-reduced-motion and data-saving preferences
+ *   by falling back to the static dark base.
+ * - Fixed viewport coverage (inset:0; object-fit:cover) so the same
+ *   wallpaper spans the entire dashboard, including the sidebar.
  */
 export default function DashboardVideoBackground() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoEnabled,setVideoEnabled] = useState(true);
+  const [videoEnabled, setVideoEnabled] = useState(true);
   useEffect(() => {
-    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const connection=(navigator as Navigator&{connection?:{saveData?:boolean;effectiveType?:string}}).connection;
-    const conserve=()=>Boolean(connection?.saveData || connection?.effectiveType==='slow-2g' || connection?.effectiveType==='2g');
-    const video=videoRef.current;
-    if(!video)return;
-    let lastAttempt=0;
-    let retry:ReturnType<typeof setTimeout>|undefined;
-    let destroyed=false;
-    let initialSeek=false;
-    const enabled=()=>!motion.matches&&!conserve();
-    const shouldPlay=()=>enabled()&&!document.hidden;
-    const attempt=()=>{
-      if(destroyed||!shouldPlay())return;
-      if(!video.paused&&!video.ended)return;
-      const now=Date.now();
-      if(now-lastAttempt<850)return;
-      lastAttempt=now;
-      video.muted=true;
-      video.defaultMuted=true;
-      void video.play().catch(()=>{
-        // iOS may block autoplay in Low Power Mode; recover on next user gesture.
-        // Do not loop failed play() calls or interfere with staff interactions.
-      });
+    const mqMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // Best-effort data-saver detection (Connection API is not everywhere).
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    const isDataSaving = !!(conn && (conn.saveData || conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g'));
+
+    const enabled = !mqMotion.matches && !isDataSaving;
+    setVideoEnabled(enabled);
+
+    if (!enabled) return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    const shouldPlay = () => !mqMotion.matches && !document.hidden;
+
+    // Seek once on initial load only. Native loop still repeats from the video's real start.
+    const seekInitial = () => {
+      if (video.readyState < 1 || !Number.isFinite(video.duration) || video.duration <= 1) return;
+      if (video.currentTime < 0.5) video.currentTime = 1;
     };
-    const seekOnce=()=>{
-      if(initialSeek||video.readyState<1||!Number.isFinite(video.duration)||video.duration<=1)return;
-      initialSeek=true;
-      if(video.currentTime<0.5){
-        try{video.currentTime=1;}catch{/* A browser may disallow seeking before buffering. */}
+    video.addEventListener('loadedmetadata', seekInitial);
+    seekInitial();
+
+    const sync = () => {
+      if (!video) return;
+      if (shouldPlay()) {
+        void video.play().catch(() => { /* autoplay may be blocked; ignore */ });
+      } else {
+        video.pause();
       }
     };
-    const sync=()=>{
-      setVideoEnabled(enabled());
-      if(shouldPlay()){
-        seekOnce();
-        attempt();
-      }else video.pause();
+
+    const onVisibility = () => sync();
+    const onMotion = () => {
+      if (mqMotion.matches) video?.pause();
+      else sync();
     };
-    const resume=()=>{
-      if(retry)clearTimeout(retry);
-      retry=setTimeout(sync,150);
-    };
-    const resumeFromInteraction=()=>{
-      if(shouldPlay())attempt();
-    };
-    const onMotion=()=>sync();
-    const onPageShow=()=>resume();
-    const onError=()=>{ /* Keep the original source; future focus/page-show may recover. */ };
-    video.addEventListener('loadedmetadata',seekOnce);
-    video.addEventListener('canplay',resume);
-    video.addEventListener('stalled',resume);
-    video.addEventListener('error',onError);
-    document.addEventListener('visibilitychange',sync);
-    window.addEventListener('pageshow',onPageShow);
-    window.addEventListener('focus',resume);
-    window.addEventListener('pointerdown',resumeFromInteraction,{passive:true});
-    window.addEventListener('keydown',resumeFromInteraction);
-    motion.addEventListener('change',onMotion);
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', onVisibility);
+    window.addEventListener('focus', onVisibility);
+    mqMotion.addEventListener('change', onMotion);
+
     sync();
-    return()=>{
-      destroyed=true;
-      if(retry)clearTimeout(retry);
-      video.removeEventListener('loadedmetadata',seekOnce);
-      video.removeEventListener('canplay',resume);
-      video.removeEventListener('stalled',resume);
-      video.removeEventListener('error',onError);
-      document.removeEventListener('visibilitychange',sync);
-      window.removeEventListener('pageshow',onPageShow);
-      window.removeEventListener('focus',resume);
-      window.removeEventListener('pointerdown',resumeFromInteraction);
-      window.removeEventListener('keydown',resumeFromInteraction);
-      motion.removeEventListener('change',onMotion);
+
+    return () => {
+      video.removeEventListener('loadedmetadata', seekInitial);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', onVisibility);
+      window.removeEventListener('focus', onVisibility);
+      mqMotion.removeEventListener('change', onMotion);
     };
-  },[]);
+  }, []);
+
   return (
-    <div className="ds-dash-bg fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      <video
-        ref={videoRef}
-        src="/videos/herobackground.mp4"
-        muted autoPlay loop playsInline preload="auto"
-        className="ds-dash-bg-video h-full w-full object-cover"
-        style={{visibility:videoEnabled?'visible':'hidden'}}
-      />
-      <div className="absolute inset-0 ds-dash-overlay"/>
+    <div
+      className="ds-dash-bg fixed inset-0 z-0 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
+      {videoEnabled && (
+        <video
+          ref={videoRef}
+          src="/videos/herobackground.mp4"
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="ds-dash-bg-video w-full h-full object-cover"
+        />
+      )}
+      <div className="absolute inset-0 ds-dash-overlay" />
     </div>
   );
 }
