@@ -10,13 +10,27 @@ self.addEventListener('push', event => {
     : payload.kind === 'handoff_claimed'
       ? 'Missy has taken over a concierge conversation.'
       : 'A visitor is waiting for Missy’s team.';
-  event.waitUntil(self.registration.showNotification(title, {
-    body,
-    tag: 'missy-crm-' + (typeof payload.id === 'string' ? payload.id.slice(0, 50) : 'attention'),
-    icon: '/images/Favicons/web-app-manifest-192x192.png',
-    badge: '/images/Favicons/favicon-96x96.png',
-    data: { url: '/dashboard/conversations' }
-  }));
+  event.waitUntil((async () => {
+    // Test pushes do not increment the business-work badge.
+    // The server supplies an authoritative count for real concierge events.
+    if(payload.kind !== 'device_test' && Number.isFinite(payload.attention_count)) {
+      try {
+        const count=Math.max(0,Math.floor(payload.attention_count));
+        if(count>0 && typeof self.navigator.setAppBadge==='function')await self.navigator.setAppBadge(count);
+        else if(count===0 && typeof self.navigator.clearAppBadge==='function')await self.navigator.clearAppBadge();
+      } catch { /* iOS/desktop badge support varies; never block a notification. */ }
+    }
+    await self.registration.showNotification(title, {
+      body,
+      // Re-use the task tag for new-handoff, claim and escalation updates.
+      // This avoids stacking several native banners for one visitor request.
+      tag: 'missy-crm-' + (typeof payload.id === 'string' ? payload.id.slice(0, 50) : 'attention'),
+      renotify: false,
+      icon: '/images/Favicons/web-app-manifest-192x192.png',
+      badge: '/images/Favicons/favicon-96x96.png',
+      data: { url: '/dashboard/conversations' }
+    });
+  })());
 });
 self.addEventListener('notificationclick', event => {
   event.notification.close();
