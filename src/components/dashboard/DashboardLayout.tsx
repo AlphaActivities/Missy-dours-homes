@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
-import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle, Settings2, ShieldCheck } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle, Settings2, ShieldCheck, BellRing } from 'lucide-react';
+import {CrmActivityProvider,useCrmActivity} from './CrmActivityContext';
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
 import ConciergeSignatureEntrance from './ui/ConciergeSignatureEntrance';
 import { supabase } from '../../lib/supabase';
@@ -52,8 +53,9 @@ function UserAvatar({
   );
 }
 
-export default function DashboardLayout() {
+function DashboardLayoutInner() {
   const { signOut, avatarUrl, user } = useAuth();
+  const {unreadCount,attentionCount}=useCrmActivity();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isLoginRoute = pathname === '/dashboard/login';
@@ -245,6 +247,10 @@ export default function DashboardLayout() {
               )}
             </NavLink>
           ))}
+          <button type="button" onClick={()=>{navigate('/dashboard/settings#crm-activity');closeSidebar();}} className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#c8a96e]/20 px-3 py-2.5 text-sm text-[#d6bb8b]" aria-label="Open notification and activity history">
+            <span className="flex items-center gap-2"><BellRing size={16}/> Activity Center</span>
+            <span className="flex items-center gap-1">{unreadCount>0&&<span className="rounded-full bg-[#c8a96e]/20 px-2 py-0.5 text-xs" title="Unread activity">{unreadCount>99?'99+':unreadCount}</span>}{attentionCount>0&&<span className="rounded-full bg-[#672c21] px-2 py-0.5 text-xs text-[#f1ccb2]" title="Unresolved work">{attentionCount>99?'99+':attentionCount}</span>}</span>
+          </button>
         </nav>
 
         {/* Sidebar: User section */}
@@ -321,6 +327,7 @@ export default function DashboardLayout() {
             </span>
           </div>
 
+          <button type="button" onClick={()=>navigate('/dashboard/settings#crm-activity')} aria-label={'Activity Center: '+unreadCount+' unread alerts, '+attentionCount+' items need attention'} className="relative rounded-lg p-2 text-[#e1c18a]"><BellRing size={20}/>{unreadCount>0&&<span className="absolute -right-1 -top-1 rounded-full bg-[#7a3227] px-1.5 text-[10px] text-white">{unreadCount>99?'99+':unreadCount}</span>}</button>
           {/* Avatar — only shown when a real Google profile photo exists */}
           {avatarUrl && <UserAvatar avatarUrl={avatarUrl} size={32} />}
         </header>
@@ -335,3 +342,5 @@ export default function DashboardLayout() {
     </ToastProvider>
   );
 }
+
+export default function DashboardLayout(){return <CrmActivityProvider><DashboardLayoutInner/></CrmActivityProvider>;}
