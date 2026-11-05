@@ -3,9 +3,7 @@ import {BellRing,CheckCircle2,Monitor,Smartphone,RefreshCw,Trash2,Send,ShieldChe
 import {useAuth} from '../../contexts/AuthContext';
 import {supabase} from '../../lib/supabase';
 import DesktopAppInstallCard from '../../components/dashboard/DesktopAppInstallCard';
-import CrmActivityCenter from '../../components/dashboard/CrmActivityCenter';
 import CrmNotificationPreferences from '../../components/dashboard/CrmNotificationPreferences';
-import {useLocation} from 'react-router-dom';
 
 type Device={id:string;user_agent:string|null;device_label:string|null;created_at:string;updated_at:string;last_test_accepted_at:string|null;last_test_confirmed_at:string|null;endpoint:string};
 type Permission='granted'|'denied'|'default'|'unsupported';
@@ -19,8 +17,6 @@ const isIos=()=>/iPhone|iPad|iPod/.test(navigator.userAgent);
 const isStandalone=()=>window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as Navigator & {standalone?:boolean}).standalone);
 const stamped=(v:string|null)=>v?new Date(v).toLocaleString():'Not yet';
 export default function SettingsPage(){
- const location=useLocation();
- useEffect(()=>{if(location.hash==='#crm-activity'){const timeout=window.setTimeout(()=>document.getElementById('crm-activity')?.scrollIntoView({behavior:'smooth',block:'start'}),150);return()=>window.clearTimeout(timeout);}},[location.hash]);
  const {user}=useAuth();
  const email=user?.email?.toLowerCase()??'';
  const [permission,setPermission]=useState<Permission>('unsupported');
@@ -134,9 +130,9 @@ export default function SettingsPage(){
  };
  const label='rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 p-4 sm:p-5';
  return <main className="mx-auto max-w-5xl px-4 py-7 text-[#ecdbc2] md:px-8 md:py-9">
-  <div className="mb-6 flex items-center gap-3"><BellRing className="text-[#d7b878]" size={23}/><div><h1 className="font-serif text-2xl">Settings</h1><p className="mt-1 text-sm text-[#bdb0a0]">Notifications, devices and app preferences</p></div></div>
+  <div className="mb-6 flex items-center gap-3"><BellRing className="text-[#d7b878]" size={23}/><div><h1 className="font-serif text-2xl">Settings</h1><p className="mt-1 text-sm text-[#bdb0a0]">Device registration, notification preferences and app setup</p></div></div>
   <section className={label}>
-   <h2 className="font-serif text-xl text-[#edcfa0]">Notification Center</h2>
+   <h2 className="font-serif text-xl text-[#edcfa0]">Push Notifications</h2>
    <p className="mt-2 text-sm text-[#c7b9a6]">Get new concierge handoffs and urgent callback alerts on your registered devices. Customize alerts in Notification Preferences below.</p>
    <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
     <div>Browser permission: <strong>{permission==='granted'?'Granted':permission==='denied'?'Blocked':permission==='default'?'Not requested':'Unsupported'}</strong></div>
@@ -170,7 +166,6 @@ export default function SettingsPage(){
    <p className="mt-4 text-xs text-[#bdb0a0]">A push-provider acceptance is not proof the notification appeared. Only mark receipt after seeing an alert on the selected device. Signing out unregisters this browser's push subscription.</p>
   </section>
   <CrmNotificationPreferences/>
-  <CrmActivityCenter/>
   <DesktopAppInstallCard/>
   <section className={label+' mt-5'}>
    <h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><ShieldCheck size={19}/> App & Browser Setup</h2>
