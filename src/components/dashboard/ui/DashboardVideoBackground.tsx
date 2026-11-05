@@ -1,165 +1,89 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * Private CRM cinematic wallpaper.
+ * Cinematic dashboard background.
  *
- * Keep the actual <video> mounted while the executive entrance plays.
- * Only reveal it after we have seen the clock advance past the 1-second seek,
- * so iOS never exposes its native paused-video play glyph on the dashboard.
+ * - Reuses the existing homepage hero video asset (single public file,
+ *   HTTP-cached, not duplicated).
+ * - Plays on both desktop and mobile when allowed.
+ * - Exactly 60% black overlay over the video.
+ * - pointer-events: none so it never blocks interaction.
+ * - Pauses while the tab is hidden; resumes on visibility.
+ * - Respects prefers-reduced-motion and data-saving preferences
+ *   by falling back to the static dark base.
+ * - Fixed viewport coverage (inset:0; object-fit:cover) so the same
+ *   wallpaper spans the entire dashboard, including the sidebar.
  */
 export default function DashboardVideoBackground() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoEnabled, setVideoEnabled] = useState(true);
-  const [moving, setMoving] = useState(false);
-
   useEffect(() => {
+    const mqMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // Best-effort data-saver detection (Connection API is not everywhere).
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    const isDataSaving = !!(conn && (conn.saveData || conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g'));
+
+    const enabled = !mqMotion.matches && !isDataSaving;
+    setVideoEnabled(enabled);
+
+    if (!enabled) return;
+
     const video = videoRef.current;
     if (!video) return;
 
-    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const connection = (navigator as Navigator & {
-      connection?: { saveData?: boolean; effectiveType?: string };
-    }).connection;
-    const saveData = Boolean(connection?.saveData || connection?.effectiveType === '2g' || connection?.effectiveType === 'slow-2g');
-    const allowed = () => !motion.matches && !saveData;
-    const shouldPlay = () => allowed() && !document.hidden;
+    const shouldPlay = () => !mqMotion.matches && !document.hidden;
 
-    let disposed = false;
-    let initialSeekFinished = false;
-    let playPending = false;
-    let lastPlayAttempt = 0;
-    let lastMediaTime = -1;
-    let lastSampleAt = 0;
-    let resumeTimer: ReturnType<typeof setTimeout> | undefined;
-
-    // The browser may begin native muted autoplay before loadedmetadata;
-    // conceal that pre-seek activity until the first video frame has advanced.
-    const seekStart = () => {
-      if (initialSeekFinished || video.readyState < HTMLMediaElement.HAVE_METADATA) return;
-      if (!Number.isFinite(video.duration) || video.duration <= 1.2) return;
-      initialSeekFinished = true;
-      if (video.currentTime < 0.8) {
-        try { video.currentTime = 1; } catch { initialSeekFinished = false; }
-      }
-      lastMediaTime = -1;
-      setMoving(false);
+    // Seek once on initial load only. Native loop still repeats from the video's real start.
+    const seekInitial = () => {
+      if (video.readyState < 1 || !Number.isFinite(video.duration) || video.duration <= 1) return;
+      if (video.currentTime < 0.5) video.currentTime = 1;
     };
-
-    const attemptPlay = () => {
-      if (disposed || !shouldPlay() || playPending || (!video.paused && !video.ended)) return;
-      if (Date.now() - lastPlayAttempt < 450) return;
-      lastPlayAttempt = Date.now();
-      video.muted = true;
-      video.defaultMuted = true;
-      video.playsInline = true;
-      video.controls = false;
-      seekStart();
-      playPending = true;
-      void video.play().catch(() => {
-        // A blocked autoplay cannot be overridden in iOS Low Power Mode.
-        // Remain dark and retry when media becomes ready or the user returns.
-        setMoving(false);
-      }).finally(() => { playPending = false; });
-    };
-
-    const checkProgress = () => {
-      if (disposed || !shouldPlay() || video.paused || video.seeking) return;
-      // Do not show the video based on the 'playing' event alone: on iOS that
-      // event can fire while the displayed frame is still frozen.
-      const current = video.currentTime;
-      if (!initialSeekFinished || current < 1.02) return;
-      const now = performance.now();
-      if (lastMediaTime >= 1 && current > lastMediaTime + 0.025 && now >= lastSampleAt) {
-        setMoving(true);
-      }
-      lastMediaTime = current;
-      lastSampleAt = now;
-    };
-
-    const scheduleResume = () => {
-      if (resumeTimer) clearTimeout(resumeTimer);
-      if (!shouldPlay()) return;
-      resumeTimer = setTimeout(() => {
-        seekStart();
-        attemptPlay();
-        checkProgress();
-      }, 50);
-    };
+    video.addEventListener('loadedmetadata', seekInitial);
+    seekInitial();
 
     const sync = () => {
-      setVideoEnabled(allowed());
-      if (!shouldPlay()) {
-        video.pause();
-        setMoving(false);
+      if (!video) return;
+      if (shouldPlay()) {
+        void video.play().catch(() => { /* autoplay may be blocked; ignore */ });
       } else {
-        seekStart();
-        attemptPlay(); // immediate — do not delay until the loading screen ends
-        scheduleResume();
+        video.pause();
       }
     };
-    const onReady = () => { seekStart(); scheduleResume(); };
-    const onPause = () => { if (!document.hidden && allowed()) { setMoving(false); scheduleResume(); } };
-    const onGesture = () => { if (shouldPlay()) attemptPlay(); };
-    const onMotion = () => sync();
 
-    video.muted = true;
-    video.defaultMuted = true;
-    video.controls = false;
-    video.addEventListener('loadedmetadata', onReady);
-    video.addEventListener('loadeddata', onReady);
-    video.addEventListener('canplay', onReady);
-    video.addEventListener('seeked', onReady);
-    video.addEventListener('playing', checkProgress);
-    video.addEventListener('timeupdate', checkProgress);
-    video.addEventListener('pause', onPause);
-    video.addEventListener('stalled', scheduleResume);
-    document.addEventListener('visibilitychange', sync);
-    window.addEventListener('pageshow', sync);
-    window.addEventListener('focus', sync);
-    window.addEventListener('pointerdown', onGesture, { passive: true });
-    window.addEventListener('touchstart', onGesture, { passive: true });
-    motion.addEventListener('change', onMotion);
+    const onVisibility = () => sync();
+    const onMotion = () => {
+      if (mqMotion.matches) video?.pause();
+      else sync();
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    mqMotion.addEventListener('change', onMotion);
+
     sync();
 
     return () => {
-      disposed = true;
-      if (resumeTimer) clearTimeout(resumeTimer);
-      video.removeEventListener('loadedmetadata', onReady);
-      video.removeEventListener('loadeddata', onReady);
-      video.removeEventListener('canplay', onReady);
-      video.removeEventListener('seeked', onReady);
-      video.removeEventListener('playing', checkProgress);
-      video.removeEventListener('timeupdate', checkProgress);
-      video.removeEventListener('pause', onPause);
-      video.removeEventListener('stalled', scheduleResume);
-      document.removeEventListener('visibilitychange', sync);
-      window.removeEventListener('pageshow', sync);
-      window.removeEventListener('focus', sync);
-      window.removeEventListener('pointerdown', onGesture);
-      window.removeEventListener('touchstart', onGesture);
-      motion.removeEventListener('change', onMotion);
+      video.removeEventListener('loadedmetadata', seekInitial);
+      document.removeEventListener('visibilitychange', onVisibility);
+      mqMotion.removeEventListener('change', onMotion);
     };
   }, []);
 
   return (
-    <div className="ds-dash-bg fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      <video
-        ref={videoRef}
-        src="/videos/herobackground.mp4"
-        autoPlay
-        muted
-        playsInline
-        loop
-        controls={false}
-        disablePictureInPicture
-        disableRemotePlayback
-        preload="auto"
-        className="ds-dash-bg-video h-full w-full object-cover"
-        style={{
-          opacity: videoEnabled && moving ? 1 : 0,
-          pointerEvents: 'none',
-        }}
-      />
+    <div
+      className="ds-dash-bg fixed inset-0 z-0 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
+      {videoEnabled && (
+        <video
+          ref={videoRef}
+          src="/videos/herobackground.mp4"
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="ds-dash-bg-video w-full h-full object-cover"
+        />
+      )}
       <div className="absolute inset-0 ds-dash-overlay" />
     </div>
   );
