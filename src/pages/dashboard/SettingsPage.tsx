@@ -3,7 +3,6 @@ import {BellRing,CheckCircle2,Monitor,Smartphone,RefreshCw,Trash2,Send,ShieldChe
 import {useAuth} from '../../contexts/AuthContext';
 import {supabase} from '../../lib/supabase';
 import DesktopAppInstallCard from '../../components/dashboard/DesktopAppInstallCard';
-import CrmNotificationPreferences from '../../components/dashboard/CrmNotificationPreferences';
 
 type Device={id:string;user_agent:string|null;device_label:string|null;created_at:string;updated_at:string;last_test_accepted_at:string|null;last_test_confirmed_at:string|null;endpoint:string};
 type Permission='granted'|'denied'|'default'|'unsupported';
@@ -130,10 +129,10 @@ export default function SettingsPage(){
  };
  const label='rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 p-4 sm:p-5';
  return <main className="mx-auto max-w-5xl px-4 py-7 text-[#ecdbc2] md:px-8 md:py-9">
-  <div className="mb-6 flex items-center gap-3"><BellRing className="text-[#d7b878]" size={23}/><div><h1 className="font-serif text-2xl">Settings</h1><p className="mt-1 text-sm text-[#bdb0a0]">Device registration, notification preferences and app setup</p></div></div>
+  <div className="mb-6 flex items-center gap-3"><BellRing className="text-[#d7b878]" size={23}/><div><h1 className="font-serif text-2xl">Settings</h1><p className="mt-1 text-sm text-[#bdb0a0]">Notifications, devices and app preferences</p></div></div>
   <section className={label}>
-   <h2 className="font-serif text-xl text-[#edcfa0]">Push Notifications</h2>
-   <p className="mt-2 text-sm text-[#c7b9a6]">Get new concierge handoffs and urgent callback alerts on your registered devices. Customize alerts in Notification Preferences below.</p>
+   <h2 className="font-serif text-xl text-[#edcfa0]">Notification Center</h2>
+   <p className="mt-2 text-sm text-[#c7b9a6]">Get new concierge handoffs and urgent callback alerts on your registered devices.</p>
    <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
     <div>Browser permission: <strong>{permission==='granted'?'Granted':permission==='denied'?'Blocked':permission==='default'?'Not requested':'Unsupported'}</strong></div>
     <div>Current device: <strong>{subscribed?'Registered':'Not registered'}</strong></div>
@@ -165,7 +164,6 @@ export default function SettingsPage(){
    {testMessage&&<p role="status" className="mt-4 rounded-lg border border-[#c8a96e]/25 p-3 text-sm text-[#ebd3a4]">{testMessage}</p>}
    <p className="mt-4 text-xs text-[#bdb0a0]">A push-provider acceptance is not proof the notification appeared. Only mark receipt after seeing an alert on the selected device. Signing out unregisters this browser's push subscription.</p>
   </section>
-  <CrmNotificationPreferences/>
   <DesktopAppInstallCard/>
   <section className={label+' mt-5'}>
    <h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><ShieldCheck size={19}/> App & Browser Setup</h2>
@@ -176,6 +174,6 @@ export default function SettingsPage(){
     <p>For every additional device, sign in to the CRM, open Settings and repeat registration and the test.</p>
    </div>
   </section>
-  <p className="mt-5 text-xs text-[#aaa092]">Desktop and iOS notification sounds and app badges depend on platform support. Activity history and actionable-work counts remain available in this dashboard.</p>
+  <p className="mt-5 text-xs text-[#aaa092]">Per-alert notification preferences are planned for a later update. Current handoff and escalation alerts are delivered to registered staff devices.</p>
  </main>;
 }
