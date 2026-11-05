@@ -11,9 +11,9 @@ import { clearUserNoteDrafts } from '../../lib/crmNoteDrafts';
 
 const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
+  { to: '/dashboard/notifications', label: 'Notifications', icon: BellRing, end: true },
   { to: '/dashboard/leads', label: 'Leads',    icon: Users,            end: false },
   { to: '/dashboard/conversations', label: 'Conversations', icon: MessageCircle, end: false },
-  { to: '/dashboard/notifications', label: 'Notifications', icon: BellRing, end: true },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings2, end: true },
   { to: '/dashboard/admin', label: 'Admin', icon: ShieldCheck, end: true, ownerOnly: true },
 ];
@@ -315,9 +315,32 @@ function DashboardLayoutInner() {
           </button>
         </header>
 
-        {/* Page */}
+        {/* Page: retain Overview's own 110ms card stagger; apply matching
+            section entrance timing to the other dashboard routes. */}
         <main className="flex-1 overflow-y-auto animate-ds-fade-in">
-          <Outlet />
+          <style>{`
+            @keyframes crmSectionEnter {
+              from { opacity: 0; transform: translate3d(0, 12px, 0); }
+              to { opacity: 1; transform: translate3d(0, 0, 0); }
+            }
+            .ds-crm-page-stagger > main > :nth-child(-n+12) {
+              animation: crmSectionEnter 420ms cubic-bezier(.22,1,.36,1) both;
+            }
+            .ds-crm-page-stagger > main > :nth-child(1) {animation-delay:0ms}
+            .ds-crm-page-stagger > main > :nth-child(2) {animation-delay:110ms}
+            .ds-crm-page-stagger > main > :nth-child(3) {animation-delay:220ms}
+            .ds-crm-page-stagger > main > :nth-child(4) {animation-delay:330ms}
+            .ds-crm-page-stagger > main > :nth-child(5) {animation-delay:440ms}
+            .ds-crm-page-stagger > main > :nth-child(6) {animation-delay:550ms}
+            .ds-crm-page-stagger > main > :nth-child(7) {animation-delay:660ms}
+            .ds-crm-page-stagger > main > :nth-child(n+8) {animation-delay:770ms}
+            @media (prefers-reduced-motion: reduce) {
+              .ds-crm-page-stagger > main > * {animation:none!important;}
+            }
+          `}</style>
+          <div key={pathname} className={pathname==='/dashboard'?'':'ds-crm-page-stagger'}>
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
