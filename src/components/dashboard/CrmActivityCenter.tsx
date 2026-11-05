@@ -10,6 +10,10 @@ export default function CrmActivityCenter(){
  const [working,setWorking]=useState(false);
  const [notice,setNotice]=useState('');
  const visible=items.filter(x=>showArchived?Boolean(x.archived_at):!x.archived_at);
+ const hideNotice=(item:CrmActivity)=>{
+  if(!window.confirm('Hide this notification from your activity list? The related lead, callback or conversation will NOT be archived, deleted, or completed.'))return;
+  void execute(()=>archive(item.id));
+ };
  const execute=async(task:()=>Promise<void>)=>{
   if(working)return;setWorking(true);setNotice('');
   try{await task();}catch(e){setNotice(e instanceof Error?e.message:'Unable to update activity');}
@@ -21,10 +25,10 @@ export default function CrmActivityCenter(){
    <div className="rounded-lg border border-[#c8a96e]/20 bg-black/30 p-3"><p className="text-xs text-[#bfb09a]">Needs attention</p><p className="mt-1 font-serif text-3xl text-[#ecd19d] tabular-nums">{attentionCount}</p><p className="mt-1 text-[11px] text-[#aa9e8b]">{attentionBreakdown.new_leads} new leads · {attentionBreakdown.open_tasks} open tasks · {attentionBreakdown.waiting_conversations} waiting chats</p></div>
    <div className="rounded-lg border border-[#c8a96e]/20 bg-black/30 p-3"><p className="text-xs text-[#bfb09a]">Unread activity</p><p className="mt-1 font-serif text-3xl text-[#ecd19d] tabular-nums">{unreadCount}</p><p className="mt-1 text-[11px] text-[#aa9e8b]">Only your account's read status</p></div>
   </div>
-  <p className="mt-3 text-xs text-[#bfb09a]">The installed app badge represents unresolved work, not unread banners. Reading or archiving a notice never completes its associated lead or callback.</p>
+  <p className="mt-3 text-xs text-[#bfb09a]">The installed app badge represents unresolved work, not unread banners. Reading or hiding a notice never archives or completes its associated lead or callback.</p>
   <div className="mt-4 flex flex-wrap gap-2">
    <button type="button" disabled={working||unreadCount===0} onClick={()=>void execute(markAllRead)} className="inline-flex items-center gap-2 rounded-lg border border-[#c8a96e]/35 px-3 py-2 text-xs text-[#edce93] disabled:opacity-40"><CheckCheck size={15}/> Mark all read</button>
-   <button type="button" onClick={()=>setShowArchived(x=>!x)} className="rounded-lg border border-white/20 px-3 py-2 text-xs">{showArchived?'Show current':'View archived'}</button>
+   <button type="button" onClick={()=>setShowArchived(x=>!x)} className="rounded-lg border border-white/20 px-3 py-2 text-xs">{showArchived?'Show current':'Hidden notices'}</button>
   </div>
   {notice&&<p role="alert" className="mt-3 text-sm text-amber-200">{notice}</p>}
   {error&&<p role="alert" className="mt-3 text-xs text-amber-200">{error}</p>}
@@ -36,7 +40,7 @@ export default function CrmActivityCenter(){
     <div className="mt-3 flex flex-wrap items-center gap-2">
      <Link to={safeTarget(item.target_path)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}} className="inline-flex items-center gap-1 rounded-md border border-[#c8a96e]/40 px-3 py-1.5 text-xs text-[#ecd09b]"><ExternalLink size={13}/> Open</Link>
      {!item.read_at&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))} className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40"><Check size={13}/> Mark read</button>}
-     <button type="button" disabled={working} onClick={()=>void execute(()=>item.archived_at?restore(item.id):archive(item.id))} className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">{item.archived_at?<RotateCcw size={13}/>:<Archive size={13}/>} {item.archived_at?'Restore':'Archive'}</button>
+     <button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)} className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">{item.archived_at?<RotateCcw size={13}/>:<Archive size={13}/>} {item.archived_at?'Restore notice':'Hide notice'}</button>
     </div>
    </article>)}
   </div>
