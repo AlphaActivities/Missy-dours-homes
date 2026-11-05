@@ -100,7 +100,8 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const markAllRead=async()=>{const r=await supabase.rpc('crm_mark_all_activity_read');if(r.error)throw r.error;const now=new Date().toISOString();setItems(old=>old.map(x=>({...x,read_at:x.read_at??now})));};
  const setPreference=async(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>{
   if(name==='in_app_sound'&&value)await unlockCrmChime();
-  const r=await supabase.from('crm_notification_preferences').upsert({staff_email:email,[name]:value,updated_at:new Date().toISOString()},{onConflict:'staff_email'});
+  // Update just the chosen setting; upsert could reset unrelated options to defaults.
+  const r=await supabase.from('crm_notification_preferences').update({[name]:value,updated_at:new Date().toISOString()}).eq('staff_email',email);
   if(r.error)throw r.error;
   setPrefs(old=>({...old,[name]:value}));
  };
