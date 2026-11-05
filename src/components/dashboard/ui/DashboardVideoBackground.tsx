@@ -80,7 +80,7 @@ export default function DashboardVideoBackground() {
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           className="ds-dash-bg-video w-full h-full object-cover"
         />
       )}
