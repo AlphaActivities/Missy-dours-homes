@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
-import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle, Settings2, ShieldCheck, BellRing } from 'lucide-react';
-import {CrmActivityProvider,useCrmActivity} from './CrmActivityContext';
+import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle, Settings2, ShieldCheck } from 'lucide-react';
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
 import ConciergeSignatureEntrance from './ui/ConciergeSignatureEntrance';
 import { supabase } from '../../lib/supabase';
@@ -11,7 +10,6 @@ import { clearUserNoteDrafts } from '../../lib/crmNoteDrafts';
 
 const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
-  { to: '/dashboard/notifications', label: 'Notifications', icon: BellRing, end: true },
   { to: '/dashboard/leads', label: 'Leads',    icon: Users,            end: false },
   { to: '/dashboard/conversations', label: 'Conversations', icon: MessageCircle, end: false },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings2, end: true },
@@ -54,13 +52,11 @@ function UserAvatar({
   );
 }
 
-function DashboardLayoutInner() {
+export default function DashboardLayout() {
   const { signOut, avatarUrl, user } = useAuth();
-  const {unreadCount,attentionCount}=useCrmActivity();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isLoginRoute = pathname === '/dashboard/login';
-  const mobileSection=pathname.startsWith('/dashboard/notifications')?'Notifications':pathname.startsWith('/dashboard/conversations')?'Conversations':pathname.startsWith('/dashboard/leads')?'Leads':pathname.startsWith('/dashboard/settings')?'Settings':pathname.startsWith('/dashboard/admin')?'Admin Dashboard':'Admin Dashboard';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -244,7 +240,7 @@ function DashboardLayoutInner() {
                     size={15}
                     style={{ color: isActive ? 'var(--ds-gold)' : 'var(--ds-text-tertiary)' }}
                   />
-                  <span>{label}</span>{to==='/dashboard/notifications'&&unreadCount>0&&<span className="ml-auto rounded-full bg-[#803a30] px-2 py-0.5 text-[10px] font-semibold text-[#fff1de]" aria-label={unreadCount+' unread notifications'}>{unreadCount>99?'99+':unreadCount}</span>}
+                  <span>{label}</span>
                 </>
               )}
             </NavLink>
@@ -284,63 +280,54 @@ function DashboardLayoutInner() {
 
         {/* Mobile top bar — hidden on login route, which has its own full-screen layout */}
         <header
-          className={`ds-dash-topbar ${isLoginRoute ? 'hidden' : 'lg:hidden'} flex items-center gap-3 px-4 py-4 shrink-0`}
+          className={`ds-dash-topbar ${isLoginRoute ? 'hidden' : 'lg:hidden'} flex items-center justify-between px-4 py-4 shrink-0`}
           style={{
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             boxShadow: '0 1px 0 rgba(255,255,255,0.04)',
           }}
         >
-          <button onClick={() => setSidebarOpen(true)} className="shrink-0 rounded-lg p-1.5 transition-colors duration-150"
-            style={{color:'var(--ds-text-secondary)'}} aria-label="Open sidebar">
-            <Menu size={20}/>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-1.5 rounded-lg transition-colors duration-150"
+            style={{ color: 'var(--ds-text-secondary)' }}
+            aria-label="Open sidebar"
+          >
+            <Menu size={20} />
           </button>
-          {/* Keep a fixed, measurable logo position so the entrance animation has a stable destination. */}
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div data-crm-brand-target className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-              style={{background:'rgba(245,237,220,0.92)',boxShadow:'0 0 0 1px rgba(196,164,106,0.25)'}}>
-              <img src="/images/md-logo.png" alt="Missy Dours" className="h-[25px] w-[25px] object-contain"/>
+
+          <div className="flex items-center gap-2.5">
+            <div
+              data-crm-brand-target
+              className="flex items-center justify-center rounded-lg shrink-0"
+              style={{
+                width: '32px',
+                height: '32px',
+                background: 'rgba(245,237,220,0.92)',
+                boxShadow: '0 0 0 1px rgba(196,164,106,0.25)',
+              }}
+            >
+              <img
+                src="/images/md-logo.png"
+                alt="Missy Dours"
+                className="object-contain"
+                style={{ width: '22px', height: '22px' }}
+              />
             </div>
-            <div className="min-w-0">
-              <p className="truncate text-[9px] font-medium uppercase tracking-[.13em]"
-                style={{color:'var(--ds-text-tertiary)'}}>{mobileSection}</p>
-              <p className="truncate text-[15px] font-semibold leading-tight"
-                style={{fontFamily:"'Playfair Display', Georgia, serif",color:'var(--ds-text-primary)'}}>Missy Dours</p>
-            </div>
+            <span
+              className="text-sm font-semibold tracking-tight"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ds-text-primary)' }}
+            >
+              Missy Dours
+            </span>
           </div>
-          <button type="button" onClick={()=>navigate('/dashboard/notifications')}
-            aria-label={'Notifications: '+unreadCount+' unread alerts, '+attentionCount+' items need attention'}
-            className="relative shrink-0 rounded-lg p-2 text-[#e1c18a]">
-            <BellRing size={21}/>
-            {unreadCount>0&&<span className="absolute -right-1 -top-1 rounded-full bg-[#7a3227] px-1.5 text-[10px] text-white">{unreadCount>99?'99+':unreadCount}</span>}
-          </button>
+
+          {/* Avatar — only shown when a real Google profile photo exists */}
+          {avatarUrl && <UserAvatar avatarUrl={avatarUrl} size={32} />}
         </header>
 
-        {/* Page: retain Overview's own 110ms card stagger; apply matching
-            section entrance timing to the other dashboard routes. */}
+        {/* Page */}
         <main className="flex-1 overflow-y-auto animate-ds-fade-in">
-          <style>{`
-            @keyframes crmSectionEnter {
-              from { opacity: 0; transform: translate3d(0, 12px, 0); }
-              to { opacity: 1; transform: translate3d(0, 0, 0); }
-            }
-            .ds-crm-page-stagger > main > :nth-child(-n+12) {
-              animation: crmSectionEnter 420ms cubic-bezier(.22,1,.36,1) both;
-            }
-            .ds-crm-page-stagger > main > :nth-child(1) {animation-delay:0ms}
-            .ds-crm-page-stagger > main > :nth-child(2) {animation-delay:110ms}
-            .ds-crm-page-stagger > main > :nth-child(3) {animation-delay:220ms}
-            .ds-crm-page-stagger > main > :nth-child(4) {animation-delay:330ms}
-            .ds-crm-page-stagger > main > :nth-child(5) {animation-delay:440ms}
-            .ds-crm-page-stagger > main > :nth-child(6) {animation-delay:550ms}
-            .ds-crm-page-stagger > main > :nth-child(7) {animation-delay:660ms}
-            .ds-crm-page-stagger > main > :nth-child(n+8) {animation-delay:770ms}
-            @media (prefers-reduced-motion: reduce) {
-              .ds-crm-page-stagger > main > * {animation:none!important;}
-            }
-          `}</style>
-          <div key={pathname} className={pathname==='/dashboard'?'':'ds-crm-page-stagger'}>
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </div>
@@ -348,5 +335,3 @@ function DashboardLayoutInner() {
     </ToastProvider>
   );
 }
-
-export default function DashboardLayout(){return <CrmActivityProvider><DashboardLayoutInner/></CrmActivityProvider>;}
