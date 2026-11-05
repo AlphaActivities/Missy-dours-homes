@@ -1,111 +1,78 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * Cinematic dashboard wallpaper. Keep the proven muted video startup untouched;
- * iOS Low Power Mode can refuse play(), so display a luxury static fallback
- * until the video's playback clock is visibly advancing.
+ * Cinematic dashboard background.
+ *
+ * - Reuses the existing homepage hero video asset (single public file,
+ *   HTTP-cached, not duplicated).
+ * - Plays on both desktop and mobile when allowed.
+ * - Exactly 60% black overlay over the video.
+ * - pointer-events: none so it never blocks interaction.
+ * - Pauses while the tab is hidden; resumes on visibility.
+ * - Respects prefers-reduced-motion and data-saving preferences
+ *   by falling back to the static dark base.
+ * - Fixed viewport coverage (inset:0; object-fit:cover) so the same
+ *   wallpaper spans the entire dashboard, including the sidebar.
  */
 export default function DashboardVideoBackground() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoEnabled, setVideoEnabled] = useState(true);
-  const [videoMoving, setVideoMoving] = useState(false);
-
   useEffect(() => {
     const mqMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // Best-effort data-saver detection (Connection API is not everywhere).
     const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
     const isDataSaving = !!(conn && (conn.saveData || conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g'));
+
     const enabled = !mqMotion.matches && !isDataSaving;
     setVideoEnabled(enabled);
 
-    const video = videoRef.current;
-    if (!enabled || !video) return;
+    if (!enabled) return;
 
-    let disposed = false;
-    let lastTime = -1;
-    let lastAttempt = 0;
-    let seekingInitially = false;
-    const shouldPlay = () => !disposed && !mqMotion.matches && !document.hidden;
+    const video = videoRef.current;
+    if (!video) return;
+
+    const shouldPlay = () => !mqMotion.matches && !document.hidden;
+
+    // Seek once on initial load only. Native loop still repeats from the video's real start.
     const seekInitial = () => {
-      if (seekingInitially || video.readyState < 1 || !Number.isFinite(video.duration) || video.duration <= 1) return;
-      seekingInitially = true;
-      if (video.currentTime < 0.5) {
-        try { video.currentTime = 1; } catch { /* Keep playback possible even if seek is rejected. */ }
-      }
+      if (video.readyState < 1 || !Number.isFinite(video.duration) || video.duration <= 1) return;
+      if (video.currentTime < 0.5) video.currentTime = 1;
     };
-    const monitor = () => {
-      if (!shouldPlay() || video.paused || video.seeking) return;
-      const current = video.currentTime;
-      // A successful play() promise does not always mean iOS is rendering
-      // moving frames. Only unveil the video when its time truly progresses.
-      if (lastTime >= 0 && (current > lastTime + 0.035 || current < lastTime - 0.5)) {
-        setVideoMoving(true);
-      }
-      lastTime = current;
-    };
-    const tryPlay = () => {
-      if (!shouldPlay() || !video.paused) return;
-      if (Date.now() - lastAttempt < 500) return;
-      lastAttempt = Date.now();
-      video.muted = true;
-      void video.play().catch(() => { setVideoMoving(false); });
-    };
-    const onVisibility = () => {
+    video.addEventListener('loadedmetadata', seekInitial);
+    seekInitial();
+
+    const sync = () => {
+      if (!video) return;
       if (shouldPlay()) {
-        seekInitial();
-        tryPlay();
+        void video.play().catch(() => { /* autoplay may be blocked; ignore */ });
       } else {
         video.pause();
-        setVideoMoving(false);
-        lastTime = -1;
       }
     };
-    const onPaused = () => { setVideoMoving(false); lastTime = -1; };
-    const onGesture = () => { if (shouldPlay()) tryPlay(); };
 
-    video.controls = false;
-    video.addEventListener('loadedmetadata', seekInitial);
-    video.addEventListener('timeupdate', monitor);
-    video.addEventListener('pause', onPaused);
-    video.addEventListener('ended', onPaused);
-    video.addEventListener('error', onPaused);
+    const onVisibility = () => sync();
+    const onMotion = () => {
+      if (mqMotion.matches) video?.pause();
+      else sync();
+    };
+
     document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('pageshow', onVisibility);
-    window.addEventListener('focus', onVisibility);
-    // A real tap can unlock playback where iOS blocks unattended autoplay.
-    // The wallpaper never creates its own playback controls.
-    window.addEventListener('pointerdown', onGesture, { passive: true });
-    window.addEventListener('touchstart', onGesture, { passive: true });
-    mqMotion.addEventListener('change', onVisibility);
+    mqMotion.addEventListener('change', onMotion);
 
-    seekInitial();
-    onVisibility();
+    sync();
 
     return () => {
-      disposed = true;
       video.removeEventListener('loadedmetadata', seekInitial);
-      video.removeEventListener('timeupdate', monitor);
-      video.removeEventListener('pause', onPaused);
-      video.removeEventListener('ended', onPaused);
-      video.removeEventListener('error', onPaused);
       document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('pageshow', onVisibility);
-      window.removeEventListener('focus', onVisibility);
-      window.removeEventListener('pointerdown', onGesture);
-      window.removeEventListener('touchstart', onGesture);
-      mqMotion.removeEventListener('change', onVisibility);
+      mqMotion.removeEventListener('change', onMotion);
     };
   }, []);
 
   return (
-    <div className="ds-dash-bg fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      {/* Elegant still background in Low Power Mode or whenever playback is blocked. */}
-      <div className="absolute inset-0 bg-[#14110f]" style={{
-        backgroundImage: [
-          'radial-gradient(ellipse at 80% 18%, rgba(168,125,66,.24), transparent 48%)',
-          'radial-gradient(ellipse at 18% 90%, rgba(117,79,39,.18), transparent 58%)',
-          'linear-gradient(145deg, #201a15 0%, #110f0d 49%, #1b1611 100%)',
-        ].join(','),
-      }} />
+    <div
+      className="ds-dash-bg fixed inset-0 z-0 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
       {videoEnabled && (
         <video
           ref={videoRef}
@@ -114,16 +81,10 @@ export default function DashboardVideoBackground() {
           loop
           playsInline
           preload="metadata"
-          controls={false}
-          disablePictureInPicture
-          className="ds-dash-bg-video absolute inset-0 h-full w-full object-cover"
-          style={{ opacity: videoMoving ? 1 : 0, pointerEvents: 'none' }}
+          className="ds-dash-bg-video w-full h-full object-cover"
         />
       )}
       <div className="absolute inset-0 ds-dash-overlay" />
-      {!videoMoving && <div className="absolute inset-0 pointer-events-none" style={{
-        background: 'radial-gradient(ellipse at 75% 24%, rgba(204,164,101,.11), transparent 54%)',
-      }} />}
     </div>
   );
 }
