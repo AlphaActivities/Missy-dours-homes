@@ -14,7 +14,7 @@ const LOGO_SIZE = 124;
 const CENTER_Y = 0.38;
 const MOBILE_START_OFFSET_PX = -30; // Align mobile live entrance with approved iOS launch image.
 const HOLD_MS = 3000;
-const FLIGHT_MS = 1250;
+const FLIGHT_MS = 840;
 const FADE_MS = 320;
 const formatDeviceDate = () => new Intl.DateTimeFormat(navigator.language || 'en-US', {
  weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
@@ -66,9 +66,14 @@ export default function ConciergeSignatureEntrance() {
   // Do not fly until the exact visible destination has been measured.
   const begin=()=>{
    if(!locate()){frame=requestAnimationFrame(begin);return;}
-   start=setTimeout(()=>setPhase('fly'),HOLD_MS);
-   fade=setTimeout(()=>setPhase('leave'),HOLD_MS+FLIGHT_MS+100);
-   finish=setTimeout(()=>{setVisible(false);document.documentElement.dataset.crmEntranceComplete='true';window.dispatchEvent(new Event('missy-crm-entrance-complete'));},HOLD_MS+FLIGHT_MS+100+FADE_MS);
+   // The destination can shift while data and header content hydrate.
+   // Take the final measurement immediately before flight, not 3 seconds earlier.
+   start=setTimeout(()=>{
+    if(!locate()){setVisible(false);document.documentElement.dataset.crmEntranceComplete='true';return;}
+    frame=requestAnimationFrame(()=>setPhase('fly'));
+   },HOLD_MS);
+   fade=setTimeout(()=>setPhase('leave'),HOLD_MS+FLIGHT_MS+130);
+   finish=setTimeout(()=>{setVisible(false);document.documentElement.dataset.crmEntranceComplete='true';window.dispatchEvent(new Event('missy-crm-entrance-complete'));},HOLD_MS+FLIGHT_MS+130+FADE_MS);
   };
   frame=requestAnimationFrame(begin);
   return()=>{cancelAnimationFrame(frame);clearTimeout(start);clearTimeout(fade);clearTimeout(finish);};
@@ -87,8 +92,8 @@ export default function ConciergeSignatureEntrance() {
      className="relative h-[124px] w-[124px] rounded-2xl bg-[#eee2c8] p-2.5 shadow-[0_0_48px_rgba(196,164,106,.24)]"
      initial={{x:0,y:0,scale:1}}
      animate={phase==='welcome'?{x:0,y:0,scale:1}:{x:target.x,y:target.y,scale:target.scale}}
-     transition={{duration:FLIGHT_MS/1000,ease:[.32,.04,.25,1]}}
-     style={{transformOrigin:'center center'}}>
+     transition={{duration:FLIGHT_MS/1000,ease:[.22,1,.36,1]}}
+     style={{transformOrigin:'center center',willChange:'transform'}}>
      <img src="/images/md-logo.png" alt="Missy Dours" decoding="sync" loading="eager" fetchPriority="high"
       className="block h-full w-full object-contain"/>
      {/* Single cinematic champagne-gold glint, clipped to the logo card and completed before flight. */}

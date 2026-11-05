@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/leads', label: 'Leads',    icon: Users,            end: false },
   { to: '/dashboard/conversations', label: 'Conversations', icon: MessageCircle, end: false },
+  { to: '/dashboard/notifications', label: 'Notifications', icon: BellRing, end: true },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings2, end: true },
   { to: '/dashboard/admin', label: 'Admin', icon: ShieldCheck, end: true, ownerOnly: true },
 ];
@@ -59,6 +60,7 @@ function DashboardLayoutInner() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isLoginRoute = pathname === '/dashboard/login';
+  const mobileSection=pathname.startsWith('/dashboard/notifications')?'Notifications':pathname.startsWith('/dashboard/conversations')?'Conversations':pathname.startsWith('/dashboard/leads')?'Leads':pathname.startsWith('/dashboard/settings')?'Settings':pathname.startsWith('/dashboard/admin')?'Admin Dashboard':'Admin Dashboard';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -242,15 +244,11 @@ function DashboardLayoutInner() {
                     size={15}
                     style={{ color: isActive ? 'var(--ds-gold)' : 'var(--ds-text-tertiary)' }}
                   />
-                  <span>{label}</span>
+                  <span>{label}</span>{to==='/dashboard/notifications'&&unreadCount>0&&<span className="ml-auto rounded-full bg-[#803a30] px-2 py-0.5 text-[10px] font-semibold text-[#fff1de]" aria-label={unreadCount+' unread notifications'}>{unreadCount>99?'99+':unreadCount}</span>}
                 </>
               )}
             </NavLink>
           ))}
-          <button type="button" onClick={()=>{navigate('/dashboard/settings#crm-activity');closeSidebar();}} className="mt-4 flex w-full items-center justify-between rounded-xl border border-[#c8a96e]/20 px-3 py-2.5 text-sm text-[#d6bb8b]" aria-label="Open notification and activity history">
-            <span className="flex items-center gap-2"><BellRing size={16}/> Activity Center</span>
-            <span className="flex items-center gap-1">{unreadCount>0&&<span className="rounded-full bg-[#c8a96e]/20 px-2 py-0.5 text-xs" title="Unread activity">{unreadCount>99?'99+':unreadCount}</span>}{attentionCount>0&&<span className="rounded-full bg-[#672c21] px-2 py-0.5 text-xs text-[#f1ccb2]" title="Unresolved work">{attentionCount>99?'99+':attentionCount}</span>}</span>
-          </button>
         </nav>
 
         {/* Sidebar: User section */}
@@ -286,50 +284,35 @@ function DashboardLayoutInner() {
 
         {/* Mobile top bar — hidden on login route, which has its own full-screen layout */}
         <header
-          className={`ds-dash-topbar ${isLoginRoute ? 'hidden' : 'lg:hidden'} flex items-center justify-between px-4 py-4 shrink-0`}
+          className={`ds-dash-topbar ${isLoginRoute ? 'hidden' : 'lg:hidden'} flex items-center gap-3 px-4 py-4 shrink-0`}
           style={{
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             boxShadow: '0 1px 0 rgba(255,255,255,0.04)',
           }}
         >
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg transition-colors duration-150"
-            style={{ color: 'var(--ds-text-secondary)' }}
-            aria-label="Open sidebar"
-          >
-            <Menu size={20} />
+          <button onClick={() => setSidebarOpen(true)} className="shrink-0 rounded-lg p-1.5 transition-colors duration-150"
+            style={{color:'var(--ds-text-secondary)'}} aria-label="Open sidebar">
+            <Menu size={20}/>
           </button>
-
-          <div className="flex items-center gap-2.5">
-            <div
-              data-crm-brand-target
-              className="flex items-center justify-center rounded-lg shrink-0"
-              style={{
-                width: '32px',
-                height: '32px',
-                background: 'rgba(245,237,220,0.92)',
-                boxShadow: '0 0 0 1px rgba(196,164,106,0.25)',
-              }}
-            >
-              <img
-                src="/images/md-logo.png"
-                alt="Missy Dours"
-                className="object-contain"
-                style={{ width: '22px', height: '22px' }}
-              />
+          {/* Keep a fixed, measurable logo position so the entrance animation has a stable destination. */}
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div data-crm-brand-target className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+              style={{background:'rgba(245,237,220,0.92)',boxShadow:'0 0 0 1px rgba(196,164,106,0.25)'}}>
+              <img src="/images/md-logo.png" alt="Missy Dours" className="h-[25px] w-[25px] object-contain"/>
             </div>
-            <span
-              className="text-sm font-semibold tracking-tight"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ds-text-primary)' }}
-            >
-              Missy Dours
-            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[9px] font-medium uppercase tracking-[.13em]"
+                style={{color:'var(--ds-text-tertiary)'}}>{mobileSection}</p>
+              <p className="truncate text-[15px] font-semibold leading-tight"
+                style={{fontFamily:"'Playfair Display', Georgia, serif",color:'var(--ds-text-primary)'}}>Missy Dours</p>
+            </div>
           </div>
-
-          <button type="button" onClick={()=>navigate('/dashboard/settings#crm-activity')} aria-label={'Activity Center: '+unreadCount+' unread alerts, '+attentionCount+' items need attention'} className="relative rounded-lg p-2 text-[#e1c18a]"><BellRing size={20}/>{unreadCount>0&&<span className="absolute -right-1 -top-1 rounded-full bg-[#7a3227] px-1.5 text-[10px] text-white">{unreadCount>99?'99+':unreadCount}</span>}</button>
-          {/* Avatar — only shown when a real Google profile photo exists */}
-          {avatarUrl && <UserAvatar avatarUrl={avatarUrl} size={32} />}
+          <button type="button" onClick={()=>navigate('/dashboard/notifications')}
+            aria-label={'Notifications: '+unreadCount+' unread alerts, '+attentionCount+' items need attention'}
+            className="relative shrink-0 rounded-lg p-2 text-[#e1c18a]">
+            <BellRing size={21}/>
+            {unreadCount>0&&<span className="absolute -right-1 -top-1 rounded-full bg-[#7a3227] px-1.5 text-[10px] text-white">{unreadCount>99?'99+':unreadCount}</span>}
+          </button>
         </header>
 
         {/* Page */}
