@@ -207,7 +207,7 @@ function DashboardLayoutInner() {
 
   return (
     <ToastProvider>
-    <div className="ds-shell isolate min-h-screen flex ds-dash-shell" style={{ background: 'var(--ds-bg-base)' }}>
+    <div className="ds-shell isolate h-screen h-[100dvh] overflow-hidden flex ds-dash-shell" style={{ background: 'var(--ds-bg-base)' }}>
 
       {/* ── Cinematic background (desktop only) ──────────── */}
       <DashboardVideoBackground />
@@ -347,7 +347,7 @@ function DashboardLayoutInner() {
       <div className="hidden lg:block w-64 shrink-0" />
 
       {/* ── Main content ──────────────────────────────────── */}
-      <div className="relative z-10 flex-1 flex flex-col min-w-0">
+      <div className="relative z-10 flex-1 flex flex-col min-w-0 min-h-0">
 
         {/* Mobile top bar — hidden on login route, which has its own full-screen layout */}
         <header
@@ -384,7 +384,7 @@ function DashboardLayoutInner() {
 
         {/* Page: retain Overview's own 110ms card stagger; apply matching
             section entrance timing to the other dashboard routes. */}
-        <main ref={pageScrollRef} className="flex-1 overflow-y-auto animate-ds-fade-in" onClickCapture={replayRefreshStagger}>
+        <main ref={pageScrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain animate-ds-fade-in" onClickCapture={replayRefreshStagger}>
           <style>{`
             @keyframes crmSectionEnter {
               from { opacity: 0; transform: translate3d(0, 12px, 0); }
