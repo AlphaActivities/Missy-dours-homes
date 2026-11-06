@@ -77,7 +77,6 @@ export default function DashboardVideoBackground() {
         <video
           ref={videoRef}
           src="/videos/herobackground.mp4"
-          autoPlay
           muted
           loop
           playsInline
