@@ -130,8 +130,17 @@ export default function SettingsPage(){
  };
  const label='rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 p-4 sm:p-5';
  return <main className="mx-auto max-w-5xl px-4 py-7 text-[#ecdbc2] md:px-8 md:py-9">
-  <div className="mb-6 flex items-center gap-3"><BellRing className="text-[#d7b878]" size={23}/><div><h1 className="font-serif text-2xl">Settings</h1><p className="mt-1 text-sm text-[#bdb0a0]">Device registration, notification preferences and app setup</p></div></div>
-  <section className={label}>
+  <div className="mb-6 flex items-center gap-3"><ShieldCheck className="text-[#d7b878]" size={23}/><div><h1 className="font-serif text-2xl">My Settings</h1><p className="mt-1 text-sm text-[#bdb0a0]">Personal preferences, notification devices and app setup</p></div></div>
+  <nav aria-label="Settings sections" className="mb-5 flex flex-wrap gap-2 text-xs">
+   {([{id:'account',label:'My account'},{id:'notification-preferences',label:'Preferences'},{id:'push-device-settings',label:'Push alerts'},{id:'registered-devices',label:'My devices'},{id:'app-install-settings',label:'App setup'}] as const).map(link=><a key={link.id} href={'#'+link.id} className="rounded-lg border border-[#c8a96e]/30 bg-black/20 px-3 py-2 text-[#e3c99b]">{link.label}</a>)}
+  </nav>
+  <section id="account" className={label}>
+   <h2 className="font-serif text-xl text-[#edcfa0]">My account</h2>
+   <p className="mt-2 text-sm text-[#c7b9a6]">Signed in as <strong className="break-all text-[#e9d6b6]">{email}</strong></p>
+   <p className="mt-2 text-xs text-[#bdb0a0]">Personal notification preferences and registered devices belong to your account. Business-wide controls are kept separately in the owner-only Admin area.</p>
+  </section>
+  <div id="notification-preferences" className="scroll-mt-5"><CrmNotificationPreferences/></div>
+  <section id="push-device-settings" className={label+' mt-5'}>
    <h2 className="font-serif text-xl text-[#edcfa0]">Push Notifications</h2>
    <p className="mt-2 text-sm text-[#c7b9a6]">Get new concierge handoffs and urgent callback alerts on your registered devices. Customize alerts in Notification Preferences below.</p>
    <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
@@ -143,7 +152,7 @@ export default function SettingsPage(){
    <button type="button" onClick={()=>void enable()} disabled={!platformSupported||iosHomeScreenRequired||Boolean(busy)} className="mt-4 rounded-xl border border-[#d5b16d] bg-[#3c2d19] px-5 py-3 text-sm text-[#f0d29a] disabled:opacity-40">{busy==='enable'?'Registering…':subscribed?'Refresh this device registration':'Enable notifications on this device'}</button>
    {message&&<p role="status" className="mt-3 text-sm text-[#e7cfa6]">{message}</p>}
   </section>
-  <section className={label+' mt-5'}>
+  <section id="registered-devices" className={label+' mt-5'}>
    <div className="flex items-center justify-between gap-2"><div><h2 className="font-serif text-xl text-[#edcfa0]">My Devices</h2><p className="mt-1 text-xs text-[#bdb0a0]">Each browser and installed app registers separately.</p></div><button type="button" aria-label="Refresh devices" data-crm-refresh onClick={()=>void reload()} className="rounded-lg border border-white/15 p-2"><RefreshCw size={17}/></button></div>
    {loading?<p className="mt-4 text-sm text-[#bdb0a0]">Checking your devices…</p>:devices.length===0?<p className="mt-4 text-sm text-[#bdb0a0]">No registered devices yet.</p>:<div className="mt-4 space-y-3">
     {devices.map(d=><article key={d.id} className="rounded-xl border border-white/15 bg-black/20 p-4">
@@ -165,8 +174,7 @@ export default function SettingsPage(){
    {testMessage&&<p role="status" className="mt-4 rounded-lg border border-[#c8a96e]/25 p-3 text-sm text-[#ebd3a4]">{testMessage}</p>}
    <p className="mt-4 text-xs text-[#bdb0a0]">A push-provider acceptance is not proof the notification appeared. Only mark receipt after seeing an alert on the selected device. Signing out unregisters this browser's push subscription.</p>
   </section>
-  <CrmNotificationPreferences/>
-  <DesktopAppInstallCard/>
+  <div id="app-install-settings" className="scroll-mt-5"><DesktopAppInstallCard/></div>
   <section className={label+' mt-5'}>
    <h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><ShieldCheck size={19}/> App & Browser Setup</h2>
    <div className="mt-3 space-y-3 text-sm text-[#d6c4aa]">
