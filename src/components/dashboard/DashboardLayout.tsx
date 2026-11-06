@@ -97,9 +97,9 @@ function DashboardLayoutInner() {
         ...Array.from(page.querySelectorAll<HTMLElement>(':scope > div:first-child')),
         ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > div:first-child')),
         ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > div:nth-child(2) > div')),
-        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > p')),
-        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > div:nth-child(4)')),
-        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity article'))
+        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > div:nth-child(3)')),
+        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > div[aria-live] > article, #crm-activity > div[aria-live] > div')),
+        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > p:last-child'))
       ];
     } else {
       // Settings and Admin have multiple distinct top-level panels. Their
