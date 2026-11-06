@@ -1,7 +1,6 @@
 import {useState} from 'react';
 import {BellRing,Volume2,VolumeX,ShieldCheck} from 'lucide-react';
 import {useCrmActivity,previewCrmChime} from './CrmActivityContext';
-import CrmSoundStudio from './CrmSoundStudio';
 const options=[
  {name:'handoff_enabled' as const,title:'New concierge handoffs',detail:'Alert when a visitor requests staff assistance.'},
  {name:'escalation_enabled' as const,title:'Urgent escalations',detail:'Alert when a visitor request becomes overdue.'},
@@ -25,15 +24,14 @@ export default function CrmNotificationPreferences(){
     <input type="checkbox" className="h-5 w-5 shrink-0 accent-[#c8a96e]" checked={prefs[o.name]} disabled={Boolean(working)} onChange={e=>void change(o.name,e.target.checked)} aria-label={o.title}/>
    </label>)}
    <label className="flex items-center justify-between gap-4 rounded-lg border border-[#c8a96e]/20 bg-black/20 p-3">
-    <span className="min-w-0"><span className="flex items-center gap-2 text-sm font-medium">{prefs.in_app_sound?<Volume2 size={17}/>:<VolumeX size={17}/>} Discreet in-app chime</span><span className="mt-1 block text-xs text-[#baad97]">Enable your individually assigned alert sounds while the CRM is open and the device allows audio. Background push sounds are controlled by the operating system.</span></span>
+    <span className="min-w-0"><span className="flex items-center gap-2 text-sm font-medium">{prefs.in_app_sound?<Volume2 size={17}/>:<VolumeX size={17}/>} Discreet in-app chime</span><span className="mt-1 block text-xs text-[#baad97]">Enable the four built-in alert tones while the CRM is open and the device allows audio. Background push sounds are controlled by the operating system.</span></span>
     <input type="checkbox" className="h-5 w-5 shrink-0 accent-[#c8a96e]" checked={prefs.in_app_sound} disabled={Boolean(working)} onChange={e=>void change('in_app_sound',e.target.checked)} aria-label="Enable in-app sound"/>
    </label>
   </div>
   <div className="mt-3 flex justify-end">
    <button type="button" onClick={()=>void previewCrmChime()} className="rounded-lg border border-[#c8a96e]/45 px-3 py-2 text-xs font-medium text-[#edce93]" aria-label="Play a test CRM notification chime">Test chime</button>
   </div>
-  <CrmSoundStudio/>
-  <div className="mt-4 flex items-start gap-2 text-xs text-[#bdb0a0]"><BellRing size={17} className="shrink-0"/>Push notifications and activity history are separate. A muted category remains visible in the CRM history and in unresolved-work counts.</div>
+  <div className="mt-4 flex items-start gap-2 text-xs text-[#bdb0a0]"><BellRing size={17} className="shrink-0"/>Push notifications and activity history are separate. Alert history and unresolved-work counts remain available regardless of your audio setting.</div>
   {message&&<p className="mt-3 text-sm text-amber-200" role="alert">{message}</p>}
  </section>;
 }
