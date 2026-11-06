@@ -1,15 +1,15 @@
 import {useMemo,useState} from 'react';
-import {Bell,Archive,CheckCheck,Check,RotateCcw,ExternalLink,RefreshCw,AlertTriangle,Inbox,Clock3} from 'lucide-react';
+import {Bell,Archive,CheckCheck,Check,RotateCcw,ArrowUpRight,ExternalLink,RefreshCw,AlertTriangle,Inbox,Clock3} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 
 type Filter='all'|'unread'|'urgent'|'lead'|'handoff'|'staff'|'history';
-const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent':category==='lead'?'Lead':category==='handoff'?'Visitor Chat Request':'Team Update';
+const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent':category==='lead'?'Lead':category==='handoff'?'Direct Chat Request':'Staff Activity';
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'?value:'/dashboard/conversations';
-const actionLabel=(item:CrmActivity)=>item.target_path.startsWith('/dashboard/leads?lead=')?'View Lead':'View Conversation';
+const actionLabel=(item:CrmActivity)=>item.target_path.startsWith('/dashboard/leads?lead=')?'Open Lead':'View Conversation';
 const filters:Array<{key:Filter;label:string}>=[
  {key:'all',label:'All'},{key:'unread',label:'Unread'},{key:'urgent',label:'Urgent'},
- {key:'lead',label:'Leads'},{key:'handoff',label:'Visitor Chat Requests'},{key:'staff',label:'Team Updates'},{key:'history',label:'History'}
+ {key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
 ];
 export default function CrmActivityCenter(){
  const {items,unreadCount,urgentCount,todayCount,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,markAllRead,archive,restore}=useCrmActivity();
@@ -36,7 +36,7 @@ export default function CrmActivityCenter(){
  return <section id="crm-activity" className="mt-5 text-[#edddc4]" aria-label="CRM notifications inbox">
   <div className="flex items-start justify-between gap-3">
    <div><h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><Inbox size={19}/> Activity inbox</h2>
-    <p className="mt-1 text-xs text-[#bdb0a0]">New inquiries, concierge requests, and team updates in one place</p></div>
+    <p className="mt-1 text-xs text-[#bdb0a0]">Website inquiries, direct chat requests, and staff activity in one place</p></div>
    <button type="button" aria-label="Refresh notifications" data-crm-refresh onClick={()=>void refresh()}
     className="shrink-0 rounded-lg border border-white/20 p-2 text-[#e6cb98]"><RefreshCw size={17}/></button>
   </div>
@@ -50,8 +50,8 @@ export default function CrmActivityCenter(){
   <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
    <div role="group" aria-label="Filter activity" className="flex flex-wrap gap-2">
     {filters.map(({key,label})=><button key={key} type="button" onClick={()=>setFilter(key)}
-     aria-pressed={filter===key} className={'rounded-lg border px-3 py-1.5 text-xs transition-colors '+(filter===key?'border-[#c8a96e] bg-[#c8a96e]/15 text-[#f0d09d]':'border-white/15 text-[#c4b7a4]')}>
-     {label}{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</button>)}
+     aria-pressed={filter===key} data-filter={key} className="crm-activity-filter relative isolate overflow-hidden rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,box-shadow] duration-300">
+     <span className="relative z-10">{label}{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</span></button>)}
    </div>
    <button type="button" disabled={working||unreadCount===0} onClick={()=>void execute(markAllRead)}
     className="inline-flex items-center gap-1.5 rounded-lg border border-[#c8a96e]/35 px-3 py-2 text-xs text-[#edce93] disabled:opacity-40"><CheckCheck size={15}/> Mark all read</button>
@@ -77,7 +77,7 @@ export default function CrmActivityCenter(){
     </div></div>
     <div className="mt-3 flex flex-wrap items-center gap-2">
      <Link to={safeTarget(item.target_path)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}}
-      className="inline-flex items-center gap-1 rounded-md border border-[#c8a96e]/40 px-3 py-1.5 text-xs text-[#ecd09b]"><ExternalLink size={13}/> {actionLabel(item)}</Link>
+      className="crm-open-notification inline-flex items-center gap-2 rounded-md border border-[#c8a96e]/50 px-3.5 py-2 text-xs font-medium tracking-[0.025em] text-[#f1d7a6]">{actionLabel(item)}{item.target_path.startsWith('/dashboard/leads?lead=')?<ArrowUpRight size={15} strokeWidth={1.45} aria-hidden="true" className="crm-open-notification-arrow"/>:<ExternalLink size={13} strokeWidth={1.5} aria-hidden="true"/>}</Link>
      {!item.read_at&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
       className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40"><Check size={13}/> Mark read</button>}
      {!item.lead_archived&&<button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)}
