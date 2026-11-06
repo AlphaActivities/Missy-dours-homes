@@ -53,8 +53,14 @@ export default function OwnerAdminPage(){
  };
  if(!owner)return <p className="p-8 text-center text-[#e6cb98]">Owner-only admin controls.</p>;
  return <main className="mx-auto max-w-5xl px-4 py-7 text-[#ebdbc3] md:px-8 md:py-9">
-  <div className="mb-6 flex items-center gap-2"><Settings2 size={21} className="text-[#d5b16d]"/><div><h1 className="font-serif text-2xl">Admin Control Center</h1><p className="mt-1 text-sm text-[#bfb3a2]">Owner only · Launch, testing and data management</p></div></div>
-  <section className="mb-5 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 p-4">
+  <div className="mb-6 flex items-center gap-2"><Settings2 size={21} className="text-[#d5b16d]"/><div><h1 className="font-serif text-2xl">Admin Control Center</h1><p className="mt-1 text-sm text-[#bfb3a2]">Owner-only business operations, diagnostics and data safeguards</p></div></div>
+  <nav aria-label="Owner administration sections" className="mb-5 flex flex-wrap gap-2 text-xs">
+   <a href="#concierge-operations" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Concierge operations</a>
+   <a href="#owner-testing" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Private testing</a>
+   <a href="#owner-diagnostics" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Diagnostics</a>
+   <a href="#owner-danger-zone" className="rounded-lg border border-red-400/30 px-3 py-2 text-red-200">Danger zone</a>
+  </nav>
+  <section id="concierge-operations" className="mb-5 scroll-mt-5 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 p-4">
    <h2 className="text-sm font-semibold uppercase tracking-widest text-[#e6cb98]">Public chatbot</h2>
    <p className="mt-3 text-sm">Backend status: <strong className={live?'text-emerald-300':'text-amber-200'}>{live===null?'Checking…':live?'Live':'Paused'}</strong></p>
    <p className="mt-2 text-xs text-[#bdb0a0]">Only the owner can change this switch. Pausing prevents visitor API calls; the public chat icon remains visible.</p>
@@ -63,13 +69,20 @@ export default function OwnerAdminPage(){
    <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void changeLaunch()} disabled={launchBusy||live===null||launchPhrase!==(live?'PAUSE CONCIERGE':'PUBLISH CONCIERGE')} className="rounded-lg border border-[#c8a96e] px-4 py-2 text-sm text-[#e6cb98] disabled:opacity-40">{live?'Pause public chat':'Launch public chat'}</button><button type="button" onClick={()=>void refresh()} data-crm-refresh className="rounded-lg border border-white/20 px-4 py-2 text-sm">Refresh status</button></div>
    {launchFeedback&&<p role="status" className="mt-3 text-sm">{launchFeedback}</p>}
   </section>
-  <section className="mb-5 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/50 p-4">
+  <section id="owner-testing" className="mb-5 scroll-mt-5 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/50 p-4">
    <h2 className="text-sm font-semibold text-[#e6cb98]">Private visitor testing</h2>
    <p className="mt-2 text-xs text-[#bdb0a0]">Owner-authorized test sessions use reserved QA contact details.</p>
    <Link to="/dashboard/concierge-qa" className="mt-3 inline-block rounded-lg border border-[#c8a96e] px-4 py-2 text-sm text-[#e6cb98]">Open private QA chat</Link>
   </section>
-  <OwnerDiagnostics/>
-  <section className="mt-5 rounded-xl border border-red-400/35 bg-[#211310]/65 p-4">
+  <details id="owner-diagnostics" className="mb-5 scroll-mt-5 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/65 p-4">
+   <summary className="cursor-pointer font-serif text-lg text-[#edcfa0]">Technical diagnostics and staff delivery readiness</summary>
+   <p className="mt-2 text-xs text-[#bdb0a0]">Troubleshooting and private test tools for the owner, not everyday staff preferences.</p>
+   <OwnerDiagnostics/>
+  </details>
+  <details id="owner-danger-zone" className="mt-5 scroll-mt-5 rounded-xl border border-red-400/35 bg-[#211310]/65 p-4">
+   <summary className="cursor-pointer font-serif text-lg text-red-200">Danger zone · Destructive operations</summary>
+   <p className="mt-3 text-xs text-red-200/80">Only expand this section when deliberately managing permanent data deletion.</p>
+   <section className="mt-4">
    <div className="flex items-center gap-2"><ShieldAlert size={19} className="text-red-300"/><h2 className="text-base font-semibold text-red-100">Delete all conversations</h2></div>
    <p className="mt-2 text-sm text-[#dfc9b9]">Current conversations: {count===null?'Checking…':count}. This permanently deletes chat transcripts, callback tasks, and delivery history, but preserves all CRM leads and registered devices.</p>
    <p className="mt-2 text-xs text-amber-200">Deletion is blocked if attached files need separate storage cleanup. This action cannot be undone.</p>
@@ -77,6 +90,7 @@ export default function OwnerAdminPage(){
    <input id="delete-phrase" autoComplete="off" value={deletePhrase} onChange={e=>setDeletePhrase(e.target.value)} className="mt-2 w-full rounded-lg border border-red-400/35 bg-black/30 p-3 text-base text-white"/>
    <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void deleteAll()} disabled={deleteBusy||deletePhrase!=='DELETE ALL CONVERSATIONS'} className="rounded-lg bg-red-800/75 px-4 py-2 text-sm text-white disabled:opacity-40">{deleteBusy?'Deleting…':'Permanently delete all conversations'}</button><button type="button" onClick={()=>void refresh()} data-crm-refresh className="rounded-lg border border-white/20 px-4 py-2 text-sm">Refresh count</button></div>
    {deleteFeedback&&<p role="status" className="mt-3 text-sm">{deleteFeedback}</p>}
-  </section>
+   </section>
+  </details>
  </main>;
 }
