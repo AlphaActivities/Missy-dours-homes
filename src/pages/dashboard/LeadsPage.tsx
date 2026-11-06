@@ -8,6 +8,7 @@ import SectionHeader from '../../components/dashboard/ui/SectionHeader';
 import { LeadStatus } from '../../components/dashboard/ui/StatusBadge';
 import { useToast } from '../../contexts/ToastContext';
 import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle, Search, X } from 'lucide-react';
+import {IosNativeTap} from '../../components/dashboard/DashboardHaptics';
 
 const PAGE_SIZE = 25;
 
@@ -363,8 +364,7 @@ export default function LeadsPage() {
             // In search mode, no status filter is active — search covers all
             const isActive = !isSearchMode && filter === tab.value;
             return (
-              <button
-                key={tab.value}
+              <IosNativeTap key={tab.value} className="relative inline-flex flex-shrink-0"><button
                 onClick={() => handleFilterChange(tab.value)}
                 className={`ds-filter-tab ${isActive ? 'ds-filter-tab-active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${isSearchMode ? 'opacity-50' : ''}`}
                 style={{
@@ -390,7 +390,7 @@ export default function LeadsPage() {
                 }}
               >
                 {tab.label}
-              </button>
+              </button></IosNativeTap>
             );
           })}
         </div>

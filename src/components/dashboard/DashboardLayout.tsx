@@ -6,6 +6,7 @@ import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle, Settings2, Shie
 import {CrmActivityProvider,useCrmActivity} from './CrmActivityContext';
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
 import ConciergeSignatureEntrance from './ui/ConciergeSignatureEntrance';
+import DashboardHaptics,{IosNativeTap} from './DashboardHaptics';
 import { supabase } from '../../lib/supabase';
 import { clearUserNoteDrafts } from '../../lib/crmNoteDrafts';
 
@@ -209,6 +210,7 @@ function DashboardLayoutInner() {
   return (
     <ToastProvider>
     <div className="ds-shell isolate h-screen h-[100dvh] overflow-hidden flex ds-dash-shell" style={{ background: 'var(--ds-bg-base)' }}>
+      <DashboardHaptics/>
 
       {/* ── Cinematic background (desktop only) ──────────── */}
       <DashboardVideoBackground />
@@ -295,8 +297,8 @@ function DashboardLayoutInner() {
             Navigation
           </p>
           {NAV_ITEMS.filter(item=>!('ownerOnly' in item && item.ownerOnly)||user?.email?.toLowerCase()==='yourcustomerflowguy@gmail.com').map(({ to, label, icon: Icon, end }) => (
+            <IosNativeTap key={to} className="relative block">
             <NavLink
-              key={to}
               to={to}
               end={end}
               onClick={closeSidebar}
@@ -316,6 +318,7 @@ function DashboardLayoutInner() {
                 </>
               )}
             </NavLink>
+            </IosNativeTap>
           ))}
         </nav>
 
@@ -375,6 +378,7 @@ function DashboardLayoutInner() {
                 style={{fontFamily:"'Playfair Display', Georgia, serif",color:'var(--ds-text-primary)'}}>Missy Dours</p>
             </div>
           </div>
+          <IosNativeTap className="relative inline-flex">
           <button type="button" onClick={()=>navigate('/dashboard/notifications')}
             aria-label={'Notifications: '+attentionCount+' items need attention, '+unreadCount+' unread alerts'}
             aria-current={pathname==='/dashboard/notifications'?'page':undefined}
@@ -382,6 +386,7 @@ function DashboardLayoutInner() {
             <BellRing size={21} aria-hidden="true"/>
             {attentionCount>0&&<span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0b0a,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{attentionCount>99?'99+':attentionCount}</span>}
           </button>
+          </IosNativeTap>
         </header>
 
         {/* Page: retain Overview's own 110ms card stagger; apply matching

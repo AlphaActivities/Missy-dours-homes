@@ -2,6 +2,7 @@ import {useMemo,useState} from 'react';
 import {Bell,Archive,Check,RotateCcw,ArrowUpRight,ExternalLink,RefreshCw,AlertTriangle,Inbox,Clock3} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
+import {IosNativeTap} from './DashboardHaptics';
 
 type Filter='all'|'unread'|'urgent'|'lead'|'handoff'|'staff'|'history';
 const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent':category==='lead'?'Lead':category==='handoff'?'Direct Chat Request':'Staff Activity';
@@ -61,9 +62,9 @@ export default function CrmActivityCenter(){
   </div>
   <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
    <div role="group" aria-label="Filter activity" className="flex flex-wrap gap-2">
-    {filters.map(({key,label})=><button key={key} type="button" onClick={()=>setFilter(key)}
+    {filters.map(({key,label})=><IosNativeTap key={key}><button type="button" onClick={()=>setFilter(key)}
      aria-pressed={filter===key} data-filter={key} className="crm-activity-filter relative isolate overflow-hidden rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,box-shadow] duration-300">
-     <span className="relative z-10">{label}{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</span></button>)}
+     <span className="relative z-10">{label}{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</span></button></IosNativeTap>)}
    </div>
   </div>
   {notice&&<p role="alert" className="mt-3 text-sm text-amber-200">{notice}</p>}
