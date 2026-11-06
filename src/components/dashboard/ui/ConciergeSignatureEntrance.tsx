@@ -25,7 +25,7 @@ const formatDeviceDate = () => new Intl.DateTimeFormat(navigator.language || 'en
 export default function ConciergeSignatureEntrance() {
  const { user } = useAuth();
  const greeting = getDashboardGreeting(user?.email);
- const {unreadCount,loading:attentionLoading,error:attentionError}=useCrmActivity();
+ const {attentionCount,loading:attentionLoading,error:attentionError}=useCrmActivity();
  const [visible,setVisible]=useState(()=>!entrancePlayed);
  const [phase,setPhase]=useState<'welcome'|'fly'|'leave'>('welcome');
  const [target,setTarget]=useState<Target>({x:0,y:0,scale:1,radius:16,innerScale:1});
@@ -94,21 +94,8 @@ export default function ConciergeSignatureEntrance() {
    role="status" aria-label="Opening Missy Dours private CRM" aria-live="polite">
    <style>{`@keyframes crmGoldSheen { 0% { transform: translate3d(-155px,-170px,0) rotate(35deg); opacity:0; } 12% {opacity:1;} 72% {opacity:1;} 100% {transform:translate3d(210px,195px,0) rotate(35deg);opacity:0;} } @keyframes crmGoldRim { 0%,100% {opacity:0;} 30% {opacity:.15;} 55% {opacity:.75;} 80% {opacity:.08;} } .crm-logo-sheen {animation:crmGoldSheen 1900ms linear 90ms 1 both;} .crm-logo-sheen-rim {animation:crmGoldRim 1900ms ease-in-out 90ms 1 both;} @keyframes crmLuxurySpin {to{transform:rotate(360deg)}} @keyframes crmLuxuryType {from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}} @keyframes crmLuxuryCursor {0%,49%{opacity:1}50%,100%{opacity:0}} .crm-date-type {animation:crmLuxuryType 1.15s steps(31,end) .55s both;} .crm-date-cursor {animation:crmLuxuryCursor .5s steps(1,end) 3;} .crm-luxury-ring {animation:crmLuxurySpin 1.667s linear infinite;filter:drop-shadow(0 0 5px rgba(255,212,122,.65));} @media (prefers-reduced-motion:reduce) {.crm-luxury-ring{animation:none;} .crm-logo-sheen,.crm-logo-sheen-rim{animation:none;opacity:0;}}`}</style>
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
-   {/* Keep the approved greeting motion. The compact unread alert appears just above it,
-       staggered shortly after the greeting starts, without shifting any existing content. */}
    {greeting && <motion.p className="pointer-events-none absolute inset-x-0 top-[calc(38%-112px)] max-lg:top-[calc(38%-142px)] px-4 text-center text-[18px] sm:text-[21px] font-medium tracking-[.09em] text-[#f0d8a0] drop-shadow-[0_0_14px_rgba(196,164,106,.2)]"
      initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}} transition={phase==='welcome'?{duration:.55,delay:.35,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}>{greeting}</motion.p>}
-   {!attentionLoading&&!attentionError&&unreadCount>0&&<motion.div
-     className="pointer-events-none absolute inset-x-0 top-[calc(38%-181px)] max-lg:top-[calc(38%-211px)] mx-auto flex max-w-[90vw] items-center justify-center gap-3 text-[#edd2a3]"
-     initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}}
-     transition={phase==='welcome'?{duration:.38,delay:.78,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}
-     aria-label={unreadCount+' new '+(unreadCount===1?'notification':'notifications')}>
-     <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#ddbb7c]">
-      <BellRing size={26} strokeWidth={1.8} aria-hidden="true"/>
-      <span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0a08,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{unreadCount>99?'99+':unreadCount}</span>
-     </span>
-     <span className="text-[13px] font-semibold leading-snug tracking-[.025em]">{unreadCount+' new '+(unreadCount===1?'notification':'notifications')}</span>
-   </motion.div>}
    <div className="absolute left-1/2 top-[38%] max-lg:top-[calc(38%-30px)]" style={{transform:'translate(-50%, -50%)'}}>
     <motion.div
      className="relative h-[124px] w-[124px] overflow-hidden rounded-2xl bg-[#eee2c8] p-2.5 shadow-[0_0_48px_rgba(196,164,106,.24)]"
@@ -144,6 +131,18 @@ export default function ConciergeSignatureEntrance() {
       <p className="mt-9 sm:mt-10 text-[15px] sm:text-[17px] leading-relaxed tracking-[.075em] text-[#dfc58e]/95" aria-label={`Device date: ${deviceDate}`}>
        <span className="crm-date-type inline-block whitespace-nowrap">{deviceDate}</span>
       </p>
+      {/* Outstanding-work summary follows the date, without a card or viewport-bottom anchoring.
+          The logo flight, spinner, date typing and original entrance timing remain unchanged. */}
+      {!attentionLoading&&!attentionError&&<div className="mt-5 flex max-w-[90vw] items-center justify-center gap-3 text-left" aria-label={attentionCount+' items requiring attention'}>
+       <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#ddbb7c]">
+        <BellRing size={26} strokeWidth={1.8} aria-hidden="true"/>
+        {attentionCount>0&&<span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0a08,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{attentionCount>99?'99+':attentionCount}</span>}
+       </span>
+       <div className="min-w-0">
+        <p className="text-[13px] font-semibold leading-snug tracking-[.025em] text-[#edd2a3]">{attentionCount===0?'All caught up':attentionCount+' '+(attentionCount===1?'item requires':'items require')+' your attention'}</p>
+        <p className="mt-1 text-[11px] leading-snug tracking-[.035em] text-[#af9e83]">{attentionCount===0?'No outstanding items':'Your executive notification summary'}</p>
+       </div>
+      </div>}
      </div>
    </motion.div>
   </motion.div>}</AnimatePresence>;
