@@ -91,7 +91,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const next=[...newest,...seen.filter(e=>!newestIds.has(e.id))];
    loadedRef.current=next;
    setItems(next);
-   setHasMore(recent.length===PAGE_SIZE || next.length>PAGE_SIZE);
+   setHasMore(previous=>next.length>PAGE_SIZE?previous:recent.length===PAGE_SIZE);
    const t=totals.data as {unread?:number;urgent?:number;today?:number;hidden?:number}|null;
    setCounts({unread:Number(t?.unread??0),urgent:Number(t?.urgent??0),today:Number(t?.today??0),hidden:Number(t?.hidden??0)});
    const c=summary.data as {attention_count?:number;new_leads?:number;open_tasks?:number;waiting_conversations?:number}|null;
