@@ -86,7 +86,7 @@ export default function CrmActivityCenter(){
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{friendlySummary(item.summary)}</p>
      {item.lead_status==='new'&&!item.lead_archived&&!item.archived_at&&<div className="mt-3 space-y-1.5">
       <p className="inline-flex items-center gap-1.5 rounded-md border border-red-400/35 bg-red-900/20 px-3 py-2 text-xs font-semibold text-red-200"><AlertTriangle size={13} aria-hidden="true"/> Follow-up required</p>
-      <p className="text-xs italic leading-relaxed text-[#cbbbaa]">This inquiry hasn't been handled yet. Open the lead to review the details and take the next step.</p>
+      <p className="text-xs italic leading-relaxed text-[#cbbbaa]"><span className="block">This inquiry hasn't been handled yet.</span><span className="block">Open the lead to review the details and take the next step.</span></p>
      </div>}
      <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
     </div></div>
