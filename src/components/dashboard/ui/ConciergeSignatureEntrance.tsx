@@ -15,7 +15,7 @@ type Target = { x: number; y: number; scale: number; radius: number; innerScale:
 const LOGO_SIZE = 124;
 const CENTER_Y = 0.38;
 const MOBILE_START_OFFSET_PX = -30; // Align mobile live entrance with approved iOS launch image.
-const HOLD_MS = 3500;
+const HOLD_MS = 4000;
 const FLIGHT_MS = 820;
 const FADE_MS = 320;
 const formatDeviceDate = () => new Intl.DateTimeFormat(navigator.language || 'en-US', {
