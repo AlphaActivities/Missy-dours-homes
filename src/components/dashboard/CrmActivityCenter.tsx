@@ -74,7 +74,7 @@ export default function CrmActivityCenter(){
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
-   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(item.lead_status==='new'&&!item.lead_archived&&!item.archived_at?'crm-actionable-notification border-[#d5aa66]/70 bg-[#1b1510]/90':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
+   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(item.lead_status==='new'&&!item.lead_archived&&!item.archived_at?'crm-actionable-notification relative isolate overflow-hidden border-red-500/55 bg-[#1b1510]/90':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
     <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1">
      <div className="flex flex-wrap items-center gap-2">
       <strong className="text-sm text-[#f0dfc4]">{item.title}</strong>
