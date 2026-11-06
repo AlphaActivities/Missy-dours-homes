@@ -7,7 +7,7 @@ export type CrmActivity={id:string;event_key:string;category:ActivityCategory;ti
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false});
 type ActivityState={
- items:CrmActivity[];unreadCount:number;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
+ items:CrmActivity[];unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
  prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;
  markRead:(eventId:string)=>Promise<void>;archive:(eventId:string)=>Promise<void>;restore:(eventId:string)=>Promise<void>;
  markAllRead:()=>Promise<void>;setPreference:(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>Promise<void>;
@@ -46,44 +46,77 @@ const permitted=['yourcustomerflowguy@gmail.com','missydourshomes@gmail.com','he
 export function CrmActivityProvider({children}:{children:ReactNode}){
  const {user}=useAuth(),email=user?.email?.toLowerCase()??'';
  const [items,setItems]=useState<CrmActivity[]>([]);
+ const [counts,setCounts]=useState({unread:0,urgent:0,today:0,hidden:0});
+ const [hasMore,setHasMore]=useState(false);
+ const [loadingMore,setLoadingMore]=useState(false);
  const [prefs,setPrefs]=useState<NotificationPrefs>(defaults(email));
  const [attentionCount,setAttentionCount]=useState(0);
  const [attentionBreakdown,setBreakdown]=useState({new_leads:0,open_tasks:0,waiting_conversations:0});
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState<string|null>(null);
- const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false);
+ const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false),loadedRef=useRef<CrmActivity[]>([]);
+ const PAGE_SIZE=60;
+ const fetchReceipts=async(events:Array<{id:string}>)=>{
+  if(!events.length)return new Map<string,{read_at:string|null;archived_at:string|null}>();
+  const r=await supabase.from('crm_activity_receipts').select('event_id,read_at,archived_at').eq('staff_email',email).in('event_id',events.map(e=>e.id));
+  if(r.error)throw r.error;
+  return new Map((r.data??[]).map(x=>[x.event_id,{read_at:x.read_at,archived_at:x.archived_at}]));
+ };
+
  const prefsRef=useRef(prefs);
  useEffect(()=>{prefsRef.current=prefs;},[prefs]);
  const refresh=useCallback(async()=>{
   if(!permitted.includes(email)||inFlight.current)return;
   inFlight.current=true;
   try {
-   const [events,receipts,summary,preferences]=await Promise.all([
-    supabase.from('crm_activity_events').select('id,event_key,category,title,summary,target_path,created_at').order('created_at',{ascending:false}).limit(150),
-    supabase.from('crm_activity_receipts').select('event_id,read_at,archived_at').eq('staff_email',email).limit(500),
+   const [events,summary,preferences,totals]=await Promise.all([
+    supabase.from('crm_activity_events').select('id,event_key,category,title,summary,target_path,created_at').order('created_at',{ascending:false}).order('id',{ascending:false}).range(0,PAGE_SIZE-1),
     supabase.rpc('crm_attention_summary'),
-    supabase.from('crm_notification_preferences').select('staff_email,handoff_enabled,escalation_enabled,staff_enabled,in_app_sound,updated_at').eq('staff_email',email).maybeSingle()
+    supabase.from('crm_notification_preferences').select('staff_email,handoff_enabled,escalation_enabled,staff_enabled,in_app_sound,updated_at').eq('staff_email',email).maybeSingle(),
+    supabase.rpc('crm_activity_totals')
    ]);
-   if(events.error||receipts.error||summary.error||preferences.error)throw events.error||receipts.error||summary.error||preferences.error;
-   const state=new Map((receipts.data??[]).map(r=>[r.event_id,r]));
-   const next=(events.data??[]).map(e=>({...e,read_at:state.get(e.id)?.read_at??null,archived_at:state.get(e.id)?.archived_at??null})) as CrmActivity[];
+   if(events.error||summary.error||preferences.error||totals.error)throw events.error||summary.error||preferences.error||totals.error;
+   const recent=events.data??[];
+   const receipts=await fetchReceipts(recent);
+   const newest=recent.map(e=>({...e,read_at:receipts.get(e.id)?.read_at??null,archived_at:receipts.get(e.id)?.archived_at??null})) as CrmActivity[];
    const nextPrefs=preferences.data as NotificationPrefs|null;
    if(nextPrefs)setPrefs(nextPrefs);
-   const latest=next[0]?.id??null;
-   if(firstLoaded.current && latest && latest!==lastEvent.current && document.visibilityState==='visible' && (nextPrefs?.in_app_sound??prefsRef.current.in_app_sound)){
-    // Only chime for new, actionable events (not background device tests).
-    if(next.some(e=>e.id===latest&&!e.read_at&&!e.archived_at&&e.category!=='staff'))chime();
-   }
-   firstLoaded.current=true;lastEvent.current=latest;
+   const seen=loadedRef.current;
+   const newestIds=new Set(newest.map(e=>e.id));
+   const newArrivals=firstLoaded.current?newest.filter(e=>!seen.some(x=>x.id===e.id)):[]; 
+   if(newArrivals.length && document.visibilityState==='visible' && (nextPrefs?.in_app_sound??prefsRef.current.in_app_sound) &&
+    newArrivals.some(e=>!e.read_at&&!e.archived_at&&e.category!=='staff')) chime(); // One restrained sound per refresh batch.
+   firstLoaded.current=true;lastEvent.current=newest[0]?.id??null;
+   // Keep any older pages loaded by the user; the first page stays fresh.
+   const next=[...newest,...seen.filter(e=>!newestIds.has(e.id))];
+   loadedRef.current=next;
    setItems(next);
-   const counts=summary.data as {attention_count?:number;new_leads?:number;open_tasks?:number;waiting_conversations?:number}|null;
-   setAttentionCount(Math.max(0,Number(counts?.attention_count??0)));
-   setBreakdown({new_leads:Number(counts?.new_leads??0),open_tasks:Number(counts?.open_tasks??0),waiting_conversations:Number(counts?.waiting_conversations??0)});
+   setHasMore(recent.length===PAGE_SIZE || next.length>PAGE_SIZE);
+   const t=totals.data as {unread?:number;urgent?:number;today?:number;hidden?:number}|null;
+   setCounts({unread:Number(t?.unread??0),urgent:Number(t?.urgent??0),today:Number(t?.today??0),hidden:Number(t?.hidden??0)});
+   const c=summary.data as {attention_count?:number;new_leads?:number;open_tasks?:number;waiting_conversations?:number}|null;
+   setAttentionCount(Math.max(0,Number(c?.attention_count??0)));
+   setBreakdown({new_leads:Number(c?.new_leads??0),open_tasks:Number(c?.open_tasks??0),waiting_conversations:Number(c?.waiting_conversations??0)});
    setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Unable to load activity');}
   finally{setLoading(false);inFlight.current=false;}
  },[email]);
- useEffect(()=>{firstLoaded.current=false;lastEvent.current=null;setItems([]);setPrefs(defaults(email));setLoading(true);if(!permitted.includes(email))return;void refresh();const timer=window.setInterval(()=>void refresh(),15000);const visible=()=>{if(document.visibilityState==='visible')void refresh();};document.addEventListener('visibilitychange',visible);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};},[email,refresh]);
+ const loadMore=async()=>{
+  if(loadingMore||!hasMore||!permitted.includes(email))return;
+  setLoadingMore(true);
+  try{
+   const from=loadedRef.current.length;
+   const result=await supabase.from('crm_activity_events').select('id,event_key,category,title,summary,target_path,created_at').order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,from+PAGE_SIZE-1);
+   if(result.error)throw result.error;
+   const rows=result.data??[];
+   const receipts=await fetchReceipts(rows);
+   const ids=new Set(loadedRef.current.map(e=>e.id));
+   const next=[...loadedRef.current,...rows.filter(e=>!ids.has(e.id)).map(e=>({...e,read_at:receipts.get(e.id)?.read_at??null,archived_at:receipts.get(e.id)?.archived_at??null}) as CrmActivity)];
+   loadedRef.current=next;setItems(next);setHasMore(rows.length===PAGE_SIZE);setError(null);
+  }catch(e){setError(e instanceof Error?e.message:'Could not load older notifications');}
+  finally{setLoadingMore(false);}
+ };
+ useEffect(()=>{firstLoaded.current=false;lastEvent.current=null;loadedRef.current=[];setItems([]);setHasMore(false);setCounts({unread:0,urgent:0,today:0,hidden:0});setPrefs(defaults(email));setLoading(true);if(!permitted.includes(email))return;void refresh();const timer=window.setInterval(()=>void refresh(),15000);const visible=()=>{if(document.visibilityState==='visible')void refresh();};document.addEventListener('visibilitychange',visible);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};},[email,refresh]);
  useEffect(()=>{
   // Use work requiring attention, never the number of notification banners.
   // Some browsers/platforms do not implement the Badging API.
@@ -97,12 +130,13 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   const payload={event_id:id,staff_email:email,read_at:changes.read_at===undefined?before.read_at:changes.read_at,archived_at:changes.archived_at===undefined?before.archived_at:changes.archived_at};
   const r=await supabase.from('crm_activity_receipts').upsert(payload,{onConflict:'event_id,staff_email'});
   if(r.error)throw r.error;
-  setItems(old=>old.map(x=>x.id===id?{...x,...changes}:x));
+  setItems(old=>{const next=old.map(x=>x.id===id?{...x,...changes}:x);loadedRef.current=next;return next;});
+  await refresh();
  };
  const markRead=async(id:string)=>upsertReceipt(id,{read_at:new Date().toISOString()});
  const archive=async(id:string)=>upsertReceipt(id,{read_at:new Date().toISOString(),archived_at:new Date().toISOString()});
  const restore=async(id:string)=>upsertReceipt(id,{archived_at:null});
- const markAllRead=async()=>{const r=await supabase.rpc('crm_mark_all_activity_read');if(r.error)throw r.error;const now=new Date().toISOString();setItems(old=>old.map(x=>({...x,read_at:x.read_at??now})));};
+ const markAllRead=async()=>{const r=await supabase.rpc('crm_mark_all_activity_read');if(r.error)throw r.error;const now=new Date().toISOString();setItems(old=>{const next=old.map(x=>({...x,read_at:x.read_at??now}));loadedRef.current=next;return next;});setCounts(old=>({...old,unread:0}));};
  const setPreference=async(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>{
   if(name==='in_app_sound'&&value)await unlockCrmChime();
   // Update just the chosen setting; upsert could reset unrelated options to defaults.
@@ -110,7 +144,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   if(r.error)throw r.error;
   setPrefs(old=>({...old,[name]:value}));
  };
- const unreadCount=items.filter(e=>!e.read_at&&!e.archived_at).length;
- return <Context.Provider value={{items,unreadCount,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference}}>{children}</Context.Provider>;
+ const unreadCount=counts.unread;
+ return <Context.Provider value={{items,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference}}>{children}</Context.Provider>;
 }
 export function useCrmActivity(){const ctx=useContext(Context);if(!ctx)throw new Error('CRM activity provider missing');return ctx;}
