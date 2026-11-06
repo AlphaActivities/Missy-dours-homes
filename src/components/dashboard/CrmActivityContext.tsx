@@ -65,6 +65,23 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
 
  const prefsRef=useRef(prefs);
  useEffect(()=>{prefsRef.current=prefs;},[prefs]);
+ useEffect(()=>{
+  // iOS only permits Web Audio after a real user interaction. Restore audio
+  // capability after a fresh Home Screen launch if sound was already enabled.
+  const onGesture=(event:Event)=>{
+   if(!event.isTrusted || !prefsRef.current.in_app_sound || context?.state==='running')return;
+   void unlockCrmChime();
+  };
+  document.addEventListener('pointerdown',onGesture,{capture:true,passive:true});
+  document.addEventListener('touchend',onGesture,{capture:true,passive:true});
+  document.addEventListener('keydown',onGesture,true);
+  return()=>{
+   document.removeEventListener('pointerdown',onGesture,true);
+   document.removeEventListener('touchend',onGesture,true);
+   document.removeEventListener('keydown',onGesture,true);
+  };
+ },[]);
+
  const refresh=useCallback(async()=>{
   if(!permitted.includes(email)||inFlight.current)return;
   inFlight.current=true;
