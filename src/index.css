@@ -604,3 +604,73 @@
 @media (prefers-reduced-motion: reduce) {
   .ds-shell .ds-page-reveal { animation: none !important; }
 }
+
+
+/* Premium CRM notification filters: meaningful category colors, a restrained
+   traveling highlight only on the active selection. Scoped to the inbox. */
+.ds-shell .crm-activity-filter {
+  --crm-filter-rgb: 209, 177, 112;
+  color: rgb(var(--crm-filter-rgb));
+  border-color: rgba(var(--crm-filter-rgb), .45);
+  background-color: rgba(13, 12, 11, .68);
+  isolation: isolate;
+}
+.ds-shell .crm-activity-filter[data-filter="all"] { --crm-filter-rgb: 209, 177, 112; }
+.ds-shell .crm-activity-filter[data-filter="unread"] { --crm-filter-rgb: 222, 214, 197; }
+.ds-shell .crm-activity-filter[data-filter="urgent"] { --crm-filter-rgb: 207, 119, 100; }
+.ds-shell .crm-activity-filter[data-filter="lead"] { --crm-filter-rgb: 122, 169, 216; }
+.ds-shell .crm-activity-filter[data-filter="handoff"] { --crm-filter-rgb: 125, 187, 181; }
+.ds-shell .crm-activity-filter[data-filter="staff"] { --crm-filter-rgb: 133, 186, 148; }
+.ds-shell .crm-activity-filter[data-filter="history"] { --crm-filter-rgb: 158, 155, 153; }
+.ds-shell .crm-activity-filter:hover {
+  border-color: rgba(var(--crm-filter-rgb), .8);
+  background-color: rgba(var(--crm-filter-rgb), .09);
+}
+.ds-shell .crm-activity-filter[aria-pressed="true"] {
+  color: rgb(var(--crm-filter-rgb));
+  border-color: rgba(var(--crm-filter-rgb), .85);
+  box-shadow: 0 0 0 1px rgba(var(--crm-filter-rgb), .23), 0 0 12px rgba(var(--crm-filter-rgb), .15);
+}
+.ds-shell .crm-activity-filter[aria-pressed="true"]::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -100%;
+  pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0deg 220deg, rgba(var(--crm-filter-rgb), .95) 260deg, transparent 305deg 360deg);
+  animation: crm-notification-filter-orbit 5.5s linear infinite;
+}
+.ds-shell .crm-activity-filter[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 1px;
+  border-radius: 6px;
+  pointer-events: none;
+  background: linear-gradient(130deg, rgba(var(--crm-filter-rgb), .14), rgba(12, 11, 10, .96) 65%);
+}
+@keyframes crm-notification-filter-orbit { to { transform: rotate(360deg); } }
+.ds-shell .crm-activity-filter:focus-visible,
+.ds-shell .crm-open-notification:focus-visible {
+  outline: 2px solid #e9c98c;
+  outline-offset: 3px;
+}
+.ds-shell .crm-open-notification {
+  background: linear-gradient(110deg, rgba(196, 164, 106, .13), rgba(20, 17, 13, .45));
+  box-shadow: 0 0 0 1px rgba(196, 164, 106, .09) inset;
+  transition: border-color 260ms ease, background-color 260ms ease, box-shadow 260ms ease;
+}
+.ds-shell .crm-open-notification:hover {
+  border-color: rgba(233, 199, 135, .85);
+  box-shadow: 0 0 16px rgba(196, 164, 106, .16);
+}
+.ds-shell .crm-open-notification-arrow {
+  transition: transform 260ms cubic-bezier(.22, 1, .36, 1);
+}
+.ds-shell .crm-open-notification:hover .crm-open-notification-arrow {
+  transform: translate(2px, -2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-shell .crm-activity-filter[aria-pressed="true"]::before { animation: none; }
+  .ds-shell .crm-open-notification-arrow { transition: none; }
+}
