@@ -335,7 +335,7 @@ export default function LeadsPage() {
 
               {/* Refresh */}
               <button
-                onClick={handleRefresh}
+                onClick={handleRefresh} data-crm-refresh
                 disabled={loading}
                 className="shrink-0 flex items-center gap-2 text-xs font-medium px-3.5 py-2 rounded-xl transition-all duration-150 disabled:opacity-40 h-9"
                 style={{
@@ -421,7 +421,7 @@ export default function LeadsPage() {
                 {error}
               </p>
               <button
-                onClick={handleRefresh}
+                onClick={handleRefresh} data-crm-refresh
                 className="text-xs px-4 py-2 rounded-xl transition-all duration-150"
                 style={{
                   color: 'var(--ds-text-secondary)',
