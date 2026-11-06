@@ -3,7 +3,7 @@ import {supabase} from '../../lib/supabase';
 import {useAuth} from '../../contexts/AuthContext';
 
 export type ActivityCategory='lead'|'handoff'|'escalation'|'staff';
-export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null};
+export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean};
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false});
 type ActivityState={
@@ -56,12 +56,6 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const [error,setError]=useState<string|null>(null);
  const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false),loadedRef=useRef<CrmActivity[]>([]);
  const PAGE_SIZE=60;
- const fetchReceipts=async(events:Array<{id:string}>)=>{
-  if(!events.length)return new Map<string,{read_at:string|null;archived_at:string|null}>();
-  const r=await supabase.from('crm_activity_receipts').select('event_id,read_at,archived_at').eq('staff_email',email).in('event_id',events.map(e=>e.id));
-  if(r.error)throw r.error;
-  return new Map((r.data??[]).map(x=>[x.event_id,{read_at:x.read_at,archived_at:x.archived_at}]));
- };
 
  const prefsRef=useRef(prefs);
  useEffect(()=>{prefsRef.current=prefs;},[prefs]);
@@ -87,22 +81,21 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   inFlight.current=true;
   try {
    const [events,summary,preferences,totals]=await Promise.all([
-    supabase.from('crm_activity_events').select('id,event_key,category,title,summary,target_path,created_at').order('created_at',{ascending:false}).order('id',{ascending:false}).range(0,PAGE_SIZE-1),
+    supabase.rpc('crm_activity_page',{p_offset:0,p_limit:PAGE_SIZE}),
     supabase.rpc('crm_attention_summary'),
     supabase.from('crm_notification_preferences').select('staff_email,handoff_enabled,escalation_enabled,staff_enabled,in_app_sound,updated_at').eq('staff_email',email).maybeSingle(),
     supabase.rpc('crm_activity_totals')
    ]);
    if(events.error||summary.error||preferences.error||totals.error)throw events.error||summary.error||preferences.error||totals.error;
-   const recent=events.data??[];
-   const receipts=await fetchReceipts(recent);
-   const newest=recent.map(e=>({...e,read_at:receipts.get(e.id)?.read_at??null,archived_at:receipts.get(e.id)?.archived_at??null})) as CrmActivity[];
+   const newest=(events.data??[]) as CrmActivity[];
+   const recent=newest;
    const nextPrefs=preferences.data as NotificationPrefs|null;
    if(nextPrefs)setPrefs(nextPrefs);
    const seen=loadedRef.current;
    const newestIds=new Set(newest.map(e=>e.id));
    const newArrivals=firstLoaded.current?newest.filter(e=>!seen.some(x=>x.id===e.id)):[]; 
    if(newArrivals.length && document.visibilityState==='visible' && (nextPrefs?.in_app_sound??prefsRef.current.in_app_sound) &&
-    newArrivals.some(e=>!e.read_at&&!e.archived_at&&e.category!=='staff')) chime(); // One restrained sound per refresh batch.
+    newArrivals.some(e=>!e.read_at&&!e.archived_at&&!e.lead_archived&&e.category!=='staff')) chime(); // One restrained sound per refresh batch.
    firstLoaded.current=true;lastEvent.current=newest[0]?.id??null;
    // Keep any older pages loaded by the user; the first page stays fresh.
    const next=[...newest,...seen.filter(e=>!newestIds.has(e.id))];
@@ -123,12 +116,11 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   setLoadingMore(true);
   try{
    const from=loadedRef.current.length;
-   const result=await supabase.from('crm_activity_events').select('id,event_key,category,title,summary,target_path,created_at').order('created_at',{ascending:false}).order('id',{ascending:false}).range(from,from+PAGE_SIZE-1);
+   const result=await supabase.rpc('crm_activity_page',{p_offset:from,p_limit:PAGE_SIZE});
    if(result.error)throw result.error;
-   const rows=result.data??[];
-   const receipts=await fetchReceipts(rows);
+   const rows=(result.data??[]) as CrmActivity[];
    const ids=new Set(loadedRef.current.map(e=>e.id));
-   const next=[...loadedRef.current,...rows.filter(e=>!ids.has(e.id)).map(e=>({...e,read_at:receipts.get(e.id)?.read_at??null,archived_at:receipts.get(e.id)?.archived_at??null}) as CrmActivity)];
+   const next=[...loadedRef.current,...rows.filter(e=>!ids.has(e.id))];
    loadedRef.current=next;setItems(next);setHasMore(rows.length===PAGE_SIZE);setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Could not load older notifications');}
   finally{setLoadingMore(false);}
