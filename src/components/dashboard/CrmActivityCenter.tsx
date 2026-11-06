@@ -40,7 +40,7 @@ export default function CrmActivityCenter(){
     className="shrink-0 rounded-lg border border-white/20 p-2 text-[#e6cb98]"><RefreshCw size={17}/></button>
   </div>
   <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
-   {([{label:'Unread',value:unreadCount,icon:Bell},{label:'Urgent',value:urgentCount,icon:AlertTriangle},{label:'Today',value:todayCount,icon:Clock3}] as const).map(({label,value,icon:Icon})=>
+   {([{label:'Unread',value:unreadCount,icon:Bell},{label:'Urgent',value:urgentCount,icon:AlertTriangle},{label:'Last 24h',value:todayCount,icon:Clock3}] as const).map(({label,value,icon:Icon})=>
    <div key={label} className="rounded-xl border border-[#c8a96e]/20 bg-[#14110d]/80 px-3 py-4">
     <div className="flex items-center gap-1 text-xs text-[#bfb09a]"><Icon size={13}/>{label}</div>
     <p className="mt-2 font-serif text-3xl text-[#ecd19d] tabular-nums">{value}</p>
