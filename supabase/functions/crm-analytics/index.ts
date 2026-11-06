@@ -2,7 +2,7 @@ import {createClient} from 'npm:@supabase/supabase-js@2.57.4';
 const approved=new Set(['yourcustomerflowguy@gmail.com','missydourshomes@gmail.com','heberherrera92@gmail.com']);
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'GET,OPTIONS'};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'private, no-store'}});
-const b64url=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes)).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');
+const b64url=(bytes:Uint8Array)=>btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
 const encode=(value:unknown)=>b64url(new TextEncoder().encode(JSON.stringify(value)));
 type GoogleCredentials={client_email:string;private_key:string;token_uri?:string};
 type GaRow={dimensionValues?:{value:string}[];metricValues?:{value:string}[]};
@@ -12,7 +12,7 @@ async function accessToken(creds:GoogleCredentials){
  const now=Math.floor(Date.now()/1000);
  const head=encode({alg:'RS256',typ:'JWT'});
  const payload=encode({iss:creds.client_email,scope:'https://www.googleapis.com/auth/analytics.readonly',aud:'https://oauth2.googleapis.com/token',iat:now,exp:now+3600});
- const pem=creds.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\\s/g,'');
+ const pem=creds.private_key.replaceAll('-----BEGIN PRIVATE KEY-----','').replaceAll('-----END PRIVATE KEY-----','').replaceAll('\\n','').replaceAll(' ','');
  const binary=Uint8Array.from(atob(pem),c=>c.charCodeAt(0));
  const key=await crypto.subtle.importKey('pkcs8',binary,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
  const signature=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key,new TextEncoder().encode(head+'.'+payload));
