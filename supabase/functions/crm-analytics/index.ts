@@ -12,7 +12,7 @@ async function accessToken(creds:GoogleCredentials){
  const now=Math.floor(Date.now()/1000);
  const head=encode({alg:'RS256',typ:'JWT'});
  const payload=encode({iss:creds.client_email,scope:'https://www.googleapis.com/auth/analytics.readonly',aud:'https://oauth2.googleapis.com/token',iat:now,exp:now+3600});
- const pem=creds.private_key.replaceAll('-----BEGIN PRIVATE KEY-----','').replaceAll('-----END PRIVATE KEY-----','').replaceAll('\\n','').replaceAll(' ','');
+ const pem=creds.private_key.replaceAll('-----BEGIN PRIVATE KEY-----','').replaceAll('-----END PRIVATE KEY-----','').replaceAll(String.fromCharCode(10),'').replaceAll(String.fromCharCode(13),'').replaceAll(' ','');
  const binary=Uint8Array.from(atob(pem),c=>c.charCodeAt(0));
  const key=await crypto.subtle.importKey('pkcs8',binary,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
  const signature=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key,new TextEncoder().encode(head+'.'+payload));
