@@ -24,9 +24,9 @@ export default function AnalyticsPage(){
    const auth=await supabase.auth.getSession();
    const token=auth.data.session?.access_token;
    if(!token)throw new Error('Sign in again to view website analytics.');
-   const base=String(import.meta.env.VITE_MISSY_SUPABASE_URL||'').replace(/\\/$/,'');
+   const base=String(import.meta.env.VITE_MISSY_SUPABASE_URL||'');
    const apiKey=String(import.meta.env.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY||'');
-   const response=await fetch(base+'/functions/v1/crm-analytics?days='+days,{
+   const response=await fetch(base.replace(/\\/$/,'')+'/functions/v1/crm-analytics?days='+days,{
     headers:{Authorization:'Bearer '+token,apikey:apiKey},
     signal:AbortSignal.timeout(20000)
    });
