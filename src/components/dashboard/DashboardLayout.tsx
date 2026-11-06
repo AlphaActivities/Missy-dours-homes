@@ -78,12 +78,35 @@ function DashboardLayoutInner() {
     const outlet = event.currentTarget.querySelector<HTMLElement>(':scope > div');
     const page = outlet?.firstElementChild;
     if (!(page instanceof HTMLElement)) return;
-    // Leads / Conversations already declare their ordered sections. Other
-    // pages use the direct page children, so nothing is remounted.
-    const sections = Array.from(page.querySelectorAll<HTMLElement>('.ds-page-reveal'));
-    const candidates = sections.length ? sections : Array.from(page.children).filter(
+    // Leads' four individually revealed sections are the approved reference.
+    // Do not change that working cadence. Other pages have different DOM
+    // structures: selecting every .ds-page-reveal accidentally picks just
+    // one nested Admin card, while Notifications exposes only two outer cards.
+    const directSections = () => Array.from(page.children).filter(
       (node): node is HTMLElement => node instanceof HTMLElement && node.tagName !== 'STYLE'
     );
+    let candidates: HTMLElement[];
+    if (pathname.startsWith('/dashboard/leads') || pathname.startsWith('/dashboard/conversations')) {
+      candidates = Array.from(page.querySelectorAll<HTMLElement>('.ds-page-reveal'));
+    } else if (pathname.startsWith('/dashboard/notifications')) {
+      // Reveal the same meaningful, discrete pieces users see on Leads:
+      // page heading, activity heading, the two summary cards, controls,
+      // then each visible activity entry. Avoid animating an ancestor and
+      // its children simultaneously (double transforms look jumpy).
+      candidates = [
+        ...Array.from(page.querySelectorAll<HTMLElement>(':scope > div:first-child')),
+        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > div:first-child')),
+        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > div:nth-child(2) > div')),
+        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > p')),
+        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity > div:nth-child(4)')),
+        ...Array.from(page.querySelectorAll<HTMLElement>('#crm-activity article'))
+      ];
+    } else {
+      // Settings and Admin have multiple distinct top-level panels. Their
+      // nested .ds-page-reveal classes are mount animations, not a complete
+      // representation of the cards that should replay on manual refresh.
+      candidates = directSections();
+    }
     refreshAnimations.current.forEach(animation => animation.cancel());
     refreshAnimations.current = candidates.slice(0, 12).map((section, index) =>
       section.animate(
