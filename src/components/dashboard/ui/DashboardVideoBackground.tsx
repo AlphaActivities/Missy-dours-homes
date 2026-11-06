@@ -69,6 +69,9 @@ export default function DashboardVideoBackground() {
     // pointerdown covers taps/mouse; touchend covers Safari gesture handling;
     // keydown supports keyboard-operated dashboard controls.
     document.addEventListener('pointerdown', onUserGesture, { capture: true, passive: true });
+    // Test 5: attempt playback at finger contact, before a swipe or tap finishes.
+    // Keep touchend as the proven Test 4 fallback if iOS declines touchstart.
+    document.addEventListener('touchstart', onUserGesture, { capture: true, passive: true });
     document.addEventListener('touchend', onUserGesture, { capture: true, passive: true });
     document.addEventListener('keydown', onUserGesture, true);
     mqMotion.addEventListener('change', onMotion);
@@ -79,6 +82,7 @@ export default function DashboardVideoBackground() {
       video.removeEventListener('loadedmetadata', seekInitial);
       document.removeEventListener('visibilitychange', onVisibility);
       document.removeEventListener('pointerdown', onUserGesture, true);
+      document.removeEventListener('touchstart', onUserGesture, true);
       document.removeEventListener('touchend', onUserGesture, true);
       document.removeEventListener('keydown', onUserGesture, true);
       mqMotion.removeEventListener('change', onMotion);
