@@ -64,20 +64,22 @@ export default function CrmActivityCenter(){
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
-   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 '+(!item.read_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
+   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(item.lead_status==='new'&&!item.lead_archived&&!item.archived_at?'crm-actionable-notification border-[#d5aa66]/70 bg-[#1b1510]/90':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
     <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1">
      <div className="flex flex-wrap items-center gap-2">
       <strong className="text-sm text-[#f0dfc4]">{item.title}</strong>
       <span className="rounded border border-[#c8a96e]/25 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#c8a96e]">{categoryLabel(item.category)}</span>
-      {!item.read_at&&!item.archived_at&&!item.lead_archived&&<span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] text-emerald-300">New</span>}
+      {item.lead_status==='new'&&!item.lead_archived&&!item.archived_at&&<span className="inline-flex items-center gap-1 rounded-full border border-amber-400/45 bg-amber-400/10 px-2.5 py-1 text-[10px] font-semibold tracking-[0.025em] text-amber-200"><AlertTriangle size={11} aria-hidden="true"/> Needs Attention</span>}
+      {!item.read_at&&!item.archived_at&&!item.lead_archived&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
      {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.summary}</p>
+     {item.lead_status==='new'&&!item.lead_archived&&!item.archived_at&&<p className="mt-3 rounded-lg border border-[#c8a96e]/20 bg-[#c8a96e]/10 px-3 py-2 text-xs font-medium text-[#efce94]">This inquiry is awaiting follow-up. Opening it does not mark it handled.</p>}
      <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
     </div></div>
     <div className="mt-3 flex flex-wrap items-center gap-2">
      <Link to={safeTarget(item.target_path)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}}
-      className="crm-open-notification inline-flex items-center gap-2 rounded-md border border-[#c8a96e]/50 px-3.5 py-2 text-xs font-medium tracking-[0.025em] text-[#f1d7a6]">{actionLabel(item)}{item.target_path.startsWith('/dashboard/leads?lead=')?<ArrowUpRight size={15} strokeWidth={1.45} aria-hidden="true" className="crm-open-notification-arrow"/>:<ExternalLink size={13} strokeWidth={1.5} aria-hidden="true"/>}</Link>
+      className={'crm-open-notification inline-flex items-center gap-2 rounded-md border border-[#c8a96e]/50 px-3.5 py-2 text-xs font-medium tracking-[0.025em] text-[#f1d7a6] '+(item.lead_status==='new'&&!item.lead_archived&&!item.archived_at?'crm-open-attention':'')}>{actionLabel(item)}{item.target_path.startsWith('/dashboard/leads?lead=')?<ArrowUpRight size={15} strokeWidth={1.45} aria-hidden="true" className="crm-open-notification-arrow"/>:<ExternalLink size={13} strokeWidth={1.5} aria-hidden="true"/>}</Link>
      {!item.read_at&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
       className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40"><Check size={13}/> Mark read</button>}
      {!item.lead_archived&&<button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)}

@@ -3,7 +3,7 @@ import {supabase} from '../../lib/supabase';
 import {useAuth} from '../../contexts/AuthContext';
 
 export type ActivityCategory='lead'|'handoff'|'escalation'|'staff';
-export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean};
+export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null};
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false});
 type ActivityState={
@@ -56,6 +56,21 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const [error,setError]=useState<string|null>(null);
  const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false),loadedRef=useRef<CrmActivity[]>([]);
  const PAGE_SIZE=60;
+ // A notification being read does not mean the associated inquiry was handled.
+ // Query the CURRENT lead stage separately; preserve personal read receipts.
+ const attachLeadStatuses=async(rows:CrmActivity[]):Promise<CrmActivity[]>=>{
+  const ids=[...new Set(rows.map(e=>e.target_path.startsWith('/dashboard/leads?lead=')?
+   e.target_path.slice('/dashboard/leads?lead='.length):'').filter(Boolean))];
+  if(!ids.length)return rows;
+  const res=await supabase.from('leads').select('id,status').in('id',ids);
+  if(res.error)throw res.error;
+  const statuses=new Map((res.data??[]).map(l=>[l.id,l.status]));
+  return rows.map(e=>{
+   const id=e.target_path.startsWith('/dashboard/leads?lead=')?
+    e.target_path.slice('/dashboard/leads?lead='.length):'';
+   return {...e,lead_status:id?(statuses.get(id)??null):null};
+  });
+ };
 
  const prefsRef=useRef(prefs);
  useEffect(()=>{prefsRef.current=prefs;},[prefs]);
@@ -87,7 +102,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     supabase.rpc('crm_activity_totals')
    ]);
    if(events.error||summary.error||preferences.error||totals.error)throw events.error||summary.error||preferences.error||totals.error;
-   const newest=(events.data??[]) as CrmActivity[];
+   const newest=await attachLeadStatuses((events.data??[]) as CrmActivity[]);
    const recent=newest;
    const nextPrefs=preferences.data as NotificationPrefs|null;
    if(nextPrefs)setPrefs(nextPrefs);
@@ -118,7 +133,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const from=loadedRef.current.length;
    const result=await supabase.rpc('crm_activity_page',{p_offset:from,p_limit:PAGE_SIZE});
    if(result.error)throw result.error;
-   const rows=(result.data??[]) as CrmActivity[];
+   const rows=await attachLeadStatuses((result.data??[]) as CrmActivity[]);
    const ids=new Set(loadedRef.current.map(e=>e.id));
    const next=[...loadedRef.current,...rows.filter(e=>!ids.has(e.id))];
    loadedRef.current=next;setItems(next);setHasMore(rows.length===PAGE_SIZE);setError(null);

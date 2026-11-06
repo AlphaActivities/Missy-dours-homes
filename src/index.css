@@ -637,7 +637,19 @@
   z-index: 0;
   inset: -100%;
   pointer-events: none;
-  background: conic-gradient(from 0deg, transparent 0deg 220deg, rgba(var(--crm-filter-rgb), .95) 260deg, transparent 305deg 360deg);
+  /* Both ends fade fully to transparent before the 0/360 seam. On blue
+     filters this avoids the visible white cut line from the old hard stop. */
+  background: conic-gradient(from 0deg,
+    transparent 0deg 184deg,
+    rgba(var(--crm-filter-rgb), 0) 202deg,
+    rgba(var(--crm-filter-rgb), .07) 221deg,
+    rgba(var(--crm-filter-rgb), .28) 239deg,
+    rgba(var(--crm-filter-rgb), .7) 258deg,
+    rgba(var(--crm-filter-rgb), .88) 268deg,
+    rgba(var(--crm-filter-rgb), .62) 278deg,
+    rgba(var(--crm-filter-rgb), .22) 294deg,
+    rgba(var(--crm-filter-rgb), .04) 310deg,
+    transparent 331deg 360deg);
   animation: crm-notification-filter-orbit 5.5s linear infinite;
 }
 .ds-shell .crm-activity-filter[aria-pressed="true"]::after {
@@ -673,4 +685,14 @@
 @media (prefers-reduced-motion: reduce) {
   .ds-shell .crm-activity-filter[aria-pressed="true"]::before { animation: none; }
   .ds-shell .crm-open-notification-arrow { transition: none; }
+}
+
+/* Outstanding CRM work is highlighted independently of read receipts. */
+.ds-shell .crm-actionable-notification {
+  box-shadow: inset 0 0 0 1px rgba(205, 159, 89, .12), 0 0 22px rgba(168, 112, 51, .12);
+}
+.ds-shell .crm-open-attention {
+  border-color: rgba(223, 183, 114, .73);
+  background: linear-gradient(110deg, rgba(196, 164, 106, .3), rgba(68, 46, 24, .55));
+  box-shadow: inset 0 0 0 1px rgba(225, 194, 133, .12), 0 0 12px rgba(196, 164, 106, .14);
 }
