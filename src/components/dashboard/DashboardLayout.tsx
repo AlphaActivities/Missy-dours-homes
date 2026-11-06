@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type MouseEvent } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, type MouseEvent } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
@@ -66,6 +66,19 @@ function DashboardLayoutInner() {
   const [signOutError, setSignOutError] = useState<string | null>(null);
   useEffect(() => { if (isLoginRoute) setSigningOut(false); }, [isLoginRoute]);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const pageScrollRef = useRef<HTMLElement>(null);
+  const previousPagePathRef = useRef(pathname);
+  // Every dashboard route shares the same scroll surface. Reset it before
+  // paint when navigating to another section, so prior scroll positions do
+  // not carry over from Overview to Leads (or any other dashboard page).
+  // Ignore search-parameter updates within a section, preserving lead drawer,
+  // filter, refresh and in-page interaction positions.
+  useLayoutEffect(() => {
+    if (previousPagePathRef.current === pathname) return;
+    previousPagePathRef.current = pathname;
+    pageScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
   const refreshAnimations = useRef<Animation[]>([]);
   // Re-play the same 420ms / 110ms luxury cascade only for explicitly
   // marked manual refresh buttons. Do not remount the route (that would discard
@@ -371,7 +384,7 @@ function DashboardLayoutInner() {
 
         {/* Page: retain Overview's own 110ms card stagger; apply matching
             section entrance timing to the other dashboard routes. */}
-        <main className="flex-1 overflow-y-auto animate-ds-fade-in" onClickCapture={replayRefreshStagger}>
+        <main ref={pageScrollRef} className="flex-1 overflow-y-auto animate-ds-fade-in" onClickCapture={replayRefreshStagger}>
           <style>{`
             @keyframes crmSectionEnter {
               from { opacity: 0; transform: translate3d(0, 12px, 0); }
