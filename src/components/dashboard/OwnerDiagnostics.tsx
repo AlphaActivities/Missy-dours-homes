@@ -130,7 +130,7 @@ export default function OwnerDiagnostics(){
  return <div><section className="ds-page-reveal ds-page-reveal-1 mb-5 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/50 px-3 py-3 sm:px-4" aria-label="Concierge staff push readiness">
      <div className="flex flex-wrap items-center justify-between gap-2">
        <p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Team device readiness</p>
-       <button type="button" onClick={()=>void refreshTeamReadiness()} className="rounded-md border border-white/15 px-2.5 py-1.5 text-xs text-[#e6cb98]">Refresh devices</button>
+       <button type="button" onClick={()=>void refreshTeamReadiness()} data-crm-refresh className="rounded-md border border-white/15 px-2.5 py-1.5 text-xs text-[#e6cb98]">Refresh devices</button>
      </div>
      <p className="mt-1 text-xs text-[#bdb0a0]">Registration is not proof of delivery. Each staff member must verify a real device alert before launch.</p>
      {<div className="mt-3 flex flex-wrap items-center gap-3">
