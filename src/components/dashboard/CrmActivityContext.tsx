@@ -37,6 +37,11 @@ function chime(){
   }
  }catch{/* Never disrupt staff work when audio is unavailable. */}
 }
+/** Preview via a real button press, so iOS is allowed to unlock Web Audio. */
+export async function previewCrmChime(){
+ await unlockCrmChime();
+ chime();
+}
 const permitted=['yourcustomerflowguy@gmail.com','missydourshomes@gmail.com','heberherrera92@gmail.com'];
 export function CrmActivityProvider({children}:{children:ReactNode}){
  const {user}=useAuth(),email=user?.email?.toLowerCase()??'';
