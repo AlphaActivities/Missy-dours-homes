@@ -311,7 +311,7 @@ function DashboardLayoutInner() {
                     size={15}
                     style={{ color: isActive ? 'var(--ds-gold)' : 'var(--ds-text-tertiary)' }}
                   />
-                  <span>{label}</span>{to==='/dashboard/notifications'&&unreadCount>0&&<span className="ml-auto rounded-full bg-[#803a30] px-2 py-0.5 text-[10px] font-semibold text-[#fff1de]" aria-label={unreadCount+' unread notifications'}>{unreadCount>99?'99+':unreadCount}</span>}
+                  <span>{label}</span>{to==='/dashboard/notifications'&&attentionCount>0&&<span className="ml-auto inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#a92f30] px-1.5 py-0.5 text-[10px] font-semibold text-white" aria-label={attentionCount+' items needing attention'}>{attentionCount>99?'99+':attentionCount}</span>}
                 </>
               )}
             </NavLink>
@@ -375,10 +375,10 @@ function DashboardLayoutInner() {
             </div>
           </div>
           <button type="button" onClick={()=>navigate('/dashboard/notifications')}
-            aria-label={'Notifications: '+unreadCount+' unread alerts, '+attentionCount+' items need attention'}
+            aria-label={'Notifications: '+attentionCount+' items need attention, '+unreadCount+' unread alerts'}
             className="relative shrink-0 rounded-lg p-2 text-[#e1c18a]">
             <BellRing size={21}/>
-            {unreadCount>0&&<span className="absolute -right-1 -top-1 rounded-full bg-[#7a3227] px-1.5 text-[10px] text-white">{unreadCount>99?'99+':unreadCount}</span>}
+            {attentionCount>0&&<span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0b0a,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{attentionCount>99?'99+':attentionCount}</span>}
           </button>
         </header>
 
