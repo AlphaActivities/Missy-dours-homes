@@ -20,6 +20,7 @@ import ConversationsPage from './pages/dashboard/ConversationsPage';
 import OwnerAdminPage from './pages/dashboard/OwnerAdminPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
 import NotificationsPage from './pages/dashboard/NotificationsPage';
+import AnalyticsPage from './pages/dashboard/AnalyticsPage';
 import ConciergePrivateQAPage from './pages/dashboard/ConciergePrivateQAPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
@@ -173,6 +174,7 @@ export default function App() {
           <Route path="/dashboard/admin" element={<ProtectedRoute><OwnerAdminPage /></ProtectedRoute>} />
           <Route path="/dashboard/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/dashboard/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+          <Route path="/dashboard/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
           <Route path="/dashboard/concierge-qa" element={<ProtectedRoute><ConciergePrivateQAPage /></ProtectedRoute>} />
         </Route>
       </Routes>

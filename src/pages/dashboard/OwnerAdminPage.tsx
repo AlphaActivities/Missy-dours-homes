@@ -17,15 +17,19 @@ export default function OwnerAdminPage(){
  const [deleteBusy,setDeleteBusy]=useState(false);
  const [deleteFeedback,setDeleteFeedback]=useState('');
  const [refreshing,setRefreshing]=useState(false);
+ const [auditEvents,setAuditEvents]=useState<{created_at:string;action:string;details:Record<string,unknown>}[]>([]);
+ const [auditError,setAuditError]=useState('');
  const refresh=async()=>{
   setRefreshing(true);
   try{
-   const [a,b]=await Promise.all([
+   const [a,b,c]=await Promise.all([
     supabase.rpc('missy_owner_concierge_launch_status'),
-    supabase.from('ai_conversations').select('id',{count:'exact',head:true})
+    supabase.from('ai_conversations').select('id',{count:'exact',head:true}),
+    supabase.rpc('missy_owner_recent_audit',{p_limit:20})
    ]);
    if(!a.error)setLive(a.data===true);else setLaunchFeedback(a.error.message);
    if(!b.error)setCount(b.count??0);
+   if(c.error)setAuditError('Audit history unavailable');else{setAuditError('');setAuditEvents((c.data??[]) as {created_at:string;action:string;details:Record<string,unknown>}[]);}
   }finally{setRefreshing(false);}
  };
  useEffect(()=>{if(owner)void refresh();},[owner]);
@@ -62,8 +66,17 @@ export default function OwnerAdminPage(){
    <a href="#concierge-operations" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Concierge operations</a>
    <a href="#owner-testing" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Private testing</a>
    <a href="#owner-diagnostics" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Diagnostics</a>
+   <a href="#owner-audit" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Audit history</a>
    <a href="#owner-danger-zone" className="rounded-lg border border-red-400/30 px-3 py-2 text-red-200">Danger zone</a>
   </nav>
+  <section aria-label="Owner system health" className="mb-5 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/70 p-4">
+   <h2 className="font-serif text-lg text-[#edcfa0]">System Health</h2>
+   <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+    <div className="rounded-lg border border-[#c8a96e]/20 bg-black/20 p-3"><p className="text-xs text-[#bdb0a0]">Public Concierge</p><p className="mt-1 text-[#e8d2aa]">{live===null?'Checking…':live?'Live':'Paused'}</p></div>
+    <div className="rounded-lg border border-[#c8a96e]/20 bg-black/20 p-3"><p className="text-xs text-[#bdb0a0]">Conversations</p><p className="mt-1 text-[#e8d2aa]">{count===null?'Checking…':count}</p></div>
+   </div>
+   <p className="mt-3 text-xs text-[#bdb0a0]">Team push readiness and delivery tests remain available under Technical diagnostics below. System status is read-only here.</p>
+  </section>
   <section id="concierge-operations" className="mb-5 scroll-mt-5 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 p-4">
    <h2 className="text-sm font-semibold uppercase tracking-widest text-[#e6cb98]">Public chatbot</h2>
    <p className="mt-3 text-sm">Backend status: <strong className={live?'text-emerald-300':'text-amber-200'}>{live===null?'Checking…':live?'Live':'Paused'}</strong></p>
@@ -83,6 +96,16 @@ export default function OwnerAdminPage(){
    <p className="mt-2 text-xs text-[#bdb0a0]">Troubleshooting and private test tools for the owner, not everyday staff preferences.</p>
    <OwnerDiagnostics/>
   </details>
+  <section id="owner-audit" className="mb-5 scroll-mt-5 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/65 p-4">
+   <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-serif text-lg text-[#edcfa0]">Owner Audit History</h2><button type="button" data-crm-refresh disabled={refreshing} onClick={()=>void refresh()} className="rounded-lg border border-[#c8a96e]/35 px-3 py-2 text-xs text-[#e6cb98] disabled:opacity-40">Refresh activity</button></div>
+   <p className="mt-2 text-xs text-[#bdb0a0]">Records owner publication, pause, and confirmed conversation purge actions from this point forward.</p>
+   {auditError&&<p role="alert" className="mt-3 text-xs text-amber-200">{auditError}</p>}
+   {!auditError&&auditEvents.length===0&&<p className="mt-3 text-xs text-[#bdb0a0]">No recorded owner operations yet.</p>}
+   <div className="mt-3 space-y-2">{auditEvents.map((event,index)=><div key={event.created_at+index} className="rounded-lg border border-white/10 bg-black/20 p-3">
+    <div className="flex flex-wrap justify-between gap-2 text-xs"><span className="font-medium text-[#e6cb98]">{event.action==='concierge_published'?'Concierge published':event.action==='concierge_paused'?'Concierge paused':event.action==='concierge_purged'?'Conversations purged':event.action}</span><time className="text-[#b6aa98]">{new Date(event.created_at).toLocaleString()}</time></div>
+    {event.action==='concierge_purged'&&<p className="mt-2 text-xs text-[#bdb0a0]">{String(event.details.deleted_conversations??0)} conversations removed</p>}
+   </div>)}</div>
+  </section>
   <details id="owner-danger-zone" className="mt-5 scroll-mt-5 rounded-xl border border-red-400/35 bg-[#211310]/65 p-4">
    <summary className="cursor-pointer font-serif text-lg text-red-200">Danger zone · Destructive operations</summary>
    <p className="mt-3 text-xs text-red-200/80">Only expand this section when deliberately managing permanent data deletion.</p>

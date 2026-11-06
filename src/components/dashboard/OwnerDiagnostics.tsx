@@ -6,8 +6,6 @@ type TeamPushReadiness={staff_name:string;device_count:number};
 export default function OwnerDiagnostics(){
  const {user}=useAuth();
  const canViewTeamReadiness=user?.email?.toLowerCase()==='yourcustomerflowguy@gmail.com';
- const [pushState]=useState<'idle'|'working'|'enabled'|'unavailable'>('enabled');
- const [alertsEnabled]=useState(true);
   const [teamReadiness,setTeamReadiness]=useState<TeamPushReadiness[]>([]);
  const [teamReadinessError,setTeamReadinessError]=useState(false);
  const [manualRefreshing,setManualRefreshing]=useState(false);
