@@ -1,21 +1,24 @@
 import {useMemo,useState} from 'react';
-import {Bell,Archive,CheckCheck,Check,RotateCcw,ArrowUpRight,ExternalLink,RefreshCw,AlertTriangle,Inbox,Clock3} from 'lucide-react';
+import {Bell,Archive,Check,RotateCcw,ArrowUpRight,ExternalLink,RefreshCw,AlertTriangle,Inbox,Clock3} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 
 type Filter='all'|'unread'|'urgent'|'lead'|'handoff'|'staff'|'history';
 const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent':category==='lead'?'Lead':category==='handoff'?'Direct Chat Request':'Staff Activity';
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'?value:'/dashboard/conversations';
+const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|·)/gi,'$1Homepage');
 const actionLabel=(item:CrmActivity)=>item.target_path.startsWith('/dashboard/leads?lead=')?'Open Lead':'View Conversation';
 const filters:Array<{key:Filter;label:string}>=[
  {key:'all',label:'All'},{key:'unread',label:'Unread'},{key:'urgent',label:'Urgent'},
  {key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
 ];
 export default function CrmActivityCenter(){
- const {items,unreadCount,urgentCount,todayCount,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,markAllRead,archive,restore}=useCrmActivity();
+ const {items,unreadCount,urgentCount,todayCount,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
  const [filter,setFilter]=useState<Filter>('all');
  const [working,setWorking]=useState(false);
  const [notice,setNotice]=useState('');
+ const [refreshing,setRefreshing]=useState(false);
+ const refreshInbox=async()=>{if(refreshing)return;setRefreshing(true);try{await refresh();}finally{setRefreshing(false);}};
  const visible=useMemo(()=>items.filter(e=>{
   if(filter==='history')return Boolean(e.archived_at||e.lead_archived);
   if(e.archived_at||e.lead_archived)return false;
@@ -34,11 +37,20 @@ export default function CrmActivityCenter(){
   void execute(()=>archive(item.id));
  };
  return <section id="crm-activity" className="mt-5 text-[#edddc4]" aria-label="CRM notifications inbox">
-  <div className="flex items-start justify-between gap-3">
-   <div><h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><Inbox size={19}/> Activity inbox</h2>
-    <p className="mt-1 text-xs text-[#bdb0a0]">Website inquiries, direct chat requests, and staff activity in one place</p></div>
-   <button type="button" aria-label="Refresh notifications" data-crm-refresh onClick={()=>void refresh()}
-    className="shrink-0 rounded-lg border border-white/20 p-2 text-[#e6cb98]"><RefreshCw size={17}/></button>
+  <div>
+   <div className="flex items-center justify-between gap-3">
+    <h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><Inbox size={19}/> Activity inbox</h2>
+    <button type="button" aria-label={refreshing?'Refreshing notifications':'Refresh notifications'} aria-busy={refreshing}
+     disabled={refreshing} data-crm-refresh onClick={()=>void refreshInbox()}
+     className="inline-flex min-w-[108px] shrink-0 items-center justify-center gap-2 rounded-lg border border-white/20 px-2.5 py-2 text-xs text-[#e6cb98] disabled:opacity-70">
+     <RefreshCw size={16} className={refreshing?'animate-spin':''}/>
+     <span>{refreshing?'Refreshing…':'Refresh'}</span>
+    </button>
+   </div>
+   <p className="mt-2 text-xs leading-relaxed text-[#bdb0a0]">
+    <span className="block">Website inquiries and direct chat requests</span>
+    <span className="block">Staff activity, follow-ups, and important updates</span>
+   </p>
   </div>
   <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
    {([{label:'Unread',value:unreadCount,icon:Bell},{label:'Urgent',value:urgentCount,icon:AlertTriangle},{label:'Last 24h',value:todayCount,icon:Clock3}] as const).map(({label,value,icon:Icon})=>
@@ -53,8 +65,6 @@ export default function CrmActivityCenter(){
      aria-pressed={filter===key} data-filter={key} className="crm-activity-filter relative isolate overflow-hidden rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,box-shadow] duration-300">
      <span className="relative z-10">{label}{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</span></button>)}
    </div>
-   <button type="button" disabled={working||unreadCount===0} onClick={()=>void execute(markAllRead)}
-    className="inline-flex items-center gap-1.5 rounded-lg border border-[#c8a96e]/35 px-3 py-2 text-xs text-[#edce93] disabled:opacity-40"><CheckCheck size={15}/> Mark all read</button>
   </div>
   {notice&&<p role="alert" className="mt-3 text-sm text-amber-200">{notice}</p>}
   {error&&<p role="alert" className="mt-3 text-xs text-amber-200">{error} <button type="button" onClick={()=>void refresh()} className="underline">Try again</button></p>}
@@ -69,12 +79,15 @@ export default function CrmActivityCenter(){
      <div className="flex flex-wrap items-center gap-2">
       <strong className="text-sm text-[#f0dfc4]">{item.title}</strong>
       <span className="rounded border border-[#c8a96e]/25 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#c8a96e]">{categoryLabel(item.category)}</span>
-      {item.lead_status==='new'&&!item.lead_archived&&!item.archived_at&&<span className="inline-flex items-center gap-1 rounded-full border border-amber-400/45 bg-amber-400/10 px-2.5 py-1 text-[10px] font-semibold tracking-[0.025em] text-amber-200"><AlertTriangle size={11} aria-hidden="true"/> Needs Attention</span>}
+      {item.lead_status==='new'&&!item.lead_archived&&!item.archived_at&&<span className="inline-flex items-center gap-1 rounded-full border border-red-400/55 bg-red-700/20 px-2.5 py-1 text-[10px] font-semibold tracking-[0.025em] text-red-200"><AlertTriangle size={11} aria-hidden="true"/> Needs Attention</span>}
       {!item.read_at&&!item.archived_at&&!item.lead_archived&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
      {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
-     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.summary}</p>
-     {item.lead_status==='new'&&!item.lead_archived&&!item.archived_at&&<p className="mt-3 rounded-lg border border-[#c8a96e]/20 bg-[#c8a96e]/10 px-3 py-2 text-xs font-medium text-[#efce94]">This inquiry is awaiting follow-up. Opening it does not mark it handled.</p>}
+     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{friendlySummary(item.summary)}</p>
+     {item.lead_status==='new'&&!item.lead_archived&&!item.archived_at&&<div className="mt-3 space-y-1.5">
+      <p className="inline-flex items-center gap-1.5 rounded-md border border-red-400/35 bg-red-900/20 px-3 py-2 text-xs font-semibold text-red-200"><AlertTriangle size={13} aria-hidden="true"/> Follow-up required</p>
+      <p className="text-xs italic leading-relaxed text-[#cbbbaa]">This inquiry hasn't been handled yet. Open the lead to review the details and take the next step.</p>
+     </div>}
      <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
     </div></div>
     <div className="mt-3 flex flex-wrap items-center gap-2">

@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react';
 import {Link} from 'react-router-dom';
-import {Settings2,ShieldAlert} from 'lucide-react';
+import {Settings2,ShieldAlert,RefreshCw} from 'lucide-react';
 import {supabase} from '../../lib/supabase';
 import {useAuth} from '../../contexts/AuthContext';
 import OwnerDiagnostics from '../../components/dashboard/OwnerDiagnostics';
@@ -16,13 +16,17 @@ export default function OwnerAdminPage(){
  const [deletePhrase,setDeletePhrase]=useState('');
  const [deleteBusy,setDeleteBusy]=useState(false);
  const [deleteFeedback,setDeleteFeedback]=useState('');
+ const [refreshing,setRefreshing]=useState(false);
  const refresh=async()=>{
-  const [a,b]=await Promise.all([
-   supabase.rpc('missy_owner_concierge_launch_status'),
-   supabase.from('ai_conversations').select('id',{count:'exact',head:true})
-  ]);
-  if(!a.error)setLive(a.data===true);else setLaunchFeedback(a.error.message);
-  if(!b.error)setCount(b.count??0);
+  setRefreshing(true);
+  try{
+   const [a,b]=await Promise.all([
+    supabase.rpc('missy_owner_concierge_launch_status'),
+    supabase.from('ai_conversations').select('id',{count:'exact',head:true})
+   ]);
+   if(!a.error)setLive(a.data===true);else setLaunchFeedback(a.error.message);
+   if(!b.error)setCount(b.count??0);
+  }finally{setRefreshing(false);}
  };
  useEffect(()=>{if(owner)void refresh();},[owner]);
  const changeLaunch=async()=>{
@@ -66,7 +70,7 @@ export default function OwnerAdminPage(){
    <p className="mt-2 text-xs text-[#bdb0a0]">Only the owner can change this switch. Pausing prevents visitor API calls; the public chat icon remains visible.</p>
    <label htmlFor="publish-phrase" className="mt-4 block text-xs text-[#e6cb98]">Type {live?'PAUSE CONCIERGE':'PUBLISH CONCIERGE'} to change status</label>
    <input id="publish-phrase" className="mt-2 w-full rounded-lg border border-[#c8a96e]/35 bg-black/30 p-3 text-base text-white" value={launchPhrase} onChange={e=>setLaunchPhrase(e.target.value)} autoComplete="off" />
-   <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void changeLaunch()} disabled={launchBusy||live===null||launchPhrase!==(live?'PAUSE CONCIERGE':'PUBLISH CONCIERGE')} className="rounded-lg border border-[#c8a96e] px-4 py-2 text-sm text-[#e6cb98] disabled:opacity-40">{live?'Pause public chat':'Launch public chat'}</button><button type="button" onClick={()=>void refresh()} data-crm-refresh className="rounded-lg border border-white/20 px-4 py-2 text-sm">Refresh status</button></div>
+   <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void changeLaunch()} disabled={launchBusy||live===null||launchPhrase!==(live?'PAUSE CONCIERGE':'PUBLISH CONCIERGE')} className="rounded-lg border border-[#c8a96e] px-4 py-2 text-sm text-[#e6cb98] disabled:opacity-40">{live?'Pause public chat':'Launch public chat'}</button><button type="button" onClick={()=>void refresh()} data-crm-refresh disabled={refreshing} aria-busy={refreshing} className="inline-flex min-w-[145px] items-center justify-center gap-2 rounded-lg border border-white/20 px-4 py-2 text-sm disabled:opacity-60"><RefreshCw size={14} className={refreshing?'animate-spin':''}/>{refreshing?'Refreshing…':'Refresh status'}</button></div>
    {launchFeedback&&<p role="status" className="mt-3 text-sm">{launchFeedback}</p>}
   </section>
   <section id="owner-testing" className="mb-5 scroll-mt-5 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/50 p-4">
@@ -88,7 +92,7 @@ export default function OwnerAdminPage(){
    <p className="mt-2 text-xs text-amber-200">Deletion is blocked if attached files need separate storage cleanup. This action cannot be undone.</p>
    <label htmlFor="delete-phrase" className="mt-4 block text-xs text-red-200">Type DELETE ALL CONVERSATIONS to confirm</label>
    <input id="delete-phrase" autoComplete="off" value={deletePhrase} onChange={e=>setDeletePhrase(e.target.value)} className="mt-2 w-full rounded-lg border border-red-400/35 bg-black/30 p-3 text-base text-white"/>
-   <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void deleteAll()} disabled={deleteBusy||deletePhrase!=='DELETE ALL CONVERSATIONS'} className="rounded-lg bg-red-800/75 px-4 py-2 text-sm text-white disabled:opacity-40">{deleteBusy?'Deleting…':'Permanently delete all conversations'}</button><button type="button" onClick={()=>void refresh()} data-crm-refresh className="rounded-lg border border-white/20 px-4 py-2 text-sm">Refresh count</button></div>
+   <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void deleteAll()} disabled={deleteBusy||deletePhrase!=='DELETE ALL CONVERSATIONS'} className="rounded-lg bg-red-800/75 px-4 py-2 text-sm text-white disabled:opacity-40">{deleteBusy?'Deleting…':'Permanently delete all conversations'}</button><button type="button" onClick={()=>void refresh()} data-crm-refresh disabled={refreshing} aria-busy={refreshing} className="inline-flex min-w-[145px] items-center justify-center gap-2 rounded-lg border border-white/20 px-4 py-2 text-sm disabled:opacity-60"><RefreshCw size={14} className={refreshing?'animate-spin':''}/>{refreshing?'Refreshing…':'Refresh count'}</button></div>
    {deleteFeedback&&<p role="status" className="mt-3 text-sm">{deleteFeedback}</p>}
    </section>
   </details>
