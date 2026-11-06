@@ -338,7 +338,7 @@ function DashboardLayoutInner() {
 
         {/* Mobile top bar — hidden on login route, which has its own full-screen layout */}
         <header
-          className={`ds-dash-topbar ${isLoginRoute ? 'hidden' : 'lg:hidden'} flex items-center gap-3 px-4 py-4 shrink-0`}
+          className={`ds-dash-topbar ${isLoginRoute ? 'hidden' : 'lg:hidden'} sticky top-0 z-20 flex items-center gap-3 px-4 py-4 shrink-0`}
           style={{
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             boxShadow: '0 1px 0 rgba(255,255,255,0.04)',
