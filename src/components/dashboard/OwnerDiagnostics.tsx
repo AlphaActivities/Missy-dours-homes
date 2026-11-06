@@ -1,4 +1,5 @@
 import { useEffect,useState } from 'react';
+import {RefreshCw} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 type TeamPushReadiness={staff_name:string;device_count:number};
@@ -9,6 +10,7 @@ export default function OwnerDiagnostics(){
  const [alertsEnabled]=useState(true);
   const [teamReadiness,setTeamReadiness]=useState<TeamPushReadiness[]>([]);
  const [teamReadinessError,setTeamReadinessError]=useState(false);
+ const [manualRefreshing,setManualRefreshing]=useState(false);
  const [pushTestState,setPushTestState]=useState<'idle'|'sending'|'accepted'|'error'>('idle');
  const [pushTestMessage,setPushTestMessage]=useState('');
  const [aiSmokeBusy,setAiSmokeBusy]=useState(false);
@@ -119,6 +121,11 @@ export default function OwnerDiagnostics(){
    setTeamReadinessError(true);
   }
  };
+ const manualRefresh=async()=>{
+  if(manualRefreshing)return;
+  setManualRefreshing(true);
+  try{await refreshTeamReadiness();}finally{setManualRefreshing(false);}
+ };
  useEffect(()=>{
   if(!canViewTeamReadiness){setTeamReadiness([]);setTeamReadinessError(false);return;}
   void refreshTeamReadiness();
@@ -130,7 +137,7 @@ export default function OwnerDiagnostics(){
  return <div><section className="ds-page-reveal ds-page-reveal-1 mb-5 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/50 px-3 py-3 sm:px-4" aria-label="Concierge staff push readiness">
      <div className="flex flex-wrap items-center justify-between gap-2">
        <p className="text-xs font-semibold uppercase tracking-[.13em] text-[#e6cb98]">Team device readiness</p>
-       <button type="button" onClick={()=>void refreshTeamReadiness()} data-crm-refresh className="rounded-md border border-white/15 px-2.5 py-1.5 text-xs text-[#e6cb98]">Refresh devices</button>
+       <button type="button" onClick={()=>void manualRefresh()} data-crm-refresh disabled={manualRefreshing} aria-busy={manualRefreshing} className="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-md border border-white/15 px-2.5 py-1.5 text-xs text-[#e6cb98] disabled:opacity-60"><RefreshCw size={13} className={manualRefreshing?'animate-spin':''}/>{manualRefreshing?'Refreshing…':'Refresh devices'}</button>
      </div>
      <p className="mt-1 text-xs text-[#bdb0a0]">Registration is not proof of delivery. Each staff member must verify a real device alert before launch.</p>
      {<div className="mt-3 flex flex-wrap items-center gap-3">
