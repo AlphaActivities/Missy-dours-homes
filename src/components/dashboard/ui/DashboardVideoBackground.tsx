@@ -41,76 +41,29 @@ export default function DashboardVideoBackground() {
     video.addEventListener('loadedmetadata', seekInitial);
     seekInitial();
 
-    // Test 2: retry the *same* muted inline playback request when iOS reports
-    // the media is ready or the installed PWA becomes active again.
-    // Keep retries bounded; Low Power Mode may block autoplay by policy.
-    let disposed = false;
-    let pending = false;
-    let lastAttempt = 0;
-    let retry: ReturnType<typeof setTimeout> | undefined;
-    let retryCount = 0;
-    const MAX_RETRIES = 3;
-
-    const tryPlay = () => {
-      if (disposed || !shouldPlay() || pending || !video.paused) return;
-      const elapsed = Date.now() - lastAttempt;
-      if (elapsed < 500) {
-        if (!retry) retry = setTimeout(() => { retry = undefined; tryPlay(); }, 500 - elapsed);
-        return;
-      }
-      lastAttempt = Date.now();
-      pending = true;
-      void video.play().then(() => {
-        pending = false;
-        retryCount = 0;
-      }).catch(() => {
-        pending = false;
-        if (!disposed && shouldPlay() && retryCount < MAX_RETRIES) {
-          retryCount += 1;
-          if (retry) clearTimeout(retry);
-          retry = setTimeout(() => { retry = undefined; tryPlay(); }, 800);
-        }
-      });
-    };
-
     const sync = () => {
+      if (!video) return;
       if (shouldPlay()) {
-        retryCount = 0;
-        tryPlay();
+        void video.play().catch(() => { /* autoplay may be blocked; ignore */ });
       } else {
-        if (retry) clearTimeout(retry);
-        retry = undefined;
         video.pause();
       }
     };
-    const onReady = () => { seekInitial(); tryPlay(); };
+
     const onVisibility = () => sync();
     const onMotion = () => {
-      if (mqMotion.matches) {
-        if (retry) clearTimeout(retry);
-        retry = undefined;
-        video.pause();
-      } else sync();
+      if (mqMotion.matches) video?.pause();
+      else sync();
     };
 
-    video.addEventListener('loadeddata', onReady);
-    video.addEventListener('canplay', onReady);
-    video.addEventListener('seeked', onReady);
     document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('pageshow', onVisibility);
     mqMotion.addEventListener('change', onMotion);
 
     sync();
 
     return () => {
-      disposed = true;
-      if (retry) clearTimeout(retry);
       video.removeEventListener('loadedmetadata', seekInitial);
-      video.removeEventListener('loadeddata', onReady);
-      video.removeEventListener('canplay', onReady);
-      video.removeEventListener('seeked', onReady);
       document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('pageshow', onVisibility);
       mqMotion.removeEventListener('change', onMotion);
     };
   }, []);
