@@ -26,7 +26,7 @@ export default function AnalyticsPage(){
    if(!token)throw new Error('Sign in again to view website analytics.');
    const base=String(import.meta.env.VITE_MISSY_SUPABASE_URL||'');
    const apiKey=String(import.meta.env.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY||'');
-   const response=await fetch(base.replace(/\\/$/,'')+'/functions/v1/crm-analytics?days='+days,{
+   const response=await fetch((base.endsWith('/')?base.slice(0,-1):base)+'/functions/v1/crm-analytics?days='+days,{
     headers:{Authorization:'Bearer '+token,apikey:apiKey},
     signal:AbortSignal.timeout(20000)
    });
