@@ -50,6 +50,15 @@ export default function DashboardVideoBackground() {
       }
     };
 
+    // Test 4: iOS may block unattended autoplay in Low Power Mode, but a
+    // genuine user gesture can sometimes authorize muted inline playback.
+    // Call play() directly in the trusted event handler (not a timer/effect),
+    // without blocking the normal dashboard interaction or showing controls.
+    const onUserGesture = (event: Event) => {
+      if (!event.isTrusted || !shouldPlay() || !video.paused) return;
+      void video.play().catch(() => { /* iOS can still decline playback. */ });
+    };
+
     const onVisibility = () => sync();
     const onMotion = () => {
       if (mqMotion.matches) video?.pause();
@@ -57,6 +66,11 @@ export default function DashboardVideoBackground() {
     };
 
     document.addEventListener('visibilitychange', onVisibility);
+    // pointerdown covers taps/mouse; touchend covers Safari gesture handling;
+    // keydown supports keyboard-operated dashboard controls.
+    document.addEventListener('pointerdown', onUserGesture, { capture: true, passive: true });
+    document.addEventListener('touchend', onUserGesture, { capture: true, passive: true });
+    document.addEventListener('keydown', onUserGesture, true);
     mqMotion.addEventListener('change', onMotion);
 
     sync();
@@ -64,6 +78,9 @@ export default function DashboardVideoBackground() {
     return () => {
       video.removeEventListener('loadedmetadata', seekInitial);
       document.removeEventListener('visibilitychange', onVisibility);
+      document.removeEventListener('pointerdown', onUserGesture, true);
+      document.removeEventListener('touchend', onUserGesture, true);
+      document.removeEventListener('keydown', onUserGesture, true);
       mqMotion.removeEventListener('change', onMotion);
     };
   }, []);
