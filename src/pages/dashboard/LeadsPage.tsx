@@ -346,8 +346,8 @@ export default function LeadsPage() {
                 onMouseEnter={e => !loading && (e.currentTarget.style.color = 'var(--ds-text-primary)')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
               >
-                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-                <span className="hidden sm:inline">Refresh</span>
+                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
+                <span aria-live="polite">{loading ? 'Refreshing…' : 'Refresh'}</span>
               </button>
             </div>
           }
@@ -431,7 +431,7 @@ export default function LeadsPage() {
                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-text-primary)')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
               >
-                Try again
+                {loading ? 'Refreshing…' : 'Try again'}
               </button>
             </div>
           ) : (
