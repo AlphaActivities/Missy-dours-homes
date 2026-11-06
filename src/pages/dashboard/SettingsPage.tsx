@@ -144,7 +144,7 @@ export default function SettingsPage(){
    {message&&<p role="status" className="mt-3 text-sm text-[#e7cfa6]">{message}</p>}
   </section>
   <section className={label+' mt-5'}>
-   <div className="flex items-center justify-between gap-2"><div><h2 className="font-serif text-xl text-[#edcfa0]">My Devices</h2><p className="mt-1 text-xs text-[#bdb0a0]">Each browser and installed app registers separately.</p></div><button type="button" aria-label="Refresh devices" onClick={()=>void reload()} className="rounded-lg border border-white/15 p-2"><RefreshCw size={17}/></button></div>
+   <div className="flex items-center justify-between gap-2"><div><h2 className="font-serif text-xl text-[#edcfa0]">My Devices</h2><p className="mt-1 text-xs text-[#bdb0a0]">Each browser and installed app registers separately.</p></div><button type="button" aria-label="Refresh devices" data-crm-refresh onClick={()=>void reload()} className="rounded-lg border border-white/15 p-2"><RefreshCw size={17}/></button></div>
    {loading?<p className="mt-4 text-sm text-[#bdb0a0]">Checking your devices…</p>:devices.length===0?<p className="mt-4 text-sm text-[#bdb0a0]">No registered devices yet.</p>:<div className="mt-4 space-y-3">
     {devices.map(d=><article key={d.id} className="rounded-xl border border-white/15 bg-black/20 p-4">
      <div className="flex items-start gap-3">{/iPhone|iPad|Android/.test(d.user_agent??'')?<Smartphone className="mt-1 shrink-0 text-[#d5b16d]" size={21}/>:<Monitor className="mt-1 shrink-0 text-[#d5b16d]" size={21}/>}
