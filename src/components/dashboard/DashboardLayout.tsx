@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
@@ -66,6 +66,37 @@ function DashboardLayoutInner() {
   const [signOutError, setSignOutError] = useState<string | null>(null);
   useEffect(() => { if (isLoginRoute) setSigningOut(false); }, [isLoginRoute]);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const refreshAnimations = useRef<Animation[]>([]);
+  // Re-play the same 420ms / 110ms luxury cascade only for explicitly
+  // marked manual refresh buttons. Do not remount the route (that would discard
+  // scroll position, form drafts, and other staff interaction state).
+  const replayRefreshStagger = (event: MouseEvent<HTMLElement>) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const button = target.closest<HTMLButtonElement>('button[data-crm-refresh]');
+    if (!button || button.disabled || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const outlet = event.currentTarget.querySelector<HTMLElement>(':scope > div');
+    const page = outlet?.firstElementChild;
+    if (!(page instanceof HTMLElement)) return;
+    // Leads / Conversations already declare their ordered sections. Other
+    // pages use the direct page children, so nothing is remounted.
+    const sections = Array.from(page.querySelectorAll<HTMLElement>('.ds-page-reveal'));
+    const candidates = sections.length ? sections : Array.from(page.children).filter(
+      (node): node is HTMLElement => node instanceof HTMLElement && node.tagName !== 'STYLE'
+    );
+    refreshAnimations.current.forEach(animation => animation.cancel());
+    refreshAnimations.current = candidates.slice(0, 12).map((section, index) =>
+      section.animate(
+        [{ opacity: 0, transform: 'translate3d(0,12px,0)' }, { opacity: 1, transform: 'translate3d(0,0,0)' }],
+        { duration: 420, delay: Math.min(index, 7) * 110, easing: 'cubic-bezier(.22,1,.36,1)' }
+      )
+    );
+  };
+  useEffect(() => () => {
+    refreshAnimations.current.forEach(animation => animation.cancel());
+    refreshAnimations.current = [];
+  }, [pathname]);
+
 
   // Remove any overflow-hidden the public site may leave on body
   useEffect(() => {
@@ -317,7 +348,7 @@ function DashboardLayoutInner() {
 
         {/* Page: retain Overview's own 110ms card stagger; apply matching
             section entrance timing to the other dashboard routes. */}
-        <main className="flex-1 overflow-y-auto animate-ds-fade-in">
+        <main className="flex-1 overflow-y-auto animate-ds-fade-in" onClickCapture={replayRefreshStagger}>
           <style>{`
             @keyframes crmSectionEnter {
               from { opacity: 0; transform: translate3d(0, 12px, 0); }
