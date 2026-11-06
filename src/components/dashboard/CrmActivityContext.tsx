@@ -1,47 +1,24 @@
 import {createContext,useCallback,useContext,useEffect,useRef,useState,type ReactNode} from 'react';
 import {supabase} from '../../lib/supabase';
 import {useAuth} from '../../contexts/AuthContext';
+import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound,type CrmSound} from './crmSounds';
 
 export type ActivityCategory='lead'|'handoff'|'escalation'|'staff';
 export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null};
-export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;updated_at?:string};
-const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false});
+export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'sound_staff';
+export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
+const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
 type ActivityState={
  items:CrmActivity[];unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
  prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;
  markRead:(eventId:string)=>Promise<void>;archive:(eventId:string)=>Promise<void>;restore:(eventId:string)=>Promise<void>;
  markAllRead:()=>Promise<void>;setPreference:(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>Promise<void>;
+ setSoundPreference:(name:SoundPreferenceKey,value:CrmSound)=>Promise<void>;
 };
 const Context=createContext<ActivityState|null>(null);
-let context:AudioContext|null=null;
-export async function unlockCrmChime(){
- try {
-  if(typeof window==='undefined')return;
-  context??=new AudioContext();
-  await context.resume();
- }catch{/* Audio is optional and browser controlled. */}
-}
-function chime(){
- if(!context||context.state!=='running')return;
- try {
-  const now=context.currentTime;
-  for(const [index,freq] of [740,988].entries()){
-   const oscillator=context.createOscillator(),gain=context.createGain();
-   oscillator.type='sine';oscillator.frequency.value=freq;
-   const start=now+index*0.12;
-   gain.gain.setValueAtTime(0.0001,start);
-   gain.gain.exponentialRampToValueAtTime(0.055,start+0.014);
-   gain.gain.exponentialRampToValueAtTime(0.0001,start+0.25);
-   oscillator.connect(gain);gain.connect(context.destination);
-   oscillator.start(start);oscillator.stop(start+0.27);
-  }
- }catch{/* Never disrupt staff work when audio is unavailable. */}
-}
-/** Preview via a real button press, so iOS is allowed to unlock Web Audio. */
-export async function previewCrmChime(){
- await unlockCrmChime();
- chime();
-}
+/** Preserve the approved original two-note test sound. */
+export {unlockCrmAudio as unlockCrmChime};
+export async function previewCrmChime(){await previewCrmSound('signature');}
 const permitted=['yourcustomerflowguy@gmail.com','missydourshomes@gmail.com','heberherrera92@gmail.com'];
 export function CrmActivityProvider({children}:{children:ReactNode}){
  const {user}=useAuth(),email=user?.email?.toLowerCase()??'';
@@ -78,8 +55,8 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   // iOS only permits Web Audio after a real user interaction. Restore audio
   // capability after a fresh Home Screen launch if sound was already enabled.
   const onGesture=(event:Event)=>{
-   if(!event.isTrusted || !prefsRef.current.in_app_sound || context?.state==='running')return;
-   void unlockCrmChime();
+   if(!event.isTrusted || !prefsRef.current.in_app_sound || isCrmAudioRunning())return;
+   void unlockCrmAudio();
   };
   document.addEventListener('pointerdown',onGesture,{capture:true,passive:true});
   document.addEventListener('touchend',onGesture,{capture:true,passive:true});
@@ -98,19 +75,36 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const [events,summary,preferences,totals]=await Promise.all([
     supabase.rpc('crm_activity_page',{p_offset:0,p_limit:PAGE_SIZE}),
     supabase.rpc('crm_attention_summary'),
-    supabase.from('crm_notification_preferences').select('staff_email,handoff_enabled,escalation_enabled,staff_enabled,in_app_sound,updated_at').eq('staff_email',email).maybeSingle(),
+    supabase.from('crm_notification_preferences').select('staff_email,handoff_enabled,escalation_enabled,staff_enabled,in_app_sound,sound_lead,sound_handoff,sound_escalation,sound_staff,updated_at').eq('staff_email',email).maybeSingle(),
     supabase.rpc('crm_activity_totals')
    ]);
    if(events.error||summary.error||preferences.error||totals.error)throw events.error||summary.error||preferences.error||totals.error;
    const newest=await attachLeadStatuses((events.data??[]) as CrmActivity[]);
    const recent=newest;
-   const nextPrefs=preferences.data as NotificationPrefs|null;
+   const rawPrefs=preferences.data as Partial<NotificationPrefs>|null;
+   const baseline=defaults(email);
+   const nextPrefs=rawPrefs?{
+    ...baseline,...rawPrefs,
+    sound_lead:isCrmSound(rawPrefs.sound_lead)?rawPrefs.sound_lead:baseline.sound_lead,
+    sound_handoff:isCrmSound(rawPrefs.sound_handoff)?rawPrefs.sound_handoff:baseline.sound_handoff,
+    sound_escalation:isCrmSound(rawPrefs.sound_escalation)?rawPrefs.sound_escalation:baseline.sound_escalation,
+    sound_staff:isCrmSound(rawPrefs.sound_staff)?rawPrefs.sound_staff:baseline.sound_staff,
+   } as NotificationPrefs:null;
    if(nextPrefs)setPrefs(nextPrefs);
    const seen=loadedRef.current;
    const newestIds=new Set(newest.map(e=>e.id));
    const newArrivals=firstLoaded.current?newest.filter(e=>!seen.some(x=>x.id===e.id)):[]; 
-   if(newArrivals.length && document.visibilityState==='visible' && (nextPrefs?.in_app_sound??prefsRef.current.in_app_sound) &&
-    newArrivals.some(e=>!e.read_at&&!e.archived_at&&!e.lead_archived&&e.category!=='staff')) chime(); // One restrained sound per refresh batch.
+   if(newArrivals.length && document.visibilityState==='visible' && (nextPrefs?.in_app_sound??prefsRef.current.in_app_sound)){
+    // Play once per polling batch, prioritized by urgency.
+    const priority:ActivityCategory[]=['escalation','handoff','lead','staff'];
+    const actionable=newArrivals.filter(e=>!e.read_at&&!e.archived_at&&!e.lead_archived);
+    const first=priority.map(category=>actionable.find(e=>e.category===category)).find(Boolean);
+    if(first){
+     const current=nextPrefs??prefsRef.current;
+     const name=('sound_'+first.category) as SoundPreferenceKey;
+     playCrmSound(current[name]);
+    }
+   }
    firstLoaded.current=true;lastEvent.current=newest[0]?.id??null;
    // Keep any older pages loaded by the user; the first page stays fresh.
    const next=[...newest,...seen.filter(e=>!newestIds.has(e.id))];
@@ -162,13 +156,19 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const restore=async(id:string)=>upsertReceipt(id,{archived_at:null});
  const markAllRead=async()=>{const r=await supabase.rpc('crm_mark_all_activity_read');if(r.error)throw r.error;const now=new Date().toISOString();setItems(old=>{const next=old.map(x=>({...x,read_at:x.read_at??now}));loadedRef.current=next;return next;});setCounts(old=>({...old,unread:0}));};
  const setPreference=async(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>{
-  if(name==='in_app_sound'&&value)await unlockCrmChime();
+  if(name==='in_app_sound'&&value)await unlockCrmAudio();
   // Update just the chosen setting; upsert could reset unrelated options to defaults.
   const r=await supabase.from('crm_notification_preferences').update({[name]:value,updated_at:new Date().toISOString()}).eq('staff_email',email);
   if(r.error)throw r.error;
   setPrefs(old=>({...old,[name]:value}));
  };
+ const setSoundPreference=async(name:SoundPreferenceKey,value:CrmSound)=>{
+  if(!isCrmSound(value))throw new Error('Unknown notification sound');
+  const r=await supabase.from('crm_notification_preferences').update({[name]:value,updated_at:new Date().toISOString()}).eq('staff_email',email);
+  if(r.error)throw r.error;
+  setPrefs(old=>({...old,[name]:value}));
+ };
  const unreadCount=counts.unread;
- return <Context.Provider value={{items,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference}}>{children}</Context.Provider>;
+ return <Context.Provider value={{items,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>{children}</Context.Provider>;
 }
 export function useCrmActivity(){const ctx=useContext(Context);if(!ctx)throw new Error('CRM activity provider missing');return ctx;}
