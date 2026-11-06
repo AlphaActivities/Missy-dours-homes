@@ -109,7 +109,7 @@ export default function ConciergeSignatureEntrance() {
    {/* Reveal a complete, stable snapshot only after data resolves and the greeting begins.
        Keep the bell/badge/text centered in a fixed column: no placeholder swap or width jump. */}
    {alertRevealReady&&entranceAttention!==null&&<motion.div
-     className="pointer-events-none absolute inset-x-0 top-[calc(38%-196px)] max-lg:top-[calc(38%-226px)] mx-auto flex w-full flex-col items-center justify-center gap-2 px-3 text-center text-[#edd2a3]"
+     className="pointer-events-none absolute inset-x-0 top-[calc(38%-220px)] max-lg:top-[calc(38%-250px)] mx-auto flex w-full flex-col items-center justify-center gap-2 px-3 text-center text-[#edd2a3]"
      initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}}
      transition={{duration:.38,ease:[.22,1,.36,1]}}
      aria-label={entranceAttention.count===null?'Notifications unavailable':entranceAttention.count+' '+(entranceAttention.count===1?'notification':'notifications')+' requiring attention'}>
