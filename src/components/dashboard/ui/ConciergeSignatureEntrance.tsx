@@ -25,7 +25,7 @@ const formatDeviceDate = () => new Intl.DateTimeFormat(navigator.language || 'en
 export default function ConciergeSignatureEntrance() {
  const { user } = useAuth();
  const greeting = getDashboardGreeting(user?.email);
- const {attentionCount,loading:attentionLoading}=useCrmActivity();
+ const {attentionCount,loading:attentionLoading,error:attentionError}=useCrmActivity();
  const [visible,setVisible]=useState(()=>!entrancePlayed);
  const [phase,setPhase]=useState<'welcome'|'fly'|'leave'>('welcome');
  const [target,setTarget]=useState<Target>({x:0,y:0,scale:1,radius:16,innerScale:1});
@@ -136,14 +136,14 @@ export default function ConciergeSignatureEntrance() {
    {/* Only addition to the approved cinematic entrance: a small live,
        anonymous outstanding-work summary. Nothing changes logo geometry,
        welcome timing, diagonal flight, ring, date or original animations. */}
-   {!attentionLoading&&<motion.div
+   {!attentionLoading&&!attentionError&&<motion.div
     className="pointer-events-none absolute inset-x-0 mx-auto flex w-[min(86vw,350px)] items-center justify-center gap-3 rounded-xl border border-[#c4a369]/30 bg-[#17120e]/75 px-4 py-3 shadow-[0_0_24px_rgba(196,164,106,.09)]"
     style={{bottom:'max(36px, env(safe-area-inset-bottom))'}}
     initial={{opacity:0,y:6}} animate={{opacity:phase==='welcome'?1:0,y:0}}
     transition={{duration:.4,ease:'easeOut'}}>
     <BellRing size={17} className="shrink-0 text-[#ddbb7c]" aria-hidden="true"/>
     <div className="min-w-0 text-left">
-     <p className="text-xs font-semibold tracking-[.045em] text-[#edd2a3]">{attentionCount===0?'All caught up':attentionCount+' '+(attentionCount===1?'item':'items')+' need attention'}</p>
+     <p className="text-xs font-semibold tracking-[.045em] text-[#edd2a3]">{attentionCount+' '+(attentionCount===1?'item needs':'items need')+' attention'}</p>
      <p className="mt-0.5 text-[10px] tracking-[.04em] text-[#af9e83]">Private executive overview</p>
     </div>
    </motion.div>}
