@@ -100,9 +100,8 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     const actionable=newArrivals.filter(e=>!e.read_at&&!e.archived_at&&!e.lead_archived);
     const first=priority.map(category=>actionable.find(e=>e.category===category)).find(Boolean);
     if(first){
-     const current=nextPrefs??prefsRef.current;
      const name=('sound_'+first.category) as SoundPreferenceKey;
-     playCrmSound(current[name]);
+     playCrmSound(defaults(email)[name]);
     }
    }
    firstLoaded.current=true;lastEvent.current=newest[0]?.id??null;
