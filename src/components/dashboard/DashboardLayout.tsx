@@ -11,9 +11,9 @@ import { clearUserNoteDrafts } from '../../lib/crmNoteDrafts';
 
 const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
-  { to: '/dashboard/notifications', label: 'Notifications', icon: BellRing, end: true },
   { to: '/dashboard/leads', label: 'Leads',    icon: Users,            end: false },
   { to: '/dashboard/conversations', label: 'Conversations', icon: MessageCircle, end: false },
+  { to: '/dashboard/notifications', label: 'Notifications', icon: BellRing, end: true },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings2, end: true },
   { to: '/dashboard/admin', label: 'Admin', icon: ShieldCheck, end: true, ownerOnly: true },
 ];
@@ -311,7 +311,7 @@ function DashboardLayoutInner() {
                     size={15}
                     style={{ color: isActive ? 'var(--ds-gold)' : 'var(--ds-text-tertiary)' }}
                   />
-                  <span>{label}</span>{to==='/dashboard/notifications'&&attentionCount>0&&<span className="ml-auto inline-flex min-w-[20px] items-center justify-center rounded-full bg-[#a92f30] px-1.5 py-0.5 text-[10px] font-semibold text-white" aria-label={attentionCount+' items needing attention'}>{attentionCount>99?'99+':attentionCount}</span>}
+                  <span>{label}</span>{to==='/dashboard/notifications'&&attentionCount>0&&<span className="ml-auto inline-flex h-6 w-6 min-h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-[#a92f30] p-0 text-[10px] font-semibold leading-none text-white" aria-label={attentionCount+' items needing attention'}>{attentionCount>99?'99+':attentionCount}</span>}
                 </>
               )}
             </NavLink>
