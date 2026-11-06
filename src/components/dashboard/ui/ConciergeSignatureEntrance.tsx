@@ -31,6 +31,18 @@ export default function ConciergeSignatureEntrance() {
  const [target,setTarget]=useState<Target>({x:0,y:0,scale:1,radius:16,innerScale:1});
  const [reduced,setReduced]=useState(false);
  const [deviceDate,setDeviceDate]=useState(formatDeviceDate);
+ // Freeze the first resolved attention result for this short cinematic entrance.
+ // Live CRM counts continue updating normally in the dashboard behind it.
+ const [entranceAttention,setEntranceAttention]=useState<{count:number|null}|null>(null);
+ const [alertRevealReady,setAlertRevealReady]=useState(false);
+ useEffect(()=>{
+  const timer=window.setTimeout(()=>setAlertRevealReady(true),800);
+  return()=>window.clearTimeout(timer);
+ },[]);
+ useEffect(()=>{
+  if(attentionLoading||entranceAttention!==null)return;
+  setEntranceAttention({count:attentionError?null:attentionCount});
+ },[attentionLoading,attentionError,attentionCount,entranceAttention]);
  useEffect(()=>{
   const updateDate=()=>setDeviceDate(formatDeviceDate());
   const interval=window.setInterval(updateDate,60_000);
@@ -94,18 +106,19 @@ export default function ConciergeSignatureEntrance() {
    role="status" aria-label="Opening Missy Dours private CRM" aria-live="polite">
    <style>{`@keyframes crmGoldSheen { 0% { transform: translate3d(-155px,-170px,0) rotate(35deg); opacity:0; } 12% {opacity:1;} 72% {opacity:1;} 100% {transform:translate3d(210px,195px,0) rotate(35deg);opacity:0;} } @keyframes crmGoldRim { 0%,100% {opacity:0;} 30% {opacity:.15;} 55% {opacity:.75;} 80% {opacity:.08;} } .crm-logo-sheen {animation:crmGoldSheen 1900ms linear 90ms 1 both;} .crm-logo-sheen-rim {animation:crmGoldRim 1900ms ease-in-out 90ms 1 both;} @keyframes crmLuxurySpin {to{transform:rotate(360deg)}} @keyframes crmLuxuryType {from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}} @keyframes crmLuxuryCursor {0%,49%{opacity:1}50%,100%{opacity:0}} .crm-date-type {animation:crmLuxuryType 1.15s steps(31,end) .55s both;} .crm-date-cursor {animation:crmLuxuryCursor .5s steps(1,end) 3;} .crm-luxury-ring {animation:crmLuxurySpin 1.667s linear infinite;filter:drop-shadow(0 0 5px rgba(255,212,122,.65));} @media (prefers-reduced-motion:reduce) {.crm-luxury-ring{animation:none;} .crm-logo-sheen,.crm-logo-sheen-rim{animation:none;opacity:0;}}`}</style>
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
-   {/* The attention summary stays mounted regardless of read receipts or fetch timing.
-       It appears just above the existing greeting without shifting it or the logo. */}
-   <motion.div className="pointer-events-none absolute inset-x-0 top-[calc(38%-180px)] max-lg:top-[calc(38%-210px)] mx-auto flex max-w-[94vw] items-center justify-center gap-3 px-3 text-[#edd2a3]"
+   {/* Reveal a complete, stable snapshot only after data resolves and the greeting begins.
+       Keep the bell/badge/text centered in a fixed column: no placeholder swap or width jump. */}
+   {alertRevealReady&&entranceAttention!==null&&<motion.div
+     className="pointer-events-none absolute inset-x-0 top-[calc(38%-196px)] max-lg:top-[calc(38%-226px)] mx-auto flex w-full flex-col items-center justify-center gap-2 px-3 text-center text-[#edd2a3]"
      initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}}
-     transition={phase==='welcome'?{duration:.38,delay:.8,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}
-     aria-label={attentionLoading?'Checking notifications':attentionError?'Notification status unavailable':attentionCount+' '+(attentionCount===1?'notification':'notifications')+' needing attention'}>
+     transition={{duration:.38,ease:[.22,1,.36,1]}}
+     aria-label={entranceAttention.count===null?'Notifications unavailable':entranceAttention.count+' '+(entranceAttention.count===1?'notification':'notifications')+' requiring attention'}>
      <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#ddbb7c]">
       <BellRing size={26} strokeWidth={1.8} aria-hidden="true"/>
-      {!attentionLoading&&!attentionError&&attentionCount>0&&<span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0a08,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{attentionCount>99?'99+':attentionCount}</span>}
+      {entranceAttention.count!==null&&entranceAttention.count>0&&<span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0a08,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{entranceAttention.count>99?'99+':entranceAttention.count}</span>}
      </span>
-     <span className="text-[13px] font-semibold leading-snug tracking-[.025em]">{attentionLoading?'Checking notifications':attentionError?'Notifications unavailable':attentionCount===0?'All caught up':attentionCount+' new '+(attentionCount===1?'notification':'notifications')}</span>
-   </motion.div>
+     <span className="min-h-[19px] text-[13px] font-semibold leading-snug tracking-[.025em]">{entranceAttention.count===null?'Notifications unavailable':entranceAttention.count===0?'All caught up':entranceAttention.count+' new '+(entranceAttention.count===1?'notification':'notifications')}</span>
+   </motion.div>}
    {greeting && <motion.p className="pointer-events-none absolute inset-x-0 top-[calc(38%-112px)] max-lg:top-[calc(38%-142px)] px-4 text-center text-[18px] sm:text-[21px] font-medium tracking-[.09em] text-[#f0d8a0] drop-shadow-[0_0_14px_rgba(196,164,106,.2)]"
      initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}} transition={phase==='welcome'?{duration:.55,delay:.35,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}>{greeting}</motion.p>}
    <div className="absolute left-1/2 top-[38%] max-lg:top-[calc(38%-30px)]" style={{transform:'translate(-50%, -50%)'}}>
