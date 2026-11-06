@@ -4,7 +4,6 @@ import {Settings2,ShieldAlert,RefreshCw} from 'lucide-react';
 import {supabase} from '../../lib/supabase';
 import {useAuth} from '../../contexts/AuthContext';
 import OwnerDiagnostics from '../../components/dashboard/OwnerDiagnostics';
-import CrmSoundStudio from '../../components/dashboard/CrmSoundStudio';
 
 export default function OwnerAdminPage(){
  const {user}=useAuth();
@@ -79,7 +78,6 @@ export default function OwnerAdminPage(){
    <p className="mt-2 text-xs text-[#bdb0a0]">Owner-authorized test sessions use reserved QA contact details.</p>
    <Link to="/dashboard/concierge-qa" className="mt-3 inline-block rounded-lg border border-[#c8a96e] px-4 py-2 text-sm text-[#e6cb98]">Open private QA chat</Link>
   </section>
-  <CrmSoundStudio admin/>
   <details id="owner-diagnostics" className="mb-5 scroll-mt-5 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/65 p-4">
    <summary className="cursor-pointer font-serif text-lg text-[#edcfa0]">Technical diagnostics and staff delivery readiness</summary>
    <p className="mt-2 text-xs text-[#bdb0a0]">Troubleshooting and private test tools for the owner, not everyday staff preferences.</p>
