@@ -13,7 +13,7 @@ const filters:Array<{key:Filter;label:string}>=[
  {key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
 ];
 export default function CrmActivityCenter(){
- const {items,unreadCount,urgentCount,todayCount,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,markAllRead,archive,restore}=useCrmActivity();
+ const {items,unreadCount,urgentCount,todayCount,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
  const [filter,setFilter]=useState<Filter>('all');
  const [working,setWorking]=useState(false);
  const [notice,setNotice]=useState('');
