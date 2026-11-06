@@ -626,42 +626,38 @@
   border-color: rgba(var(--crm-filter-rgb), .8);
   background-color: rgba(var(--crm-filter-rgb), .09);
 }
-.ds-shell .crm-activity-filter[aria-pressed="true"] {
-  color: rgb(var(--crm-filter-rgb));
-  border-color: rgba(var(--crm-filter-rgb), .85);
-  box-shadow: 0 0 0 1px rgba(var(--crm-filter-rgb), .23), 0 0 12px rgba(var(--crm-filter-rgb), .15);
+/* Animate the border itself, not a rotating cone behind the label.
+   Registered angle interpolates smoothly in modern iOS Safari, while matching
+   0/360 gradient stops remove the abrupt radial seam seen on blue chips. */
+@property --crm-filter-orbit-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
 }
-.ds-shell .crm-activity-filter[aria-pressed="true"]::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: -100%;
-  pointer-events: none;
-  /* Both ends fade fully to transparent before the 0/360 seam. On blue
-     filters this avoids the visible white cut line from the old hard stop. */
-  background: conic-gradient(from 0deg,
-    transparent 0deg 184deg,
-    rgba(var(--crm-filter-rgb), 0) 202deg,
-    rgba(var(--crm-filter-rgb), .07) 221deg,
-    rgba(var(--crm-filter-rgb), .28) 239deg,
-    rgba(var(--crm-filter-rgb), .7) 258deg,
-    rgba(var(--crm-filter-rgb), .88) 268deg,
-    rgba(var(--crm-filter-rgb), .62) 278deg,
-    rgba(var(--crm-filter-rgb), .22) 294deg,
-    rgba(var(--crm-filter-rgb), .04) 310deg,
-    transparent 331deg 360deg);
+.ds-shell .crm-activity-filter[aria-pressed="true"] {
+  --crm-filter-orbit-angle: 0deg;
+  color: rgb(var(--crm-filter-rgb));
+  border-color: transparent;
+  background:
+    linear-gradient(130deg, rgba(var(--crm-filter-rgb), .14), rgba(12, 11, 10, .96) 65%) padding-box,
+    conic-gradient(from var(--crm-filter-orbit-angle),
+      rgba(var(--crm-filter-rgb), .14) 0deg,
+      rgba(var(--crm-filter-rgb), .17) 45deg,
+      rgba(var(--crm-filter-rgb), .26) 85deg,
+      rgba(var(--crm-filter-rgb), .48) 120deg,
+      rgba(var(--crm-filter-rgb), .78) 155deg,
+      rgba(var(--crm-filter-rgb), .9) 180deg,
+      rgba(var(--crm-filter-rgb), .78) 205deg,
+      rgba(var(--crm-filter-rgb), .48) 240deg,
+      rgba(var(--crm-filter-rgb), .26) 275deg,
+      rgba(var(--crm-filter-rgb), .17) 315deg,
+      rgba(var(--crm-filter-rgb), .14) 360deg) border-box;
+  box-shadow: 0 0 0 1px rgba(var(--crm-filter-rgb), .23), 0 0 12px rgba(var(--crm-filter-rgb), .15);
   animation: crm-notification-filter-orbit 5.5s linear infinite;
 }
-.ds-shell .crm-activity-filter[aria-pressed="true"]::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 1px;
-  border-radius: 6px;
-  pointer-events: none;
-  background: linear-gradient(130deg, rgba(var(--crm-filter-rgb), .14), rgba(12, 11, 10, .96) 65%);
+@keyframes crm-notification-filter-orbit {
+  to { --crm-filter-orbit-angle: 360deg; }
 }
-@keyframes crm-notification-filter-orbit { to { transform: rotate(360deg); } }
 .ds-shell .crm-activity-filter:focus-visible,
 .ds-shell .crm-open-notification:focus-visible {
   outline: 2px solid #e9c98c;
@@ -683,7 +679,7 @@
   transform: translate(2px, -2px);
 }
 @media (prefers-reduced-motion: reduce) {
-  .ds-shell .crm-activity-filter[aria-pressed="true"]::before { animation: none; }
+  .ds-shell .crm-activity-filter[aria-pressed="true"] { animation: none; }
   .ds-shell .crm-open-notification-arrow { transition: none; }
 }
 
