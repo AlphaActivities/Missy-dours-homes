@@ -1,6 +1,7 @@
 import {useCallback,useEffect,useState} from 'react';
 import {Activity,BarChart3,CalendarDays,RefreshCw,ShieldCheck} from 'lucide-react';
 import {supabase} from '../../lib/supabase';
+import {IosNativeTap} from '../../components/dashboard/DashboardHaptics';
 
 type Row={label:string;value:number};
 type Analytics={rangeDays:number;metrics:{activeUsers:number;sessions:number;screenPageViews:number;keyEvents:number};trend:Row[];pages:Row[];channels:Row[];events:Row[]};
@@ -42,7 +43,7 @@ export default function AnalyticsPage(){
   <header className="mb-6 flex items-center gap-3"><BarChart3 className="shrink-0 text-[#d7b878]" size={25}/><div><h1 className="font-serif text-2xl">Website Intelligence</h1><p className="mt-1 text-sm text-[#bdb0a0]">Google Analytics 4 · Read-only website performance</p></div></header>
   <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/70 p-3">
    <div className="flex items-center gap-2 text-sm text-[#d8c5a2]"><CalendarDays size={17}/><span>Reporting period</span></div>
-   <div className="flex items-center gap-2">{rangeOptions.map(v=><button type="button" key={v} aria-pressed={days===v} onClick={()=>setDays(v)} className={'rounded-lg border px-3 py-2 text-xs '+(days===v?'border-[#c8a96e] bg-[#42331e] text-[#f5dba7]':'border-white/15 text-[#c8b99f]')}>{v}d</button>)}
+   <div className="flex items-center gap-2">{rangeOptions.map(v=><IosNativeTap key={v}><button type="button" aria-pressed={days===v} onClick={()=>setDays(v)} className={'rounded-lg border px-3 py-2 text-xs '+(days===v?'border-[#c8a96e] bg-[#42331e] text-[#f5dba7]':'border-white/15 text-[#c8b99f]')}>{v}d</button></IosNativeTap>)}
     <button type="button" data-crm-refresh disabled={loading} aria-label="Refresh Google Analytics" onClick={()=>void reload()} className="rounded-lg border border-white/20 p-2 disabled:opacity-40"><RefreshCw size={16} className={loading?'animate-spin':''}/></button>
    </div>
   </div>
