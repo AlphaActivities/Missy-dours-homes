@@ -8,7 +8,7 @@ The /dashboard/analytics route is available to the three approved signed-in CRM 
 2. In Google Cloud, create a service account within a project where the Google Analytics Data API is enabled, and create an authorized JSON key. Use a dedicated reporting identity with least privilege.
 3. In GA4 → Admin → Property access management, grant that service account email **Viewer** access to the correct property.
 4. In the *server-side* Supabase Edge Function secrets, configure:
-   - `GA4_PROPERTY_ID`: numeric Google Analytics property ID.
+   - `GA4_PROPERTY_ID`: numeric Google Analytics property ID. Missy’s verified property is **515902392** (non-secret fallback already built into the Edge Function; optional server-side override).
    - `GA4_SERVICE_ACCOUNT_JSON`: full service-account JSON string, including `client_email` and `private_key`.
 5. Never place the key in the GitHub repository, Vite environment variables or browser configuration. The only client-side exposure is aggregated reporting data after login.
 6. Load /dashboard/analytics while signed in, choose 7/30/90 days and verify totals against GA4. The report shows real users, sessions, page views, key events, top pages, acquisition channels and top events.
@@ -21,7 +21,7 @@ The authenticated reporting endpoint now distinguishes these cases instead of re
 
 | Code | Meaning | Action |
 | --- | --- | --- |
-| `GA4_PROPERTY_ID_MISSING` | Property ID secret not configured | Add the numeric GA4 property ID as `GA4_PROPERTY_ID` |
+| `GA4_PROPERTY_ID_MISSING` | No property ID configured in a deployment without the default | Supply the numeric GA4 Property ID; Missy's deployment defaults to `515902392` |
 | `GA4_PROPERTY_ID_INVALID` | Invalid value, often a `G-` stream measurement ID | Replace with the numeric GA4 Property ID |
 | `GA4_CREDENTIALS_MISSING` | Service-account JSON not configured | Add `GA4_SERVICE_ACCOUNT_JSON` to **server-side** Supabase secrets |
 | `GA4_CREDENTIALS_INVALID` | Credential JSON invalid or key cannot sign | Validate the entire JSON and active private key |
