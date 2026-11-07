@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { MessageCircle, X, Send, SmilePlus } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { navigateToSection } from '../../utils/scrollToSection';
 import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type VisitorSession } from '../../lib/conciergeTransport';
 
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string; sender?: 'ai' | 'human' | 'visitor' };
@@ -31,7 +33,7 @@ function formatCallbackPhone(value: string) {
 function AssistantTypingBubble() {
   const reducedMotion = useReducedMotion();
   return <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
-    <div className="inline-flex min-h-12 items-center gap-1.5 rounded-2xl rounded-bl-md border border-white/10 bg-[#29292d] px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,.12)]">
+    <div className="inline-flex min-h-12 items-center gap-1.5 rounded-[26px] rounded-bl-[12px] border border-white/10 bg-[#29292d] px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,.12)]">
       <span className="sr-only">Assistant is typing</span>
       {[0,1,2].map(index => <motion.span
         key={index}
@@ -77,6 +79,8 @@ const SESSION_LIFETIME = 24 * 60 * 60 * 1000;
  */
 export default function ConciergeWidget({ onOpenChange, privateQA = false }: { onOpenChange?: (open: boolean) => void; privateQA?: boolean }) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [draft, setDraft] = useState('');
   const [language, setLanguage] = useState(() => {
     const saved = sessionStorage.getItem(LANGUAGE_KEY);
@@ -242,6 +246,13 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     return () => document.removeEventListener('keydown', onEscape);
   }, [open]);
 
+  // Follow the same route-aware Contact navigation as the public navbar.
+  // Unmount the scroll-locked chat before calculating the section position.
+  const goToContact = () => {
+    setOpen(false);
+    window.setTimeout(() => navigateToSection('contact', navigate, location.pathname), 80);
+  };
+
   const dismissInvitation = () => {
     setInvitation(false);
     setDismissed(true);
@@ -403,7 +414,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             <div className="missy-concierge-intro mx-auto max-w-sm py-2 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 font-serif text-lg tracking-wide text-[#ebd5ae]">Imagine the Life That Awaits.</p></div>
             {messages.map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className="flex max-w-[87%] flex-col items-start">
-                <p className={`whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-md bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-md border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
+                <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-[12px] bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-[12px] border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
                 {!privateQA && session && mode === 'human' && m.sender === 'human' && <div className="relative mt-1 flex items-center gap-1">
                   <button type="button" aria-label={`React to message ${m.id}`} aria-expanded={reactionPicker===String(m.id)} onClick={()=>setReactionPicker(current=>current===String(m.id)?null:String(m.id))} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/15 bg-[#1b1b1e] px-2 text-[13px] text-[#d5d5d8] hover:border-[#007AFF]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">
                     <SmilePlus size={15} aria-hidden="true"/>{reactions[String(m.id)] && <span aria-label="Your reaction">{reactions[String(m.id)]}</span>}
@@ -417,7 +428,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {aiTyping && <AssistantTypingBubble />}
             {!chatEnabled && <div className="missy-concierge-fallback rounded-2xl border border-[#c7a568]/35 bg-gradient-to-br from-[#3a2c17]/55 to-[#18140f] px-5 py-4 text-xs leading-relaxed text-[#f0dbb4] shadow-[inset_0_1px_0_rgba(255,231,180,.07)]">
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
-              <a href="/#contact" className="mt-2 block font-semibold underline underline-offset-4">Contact Missy</a>
+              <button type="button" onClick={goToContact} className="mt-2 rounded-full border border-[#dfbf82] bg-[#c5a16a] px-4 py-2 font-semibold text-black transition-transform hover:brightness-110 active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Contact Missy</button>
             </div>}
             {chatEnabled && !session && <TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} />}
             {chatEnabled && session && mode === 'ai' && messages.some(m => m.role === 'visitor') && !handoffOpen && <button type="button" onClick={() => setHandoffOpen(true)} disabled={busy} className="inline-flex min-h-9 items-center justify-center rounded-lg border border-[#b99b68]/45 bg-[#211a12]/75 px-3 py-2 text-xs font-medium text-[#d8bc8b] transition-[background-color,border-color,transform] duration-150 hover:border-[#dfbf82] hover:bg-[#33291b] active:scale-[.97] active:bg-[#483722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a] disabled:cursor-not-allowed disabled:opacity-50">Request a team member</button>}
@@ -448,7 +459,12 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               {!privateQA && <p className="text-[11px] text-[#ae9b7f]">Human assistance only · Max 10 MB · JPG, PNG, WEBP, or PDF</p>}
               {uploadFeedback && <p role="status" className="text-xs text-[#eedab5]">{uploadFeedback}</p>}
             </div>}
-            {mode === 'waiting_human' && <p className="text-xs text-[#eacb99]">Waiting for a team member. For a time-sensitive request, you can also <a href="/#contact" className="underline underline-offset-2">contact Missy directly</a>.</p>}
+            {mode === 'waiting_human' && <div className="space-y-3 rounded-2xl border border-[#c6a16c]/30 bg-[#21190f]/60 p-4">
+              <p className="text-sm leading-relaxed text-[#f0d6a5]">Waiting for a team member. Need a faster response? You can also reach Missy through the website.</p>
+              <button type="button" onClick={goToContact} className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center rounded-xl border border-[#f0d49d] bg-gradient-to-r from-[#efd49f] via-[#d9b878] to-[#c6a065] px-6 py-3 text-sm font-semibold text-[#1c150c] shadow-[0_8px_24px_rgba(197,161,106,.22)] transition-[transform,filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_10px_28px_rgba(197,161,106,.34)] active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">
+                Contact Missy directly
+              </button>
+            </div>}
             {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
