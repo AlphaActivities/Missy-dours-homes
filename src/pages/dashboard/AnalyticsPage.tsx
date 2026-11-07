@@ -7,6 +7,15 @@ type Row={label:string;value:number};
 type Analytics={rangeDays:number;metrics:{activeUsers:number;sessions:number;screenPageViews:number;keyEvents:number};trend:Row[];pages:Row[];channels:Row[];events:Row[]};
 const n=(x:number)=>new Intl.NumberFormat().format(x);
 const rangeOptions=[7,30,90] as const;
+const formatGaDate=(value:string)=>{
+ if(!/^\d{8}$/.test(value))return value;
+ const year=Number(value.slice(0,4));
+ const month=Number(value.slice(4,6));
+ const day=Number(value.slice(6,8));
+ const date=new Date(Date.UTC(year,month-1,day));
+ if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day)return value;
+ return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(date);
+};
 function Bars({rows}:{rows:Row[]}){
  const max=Math.max(1,...rows.map(row=>row.value));
  return rows.length?<div className="mt-3 space-y-3">{rows.map(row=><div key={row.label}>
@@ -56,7 +65,7 @@ export default function AnalyticsPage(){
    {issueCode.startsWith('GA4_PROPERTY_ID')||issueCode.startsWith('GA4_CREDENTIALS')?<p className="mt-3 text-xs text-[#dac9a7]">Owner setup: confirm the numeric GA4 Property ID, then configure the reporting service account with Viewer access and server-side credentials.</p>:null}
    <p className="mt-3 text-xs text-[#b7aa96]">Website event tracking remains separate. No sample figures are shown as real traffic data.</p></section>:data&&<>
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{tile('Active users',data.metrics.activeUsers)}{tile('Sessions',data.metrics.sessions)}{tile('Page views',data.metrics.screenPageViews)}{tile('Key events',data.metrics.keyEvents)}</div>
-    <section className="mt-4 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><Activity size={19}/>Daily traffic · Page views</h2><Bars rows={data.trend}/></section>
+    <section className="mt-4 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><Activity size={19}/>Daily traffic · Page views</h2><Bars rows={data.trend.map(row=>({...row,label:formatGaDate(row.label)}))}/></section>
     <div className="mt-4 grid gap-4 md:grid-cols-2">
      <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="font-serif text-xl text-[#edcfa0]">Top pages</h2><Bars rows={data.pages.map(page=>({...page,label:page.label==='/'?'Homepage':page.label}))}/></section>
      <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="font-serif text-xl text-[#edcfa0]">Acquisition channels</h2><Bars rows={data.channels}/></section>
