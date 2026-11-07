@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MessageCircle, X, Send, ArrowLeft, SmilePlus } from 'lucide-react';
 import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type VisitorSession } from '../../lib/conciergeTransport';
 
-type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string };
+type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string; sender?: 'ai' | 'human' | 'visitor' };
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy, what can we help answer for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
@@ -53,7 +53,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     }catch{setReactions({});}
   },[reactionKey,privateQA]);
   const toggleReaction=(id:string,emoji:string)=>{
-    if(privateQA || !reactionKey)return;
+    if(privateQA || !reactionKey || mode !== 'human' || !messages.some(m=>String(m.id)===id && m.sender==='human'))return;
     setReactions(previous=>{
       const next={...previous};
       if(next[id]===emoji)delete next[id];else next[id]=emoji;
@@ -154,7 +154,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           INITIAL[0],
           ...result.messages.filter(m => m.sender !== 'system').map(m => ({
             id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const,
-            text: m.body,
+            sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
           })),
         ]);
       } catch (error) {
@@ -219,7 +219,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       try {
         const updated=await transport.sync(visitor);
         setMessages([INITIAL[0],...updated.messages.filter(m=>m.sender!=='system').map(m=>({
-          id:m.id,role:m.sender==='visitor'?'visitor' as const:'concierge' as const,text:m.body,
+          id:m.id,role:m.sender==='visitor'?'visitor' as const:'concierge' as const,sender:m.sender as 'visitor'|'ai'|'human',text:m.body,
         }))]);
         setMode(updated.status);
       } catch {
@@ -239,7 +239,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         const lastVisitor = [...latest.messages].reverse().find(m => m.sender === 'visitor');
         setMode(latest.status);
         setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
-          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
+          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
         }))]);
         if (lastVisitor?.body === message) {
           setDraft('');
@@ -287,7 +287,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         const latest = await transport.sync(session);
         setMode(latest.status);
         setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
-          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
+          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
         }))]);
         if (latest.status === 'waiting_human' || latest.status === 'human') {
           setDraft('');
@@ -330,7 +330,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {messages.map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className="flex max-w-[87%] flex-col items-start">
                 <p className={`whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-md bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-md border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.text}</p>
-                {!privateQA && session && <div className="relative mt-1 flex items-center gap-1">
+                {!privateQA && session && mode === 'human' && m.sender === 'human' && <div className="relative mt-1 flex items-center gap-1">
                   <button type="button" aria-label={`React to message ${m.id}`} aria-expanded={reactionPicker===String(m.id)} onClick={()=>setReactionPicker(current=>current===String(m.id)?null:String(m.id))} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/15 bg-[#1b1b1e] px-2 text-[13px] text-[#d5d5d8] hover:border-[#007AFF]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">
                     <SmilePlus size={15} aria-hidden="true"/>{reactions[String(m.id)] && <span aria-label="Your reaction">{reactions[String(m.id)]}</span>}
                   </button>

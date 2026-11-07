@@ -62,15 +62,8 @@ try {
  assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')<bubbleLabels.indexOf('Gracias. Missy confirmará los detalles.'));
  const visitorBubble=dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true});
  assert.ok((await visitorBubble.getAttribute('class')).includes('bg-[#007AFF]'));
- // Five deliberate Tapback-style choices, no full emoji keyboard.
- await dialog.getByRole('button',{name:'React to message m2'}).click();
- const choices=dialog.getByRole('group',{name:'Choose a message reaction'});
- assert.equal(await choices.getByRole('button').count(),5);
- assert.equal(await choices.getByRole('button',{name:'React with 😊'}).count(),1);
- assert.equal(await choices.getByRole('button',{name:'React with 😂'}).count(),0);
- await choices.getByRole('button',{name:'React with ❤️'}).click();
- assert.equal(await dialog.getByRole('button',{name:'React to message m2'}).getByText('❤️').count(),1);
- assert.ok(await page.evaluate(()=>sessionStorage.getItem('missy_concierge_reactions_11111111-1111-4111-8111-111111111111')?.includes('❤️')));
+ // Reactions must be hidden for the welcome bubble, AI replies, and visitor messages.
+ assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),0);
 
  await dialog.getByText('Automatic language assistance · Translation available').waitFor();
  await dialog.getByRole('button',{name:'Speak with Missy’s team'}).click();
@@ -83,9 +76,23 @@ try {
  await submit.click();
  await dialog.getByText(/Waiting for a team member/).waitFor();
  mode='human';
+ history.push({id:'m3',sender:'human',body:'Hi! This is Missy’s team. How can we help?',created_at:new Date().toISOString()});
  await dialog.getByRole('button',{name:'Close',exact:true}).click();
  await launcher.click();
  await dialog.getByText('A member of Missy’s team has joined this conversation.').waitFor();
+ await dialog.getByText('Hi! This is Missy’s team. How can we help?').waitFor();
+ // The real human agent's message is reactable, never the welcome, AI, or visitor messages.
+ assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),1);
+ assert.equal(await dialog.getByRole('button',{name:'React to message 0'}).count(),0);
+ assert.equal(await dialog.getByRole('button',{name:'React to message m2'}).count(),0);
+ await dialog.getByRole('button',{name:'React to message m3'}).click();
+ const choices=dialog.getByRole('group',{name:'Choose a message reaction'});
+ assert.equal(await choices.getByRole('button').count(),5);
+ assert.equal(await choices.getByRole('button',{name:'React with 😊'}).count(),1);
+ assert.equal(await choices.getByRole('button',{name:'React with 😂'}).count(),0);
+ await choices.getByRole('button',{name:'React with ❤️'}).click();
+ assert.equal(await dialog.getByRole('button',{name:'React to message m3'}).getByText('❤️').count(),1);
+ assert.ok(await page.evaluate(()=>sessionStorage.getItem('missy_concierge_reactions_11111111-1111-4111-8111-111111111111')?.includes('❤️')));
  await dialog.locator('input[type=file]').setInputFiles({
   name:'sample.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 fake file')
  });
