@@ -44,9 +44,10 @@ test('Automatic Spanish detection grounds replies in website facts without claim
   assert.equal(calls.length, 2);
   assert.ok(calls.every(call=>call.chat_template_kwargs?.enable_thinking===false));
   assert.match(calls[1].messages[0].content, /^Reply in Spanish\./);
-  assert.match(calls[1].messages[1].content, /14636 Southern Pines Dr/);
-  assert.match(calls[1].messages[1].content, /do not assert them as current/i);
-  assert.match(calls[1].messages[1].content, /Representative Example/);
+  const websiteReference=calls[1].messages.find(m=>m.content.includes('Website listing record: 14636 Southern Pines Dr'))?.content||'';
+  assert.match(websiteReference,/14636 Southern Pines Dr/);
+  assert.match(websiteReference,/do not assert them as current/i);
+  assert.match(websiteReference,/Representative Example/);
 });
 
 test('Uncertain language detection fails back to English', async () => {
@@ -178,4 +179,67 @@ test('Unreachable website reference uses a clearly dated fallback rather than cl
   assert.match(reply,/not verified as current/);
   assert.match(reply,/https:\/\/missydours\.com\/listings\/14636-southern-pines-dr/);
  }finally{globalThis.fetch=original;}
+});
+
+test('Real estate journey guidance covers 11 visitor needs without scripted pressure', async()=>{
+ const saved=globalThis.fetch;
+ globalThis.fetch=async()=>new Response(JSON.stringify({
+  schema_version:1,source:'missydours.com website listings source',
+  site_facts:{source:'https://missydours.com',agent:'Missy Dours',brokerage:'Clancy Realty',
+   focus_areas:['Dallas','Farmers Branch'],showcased_communities:['Preston Hollow','Uptown Dallas']},
+  listings:[]
+ }),{status:200});
+ const scenarios=[
+  ['I am a first time buyer looking for a dream home','buyer planning'],
+  ['What do I need for preapproval and a down payment?','budget and financing'],
+  ['How do inspections and closing work after an offer?','buyer offer and closing'],
+  ['I want to sell my house and stage it','seller planning and preparation'],
+  ['What is my home worth and how are commissions paid?','home valuation and seller costs'],
+  ['Which neighborhoods should I compare for a shorter commute?','neighborhoods and lifestyle'],
+  ['Can I schedule a house tour and see the floorplan?','property details and tour'],
+  ['Who is Missy and where is her brokerage office?','agent identity and office contact'],
+  ['What is the Texas IABS disclosure?','representation and Texas notices'],
+  ['Does the house have wheelchair accessibility?','fair housing and accessibility'],
+  ['I inherited a property and feel overwhelmed by probate','life changes and special situations']
+ ];
+ try{
+  for(const [question,topic] of scenarios){
+   let messages=[];
+   const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:question}]}),{
+    CONCIERGE_BRIDGE_SECRET:secret,
+    AI:{run:async (_model,opts)=>{messages=opts.messages;return {response:'I can help you think this through.'};}}
+   });
+   assert.equal(response.status,200,question);
+   assert.match(messages[1].content,/Emotionally intelligent visitor journey/);
+   assert.match(messages[1].content,/does NOT have a live open-web search tool/);
+   const guide=messages.find(m=>m.content.startsWith('RELEVANT CONSUMER GUIDANCE'))?.content||'';
+   assert.ok(guide.includes(topic),question+' missing '+topic);
+   assert.ok(messages.some(m=>m.content.includes('Clancy Realty')),'Website profile absent');
+   assert.equal(messages.at(-1).content,question);
+  }
+ }finally{globalThis.fetch=saved;}
+});
+
+test('Official consumer resources and non-manipulative follow ups are available for relevant topics',async()=>{
+ const saved=globalThis.fetch;
+ globalThis.fetch=async()=>{throw new Error('Offline');};
+ const scenarios=[
+  ['How can I compare a mortgage and my loan estimate?','consumerfinance.gov/owning-a-home/loan-estimate/'],
+  ['Where do I find the Texas IABS disclosure?','missydours.com/docs/IABS.pdf'],
+  ['Which neighborhoods are showcased on the website?','missydours.com/#communities'],
+  ['What should I know about disability accessibility?','hud.gov/program_offices/fair_housing_equal_opp']
+ ];
+ try{
+  for(const [question,source] of scenarios){
+   let messages=[];
+   const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:question}]}),{
+    CONCIERGE_BRIDGE_SECRET:secret,
+    AI:{run:async (_model,opts)=>{messages=opts.messages;return {response:'Here is a helpful next step.'};}}
+   });
+   assert.equal(response.status,200);
+   assert.ok(messages.some(m=>m.content.includes(source)),source);
+   assert.match(messages[1].content,/Never ask multiple qualifying questions at once/);
+   assert.match(messages[1].content,/Never recommend unverified third-party/);
+  }
+ }finally{globalThis.fetch=saved;}
 });
