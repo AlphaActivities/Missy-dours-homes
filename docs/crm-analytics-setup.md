@@ -47,3 +47,21 @@ After adding the secrets, open the dashboard's Analytics page, press Refresh, an
 ## Staff notification onboarding
 
 Settings now shows **Enable Device Notifications** at the top and reuses the existing permission/subscription handler. On iOS, launch the installed Home Screen app first, then enable and send a test push notification. Permission prompts and platform settings cannot be bypassed.
+
+## Keyless Google OAuth option (recommended where service account keys are disabled)
+
+Google Workspace organizations can enforce `iam.disableServiceAccountKeyCreation`. Keep that policy enabled. The reporting Edge Function now supports OAuth refresh tokens instead of JSON service-account keys.
+
+1. Google Cloud project: `missy-dours-analytics`. Google Analytics Data API must be enabled. OAuth Web Application client and `https://www.googleapis.com/auth/analytics.readonly` scope are required.
+2. In the OAuth client, add `https://developers.google.com/oauthplayground` under **Authorized redirect URIs** (this is a **Google-owned** tool, not the public CRM callback).
+3. Open Google's [OAuth 2.0 Playground](https://developers.google.com/oauthplayground/). In its settings enable **Use your own OAuth credentials**, paste the OAuth Web client ID and secret directly into that tool, use **Server-side**, **Offline** access, and **Consent Screen** prompt.
+4. In Step 1 enter only `https://www.googleapis.com/auth/analytics.readonly` and click **Authorize APIs**. Sign in with the approved Google test account that has GA4 property `515902392` access.
+5. In Step 2 click **Exchange authorization code for tokens**. Keep the resulting **refresh token** private and copy it directly into Supabase secrets. Never paste it into GitHub/chat.
+6. In [Missy Supabase Edge Function Secrets](https://supabase.com/dashboard/project/ddgpsvkmrnfeufepowog/settings/functions), configure all **three** values:
+   - `GA4_OAUTH_CLIENT_ID` — the OAuth web application's Client ID.
+   - `GA4_OAUTH_CLIENT_SECRET` — the OAuth web application's Client Secret.
+   - `GA4_OAUTH_REFRESH_TOKEN` — the consented refresh token obtained in Step 2.
+7. Refresh the private CRM's Website Intelligence page. When all three secrets are configured, reporting prefers OAuth and periodically exchanges the refresh token for new short-lived access tokens. Service-account JSON remains a fallback.
+8. **Production caveat:** External OAuth apps in **Testing** mode have refresh tokens that typically expire after seven days for the GA4 read-only scope. Move the app through Google's publication/verification requirements, then obtain a fresh token after publishing, for reliable long-term reporting.
+
+Security notes: this path does not turn off Cloud organization security policies and does not require Google Business Profile access. Do not expose client secrets or refresh tokens in public Vite environment variables. The dashboard remains authenticated, and the reporting Edge Function validates authorized staff.
