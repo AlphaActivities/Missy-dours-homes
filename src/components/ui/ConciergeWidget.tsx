@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, X, Send, ArrowLeft, Sparkles, SmilePlus } from 'lucide-react';
+import { MessageCircle, X, Send, ArrowLeft, SmilePlus } from 'lucide-react';
 import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type VisitorSession } from '../../lib/conciergeTransport';
 
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string };
 const REACTION_OPTIONS = ['👍','❤️','😂','😮','🙏'] as const;
-const GREETING = 'Welcome to Missy Dours Homes. How can I help you imagine the life that awaits?';
+const GREETING = 'We’re here to help you find your happy place. How can I assist you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const SESSION_KEY = 'missy_concierge_visitor_session_v1';
 const LANGUAGE_KEY = 'missy_concierge_language_v1';
@@ -29,7 +29,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [invitation, setInvitation] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const chatHistoryRef = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploadBusy, setUploadBusy] = useState(false);
@@ -104,7 +104,43 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     }
   }, [open, onOpenChange]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ block: 'nearest' }); }, [messages, open]);
+  // Scroll only the chat transcript: scrollIntoView can also scroll the page behind the modal.
+  useEffect(() => {
+    if (!open) return;
+    const history = chatHistoryRef.current;
+    if (history) history.scrollTop = history.scrollHeight;
+  }, [messages, open]);
+
+  // iOS Safari can scroll the body under a fixed dialog unless its position is frozen.
+  // Preserve the exact document position so closing the chat does not jump to the top.
+  useEffect(() => {
+    if (!open) return;
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const html = document.documentElement;
+    const previous = {
+      position:body.style.position, top:body.style.top, left:body.style.left,
+      right:body.style.right, width:body.style.width, overflow:body.style.overflow,
+      htmlOverflow:html.style.overflow
+    };
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    html.style.overflow = 'hidden';
+    return () => {
+      body.style.position = previous.position;
+      body.style.top = previous.top;
+      body.style.left = previous.left;
+      body.style.right = previous.right;
+      body.style.width = previous.width;
+      body.style.overflow = previous.overflow;
+      html.style.overflow = previous.htmlOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
   useEffect(() => {
     if (!open || !session || !chatEnabled) return;
     let current = true;
@@ -279,17 +315,16 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           </button>
         </div>
       )}
-      {open && <div className="missy-concierge-backdrop fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 sm:p-4 md:p-6" role="presentation">
-        <section aria-label="Missy Dours private concierge" role="dialog" aria-modal="true" className="missy-concierge-dialog relative flex h-auto max-h-[calc(100dvh-24px)] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-[#d1ad72]/45 bg-[#0b0a09] text-[#f2eadc] shadow-[0_30px_90px_rgba(0,0,0,.75)] sm:max-h-[calc(100dvh-32px)] md:max-h-[min(740px,calc(100dvh-48px))] md:rounded-[28px]">
+      {open && <div className="missy-concierge-backdrop fixed inset-0 z-[100] flex touch-none items-center justify-center overflow-hidden overscroll-none bg-black/70 p-3 sm:p-4 md:p-6" role="presentation">
+        <section aria-label="Missy Dours private concierge" role="dialog" aria-modal="true" className="missy-concierge-dialog relative flex h-auto max-h-[calc(100dvh-24px)] w-full max-w-xl min-h-0 flex-col overflow-hidden touch-auto rounded-[24px] border border-[#d1ad72]/45 bg-[#0b0a09] text-[#f2eadc] shadow-[0_30px_90px_rgba(0,0,0,.75)] sm:max-h-[calc(100dvh-32px)] md:max-h-[min(740px,calc(100dvh-48px))] md:rounded-[28px]">
           <div className="missy-concierge-scanline pointer-events-none absolute inset-x-0 top-0 z-20 h-px" aria-hidden="true" />
           <header className="relative flex shrink-0 items-center gap-3 border-b border-[#b9945d]/30 bg-gradient-to-r from-[#21190f] via-[#14100b] to-[#0a0908] px-5 py-5">
             <button type="button" onClick={() => setOpen(false)} aria-label="Close concierge" className="rounded-lg p-2 hover:bg-white/10"><ArrowLeft size={19}/></button>
-            <img src="/images/md-logo.png" alt="Missy Dours" className="h-9 w-9 rounded-lg bg-[#f5eddc] object-contain p-1" />
-            <div className="min-w-0 flex-1"><p className="font-serif text-[17px] text-[#f1d39a]">{privateQA?'Concierge · Private QA':'Missy Dours Concierge'}</p><p className="text-[11px] tracking-[.11em] text-[#c7bba6]">IMAGINE THE LIFE THAT AWAITS</p></div>
-            <Sparkles size={17} className="text-[#c8a56b]" aria-hidden="true"/>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="rounded-lg p-2 hover:bg-white/10"><X size={18}/></button>
+            <img src="/images/md-logo.png" alt="Missy Dours" className="h-11 w-11 shrink-0 rounded-xl bg-[#f5eddc] object-contain p-0.5" />
+            <div className="min-w-0 flex-1"><p className="font-serif text-[17px] leading-snug text-[#f1d39a]">{privateQA?'Concierge · Private QA':"Message Missy’s Team"}</p></div>
+            <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#c9a66c]/55 bg-[#2a2115]/85 text-[#f0d6a5] shadow-[inset_0_1px_0_rgba(255,235,193,.09)] transition-[background-color,border-color,transform,box-shadow] duration-150 hover:border-[#f2d5a2] hover:bg-[#43331c] active:scale-90 active:border-[#f5d69c] active:bg-[#68502d] active:shadow-[0_0_14px_rgba(206,169,104,.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4d596]"><X size={21}/></button>
           </header>
-          <div className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-4 px-5 py-4 md:px-7" aria-live="polite">
+          <div ref={chatHistoryRef} className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y space-y-4 px-5 py-4 md:px-7" aria-live="polite">
             {privateQA && <p className="rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">PRIVATE TEST ONLY. This is not a customer inquiry. Use the reserved callback details and clear the test when finished.</p>}
             <div className="missy-concierge-intro mx-auto max-w-sm py-2 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 font-serif text-lg tracking-wide text-[#ebd5ae]">Imagine the Life That Awaits.</p></div>
             {messages.map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
@@ -340,7 +375,6 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {mode === 'waiting_human' && <p className="text-xs text-[#eacb99]">Waiting for a team member. For a time-sensitive request, you can also <a href="/#contact" className="underline underline-offset-2">contact Missy directly</a>.</p>}
             {busy && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
-            <div ref={bottomRef}/>
           </div>
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] p-4 md:px-6">
             <p className="mb-2 text-right text-[11px] text-[#c8ab79]">Automatic language assistance{language!=='en' ? ' · Translation available' : ''}</p>
