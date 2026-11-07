@@ -85,7 +85,7 @@ export default function CrmActivityCenter(){
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
-   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(requiresAction(item)?(isFeatured(item)?'crm-actionable-notification relative isolate overflow-hidden border-red-500/65 bg-[#281316]/90 ':'border-red-500/55 bg-[#281316]/90 ')+(item.category==='handoff'?'border-2 border-red-400/75 bg-gradient-to-br from-[#3a161b] to-[#241115] ':''):isResolved(item)?'border-emerald-500/35 bg-emerald-950/20':isInProgress(item)?'border-[#c8a96e]/55 bg-[#c8a96e]/10':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
+   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(requiresAction(item)?(isFeatured(item)?'crm-actionable-notification relative isolate overflow-hidden border-red-500/65 bg-[#281316]/90 ':'border-red-500/55 bg-[#281316]/90 ')+(['handoff','lead'].includes(item.category)?'border-2 border-red-400/75 bg-gradient-to-br from-[#3a161b] to-[#241115] ':''):isResolved(item)?'border-emerald-500/35 bg-emerald-950/20':isInProgress(item)?'border-[#c8a96e]/55 bg-[#c8a96e]/10':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
     <div className="min-w-0">
      <div className="flex items-start justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
@@ -99,7 +99,7 @@ export default function CrmActivityCenter(){
       {!item.read_at&&!item.archived_at&&!item.lead_archived&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
      {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked concierge lead audit':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Task activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
-     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{friendlySummary(item.summary)}</p>
+     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Sent through website chatbot'):friendlySummary(item.summary)}</p>
      {requiresAction(item)&&<div className="mt-3 space-y-1.5">
       <p className="inline-flex items-center gap-1.5 rounded-md border border-red-400/35 bg-red-900/20 px-3 py-2 text-xs font-semibold text-red-200"><AlertTriangle size={13} aria-hidden="true"/> Follow-up required</p>
       <p className="text-xs italic leading-relaxed text-[#cbbbaa]"><span className="block">This inquiry hasn't been handled yet.</span><span className="block">Open the lead or conversation to record the next action.</span></p>
