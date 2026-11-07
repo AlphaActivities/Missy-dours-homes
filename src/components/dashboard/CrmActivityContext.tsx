@@ -64,7 +64,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     e.target_path.slice('/dashboard/leads?lead='.length):'';
    const task=callbacks.get(e.event_key.split(':').pop()??'');
    const convo=task?conversations.get(task.conversation_id):undefined;
-   const callback_status=convo?.status==='waiting_human'?'waiting_human':
+   const callback_status=task?.status==='claimed'?'claimed':convo?.status==='waiting_human'?'waiting_human':
     convo?.status==='closed'?'closed':task?.status??null;
    return {...e,lead_status:id?(statuses.get(id)??null):null,
     callback_status,callback_lead_id:convo?.lead_id??null};
