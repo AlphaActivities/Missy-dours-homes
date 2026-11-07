@@ -18,7 +18,7 @@ export function preloadCrmAttention(userId:string):Promise<CrmAttentionSummary>{
  if(!userId)return Promise.reject(new Error('CRM attention preload requires a user'));
  const now=Date.now();
  if(snapshot?.userId===userId&&snapshot.expiresAt>now)return snapshot.promise;
- const promise=supabase.rpc('crm_attention_summary').then(({data,error})=>{
+ const promise=Promise.resolve(supabase.rpc('crm_attention_summary')).then(({data,error})=>{
   if(error)throw error;
   return (data??{}) as CrmAttentionSummary;
  });
