@@ -34,7 +34,7 @@ try {
    const body=request.postDataJSON();
    assert.equal(body.name,'Example Visitor');
    assert.equal(body.contact_consent,true);
-   assert.equal(body.phone,'(555) 555-0147');
+   assert.equal(body.phone,'(202) 555-0147');
    mode='waiting_human';
    return send({status:mode});
   }
@@ -96,10 +96,24 @@ try {
  await dialog.getByRole('button',{name:'Request a team member'}).click();
  const form=dialog.getByRole('form',{name:'Request a callback'});
  await form.getByPlaceholder('Full name').fill('Example Visitor');
- await form.getByPlaceholder('(555) 555-0123').fill('(555) 555-0147');
+ const phone=form.getByRole('textbox',{name:'Callback phone number'});
  const submit=form.getByRole('button',{name:'Request a callback'});
- assert.equal(await submit.isDisabled(),true);
  await form.getByRole('checkbox').check();
+ assert.equal(await submit.isDisabled(),true,'Consent alone never enables handoff without a phone');
+ for(const invalid of ['1234567890','0005070570','4021110570','402507','9115070570']) {
+   await phone.fill(invalid);
+   assert.equal(await submit.isDisabled(),true,'Must reject invalid number: '+invalid);
+   assert.equal(await phone.getAttribute('aria-invalid'),'true');
+ }
+ await form.getByText('Enter a valid 10-digit U.S. phone number, including area code.').waitFor();
+ // Accept digits only and apply a consistent iPhone-friendly phone mask.
+ await phone.fill('2025550147');
+ assert.equal(await phone.inputValue(),'(202) 555-0147');
+ assert.equal(await phone.getAttribute('aria-invalid'),'false');
+ assert.equal(await submit.isEnabled(),true);
+ // Also accept a pasted US country code without saving it twice.
+ await phone.fill('+12025550147');
+ assert.equal(await phone.inputValue(),'(202) 555-0147');
  await submit.click();
  await dialog.getByText(/Waiting for a team member/).waitFor();
  mode='human';
