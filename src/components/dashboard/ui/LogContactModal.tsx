@@ -34,8 +34,8 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
     setError(null);
     try {
       await onLog(channel, notes.trim(), outcome, callbackPending && resolve, followupAt ? new Date(followupAt).toISOString() : null);
-    } catch {
-      setError('Failed to record interaction. Please try again.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Failed to record interaction. Please try again.');
       setSaving(false);
     }
   };
