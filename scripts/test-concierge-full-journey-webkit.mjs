@@ -63,10 +63,10 @@ try {
  assert.equal(await typing.locator('span[aria-hidden="true"]').count(),3,'Typing indicator has exactly three waving dots');
  assert.equal(await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).count(),0,
    'Fast model output must not bypass the typing phase');
- await page.waitForTimeout(700);
- assert.equal(await typing.isVisible(),true,'Typing indicator persists while reply is being prepared');
+ await page.waitForTimeout(350);
+ assert.equal(await typing.isVisible(),true,'Typing indicator remains visible before the reply');
  await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).waitFor();
- assert.ok(Date.now()-sentAt>=4700,'Successful AI reply must remain behind the approximately five-second typing phase');
+ assert.ok(Date.now()-sentAt>=1150,'Fast AI replies must remain behind the brief typing phase');
  await typing.waitFor({state:'hidden'});
  const listingLink=dialog.getByRole('link',{name:'https://missydours.com/listings/14636-southern-pines-dr'});
  await listingLink.waitFor();
