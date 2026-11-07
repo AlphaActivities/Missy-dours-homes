@@ -211,7 +211,7 @@ export default function LeadsPage() {
       .eq('id', id);
 
     if (error) {
-      showToast('Failed to update status.', 'error');
+      showToast(error.message.includes('Record a call') ? 'Record a call, text, or email outcome in the lead before changing its status.' : 'Failed to update status.', 'error');
       return;
     }
 
