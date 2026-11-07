@@ -839,9 +839,18 @@
 
 /* Bell hangs from its TOP (SVG fill box), not its bottom. Brief sign-like
    rocking every ~3.1s. The stationary red count badge is a sibling. */
+/* Pivot the actual HTML bell wrapper from its top-center, not the SVG
+   bounding-box, for consistent mobile Safari motion. */
+.crm-bell-top-hinge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  line-height: 0;
+  transform-origin: center top;
+  -webkit-transform-origin: center top;
+}
 .crm-bell-wobble {
-  transform-box: fill-box;
-  transform-origin: 50% 0%;
   animation: crm-notification-bell-wobble 3.1s ease-in-out infinite;
 }
 @keyframes crm-notification-bell-wobble {

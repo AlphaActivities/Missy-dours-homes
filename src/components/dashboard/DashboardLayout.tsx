@@ -383,7 +383,7 @@ function DashboardLayoutInner() {
             aria-label={'Notifications: '+attentionCount+' items need attention, '+unreadCount+' unread alerts'}
             aria-current={pathname==='/dashboard/notifications'?'page':undefined}
             className={'relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-[#e1c18a] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#d9b878]/80 hover:bg-[#c8a96e]/20 hover:shadow-[0_0_14px_rgba(200,169,110,.18)] active:scale-[.94] active:border-[#f1d49e] active:bg-[#c8a96e]/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e9c98d] '+(pathname==='/dashboard/notifications'?'border-[#d9b878]/85 bg-[#c8a96e]/20 shadow-[inset_0_0_0_1px_rgba(242,214,154,.12),0_0_13px_rgba(200,169,110,.18)]':'border-[#c8a96e]/45 bg-[#c8a96e]/[.07] shadow-[inset_0_1px_0_rgba(255,231,184,.06)]')}>
-            <BellRing size={21} className={attentionCount>0?'crm-bell-wobble':''} aria-hidden="true"/>
+            <span className={attentionCount>0?'crm-bell-top-hinge crm-bell-wobble':'crm-bell-top-hinge'} aria-hidden="true"><BellRing size={21}/></span>
             {attentionCount>0&&<span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0b0a,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{attentionCount>99?'99+':attentionCount}</span>}
           </button>
           </IosNativeTap>
