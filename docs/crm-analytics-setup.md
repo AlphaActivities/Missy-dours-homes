@@ -13,7 +13,27 @@ The /dashboard/analytics route is available to the three approved signed-in CRM 
 5. Never place the key in the GitHub repository, Vite environment variables or browser configuration. The only client-side exposure is aggregated reporting data after login.
 6. Load /dashboard/analytics while signed in, choose 7/30/90 days and verify totals against GA4. The report shows real users, sessions, page views, key events, top pages, acquisition channels and top events.
 
-If either secret is missing, the API returns `{setupRequired:true}` and the page accurately explains that reporting is not connected. Do not show invented metrics.
+If either secret is missing, the API returns `{setupRequired:true}` with a specific error code, and the page explains the missing setup. Do not show invented metrics.
+
+### Connection diagnostics
+
+The authenticated reporting endpoint now distinguishes these cases instead of reporting every issue as "not connected":
+
+| Code | Meaning | Action |
+| --- | --- | --- |
+| `GA4_PROPERTY_ID_MISSING` | Property ID secret not configured | Add the numeric GA4 property ID as `GA4_PROPERTY_ID` |
+| `GA4_PROPERTY_ID_INVALID` | Invalid value, often a `G-` stream measurement ID | Replace with the numeric GA4 Property ID |
+| `GA4_CREDENTIALS_MISSING` | Service-account JSON not configured | Add `GA4_SERVICE_ACCOUNT_JSON` to **server-side** Supabase secrets |
+| `GA4_CREDENTIALS_INVALID` | Credential JSON invalid or key cannot sign | Validate the entire JSON and active private key |
+| `GA4_CREDENTIALS_REJECTED` | Google's OAuth token exchange rejected the key | Check service-account key status/permissions |
+| `GA4_ACCESS_DENIED` | Google reporting property permission denied | Grant the service-account email GA4 Viewer access; enable Analytics Data API |
+| `GA4_PROPERTY_NOT_FOUND` | Property does not exist or is unavailable to the account | Recheck Property ID and Viewer access |
+| `GA4_RATE_LIMITED` | Google request throttled | Retry later |
+| `GA4_REPORT_FAILED` | Other temporary Google API failure | Inspect sanitized function logs, retry |
+
+After adding the secrets, open the dashboard's Analytics page, press Refresh, and compare a matching reporting period to Google Analytics. Note that GA4 totals can differ from CRM lead counts and Google's UI based on attribution, identity and reporting settings.
+
+**Security:** Do not paste a service-account JSON or private key into chat, screenshots, GitHub issues, Vite environment variables or browser code. Configure it directly in the Supabase project secrets interface.
 
 ## Application and security
 
