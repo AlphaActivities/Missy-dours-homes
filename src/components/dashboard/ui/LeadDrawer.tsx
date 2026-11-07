@@ -166,14 +166,28 @@ function DrawerContent({
   const [showLogModal, setShowLogModal] = useState(false);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const [callbackPending, setCallbackPending] = useState(false);
+  const [callbackWork,setCallbackWork] = useState<{owner:string|null;due:string|null;status:string}|null>(null);
   useEffect(() => {
-    let alive = true;
+    let alive=true;
     setCallbackPending(false);
-    supabase.from('ai_conversations').select('id').eq('lead_id',lead.id).in('status',['waiting_human','human']).limit(1)
-      .then(({data,error}) => { if(alive && !error) setCallbackPending(Boolean(data?.length)); });
-    return () => {alive=false;};
-  },[lead.id]);
-
+    setCallbackWork(null);
+    const getWork=async()=>{
+      const {data:conversations,error}=await supabase.from('ai_conversations')
+        .select('id,status,assigned_to').eq('lead_id',lead.id).in('status',['waiting_human','human']);
+      if(!alive||error||!conversations?.length)return;
+      const {data:tasks}=await supabase.from('ai_concierge_tasks')
+        .select('conversation_id,due_at,status,assigned_to')
+        .in('conversation_id',conversations.map(c=>c.id)).in('status',['pending','claimed'])
+        .order('due_at',{ascending:true}).limit(1);
+      if(!alive)return;
+      const first=tasks?.[0];
+      setCallbackPending(true);
+      setCallbackWork({owner:first?.assigned_to??conversations[0].assigned_to??null,
+        due:first?.due_at??null,status:first?.status??conversations[0].status});
+    };
+    void getWork();
+    return ()=>{alive=false;};
+  },[lead.id,activityRefreshKey]);
 
   const handleLogContact = async (channel: ContactChannel, notes: string, outcome: string, resolve: boolean, followupAt: string | null) => {
     const {error} = await supabase.rpc('crm_record_contact_outcome',{
@@ -289,6 +303,14 @@ function DrawerContent({
             </div>
           </div>
         )}
+
+        {callbackPending && <section aria-label="Callback next action" className="rounded-xl border border-red-500/50 bg-[#281316]/80 p-4 text-sm text-[#f5d9d2]">
+          <p className="font-semibold text-red-200">Callback needs attention</p>
+          <p className="mt-2">Assigned to: {callbackWork?.owner??'Unassigned'}</p>
+          <p className="mt-1">Next action: Contact customer, record a Call, Text, or Email outcome, then resolve or schedule follow-up.</p>
+          <p className="mt-1">Due: {callbackWork?.due?new Date(callbackWork.due).toLocaleString():'Awaiting staff review'}</p>
+          <button type="button" onClick={()=>setShowLogModal(true)} className="mt-3 rounded-lg bg-[#c8a96e] px-4 py-2 font-semibold text-black">Record Contact Outcome</button>
+        </section>}
 
         {/* Follow-up section */}
         <FollowUpSection leadId={lead.id} leadStatus={lead.status} onActivity={handleActivity} />
