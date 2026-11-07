@@ -1,5 +1,5 @@
 import {useMemo,useState} from 'react';
-import {Bell,Archive,Check,RotateCcw,ArrowUpRight,ExternalLink,RefreshCw,AlertTriangle,Inbox,Clock3,MessagesSquare,FileText} from 'lucide-react';
+import {Bell,Archive,Check,RotateCcw,ArrowUpRight,ExternalLink,RefreshCw,AlertTriangle,Inbox,Clock3,MessagesSquare,FileText,UserRoundPlus} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 import {IosNativeTap} from './DashboardHaptics';
@@ -89,7 +89,7 @@ export default function CrmActivityCenter(){
     <div className="min-w-0">
      <div className="flex items-start justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
-       {item.category==='handoff'?<MessagesSquare size={19} className="shrink-0 text-[#eacb96]" aria-label="Chatbot request"/>:item.category==='lead'?<FileText size={19} className="shrink-0 text-[#eacb96]" aria-label="Website contact form"/>:null}
+       {item.category==='handoff'?<MessagesSquare size={19} className="shrink-0 text-[#eacb96]" aria-label="Chatbot request"/>:item.category==='lead'?<UserRoundPlus size={19} className="shrink-0 text-[#eacb96]" aria-label="New lead received"/>:null}
        <strong className="min-w-0 text-sm text-[#f0dfc4]">{item.category==='handoff' && item.title==='Concierge handoff requested'?'Callback Requested':item.title}</strong>
       </div>
       {requiresAction(item)&&<span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-400/55 bg-red-700/20 px-2 py-1 text-[10px] font-semibold tracking-[0.025em] text-red-200"><AlertTriangle size={14} fill="#edb951" stroke="#4b250d" strokeWidth={2.5} aria-hidden="true"/> Needs Attention</span>}
