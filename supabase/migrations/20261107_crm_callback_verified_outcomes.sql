@@ -63,7 +63,7 @@ BEGIN
  IF NOT FOUND THEN RAISE EXCEPTION 'Lead not found'; END IF;
  SELECT EXISTS(
     SELECT 1 FROM public.ai_conversations c
-    WHERE c.lead_id=p_lead AND c.status='waiting_human'
+    WHERE c.lead_id=p_lead AND c.status IN ('waiting_human','human')
  ) INTO v_callback;
  IF v_callback AND NOT p_resolve AND (p_followup_at IS NULL OR p_followup_at <= v_now) THEN
    RAISE EXCEPTION 'Choose a future follow-up for an unresolved callback';
@@ -91,7 +91,7 @@ BEGIN
    WHERE t.conversation_id=c.id AND c.lead_id=p_lead AND t.status IN ('pending','claimed');
    GET DIAGNOSTICS v_count = ROW_COUNT;
    UPDATE public.ai_conversations SET status='closed',closed_at=v_now,updated_at=v_now
-     WHERE lead_id=p_lead AND status='waiting_human';
+     WHERE lead_id=p_lead AND status IN ('waiting_human','human');
  ELSIF v_callback THEN
    UPDATE public.ai_concierge_tasks t SET due_at=p_followup_at,escalation_due_at=p_followup_at + interval '30 minutes',
      escalated_at=NULL,updated_at=v_now
@@ -124,11 +124,7 @@ BEGIN
      VALUES('escalation:'||NEW.id,'escalation','Urgent concierge escalation',v_display||' requires prompt attention',v_target)
      ON CONFLICT(event_key) DO NOTHING;
    END IF;
-   IF NEW.status IS DISTINCT FROM OLD.status AND NEW.status='claimed' THEN
-     INSERT INTO public.crm_activity_events(event_key,category,title,summary,target_path)
-     VALUES('staff:claimed:'||NEW.id,'staff','Conversation claimed',v_display||' · Team member accepted the handoff',v_target)
-     ON CONFLICT(event_key) DO NOTHING;
-   END IF;
+
  END IF;
  RETURN NEW;
 END $$;
@@ -166,7 +162,7 @@ BEGIN
  END IF;
  SELECT regexp_replace(coalesce(visitor_phone,''),'[^0-9]','','g') INTO v_phone
  FROM public.ai_conversations WHERE id=p_conversation AND lead_id IS NULL
-   AND contact_consent_at IS NOT NULL AND status='waiting_human' FOR UPDATE;
+   AND contact_consent_at IS NOT NULL AND status IN ('waiting_human','human') FOR UPDATE;
  IF v_phone IS NULL THEN RETURN false; END IF;
  SELECT regexp_replace(coalesce(phone,''),'[^0-9]','','g') INTO v_lead_phone
  FROM public.leads WHERE id=p_lead;
@@ -193,7 +189,7 @@ BEGIN
  END IF;
  SELECT visitor_name,visitor_phone INTO v_name,v_phone FROM public.ai_conversations
  WHERE id=p_conversation AND lead_id IS NULL AND contact_consent_at IS NOT NULL
-   AND status='waiting_human' FOR UPDATE;
+   AND status IN ('waiting_human','human') FOR UPDATE;
  IF v_name IS NULL OR v_phone IS NULL THEN RAISE EXCEPTION 'Callback is not eligible for reviewed lead creation'; END IF;
  INSERT INTO public.leads(name,phone,email,message,source_page,status)
  VALUES(v_name,v_phone,'','Staff-reviewed concierge callback','AI Concierge','new')
@@ -217,15 +213,15 @@ BEGIN
  RETURN (
  SELECT jsonb_build_object(
    'total',count(*) FILTER(WHERE r.archived_at IS NULL AND NOT coalesce(l.status='archived',false)
-      AND e.event_key NOT LIKE 'staff:completed:%'),
+      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%'),
    'unread',count(*) FILTER(WHERE r.archived_at IS NULL AND r.read_at IS NULL AND NOT coalesce(l.status='archived',false)
-      AND e.event_key NOT LIKE 'staff:completed:%'),
+      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%'),
    'urgent',count(*) FILTER(WHERE r.archived_at IS NULL AND e.category='escalation' AND NOT coalesce(l.status='archived',false)
-      AND e.event_key NOT LIKE 'staff:completed:%'),
+      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%'),
    'today',count(*) FILTER(WHERE r.archived_at IS NULL AND e.created_at>=now()-interval '24 hours' AND NOT coalesce(l.status='archived',false)
-      AND e.event_key NOT LIKE 'staff:completed:%'),
+      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%'),
    'hidden',count(*) FILTER(WHERE r.archived_at IS NOT NULL OR coalesce(l.status='archived',false)
-      OR e.event_key LIKE 'staff:completed:%')
+      OR e.event_key LIKE 'staff:completed:%' OR e.event_key LIKE 'staff:claimed:%')
  )
  FROM public.crm_activity_events e
  LEFT JOIN public.crm_activity_receipts r ON r.event_id=e.id AND r.staff_email=v_staff
