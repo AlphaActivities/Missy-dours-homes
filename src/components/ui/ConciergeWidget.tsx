@@ -116,7 +116,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         setMode(result.status);
         setMessages([
           INITIAL[0],
-          ...result.messages.filter(m => m.sender !== 'system').map((m, i) => ({
+          ...result.messages.filter(m => m.sender !== 'system').map(m => ({
             id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const,
             text: m.body,
           })),
@@ -202,7 +202,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         const latest = await transport.sync(visitor);
         const lastVisitor = [...latest.messages].reverse().find(m => m.sender === 'visitor');
         setMode(latest.status);
-        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map((m, i) => ({
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
           id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
         }))]);
         if (lastVisitor?.body === message) {
@@ -250,7 +250,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       try {
         const latest = await transport.sync(session);
         setMode(latest.status);
-        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map((m, i) => ({
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
           id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
         }))]);
         if (latest.status === 'waiting_human' || latest.status === 'human') {
