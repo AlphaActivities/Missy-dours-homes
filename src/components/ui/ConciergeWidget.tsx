@@ -9,7 +9,8 @@ type Message = { id: number | string; role: 'concierge' | 'visitor'; text: strin
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy, what could we help answer for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
-const AI_TYPING_MIN_MS = 5000;
+const AI_TYPING_MIN_MS = 1400;
+const INTRO_TITLE = 'Imagine the Life That Awaits.';
 
 // NANP structural validation, not proof a number is assigned or reachable.
 function callbackPhoneDigits(input: string) {
@@ -97,6 +98,10 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
   const [aiTyping, setAiTyping] = useState(false);
+  const [introCharacters,setIntroCharacters] = useState(0);
+  const [welcomeReady,setWelcomeReady] = useState(false);
+  const [welcomeTyping,setWelcomeTyping] = useState(false);
+  const introPlayedRef = useRef(false);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadFeedback, setUploadFeedback] = useState<string|null>(null);
   const [handoffOpen, setHandoffOpen] = useState(false);
@@ -164,11 +169,35 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       sessionStorage.setItem('missy_concierge_invite_dismissed', '1');
       // Avoid opening the iOS keyboard automatically just by opening the chat.
       const timer = window.setTimeout(() => {
-        if (window.matchMedia('(min-width: 768px)').matches) inputRef.current?.focus();
+        if (welcomeReady && window.matchMedia('(min-width: 768px)').matches) inputRef.current?.focus();
       }, 180);
       return () => window.clearTimeout(timer);
     }
-  }, [open, onOpenChange]);
+  }, [open, onOpenChange, welcomeReady]);
+
+  // Run the entrance only for a genuinely new visitor, never over restored chat history.
+  // This is a UI presentation delay only; visitor session verification runs normally.
+  useEffect(()=>{
+    if(!open)return;
+    if(introPlayedRef.current || sessionRef.current){
+      setIntroCharacters(INTRO_TITLE.length);setWelcomeTyping(false);setWelcomeReady(true);
+      return;
+    }
+    introPlayedRef.current=true;
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      setIntroCharacters(INTRO_TITLE.length);setWelcomeReady(true);return;
+    }
+    setIntroCharacters(0);setWelcomeReady(false);setWelcomeTyping(false);
+    let characters=0;
+    const letters=window.setInterval(()=>{
+      characters=Math.min(INTRO_TITLE.length,characters+1);
+      setIntroCharacters(characters);
+      if(characters===INTRO_TITLE.length)window.clearInterval(letters);
+    },46);
+    const typing=window.setTimeout(()=>setWelcomeTyping(true),INTRO_TITLE.length*46+120);
+    const reveal=window.setTimeout(()=>{setWelcomeTyping(false);setWelcomeReady(true);},INTRO_TITLE.length*46+1020);
+    return()=>{window.clearInterval(letters);window.clearTimeout(typing);window.clearTimeout(reveal);};
+  },[open]);
 
   // Scroll only the chat transcript: scrollIntoView can also scroll the page behind the modal.
   useEffect(() => {
@@ -411,8 +440,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           </header>
           <div ref={chatHistoryRef} className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y space-y-4 px-5 py-4 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-live="polite">
             {privateQA && <p className="rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">PRIVATE TEST ONLY. This is not a customer inquiry. Use the reserved callback details and clear the test when finished.</p>}
-            <div className="missy-concierge-intro mx-auto max-w-sm py-2 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 font-serif text-lg tracking-wide text-[#ebd5ae]">Imagine the Life That Awaits.</p></div>
-            {messages.map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
+            <div className="missy-concierge-intro mx-auto max-w-sm py-2 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 min-h-[28px] font-serif text-lg tracking-wide text-[#ebd5ae]" aria-label={INTRO_TITLE}><span aria-hidden="true">{INTRO_TITLE.slice(0,introCharacters)}{!welcomeReady && <span className="ml-0.5 inline-block h-[1em] border-r border-[#e9c48b] align-middle" />}</span></p></div>
+            {messages.filter(m=>m.id!==0 || welcomeReady).map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className="flex max-w-[87%] flex-col items-start">
                 <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-[12px] bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-[12px] border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
                 {!privateQA && session && mode === 'human' && m.sender === 'human' && <div className="relative mt-1 flex items-center gap-1">
@@ -425,7 +454,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                 </div>}
               </div>
             </div>)}
-            {aiTyping && <AssistantTypingBubble />}
+            {(aiTyping || welcomeTyping) && <AssistantTypingBubble />}
             {!chatEnabled && <div className="missy-concierge-fallback rounded-2xl border border-[#c7a568]/35 bg-gradient-to-br from-[#3a2c17]/55 to-[#18140f] px-5 py-4 text-xs leading-relaxed text-[#f0dbb4] shadow-[inset_0_1px_0_rgba(255,231,180,.07)]">
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <button type="button" onClick={goToContact} className="mt-2 rounded-full border border-[#dfbf82] bg-[#c5a16a] px-4 py-2 font-semibold text-black transition-transform hover:brightness-110 active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Contact Missy</button>
@@ -470,8 +499,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           </div>
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
-              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] min-w-0 flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-base text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
-              <button type="submit" disabled={!chatEnabled || busy || !session || !draft.trim() || mode === 'waiting_human' || mode === 'closed'} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
+              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] min-w-0 flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-base text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
+              <button type="submit" disabled={!chatEnabled || !welcomeReady || busy || !session || !draft.trim() || mode === 'waiting_human' || mode === 'closed'} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
             </form>
             <div className="mt-2 text-center text-[10px] leading-relaxed text-[#988b77]"><p>AI information may be incomplete.</p><p>Missy confirms property availability and details.</p></div>
           </div>
