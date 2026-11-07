@@ -315,16 +315,16 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           </button>
         </div>
       )}
-      {open && <div className="missy-concierge-backdrop fixed inset-0 z-[100] flex touch-none items-center justify-center overflow-hidden overscroll-none bg-black/70 p-3 sm:p-4 md:p-6" role="presentation">
-        <section aria-label="Missy Dours private concierge" role="dialog" aria-modal="true" className="missy-concierge-dialog relative flex h-auto max-h-[calc(100dvh-24px)] w-full max-w-xl min-h-0 flex-col overflow-hidden touch-auto rounded-[24px] border border-[#d1ad72]/45 bg-[#0b0a09] text-[#f2eadc] shadow-[0_30px_90px_rgba(0,0,0,.75)] sm:max-h-[calc(100dvh-32px)] md:max-h-[min(740px,calc(100dvh-48px))] md:rounded-[28px]">
+      {open && <div className="missy-concierge-backdrop fixed inset-0 z-[100] flex items-stretch justify-stretch overflow-hidden overscroll-none bg-[#0b0a09]" role="presentation">
+        <section aria-label="Missy Dours private concierge" role="dialog" aria-modal="true" className="missy-concierge-dialog relative flex h-[100dvh] min-h-0 w-full min-w-0 max-w-none flex-col overflow-hidden bg-[#0b0a09] text-[#f2eadc]">
           <div className="missy-concierge-scanline pointer-events-none absolute inset-x-0 top-0 z-20 h-px" aria-hidden="true" />
-          <header className="relative flex shrink-0 items-center gap-3 border-b border-[#b9945d]/30 bg-gradient-to-r from-[#21190f] via-[#14100b] to-[#0a0908] px-5 py-5">
+          <header className="relative flex shrink-0 items-center gap-3 border-b border-[#b9945d]/30 bg-gradient-to-r from-[#21190f] via-[#14100b] to-[#0a0908] px-4 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
             <button type="button" onClick={() => setOpen(false)} aria-label="Close concierge" className="rounded-lg p-2 hover:bg-white/10"><ArrowLeft size={19}/></button>
             <img src="/images/md-logo.png" alt="Missy Dours" className="h-11 w-11 shrink-0 rounded-xl bg-[#f5eddc] object-contain p-0.5" />
-            <div className="min-w-0 flex-1"><p className="font-serif text-[17px] leading-snug text-[#f1d39a]">{privateQA?'Concierge · Private QA':"Message Missy’s Team"}</p></div>
+            <div className="min-w-0 flex-1"><p className="font-serif text-[17px] leading-snug text-[#f1d39a]">{privateQA?'Concierge · Private QA':"Message Missy’s Direct Team"}</p></div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#c9a66c]/55 bg-[#2a2115]/85 text-[#f0d6a5] shadow-[inset_0_1px_0_rgba(255,235,193,.09)] transition-[background-color,border-color,transform,box-shadow] duration-150 hover:border-[#f2d5a2] hover:bg-[#43331c] active:scale-90 active:border-[#f5d69c] active:bg-[#68502d] active:shadow-[0_0_14px_rgba(206,169,104,.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4d596]"><X size={21}/></button>
           </header>
-          <div ref={chatHistoryRef} className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y space-y-4 px-5 py-4 md:px-7" aria-live="polite">
+          <div ref={chatHistoryRef} className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y space-y-4 px-5 py-4 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-live="polite">
             {privateQA && <p className="rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">PRIVATE TEST ONLY. This is not a customer inquiry. Use the reserved callback details and clear the test when finished.</p>}
             <div className="missy-concierge-intro mx-auto max-w-sm py-2 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 font-serif text-lg tracking-wide text-[#ebd5ae]">Imagine the Life That Awaits.</p></div>
             {messages.map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
@@ -376,13 +376,13 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {busy && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
-          <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] p-4 md:px-6">
+          <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <p className="mb-2 text-right text-[11px] text-[#c8ab79]">Automatic language assistance{language!=='en' ? ' · Translation available' : ''}</p>
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
               <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] min-w-0 flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-base text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
               <button type="submit" disabled={!chatEnabled || busy || !session || !draft.trim() || mode === 'waiting_human' || mode === 'closed'} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
             </form>
-            <p className="mt-2 text-center text-[10px] text-[#988b77]">AI information may be incomplete. Missy confirms property availability and details.</p>
+            <div className="mt-2 text-center text-[10px] leading-relaxed text-[#988b77]"><p>AI information may be incomplete.</p><p>Missy confirms property availability and details.</p></div>
           </div>
         </section>
       </div>}
