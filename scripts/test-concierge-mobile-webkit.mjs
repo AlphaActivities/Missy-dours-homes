@@ -25,8 +25,8 @@ try {
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  await dialog.waitFor({state:'visible',timeout:8000});
  assert.equal(await dialog.getByText('Imagine the Life That Awaits.').count()>0,true);
- await dialog.getByText('Message Missy’s Direct Team',{exact:true}).waitFor({state:'visible'});
- await dialog.getByText('We’re here to help you find your happy place. How can I assist you?').waitFor({state:'visible'});
+ await dialog.getByText('Message Missy’s Team',{exact:true}).waitFor({state:'visible'});
+ await dialog.getByText('We help people find their happy, what can we help answer for you?').waitFor({state:'visible'});
  assert.equal(await dialog.locator('header').getByText('IMAGINE THE LIFE THAT AWAITS').count(),0,'Header tagline should be removed while preserving the in-chat headline');
  const locked=await page.evaluate(()=>({
   position:getComputedStyle(document.body).position,
