@@ -1,11 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 import { MessageCircle, X, Send, SmilePlus } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type VisitorSession } from '../../lib/conciergeTransport';
 
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string; sender?: 'ai' | 'human' | 'visitor' };
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy, what could we help answer for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
+const AI_TYPING_MIN_MS = 5000;
+
+/** A native-style incoming typing bubble, visible only while awaiting an AI reply. */
+function AssistantTypingBubble() {
+  const reducedMotion = useReducedMotion();
+  return <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
+    <div className="inline-flex min-h-12 items-center gap-1.5 rounded-2xl rounded-bl-md border border-white/10 bg-[#29292d] px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,.12)]">
+      <span className="sr-only">Assistant is typing</span>
+      {[0,1,2].map(index => <motion.span
+        key={index}
+        aria-hidden="true"
+        className="block h-2 w-2 rounded-full bg-[#b8b8be]"
+        animate={reducedMotion ? {y:0, opacity:0.8} : {y:[0,-4,0],opacity:[0.45,1,0.45]}}
+        transition={reducedMotion ? {duration:0} : {duration:0.9,repeat:Infinity,delay:index*0.16,ease:'easeInOut'}}
+      />)}
+    </div>
+  </div>;
+}
 /** Linkify only preapproved, HTTPS real-estate resources, never arbitrary AI URLs. */
 const CONCIERGE_LINK_HOSTS = new Set([
   'missydours.com', 'www.missydours.com',
@@ -55,6 +74,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const chatHistoryRef = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
+  const [aiTyping, setAiTyping] = useState(false);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadFeedback, setUploadFeedback] = useState<string|null>(null);
   const [handoffOpen, setHandoffOpen] = useState(false);
@@ -233,11 +253,24 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       return;
     }
     syncVersionRef.current += 1;
+    const shouldShowTyping = mode === 'ai';
+    const sendStartedAt = Date.now();
+    const pendingMessageId = 'pending-visitor-'+sendStartedAt;
     setBusy(true);
     setTransportError(null);
+    // Place the visitor's message immediately in the correct transcript order.
+    // Sync is held until the typing phase finishes, so a fast bot reply cannot appear early.
+    setMessages(previous => [...previous, {id:pendingMessageId,role:'visitor',sender:'visitor',text:message}]);
+    setDraft('');
+    setAiTyping(shouldShowTyping);
     try {
+      // Start the actual request immediately; only delay revealing a successful AI response.
       const result = await transport.send(visitor, message, 'auto');
       if(result.language && ['en','es','fr','pt','zh'].includes(result.language))setLanguage(result.language);
+      if(shouldShowTyping) {
+        const remaining = Math.max(0, AI_TYPING_MIN_MS - (Date.now() - sendStartedAt));
+        if(remaining > 0) await new Promise<void>(resolve => window.setTimeout(resolve, remaining));
+      }
       // Reload canonical IDs/sequence after the successful send; local fallback only on sync failure.
       try {
         const updated=await transport.sync(visitor);
@@ -247,8 +280,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         setMode(updated.status);
       } catch {
         setMessages(previous=>[
-          ...previous,
-          {id:'local-visitor-'+Date.now(),role:'visitor',text:message},
+          ...previous.filter(item => item.id !== pendingMessageId),
+          {id:'local-visitor-'+Date.now(),role:'visitor',sender:'visitor',text:message},
           ...(result.reply?[{id:'local-reply-'+Date.now(),role:'concierge' as const,text:result.reply}]:[])
         ]);
       }
@@ -273,7 +306,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       } catch {
         setTransportError('Delivery could not be confirmed. Reopen the chat and check for your message before resending.');
       }
-    } finally { setBusy(false); }
+    } finally { setAiTyping(false); setBusy(false); }
   };
 
   const uploadAttachment = async (file: File) => {
@@ -362,6 +395,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                 </div>}
               </div>
             </div>)}
+            {aiTyping && <AssistantTypingBubble />}
             {!chatEnabled && <div className="missy-concierge-fallback rounded-2xl border border-[#c7a568]/35 bg-gradient-to-br from-[#3a2c17]/55 to-[#18140f] px-5 py-4 text-xs leading-relaxed text-[#f0dbb4] shadow-[inset_0_1px_0_rgba(255,231,180,.07)]">
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <a href="/#contact" className="mt-2 block font-semibold underline underline-offset-4">Contact Missy</a>
@@ -395,7 +429,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               {uploadFeedback && <p role="status" className="text-xs text-[#eedab5]">{uploadFeedback}</p>}
             </div>}
             {mode === 'waiting_human' && <p className="text-xs text-[#eacb99]">Waiting for a team member. For a time-sensitive request, you can also <a href="/#contact" className="underline underline-offset-2">contact Missy directly</a>.</p>}
-            {busy && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
+            {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
