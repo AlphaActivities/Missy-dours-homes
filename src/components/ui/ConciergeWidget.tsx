@@ -255,11 +255,12 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     syncVersionRef.current += 1;
     const shouldShowTyping = mode === 'ai';
     const sendStartedAt = Date.now();
+    const pendingMessageId = 'pending-visitor-'+sendStartedAt;
     setBusy(true);
     setTransportError(null);
     // Place the visitor's message immediately in the correct transcript order.
     // Sync is held until the typing phase finishes, so a fast bot reply cannot appear early.
-    setMessages(previous => [...previous, {id:'pending-visitor-'+sendStartedAt,role:'visitor',sender:'visitor',text:message}]);
+    setMessages(previous => [...previous, {id:pendingMessageId,role:'visitor',sender:'visitor',text:message}]);
     setDraft('');
     setAiTyping(shouldShowTyping);
     try {
@@ -279,8 +280,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         setMode(updated.status);
       } catch {
         setMessages(previous=>[
-          ...previous,
-          {id:'local-visitor-'+Date.now(),role:'visitor',text:message},
+          ...previous.filter(item => item.id !== pendingMessageId),
+          {id:'local-visitor-'+Date.now(),role:'visitor',sender:'visitor',text:message},
           ...(result.reply?[{id:'local-reply-'+Date.now(),role:'concierge' as const,text:result.reply}]:[])
         ]);
       }
