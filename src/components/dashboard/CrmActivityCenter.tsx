@@ -22,7 +22,7 @@ export default function CrmActivityCenter(){
  const refreshInbox=async()=>{if(refreshing)return;setRefreshing(true);try{await refresh();}finally{setRefreshing(false);}};
  const visible=useMemo(()=>items.filter(e=>{
   // Completed-task events are audit history, never a new item of work.
-  const auditOnly=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
+  const auditOnly=Boolean(e.chat_lead_audit)||e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
   if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly);
   if(e.archived_at||e.lead_archived||auditOnly)return false;
   if(filter==='all')return true;
@@ -90,7 +90,7 @@ export default function CrmActivityCenter(){
       {requiresAction(item)&&<span className="inline-flex items-center gap-1 rounded-full border border-red-400/55 bg-red-700/20 px-2.5 py-1 text-[10px] font-semibold tracking-[0.025em] text-red-200"><AlertTriangle size={11} aria-hidden="true"/> Needs Attention</span>}
       {!item.read_at&&!item.archived_at&&!item.lead_archived&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
-     {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Task activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
+     {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked concierge lead audit':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Task activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{friendlySummary(item.summary)}</p>
      {requiresAction(item)&&<div className="mt-3 space-y-1.5">
       <p className="inline-flex items-center gap-1.5 rounded-md border border-red-400/35 bg-red-900/20 px-3 py-2 text-xs font-semibold text-red-200"><AlertTriangle size={13} aria-hidden="true"/> Follow-up required</p>
