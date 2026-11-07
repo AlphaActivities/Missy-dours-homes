@@ -241,7 +241,12 @@ Deno.serve(async req=>{
     return answer({error:'Please provide your name, a valid callback number, and consent to be contacted.'},400,origin);
   }
   const digits=phone.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
-  if(digits.length!==10)return answer({error:'Please enter a valid 10-digit US phone number.'},400,origin);
+  // Validate NANP numbering structure server-side; browser validation alone is bypassable.
+  // N11 area/exchange prefixes are reserved. This does not verify assignment or reachability.
+  if(!/^[2-9]\d{2}[2-9]\d{6}$/.test(digits) ||
+    digits.slice(1,3)==='11' || digits.slice(4,6)==='11'){
+    return answer({error:'Please enter a valid 10-digit U.S. phone number with area code.'},400,origin);
+  }
   const {data:requested,error:requestError}=await db.rpc('ai_concierge_request_human_with_contact',{
     p_conversation:chat.id,p_token_hash:hash,p_message:note,
     p_name:name,p_phone:phone,p_consent:true
