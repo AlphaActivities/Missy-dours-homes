@@ -24,7 +24,13 @@ try {
  await launcher.click();
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  await dialog.waitFor({state:'visible',timeout:8000});
+ const intro=dialog.locator('.missy-concierge-intro');
+ assert.equal(await intro.evaluate(el=>getComputedStyle(el).textAlign),'left','Headline typing must be left-anchored');
+ assert.equal(await intro.locator('.border-r').count(),0,'Typewriter must not show a blinking cursor');
+ assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'AI bubble must not precede finished title');
  await dialog.getByText('Imagine the Life That Awaits.',{exact:true}).waitFor({state:'visible'});
+ assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'AI bubble must pause after the full title');
+ await dialog.getByRole('status',{name:'Assistant is typing'}).waitFor({state:'visible'});
  await dialog.getByText('Message Missy’s Team',{exact:true}).waitFor({state:'visible'});
  assert.equal(await dialog.getByRole('button',{name:'Close concierge'}).count(),0,'Redundant back arrow must be removed');
  assert.equal(await dialog.getByText(/Automatic language assistance/).count(),0,'Composer language label must be removed');
