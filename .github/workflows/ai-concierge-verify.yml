@@ -79,39 +79,45 @@ jobs:
             -H 'Content-Type: application/json' -d '{"challenge":"invalid-test-token"}')
           test "$status" = 403 -o "$status" = 401
           echo "API correctly rejected untrusted-origin request with HTTP $status"
-      - name: Confirm visitor chat remains disabled before launch
+      - name: Reject unverified visitor chat sessions regardless of launch state
         shell: bash
         run: |
           set -euo pipefail
-          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-disabled.json -w '%{http_code}' -X POST \
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-session-denied.json -w '%{http_code}' -X POST \
             'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-api/session' \
             -H 'Content-Type: application/json' \
             -H 'Origin: https://missydours.com' \
             -d '{"challenge":"invalid-test-token"}')
-          test "$status" = 503
+          # Live concierge denies invalid Turnstile (400/403); paused mode
+          # returns 503. Neither response may create a visitor session.
+          case "$status" in 400|403|503) ;; *) echo "Unsafe/unexpected session HTTP $status"; exit 1;; esac
           python3 - <<'PY'
           import json
-          x=json.load(open('/tmp/concierge-disabled.json'))
-          assert 'not available yet' in x.get('error',''), 'Unexpected error; feature flag may not be disabled'
-          print('PASS: server-side concierge flag is still disabled')
+          body=json.load(open('/tmp/concierge-session-denied.json'))
+          assert isinstance(body.get('error'),str) and body['error']
+          assert not any(k in body for k in ('token','conversation_id','session_id')), 'Session was created without a valid challenge'
+          print('PASS: invalid visitor challenge denied without creating a session')
           PY
-      - name: Confirm visitor file uploads are disabled before launch
+      - name: Reject anonymous visitor attachment uploads regardless of launch state
         shell: bash
         run: |
           set -euo pipefail
-          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-upload-disabled.json -w '%{http_code}' -X POST \
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/concierge-upload-denied.json -w '%{http_code}' -X POST \
             'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-api/attachment-upload' \
             -H 'Content-Type: application/octet-stream' \
             -H 'Origin: https://missydours.com' \
             -H 'X-File-Name: sample.pdf' \
             -H 'X-File-Type: application/pdf' \
             --data-binary '%PDF-')
-          test "$status" = 503
+          # Live mode requires a valid conversation bearer token (401).
+          # Paused mode rejects before token validation (503).
+          case "$status" in 401|503) ;; *) echo "Unsafe/unexpected upload HTTP $status"; exit 1;; esac
           python3 - <<'PY'
           import json
-          x=json.load(open('/tmp/concierge-upload-disabled.json'))
-          assert 'not available yet' in x.get('error','')
-          print('PASS: private attachments remain inaccessible while public chat is off')
+          body=json.load(open('/tmp/concierge-upload-denied.json'))
+          assert isinstance(body.get('error'),str) and body['error']
+          assert 'id' not in body and 'storage_path' not in body
+          print('PASS: unauthenticated visitor attachment upload denied')
           PY
       - name: Reject anonymous iPhone push self-test against deployed API
         shell: bash
@@ -129,7 +135,7 @@ jobs:
           assert payload.get('error') == 'Unauthorized'
           print('PASS: anonymous users cannot trigger a test push')
           PY
-      - name: Reject anonymous staff device readiness while visitor chat is disabled
+      - name: Reject anonymous staff device readiness in any launch state
         shell: bash
         run: |
           set -euo pipefail
@@ -145,7 +151,7 @@ jobs:
           assert payload.get('error') == 'Unauthorized'
           print('PASS: staff readiness cannot be read anonymously')
           PY
-      - name: Reject unauthenticated staff translation while visitor chat is disabled
+      - name: Reject unauthenticated staff translation in any launch state
         shell: bash
         run: |
           set -euo pipefail
@@ -171,17 +177,18 @@ jobs:
             -d '{"messages":[{"role":"user","content":"security check"}]}')
           test "$status" = 401
           echo "PASS: Worker rejects unauthenticated AI inference"
-      - name: Confirm background push sender is disabled
+      - name: Reject unauthenticated background push delivery regardless of sender state
         shell: bash
         run: |
           set -euo pipefail
-          status=$(curl --silent --show-error --max-time 20 -o /tmp/push-disabled.json -w '%{http_code}' -X POST \
+          status=$(curl --silent --show-error --max-time 20 -o /tmp/push-denied.json -w '%{http_code}' -X POST \
             'https://ddgpsvkmrnfeufepowog.supabase.co/functions/v1/concierge-push-delivery' \
             -H 'Content-Type: application/json' -d '{}')
-          test "$status" = 503
+          # Enabled sender requires internal auth (401); paused sender (503).
+          case "$status" in 401|503) ;; *) echo "Unsafe/unexpected push delivery HTTP $status"; exit 1;; esac
           python3 - <<'PY'
           import json
-          response=json.load(open('/tmp/push-disabled.json'))
-          assert response.get('status')=='disabled', 'Background push must remain disabled'
-          print('PASS: background push delivery remains disabled')
+          response=json.load(open('/tmp/push-denied.json'))
+          assert response.get('error') == 'Unauthorized' or response.get('status') == 'disabled'
+          print('PASS: unauthenticated push delivery cannot run')
           PY
