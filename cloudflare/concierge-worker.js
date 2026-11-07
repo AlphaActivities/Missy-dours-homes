@@ -123,9 +123,18 @@ export default {
       const broadPriceQuestion = /\b(price|prices|pricing|cost|costs)\b/i.test(latestQuestion) &&
         /\b(home|homes|house|houses|property|properties)\b/i.test(latestQuestion) &&
         !/\b(average|median|market trend|mortgage|monthly payment|tax|taxes|estimate my|worth)\b/i.test(latestQuestion);
-      if (task==='reply' && language==='en' && broadPriceQuestion && publishedActiveExample) {
-        const p=publishedActiveExample;
-        return json({reply:'Home prices depend on the area, size and features. As one example, Missy’s website lists '+p.address+' at a displayed price of '+p.price_display+' (website snapshot, not a verified live quote). You can view it here: '+p.url+'\n\nMissy can confirm current price and availability. What price range and area are you considering?',language});
+      if (task==='reply' && language==='en' && broadPriceQuestion) {
+        // If the live website feed cannot be retrieved, fall back to a clearly
+        // dated public listing record, never presenting it as today's price.
+        const p=publishedActiveExample || {
+          address:'14636 Southern Pines Dr, Farmers Branch, TX 75234',
+          price_display:'$2,487,000',
+          url:'https://missydours.com/listings/14636-southern-pines-dr'
+        };
+        const sourceNote=publishedActiveExample
+          ? 'website listing snapshot, not a verified live quote'
+          : 'older website record, last updated April 6, 2026; not verified as current';
+        return json({reply:'Home prices depend on the area, size and features. As one example, Missy’s website has featured '+String(p.address).slice(0,150)+' with a displayed price of '+p.price_display+' ('+sourceNote+'). View the property here: '+p.url+'\\n\\nMissy can confirm current price and availability. What price range and area are you considering?',language});
       }
       const localizedInstructions = instructions.replace(/^Reply in [^.]+\./, 'Reply in '+languages[language]+'.');
       const result = await env.AI.run('@cf/zai-org/glm-4.7-flash', {
