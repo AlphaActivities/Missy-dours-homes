@@ -194,8 +194,10 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       setIntroCharacters(characters);
       if(characters===INTRO_TITLE.length)window.clearInterval(letters);
     },46);
-    const typing=window.setTimeout(()=>setWelcomeTyping(true),INTRO_TITLE.length*46+120);
-    const reveal=window.setTimeout(()=>{setWelcomeTyping(false);setWelcomeReady(true);},INTRO_TITLE.length*46+1020);
+    // Complete the left-to-right title, hold for 1.2s, then show the AI typing bubble.
+    // The greeting appears after a brief 850ms typing phase.
+    const typing=window.setTimeout(()=>setWelcomeTyping(true),INTRO_TITLE.length*46+1200);
+    const reveal=window.setTimeout(()=>{setWelcomeTyping(false);setWelcomeReady(true);},INTRO_TITLE.length*46+2050);
     return()=>{window.clearInterval(letters);window.clearTimeout(typing);window.clearTimeout(reveal);};
   },[open]);
 
@@ -440,7 +442,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           </header>
           <div ref={chatHistoryRef} className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y space-y-4 px-5 py-4 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-live="polite">
             {privateQA && <p className="rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">PRIVATE TEST ONLY. This is not a customer inquiry. Use the reserved callback details and clear the test when finished.</p>}
-            <div className="missy-concierge-intro mx-auto max-w-sm py-2 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 min-h-[28px] font-serif text-lg tracking-wide text-[#ebd5ae]" aria-label={INTRO_TITLE}><span aria-hidden="true">{INTRO_TITLE.slice(0,introCharacters)}{!welcomeReady && <span className="ml-0.5 inline-block h-[1em] border-r border-[#e9c48b] align-middle" />}</span></p></div>
+            <div className="missy-concierge-intro mx-auto w-full max-w-sm py-2 text-left"><span className="mb-4 block h-px w-24 bg-gradient-to-r from-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 min-h-[28px] font-serif text-lg tracking-wide text-[#ebd5ae]" aria-label={INTRO_TITLE}><span aria-hidden="true">{INTRO_TITLE.slice(0,introCharacters)}</span></p></div>
             {messages.filter(m=>m.id!==0 || welcomeReady).map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className="flex max-w-[87%] flex-col items-start">
                 <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-[12px] bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-[12px] border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
