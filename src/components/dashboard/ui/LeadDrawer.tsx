@@ -197,11 +197,11 @@ function DrawerContent({
     if(error) throw new Error(error.message);
     const now = new Date().toISOString();
     const nextStatus = lead.status==='new' && (outcome==='spoke'||outcome==='replied') ? 'contacted' : lead.status;
-    onLeadUpdate?.({...lead,last_contacted_at:now,status:nextStatus});
+    onLeadUpdate?.({...lead,last_contacted_at:(outcome==='spoke'||outcome==='replied')?now:lead.last_contacted_at,status:nextStatus});
     if(resolve) setCallbackPending(false);
     setActivityRefreshKey(k=>k+1);
     setShowLogModal(false);
-    showToast(resolve?'Contact recorded, callback resolved.':'Contact recorded. Next action remains tracked.');
+    showToast(resolve?'Contact recorded, callback resolved.':'Interaction logged. Follow-up or next action remains tracked.');
   };
 
   const handleActivity = async (eventType: string, description: string) => {
