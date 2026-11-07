@@ -6,13 +6,26 @@ type Message = { id: number | string; role: 'concierge' | 'visitor'; text: strin
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy, what could we help answer for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
-/** Safely linkify only Missy's public website URLs in assistant messages. */
+/** Linkify only preapproved, HTTPS real-estate resources, never arbitrary AI URLs. */
+const CONCIERGE_LINK_HOSTS = new Set([
+  'missydours.com', 'www.missydours.com',
+  'trec.texas.gov', 'www.trec.texas.gov',
+  'consumerfinance.gov', 'www.consumerfinance.gov',
+  'hud.gov', 'www.hud.gov',
+]);
 function renderConciergeText(text: string) {
-  return text.split(/(https:\/\/missydours\.com(?:\/[^\s<>"']*)?)/gi).map((part,index) => {
-    if (!/^https:\/\/missydours\.com(?:\/|$)/i.test(part)) return part;
-    const url = part.replace(/[.,!?;:)]*$/, '');
-    const suffix = part.slice(url.length);
-    return <span key={index}><a href={url} target="_blank" rel="noopener noreferrer" className="font-medium text-[#92c7ff] underline underline-offset-2 decoration-[#92c7ff]/65 break-all hover:text-[#c8e3ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#92c7ff]">{url}</a>{suffix}</span>;
+  return text.split(/(https:\/\/[^\s<>"']+)/gi).map((part,index) => {
+    if (!/^https:\/\//i.test(part)) return part;
+    const urlText = part.replace(/[.,!?;:)\]]*$/, '');
+    const suffix = part.slice(urlText.length);
+    let permitted = false;
+    try {
+      const url = new URL(urlText);
+      permitted = url.protocol === 'https:' && CONCIERGE_LINK_HOSTS.has(url.hostname.toLowerCase())
+        && !url.username && !url.password && url.port === '';
+    } catch { /* Keep malformed URLs as plain text. */ }
+    if (!permitted) return part;
+    return <span key={index}><a href={urlText} target="_blank" rel="noopener noreferrer" className="font-medium text-[#92c7ff] underline underline-offset-2 decoration-[#92c7ff]/65 break-all hover:text-[#c8e3ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#92c7ff]">{urlText}</a>{suffix}</span>;
   });
 }
 
