@@ -4,7 +4,7 @@ import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type 
 
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string };
 const REACTION_OPTIONS = ['👍','❤️','😂','😮','🙏'] as const;
-const GREETING = 'We’re here to help you find your happy place. How can I assist you?';
+const GREETING = 'We help people find their happy, what can we help answer for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const SESSION_KEY = 'missy_concierge_visitor_session_v1';
 const LANGUAGE_KEY = 'missy_concierge_language_v1';
@@ -321,7 +321,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           <header className="relative flex shrink-0 items-center gap-3 border-b border-[#b9945d]/30 bg-gradient-to-r from-[#21190f] via-[#14100b] to-[#0a0908] px-4 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6">
             <button type="button" onClick={() => setOpen(false)} aria-label="Close concierge" className="rounded-lg p-2 hover:bg-white/10"><ArrowLeft size={19}/></button>
             <img src="/images/md-logo.png" alt="Missy Dours" className="h-11 w-11 shrink-0 rounded-xl bg-[#f5eddc] object-contain p-0.5" />
-            <div className="min-w-0 flex-1"><p className="font-serif text-[17px] leading-snug text-[#f1d39a]">{privateQA?'Concierge · Private QA':"Message Missy’s Direct Team"}</p></div>
+            <div className="min-w-0 flex-1"><p className="font-serif text-[17px] leading-snug text-[#f1d39a]">{privateQA?'Concierge · Private QA':"Message Missy’s Team"}</p></div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#c9a66c]/55 bg-[#2a2115]/85 text-[#f0d6a5] shadow-[inset_0_1px_0_rgba(255,235,193,.09)] transition-[background-color,border-color,transform,box-shadow] duration-150 hover:border-[#f2d5a2] hover:bg-[#43331c] active:scale-90 active:border-[#f5d69c] active:bg-[#68502d] active:shadow-[0_0_14px_rgba(206,169,104,.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f4d596]"><X size={21}/></button>
           </header>
           <div ref={chatHistoryRef} className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y space-y-4 px-5 py-4 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-live="polite">
