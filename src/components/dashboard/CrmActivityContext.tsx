@@ -4,7 +4,7 @@ import {useAuth} from '../../contexts/AuthContext';
 import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound,type CrmSound} from './crmSounds';
 
 export type ActivityCategory='lead'|'handoff'|'escalation'|'staff';
-export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null};
+export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;chat_lead_audit?:boolean;}
 export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'sound_staff';
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
@@ -38,14 +38,42 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const attachLeadStatuses=async(rows:CrmActivity[]):Promise<CrmActivity[]>=>{
   const ids=[...new Set(rows.map(e=>e.target_path.startsWith('/dashboard/leads?lead=')?
    e.target_path.slice('/dashboard/leads?lead='.length):'').filter(Boolean))];
-  if(!ids.length)return rows;
-  const res=await supabase.from('leads').select('id,status').in('id',ids);
-  if(res.error)throw res.error;
-  const statuses=new Map((res.data??[]).map(l=>[l.id,l.status]));
+  const statuses=new Map<string,string>();
+  const sources=new Map<string,string>();
+  const chatLeadIds=new Set<string>();
+  if(ids.length){
+   const res=await supabase.from('leads').select('id,status,source_page').in('id',ids);
+   if(res.error)throw res.error;
+   (res.data??[]).forEach(l=>{statuses.set(l.id,l.status);sources.set(l.id,l.source_page??'');});
+   const linked=await supabase.from('ai_conversations').select('lead_id').in('lead_id',ids);
+   if(linked.error)throw linked.error;
+   (linked.data??[]).forEach(c=>{if(c.lead_id)chatLeadIds.add(c.lead_id);});
+  }
+  const taskIds=[...new Set(rows.filter(e=>e.event_key.startsWith('handoff:')||e.event_key.startsWith('staff:completed:'))
+   .map(e=>e.event_key.split(':').pop()!).filter(Boolean))];
+  const callbacks=new Map<string,{status:string;conversation_id:string}>();
+  const conversations=new Map<string,{status:string;lead_id:string|null}>();
+  if(taskIds.length){
+   const res=await supabase.from('ai_concierge_tasks').select('id,status,conversation_id').in('id',taskIds);
+   if(res.error)throw res.error;
+   (res.data??[]).forEach(t=>callbacks.set(t.id,{status:t.status,conversation_id:t.conversation_id}));
+   const convoIds=[...new Set((res.data??[]).map(t=>t.conversation_id))];
+   if(convoIds.length){
+    const convo=await supabase.from('ai_conversations').select('id,status,lead_id').in('id',convoIds);
+    if(convo.error)throw convo.error;
+    (convo.data??[]).forEach(c=>conversations.set(c.id,{status:c.status,lead_id:c.lead_id}));
+   }
+  }
   return rows.map(e=>{
    const id=e.target_path.startsWith('/dashboard/leads?lead=')?
     e.target_path.slice('/dashboard/leads?lead='.length):'';
-   return {...e,lead_status:id?(statuses.get(id)??null):null};
+   const task=callbacks.get(e.event_key.split(':').pop()??'');
+   const convo=task?conversations.get(task.conversation_id):undefined;
+   const callback_status=task?.status==='claimed'?'claimed':convo?.status==='waiting_human'?'waiting_human':
+    convo?.status==='closed'?'closed':task?.status??null;
+   return {...e,lead_status:id?(statuses.get(id)??null):null,
+    callback_status,callback_lead_id:convo?.lead_id??null,
+    chat_lead_audit:e.category==='lead'&&Boolean(id)&&sources.get(id)==='AI Concierge'&&chatLeadIds.has(id)};
   });
  };
 

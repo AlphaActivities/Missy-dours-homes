@@ -5,7 +5,8 @@ import LoadingSpinner from './LoadingSpinner';
 
 interface LogContactModalProps {
   leadName: string;
-  onLog: (channel: ContactChannel, notes: string) => Promise<void>;
+  onLog: (channel: ContactChannel, notes: string, outcome: string, resolve: boolean, followupAt: string | null) => Promise<void>;
+  callbackPending?: boolean;
   onClose: () => void;
 }
 
@@ -15,20 +16,26 @@ const CHANNELS: { value: ContactChannel; label: string; icon: React.ReactNode; c
   { value: 'email', label: 'Email', icon: <Mail size={14} />,          color: '#c8a96e' },
 ];
 
-export default function LogContactModal({ leadName, onLog, onClose }: LogContactModalProps) {
+export default function LogContactModal({ leadName, onLog, onClose, callbackPending = false }: LogContactModalProps) {
   const [channel, setChannel] = useState<ContactChannel>('call');
   const [notes, setNotes] = useState('');
+  const [outcome, setOutcome] = useState('no_answer');
+  const [resolve, setResolve] = useState(false);
+  const [followupAt, setFollowupAt] = useState('');
+  const outcomeOptions = channel === 'call' ? [{value:'spoke',label:'Spoke with customer'},{value:'no_answer',label:'No answer'},{value:'voicemail',label:'Voicemail left'}] : channel === 'text' ? [{value:'text_sent',label:'Text sent'},{value:'replied',label:'Customer replied'}] : [{value:'email_sent',label:'Email sent'},{value:'replied',label:'Customer replied'}];
+  const reached = outcome === 'spoke' || outcome === 'replied';
+  const invalid = notes.trim().length < 3 || (callbackPending && !resolve && (!followupAt || new Date(followupAt).getTime() <= Date.now()));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSave = async () => {
-    if (saving) return;
+    if (saving || invalid) return;
     setSaving(true);
     setError(null);
     try {
-      await onLog(channel, notes.trim());
-    } catch {
-      setError('Failed to record interaction. Please try again.');
+      await onLog(channel, notes.trim(), outcome, callbackPending && resolve, followupAt ? new Date(followupAt).toISOString() : null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Failed to record interaction. Please try again.');
       setSaving(false);
     }
   };
@@ -79,7 +86,7 @@ export default function LogContactModal({ leadName, onLog, onClose }: LogContact
                 return (
                   <button
                     key={ch.value}
-                    onClick={() => setChannel(ch.value)}
+                    onClick={() => { setChannel(ch.value); setOutcome(ch.value === 'call' ? 'no_answer' : ch.value === 'text' ? 'text_sent' : 'email_sent'); setResolve(false); }}
                     className="flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-medium transition-all duration-150"
                     style={{
                       color: active ? ch.color : 'var(--ds-text-tertiary)',
@@ -96,13 +103,15 @@ export default function LogContactModal({ leadName, onLog, onClose }: LogContact
           </div>
 
           <div>
-            <p className="text-[10px] font-medium tracking-[0.14em] uppercase mb-2" style={{ color: 'var(--ds-text-secondary)' }}>
-              Outcome / Notes <span style={{ color: 'var(--ds-text-tertiary)', textTransform: 'none', letterSpacing: 'normal' }}>(optional)</span>
-            </p>
+            <p className="text-[10px] font-medium tracking-[0.14em] uppercase mb-2" style={{ color: 'var(--ds-text-secondary)' }}>Outcome</p>
+            <select aria-label="Contact outcome" className="w-full rounded-lg bg-[#24201b] p-3 text-sm text-white" value={outcome} onChange={e => {setOutcome(e.target.value);setResolve(false);}}>
+              {outcomeOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <p className="mt-3 text-[10px] font-medium tracking-[0.14em] uppercase mb-2" style={{ color: 'var(--ds-text-secondary)' }}>What happened? (required)</p>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="What was the outcome?"
+              placeholder="Summarize what happened and the next step."
               rows={3}
               className="w-full resize-none rounded-xl px-3 py-2.5 text-sm outline-none transition-all duration-200"
               style={{
@@ -115,6 +124,13 @@ export default function LogContactModal({ leadName, onLog, onClose }: LogContact
             />
           </div>
 
+          {callbackPending && <div className="space-y-3 rounded-xl border border-[#c8a96e]/30 bg-[#211a12]/60 p-3 text-sm">
+            <p className="text-[#f0d5a4]">Callback still requires action until a confirmed outcome is recorded.</p>
+            {reached && <label className="flex items-center gap-2"><input type="checkbox" checked={resolve} onChange={e=>setResolve(e.target.checked)}/> Confirm customer was helped and resolve callback</label>}
+            {!resolve && <label className="block text-[#e5c89c]">Next follow-up (required)
+              <input type="datetime-local" aria-label="Next follow-up" className="mt-2 w-full rounded-lg bg-[#24201b] p-3 text-base text-white" value={followupAt} onChange={e=>setFollowupAt(e.target.value)}/>
+            </label>}
+          </div>}
           {error && <p className="text-xs" style={{ color: '#f87171' }}>{error}</p>}
 
           <div className="flex items-center justify-end gap-2 pt-1">
@@ -129,7 +145,7 @@ export default function LogContactModal({ leadName, onLog, onClose }: LogContact
             </button>
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || invalid}
               className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-xl transition-all duration-150 disabled:opacity-50"
               style={{
                 background: 'var(--ds-gold-muted)',

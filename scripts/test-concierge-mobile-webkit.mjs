@@ -24,12 +24,13 @@ try {
  await launcher.click();
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  await dialog.waitFor({state:'visible',timeout:8000});
- assert.equal(await dialog.getByText('Imagine the Life That Awaits.').count()>0,true);
+ await dialog.getByText('Imagine the Life That Awaits.',{exact:true}).waitFor({state:'visible'});
  await dialog.getByText('Message Missy’s Team',{exact:true}).waitFor({state:'visible'});
  assert.equal(await dialog.getByRole('button',{name:'Close concierge'}).count(),0,'Redundant back arrow must be removed');
  assert.equal(await dialog.getByText(/Automatic language assistance/).count(),0,'Composer language label must be removed');
  assert.equal(await dialog.getByRole('button',{name:'Speak with Missy’s team'}).count(),0,'Human handoff action should not clutter the initial welcome');
  await dialog.getByText('We help people find their happy, what could we help answer for you?').waitFor({state:'visible'});
+  assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'Opening typing bubble must disappear once greeting appears');
  assert.equal(await dialog.locator('header').getByText('IMAGINE THE LIFE THAT AWAITS').count(),0,'Header tagline should be removed while preserving the in-chat headline');
  const locked=await page.evaluate(()=>({
   position:getComputedStyle(document.body).position,
