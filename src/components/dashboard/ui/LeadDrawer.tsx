@@ -165,41 +165,29 @@ function DrawerContent({
   const { showToast } = useToast();
   const [showLogModal, setShowLogModal] = useState(false);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
+  const [callbackPending, setCallbackPending] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    setCallbackPending(false);
+    supabase.from('ai_conversations').select('id').eq('lead_id',lead.id).eq('status','waiting_human').limit(1)
+      .then(({data,error}) => { if(alive && !error) setCallbackPending(Boolean(data?.length)); });
+    return () => {alive=false;};
+  },[lead.id]);
 
-  const handleLogContact = async (channel: ContactChannel, notes: string) => {
-    const { data: userData } = await supabase.auth.getUser();
-    const actor = userData.user?.email ?? null;
+
+  const handleLogContact = async (channel: ContactChannel, notes: string, outcome: string, resolve: boolean, followupAt: string | null) => {
+    const {data,error} = await supabase.rpc('crm_record_contact_outcome',{
+      p_lead:lead.id,p_channel:channel,p_outcome:outcome,p_notes:notes,
+      p_resolve:resolve,p_followup_at:followupAt
+    });
+    if(error) throw new Error(error.message);
     const now = new Date().toISOString();
-
-    const { error: contactError } = await supabase
-      .from('lead_contact_events')
-      .insert({ lead_id: lead.id, channel, notes, contacted_by: actor });
-
-    if (contactError) {
-      throw new Error(contactError.message);
-    }
-
-    const { error: leadError } = await supabase
-      .from('leads')
-      .update({ last_contacted_at: now })
-      .eq('id', lead.id);
-
-    if (leadError) {
-      throw new Error(leadError.message);
-    }
-
-    const channelLabel = channel === 'call' ? 'Call' : channel === 'text' ? 'Text' : 'Email';
-    const desc = notes ? `${channelLabel} logged: ${notes}` : `${channelLabel} logged`;
-
-    await supabase
-      .from('lead_activities')
-      .insert({ lead_id: lead.id, event_type: 'contact_logged', description: desc, actor });
-
-    const updatedLead = { ...lead, last_contacted_at: now };
-    onLeadUpdate?.(updatedLead);
-    setActivityRefreshKey(k => k + 1);
+    const nextStatus = lead.status==='new' && (outcome==='spoke'||outcome==='replied') ? 'contacted' : lead.status;
+    onLeadUpdate?.({...lead,last_contacted_at:now,status:nextStatus});
+    if(resolve) setCallbackPending(false);
+    setActivityRefreshKey(k=>k+1);
     setShowLogModal(false);
-    showToast('Contact logged.');
+    showToast(resolve?'Contact recorded, callback resolved.':'Contact recorded. Next action remains tracked.');
   };
 
   const handleActivity = async (eventType: string, description: string) => {
@@ -366,6 +354,7 @@ function DrawerContent({
         <LogContactModal
           leadName={lead.name}
           onLog={handleLogContact}
+          callbackPending={callbackPending}
           onClose={() => setShowLogModal(false)}
         />
       )}
