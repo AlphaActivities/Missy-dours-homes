@@ -82,7 +82,7 @@ export default function ConversationsPage() {
   let live=true;
   setCandidateId('');setLeadCandidates([]);
   const c=items.find(x=>x.id===selected);
-  if(!c || c.lead_id || !c.visitor_phone || c.status!=='waiting_human')return;
+  if(!c || c.lead_id || !c.visitor_phone || !['waiting_human','human'].includes(c.status))return;
   const digits=(value:string)=>value.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
   void supabase.from('leads').select('id,name,phone').limit(500).then(({data,error})=>{
    if(!live)return;
@@ -90,7 +90,7 @@ export default function ConversationsPage() {
    setLeadCandidates((data??[]).filter(lead=>lead.phone && digits(lead.phone)===digits(c.visitor_phone??'')));
   });
   return()=>{live=false;};
- },[selected,items]);
+ },[selected,active?.lead_id,active?.visitor_phone,active?.status]);
  const linkReviewed=async(createSeparate:boolean)=>{
   if(!active || active.lead_id || linkBusy)return;
   const candidate=leadCandidates.find(x=>x.id===candidateId);
@@ -175,7 +175,7 @@ export default function ConversationsPage() {
     <div className="flex justify-between gap-2 mb-1"><strong className="text-sm truncate">{c.title}</strong><span className="text-xs uppercase" style={{color:'var(--ds-gold)'}}>{c.priority}</span></div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p><div className="flex gap-2 mt-2 text-xs opacity-60"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div>
    </button>)}</section>
    <section aria-label="Conversation transcript" className="ds-page-reveal ds-page-reveal-4 rounded-xl border border-white/10 bg-black/20 min-h-80 p-5">
-   {active && active.status==='waiting_human' && !active.lead_id && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
+   {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
     <strong className="text-amber-200">Contact identity review required</strong>
     <p className="text-[#dec9a5]">This callback is not linked to a lead. Verify the visitor’s name and phone. Do not merge different people who share a number.</p>
     {leadCandidates.length>0&&<label className="block text-[#efd5a5]">Matching phone records
