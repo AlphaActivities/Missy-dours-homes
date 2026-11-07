@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import {clearCrmAttentionPreload,preloadCrmAttention} from '../lib/crmAttentionPreload';
 
 const APPROVED_EMAILS = [
   'yourcustomerflowguy@gmail.com',
@@ -52,6 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       ]);
       if (result.error) throw result.error;
+      if(result.data.session?.user.id&&APPROVED_EMAILS.includes(result.data.session.user.email??'')) {
+        void preloadCrmAttention(result.data.session.user.id).catch(()=>{});
+      }
       setSession(result.data.session);
     } catch {
       // Do not erase a session received by the auth-change listener.
@@ -66,6 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!active) return;
+      if(newSession?.user.id&&APPROVED_EMAILS.includes(newSession.user.email??'')) {
+        // Defer network work outside Supabase's auth-state callback.
+        window.setTimeout(()=>void preloadCrmAttention(newSession.user.id).catch(()=>{}),0);
+      } else if(!newSession)clearCrmAttentionPreload();
       setSession(newSession);
       setAuthError(null);
       setLoading(false);
@@ -75,14 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [retrySession]);
 
   const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
+    // Authentication is established; warm the count while the route changes.
+    if(data.user?.id&&APPROVED_EMAILS.includes(data.user.email??''))void preloadCrmAttention(data.user.id).catch(()=>{});
     return { error: null };
   };
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    clearCrmAttentionPreload();
     setSession(null);
     setAuthError(null);
   };
