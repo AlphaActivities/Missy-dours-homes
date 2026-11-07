@@ -142,7 +142,7 @@ test('Missy and Heber cannot retrieve owner-only team device counts',async()=>{
 test('Visitor callbacks require explicit consent and a validated phone',async()=>{
   const {handler,calls}=await scenario({enabled:true,turnstile:true});
   const denied=await result(handler,req('handoff',{
-    name:'Example Visitor',phone:'(555) 555-0134',contact_consent:false,message:'Please call me'
+    name:'Example Visitor',phone:'(202) 555-0134',contact_consent:false,message:'Please call me'
   },{authorization:'Bearer '+token}));
   assert.equal(denied.status,400);
   const badNumber=await result(handler,req('handoff',{
@@ -153,17 +153,29 @@ test('Visitor callbacks require explicit consent and a validated phone',async()=
     'invalid callback must never call the contact/lead insert RPC');
 });
 
+test('Server rejects invalid NANP area codes, exchange codes, short numbers, and repeated digits',async()=>{
+ const {handler,calls}=await scenario({enabled:true,turnstile:true});
+ for(const number of ['1234567890','0005070570','1111111111','2115070570','4021110570','402507','4020000570','+14021110570']) {
+   const response=await result(handler,req('handoff',{
+     name:'Example Visitor',phone:number,contact_consent:true,message:'Please call me'
+   },{authorization:'Bearer '+token}));
+   assert.equal(response.status,400,'Should reject '+number);
+ }
+ assert.ok(!calls.some(c=>c.name==='ai_concierge_request_human_with_contact'),
+   'Invalid numbers must never create a callback request');
+});
+
 test('Valid callback passes consent, name and number into guarded transactional RPC',async()=>{
   const {handler,calls}=await scenario({enabled:true,turnstile:true});
   const response=await result(handler,req('handoff',{
-    name:'  Example Visitor ',phone:'(555) 555-0134',contact_consent:true,message:'Please call me'
+    name:'  Example Visitor ',phone:'(202) 555-0134',contact_consent:true,message:'Please call me'
   },{authorization:'Bearer '+token}));
   assert.equal(response.status,200);
   assert.equal(response.body.status,'waiting_human');
   const contact=calls.find(c=>c.name==='ai_concierge_request_human_with_contact');
   assert.ok(contact,'transactional contact RPC must be called');
   assert.equal(contact.args.p_name,'Example Visitor');
-  assert.equal(contact.args.p_phone,'(555) 555-0134');
+  assert.equal(contact.args.p_phone,'(202) 555-0134');
   assert.equal(contact.args.p_consent,true);
 });
 
