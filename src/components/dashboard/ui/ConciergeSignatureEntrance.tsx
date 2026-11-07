@@ -38,13 +38,26 @@ export default function ConciergeSignatureEntrance() {
  const [greetingFinished,setGreetingFinished]=useState(false);
  useEffect(()=>{
   let cancelled=false;
+  let settled=false;
+  // A poor connection must not trap the user behind the cinematic overlay.
+  // An expired/error response is explicitly unavailable, never a fake zero.
+  const timer=window.setTimeout(()=>{
+   if(cancelled||settled)return;
+   settled=true;
+   setEntranceAttention({count:null});
+  },2500);
   void Promise.resolve(supabase.rpc('crm_attention_summary')).then(({data,error})=>{
-   if(cancelled)return;
+   if(cancelled||settled)return;
+   settled=true;window.clearTimeout(timer);
    const raw=(data as {attention_count?:unknown}|null)?.attention_count;
    const count=Number(raw);
    setEntranceAttention({count:!error&&raw!==undefined&&raw!==null&&Number.isSafeInteger(count)&&count>=0?count:null});
-  }).catch(()=>{if(!cancelled)setEntranceAttention({count:null});});
-  return()=>{cancelled=true;};
+  }).catch(()=>{
+   if(cancelled||settled)return;
+   settled=true;window.clearTimeout(timer);
+   setEntranceAttention({count:null});
+  });
+  return()=>{cancelled=true;window.clearTimeout(timer);};
  },[]);
  useEffect(()=>{
   const updateDate=()=>setDeviceDate(formatDeviceDate());
