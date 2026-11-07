@@ -103,3 +103,32 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.crm_record_contact_outcome(uuid,text,text,text,boolean,timestamptz) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.crm_record_contact_outcome(uuid,text,text,text,boolean,timestamptz) TO authenticated;
+
+-- Task lifecycle is audited in lead activities and tasks; avoid a second
+-- actionable-style notification just because staff resolved a callback.
+CREATE OR REPLACE FUNCTION public.crm_record_task_event()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE v_display text; v_target text := '/dashboard/conversations';
+BEGIN
+ SELECT left(coalesce(nullif(trim(visitor_name),''),nullif(trim(title),''),'Visitor'),90)
+ INTO v_display FROM public.ai_conversations WHERE id=NEW.conversation_id;
+ v_display:=coalesce(v_display,'Visitor');
+ IF TG_OP='INSERT' THEN
+   INSERT INTO public.crm_activity_events(event_key,category,title,summary,target_path)
+   VALUES('handoff:'||NEW.id,'handoff','Concierge handoff requested',v_display||' requested assistance',v_target)
+   ON CONFLICT(event_key) DO NOTHING;
+ ELSE
+   IF NEW.escalated_at IS NOT NULL AND OLD.escalated_at IS DISTINCT FROM NEW.escalated_at THEN
+     INSERT INTO public.crm_activity_events(event_key,category,title,summary,target_path)
+     VALUES('escalation:'||NEW.id,'escalation','Urgent concierge escalation',v_display||' requires prompt attention',v_target)
+     ON CONFLICT(event_key) DO NOTHING;
+   END IF;
+   IF NEW.status IS DISTINCT FROM OLD.status AND NEW.status='claimed' THEN
+     INSERT INTO public.crm_activity_events(event_key,category,title,summary,target_path)
+     VALUES('staff:claimed:'||NEW.id,'staff','Conversation claimed',v_display||' · Team member accepted the handoff',v_target)
+     ON CONFLICT(event_key) DO NOTHING;
+   END IF;
+ END IF;
+ RETURN NEW;
+END $$;
