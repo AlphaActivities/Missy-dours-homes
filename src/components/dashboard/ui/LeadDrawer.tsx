@@ -169,7 +169,7 @@ function DrawerContent({
   useEffect(() => {
     let alive = true;
     setCallbackPending(false);
-    supabase.from('ai_conversations').select('id').eq('lead_id',lead.id).eq('status','waiting_human').limit(1)
+    supabase.from('ai_conversations').select('id').eq('lead_id',lead.id).in('status',['waiting_human','human']).limit(1)
       .then(({data,error}) => { if(alive && !error) setCallbackPending(Boolean(data?.length)); });
     return () => {alive=false;};
   },[lead.id]);
