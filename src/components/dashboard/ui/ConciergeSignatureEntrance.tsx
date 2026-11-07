@@ -114,7 +114,7 @@ export default function ConciergeSignatureEntrance() {
      <motion.span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#ddbb7c]"
        initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}}
        transition={phase==='welcome'?{duration:.35,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}>
-      <BellRing size={26} strokeWidth={1.8} aria-hidden="true"/>
+      <BellRing size={26} strokeWidth={1.8} className={entranceAttention.count!==null&&entranceAttention.count>0?'crm-bell-wobble':''} aria-hidden="true"/>
       {entranceAttention.count!==null&&entranceAttention.count>0&&<span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0a08,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{entranceAttention.count>99?'99+':entranceAttention.count}</span>}
      </motion.span>
      <motion.span className="inline-flex min-h-[34px] max-w-[90vw] items-center justify-center rounded-full border border-[#c4a369]/45 bg-[#17120e]/75 px-5 py-2 text-center text-[13px] font-semibold leading-snug tracking-[.025em] text-[#edd2a3] shadow-[0_0_16px_rgba(196,164,106,.11),inset_0_1px_0_rgba(255,232,185,.06)] backdrop-blur-sm"
