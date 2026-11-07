@@ -19,8 +19,9 @@ export default function AnalyticsPage(){
  const [data,setData]=useState<Analytics|null>(null);
  const [loading,setLoading]=useState(true);
  const [message,setMessage]=useState('');
+ const [issueCode,setIssueCode]=useState('');
  const reload=useCallback(async()=>{
-  setLoading(true);setMessage('');
+  setLoading(true);setMessage('');setIssueCode('');
   try{
    const auth=await supabase.auth.getSession();
    const token=auth.data.session?.access_token;
@@ -31,8 +32,12 @@ export default function AnalyticsPage(){
     headers:{Authorization:'Bearer '+token,apikey:apiKey},
     signal:AbortSignal.timeout(20000)
    });
-   const payload=await response.json().catch(()=>({})) as Analytics & {error?:string;setupRequired?:boolean};
-   if(!response.ok)throw new Error(payload.setupRequired?'Google Analytics reporting is not connected yet. The property ID and read-only reporting credentials must be configured by the owner.':payload.error||'Could not load Google Analytics.');
+   const payload=await response.json().catch(()=>({})) as Analytics & {error?:string;code?:string;setupRequired?:boolean};
+   if(!response.ok){
+    setIssueCode(payload.code??'');
+    const explanation=payload.error||'Could not load Google Analytics.';
+    throw new Error(explanation);
+   }
    setData(payload);
   }catch(e){setData(null);setMessage(e instanceof Error?e.message:'Analytics unavailable');}
   finally{setLoading(false);}
@@ -47,7 +52,9 @@ export default function AnalyticsPage(){
     <button type="button" data-crm-refresh disabled={loading} aria-label="Refresh Google Analytics" onClick={()=>void reload()} className="rounded-lg border border-white/20 p-2 disabled:opacity-40"><RefreshCw size={16} className={loading?'animate-spin':''}/></button>
    </div>
   </div>
-  {loading?<p role="status" className="rounded-xl border border-[#c8a96e]/20 p-5 text-sm">Loading website intelligence…</p>:message?<section className="rounded-xl border border-amber-500/35 bg-[#1c1813] p-5"><div className="flex items-center gap-2 text-[#ecd09c]"><ShieldCheck size={20}/><h2 className="font-serif text-lg">Analytics connection</h2></div><p role="status" className="mt-3 text-sm text-[#cbbba4]">{message}</p><p className="mt-3 text-xs text-[#b7aa96]">Website event tracking remains separate. No sample figures are shown as real traffic data.</p></section>:data&&<>
+  {loading?<p role="status" className="rounded-xl border border-[#c8a96e]/20 p-5 text-sm">Loading website intelligence…</p>:message?<section className="rounded-xl border border-amber-500/35 bg-[#1c1813] p-5"><div className="flex items-center gap-2 text-[#ecd09c]"><ShieldCheck size={20}/><h2 className="font-serif text-lg">Analytics connection</h2></div><p role="status" className="mt-3 text-sm text-[#cbbba4]">{message}</p>
+   {issueCode.startsWith('GA4_PROPERTY_ID')||issueCode.startsWith('GA4_CREDENTIALS')?<p className="mt-3 text-xs text-[#dac9a7]">Owner setup: confirm the numeric GA4 Property ID, then configure the reporting service account with Viewer access and server-side credentials.</p>:null}
+   <p className="mt-3 text-xs text-[#b7aa96]">Website event tracking remains separate. No sample figures are shown as real traffic data.</p></section>:data&&<>
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{tile('Active users',data.metrics.activeUsers)}{tile('Sessions',data.metrics.sessions)}{tile('Page views',data.metrics.screenPageViews)}{tile('Key events',data.metrics.keyEvents)}</div>
     <section className="mt-4 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><Activity size={19}/>Daily traffic · Page views</h2><Bars rows={data.trend}/></section>
     <div className="mt-4 grid gap-4 md:grid-cols-2">
