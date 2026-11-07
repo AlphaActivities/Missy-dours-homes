@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth, getDashboardGreeting } from '../../../contexts/AuthContext';
 import {BellRing} from 'lucide-react';
-import {useCrmActivity} from '../CrmActivityContext';
+import {supabase} from '../../../lib/supabase';
 
 let entrancePlayed = false;
 // A new successful login should replay the same entrance, even after signing out
@@ -25,24 +25,27 @@ const formatDeviceDate = () => new Intl.DateTimeFormat(navigator.language || 'en
 export default function ConciergeSignatureEntrance() {
  const { user } = useAuth();
  const greeting = getDashboardGreeting(user?.email);
- const {attentionCount,loading:attentionLoading,error:attentionError}=useCrmActivity();
+ const entranceStartedAt=useRef(performance.now());
  const [visible,setVisible]=useState(()=>!entrancePlayed);
  const [phase,setPhase]=useState<'welcome'|'fly'|'leave'>('welcome');
  const [target,setTarget]=useState<Target>({x:0,y:0,scale:1,radius:16,innerScale:1});
  const [reduced,setReduced]=useState(false);
  const [deviceDate,setDeviceDate]=useState(formatDeviceDate);
- // Freeze the first resolved attention result for this short cinematic entrance.
- // Live CRM counts continue updating normally in the dashboard behind it.
+ // The authenticated attention count is small and independent of the full
+ // CRM activity feed. Resolve and validate it before the existing greeting
+ // animation starts, then stagger the notification from its completion.
  const [entranceAttention,setEntranceAttention]=useState<{count:number|null}|null>(null);
- const [alertRevealReady,setAlertRevealReady]=useState(false);
+ const [greetingFinished,setGreetingFinished]=useState(false);
  useEffect(()=>{
-  const timer=window.setTimeout(()=>setAlertRevealReady(true),720);
-  return()=>window.clearTimeout(timer);
+  let cancelled=false;
+  void Promise.resolve(supabase.rpc('crm_attention_summary')).then(({data,error})=>{
+   if(cancelled)return;
+   const raw=(data as {attention_count?:unknown}|null)?.attention_count;
+   const count=Number(raw);
+   setEntranceAttention({count:!error&&raw!==undefined&&raw!==null&&Number.isSafeInteger(count)&&count>=0?count:null});
+  }).catch(()=>{if(!cancelled)setEntranceAttention({count:null});});
+  return()=>{cancelled=true;};
  },[]);
- useEffect(()=>{
-  if(attentionLoading||entranceAttention!==null)return;
-  setEntranceAttention({count:attentionError?null:attentionCount});
- },[attentionLoading,attentionError,attentionCount,entranceAttention]);
  useEffect(()=>{
   const updateDate=()=>setDeviceDate(formatDeviceDate());
   const interval=window.setInterval(updateDate,60_000);
@@ -55,7 +58,7 @@ export default function ConciergeSignatureEntrance() {
   };
  },[]);
  useEffect(()=>{
-  if(entrancePlayed)return;
+  if(entrancePlayed||entranceAttention===null)return;
   entrancePlayed=true;
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){setReduced(true);setVisible(false);document.documentElement.dataset.crmEntranceComplete='true';window.dispatchEvent(new Event('missy-crm-entrance-complete'));return;}
   const locate=()=>{
@@ -93,11 +96,11 @@ export default function ConciergeSignatureEntrance() {
    start=setTimeout(()=>{
     if(!locate()){setVisible(false);document.documentElement.dataset.crmEntranceComplete='true';return;}
     frame=requestAnimationFrame(()=>setPhase('fly'));
-   },HOLD_MS);
+   },Math.max(HOLD_MS-(performance.now()-entranceStartedAt.current),1900));
   };
   frame=requestAnimationFrame(begin);
   return()=>{cancelAnimationFrame(frame);clearTimeout(start);};
- },[]);
+ },[entranceAttention]);
  return <AnimatePresence>{visible&&!reduced&&
   <motion.div className="fixed inset-0 z-[100] overflow-hidden bg-[#0c0a08]"
    initial={{opacity:1}} animate={{opacity:phase==='leave'?0:1}}
@@ -106,9 +109,9 @@ export default function ConciergeSignatureEntrance() {
    role="status" aria-label="Opening Missy Dours private CRM" aria-live="polite">
    <style>{`@keyframes crmGoldSheen { 0% { transform: translate3d(-155px,-170px,0) rotate(35deg); opacity:0; } 12% {opacity:1;} 72% {opacity:1;} 100% {transform:translate3d(210px,195px,0) rotate(35deg);opacity:0;} } @keyframes crmGoldRim { 0%,100% {opacity:0;} 30% {opacity:.15;} 55% {opacity:.75;} 80% {opacity:.08;} } .crm-logo-sheen {animation:crmGoldSheen 1900ms linear 90ms 1 both;} .crm-logo-sheen-rim {animation:crmGoldRim 1900ms ease-in-out 90ms 1 both;} @keyframes crmLuxurySpin {to{transform:rotate(360deg)}} @keyframes crmLuxuryType {from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}} @keyframes crmLuxuryCursor {0%,49%{opacity:1}50%,100%{opacity:0}} .crm-date-type {animation:crmLuxuryType 1.15s steps(31,end) 1.5s both;} .crm-date-cursor {animation:crmLuxuryCursor .5s steps(1,end) 3;} .crm-luxury-ring {animation:crmLuxurySpin 1.667s linear infinite;filter:drop-shadow(0 0 5px rgba(255,212,122,.65));} @media (prefers-reduced-motion:reduce) {.crm-luxury-ring{animation:none;} .crm-logo-sheen,.crm-logo-sheen-rim{animation:none;opacity:0;}}`}</style>
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
-   {/* Reveal a complete, stable snapshot only after data resolves and the greeting begins.
-       Keep the bell/badge/text centered in a fixed column: no placeholder swap or width jump. */}
-   {alertRevealReady&&entranceAttention!==null&&<div
+   {/* Notification is driven by greeting completion, never a timer unrelated
+       to the verified attention count or the visual entrance sequence. */}
+   {greetingFinished&&entranceAttention!==null&&<div
      className="pointer-events-none absolute inset-x-0 top-[calc(38%-244px)] max-lg:top-[calc(38%-236px)] mx-auto flex w-full flex-col items-center justify-center gap-2 px-3 text-center text-[#edd2a3]"
      aria-label={entranceAttention.count===null?'Notifications unavailable':entranceAttention.count+' '+(entranceAttention.count===1?'notification':'notifications')+' requiring attention'}>
      <motion.span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#ddbb7c]"
@@ -119,12 +122,12 @@ export default function ConciergeSignatureEntrance() {
      </motion.span>
      <motion.span className="inline-flex min-h-[34px] max-w-[90vw] items-center justify-center rounded-full border border-[#c4a369]/45 bg-[#17120e]/75 px-5 py-2 text-center text-[13px] font-semibold leading-snug tracking-[.025em] text-[#edd2a3] shadow-[0_0_16px_rgba(196,164,106,.11),inset_0_1px_0_rgba(255,232,185,.06)] backdrop-blur-sm"
        initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}}
-       transition={phase==='welcome'?{duration:.38,delay:.12,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}>
+       transition={phase==='welcome'?{duration:.38,delay:.11,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}>
       {entranceAttention.count===null?'Notifications unavailable':entranceAttention.count===0?'All caught up':entranceAttention.count+' new '+(entranceAttention.count===1?'notification':'notifications')}
      </motion.span>
    </div>}
-   {greeting && <motion.p className="pointer-events-none absolute inset-x-0 top-[calc(38%-112px)] max-lg:top-[calc(38%-142px)] px-4 text-center text-[18px] sm:text-[21px] font-medium tracking-[.09em] text-[#f0d8a0] drop-shadow-[0_0_14px_rgba(196,164,106,.2)]"
-     initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}} transition={phase==='welcome'?{duration:.55,delay:.30,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}>{greeting}</motion.p>}
+   {greeting && entranceAttention!==null && <motion.p className="pointer-events-none absolute inset-x-0 top-[calc(38%-112px)] max-lg:top-[calc(38%-142px)] px-4 text-center text-[18px] sm:text-[21px] font-medium tracking-[.09em] text-[#f0d8a0] drop-shadow-[0_0_14px_rgba(196,164,106,.2)]"
+     initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}} transition={phase==='welcome'?{duration:.55,delay:.30,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}} onAnimationComplete={()=>{if(phase==='welcome')setGreetingFinished(true);}}>{greeting}</motion.p>}
    <div className="absolute left-1/2 top-[38%] max-lg:top-[calc(38%-30px)]" style={{transform:'translate(-50%, -50%)'}}>
     <motion.div
      className="relative h-[124px] w-[124px] overflow-hidden rounded-2xl bg-[#eee2c8] p-2.5 shadow-[0_0_48px_rgba(196,164,106,.24)]"
