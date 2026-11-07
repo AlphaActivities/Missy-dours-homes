@@ -54,8 +54,20 @@ try {
  assert.equal(await dialog.getByRole('button',{name:'Close concierge'}).count(),0);
  assert.equal(await dialog.getByRole('button',{name:'Request a team member'}).count(),0,'Human option should appear after first visitor message');
  await composer.fill('¿Puede ayudarme a comprar una casa?');
+ const sentAt=Date.now();
  await dialog.getByRole('button',{name:'Send message'}).click();
+ // User bubble renders immediately; AI stays hidden for the entire typing phase.
+ await dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true}).waitFor();
+ const typing=dialog.getByRole('status',{name:'Assistant is typing'});
+ await typing.waitFor({state:'visible'});
+ assert.equal(await typing.locator('span[aria-hidden="true"]').count(),3,'Typing indicator has exactly three waving dots');
+ assert.equal(await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).count(),0,
+   'Fast model output must not bypass the typing phase');
+ await page.waitForTimeout(700);
+ assert.equal(await typing.isVisible(),true,'Typing indicator persists while reply is being prepared');
  await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).waitFor();
+ assert.ok(Date.now()-sentAt>=4700,'Successful AI reply must remain behind the approximately five-second typing phase');
+ await typing.waitFor({state:'hidden'});
  const listingLink=dialog.getByRole('link',{name:'https://missydours.com/listings/14636-southern-pines-dr'});
  await listingLink.waitFor();
  assert.equal(await listingLink.getAttribute('href'),'https://missydours.com/listings/14636-southern-pines-dr');
@@ -96,6 +108,7 @@ try {
  await launcher.click();
  await dialog.getByText('A member of Missy’s team has joined this conversation.').waitFor();
  await dialog.getByText('Hi! This is Missy’s team. How can we help?').waitFor();
+ assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'Human messages must never show an AI typing indicator');
  // The real human agent's message is reactable, never the welcome, AI, or visitor messages.
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),1);
  assert.equal(await dialog.getByRole('button',{name:'React to message 0'}).count(),0);
