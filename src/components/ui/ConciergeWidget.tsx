@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, X, Send, ArrowLeft, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Send, ArrowLeft, Sparkles, SmilePlus } from 'lucide-react';
 import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type VisitorSession } from '../../lib/conciergeTransport';
 
-type Message = { id: number; role: 'concierge' | 'visitor'; text: string };
+type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string };
+const REACTION_OPTIONS = ['👍','❤️','😂','😮','🙏'] as const;
 const GREETING = 'Welcome to Missy Dours Homes. How can I help you imagine the life that awaits?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const SESSION_KEY = 'missy_concierge_visitor_session_v1';
@@ -22,6 +23,9 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     return saved && ['en','es','fr','pt','zh'].includes(saved) ? saved : 'en';
   });
   const [messages, setMessages] = useState<Message[]>(INITIAL);
+  const [reactions, setReactions] = useState<Record<string,string>>({});
+  const [reactionPicker, setReactionPicker] = useState<string | null>(null);
+  const syncVersionRef = useRef(0);
   const [invitation, setInvitation] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -40,6 +44,24 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const sessionRef = useRef<VisitorSession | null>(null);
   const transport = privateQA ? conciergeQaTransport : conciergeTransport;
   const sessionKey = privateQA ? PRIVATE_QA_SESSION_KEY : SESSION_KEY;
+  const reactionKey = session ? 'missy_concierge_reactions_' + session.conversation_id : null;
+  useEffect(() => {
+    if(!reactionKey || privateQA){setReactions({});return;}
+    try{
+      const saved=JSON.parse(sessionStorage.getItem(reactionKey)||'{}') as Record<string,string>;
+      setReactions(Object.fromEntries(Object.entries(saved).filter(([id,emoji]) => id.length<80 && (REACTION_OPTIONS as readonly string[]).includes(emoji))));
+    }catch{setReactions({});}
+  },[reactionKey,privateQA]);
+  const toggleReaction=(id:string,emoji:string)=>{
+    if(privateQA || !reactionKey)return;
+    setReactions(previous=>{
+      const next={...previous};
+      if(next[id]===emoji)delete next[id];else next[id]=emoji;
+      try{sessionStorage.setItem(reactionKey,JSON.stringify(next));}catch{/* Private browsing may block storage. */}
+      return next;
+    });
+    setReactionPicker(null);
+  };
   // UI-only feature flag. This is not a security boundary.
   const chatEnabled = privateQA || Boolean(turnstileSiteKey); // Public launch approved; backend launch control enforces whether visitor API requests are accepted.
 
@@ -74,7 +96,10 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     if (open) {
       setInvitation(false);
       sessionStorage.setItem('missy_concierge_invite_dismissed', '1');
-      const timer = window.setTimeout(() => inputRef.current?.focus(), 180);
+      // Avoid opening the iOS keyboard automatically just by opening the chat.
+      const timer = window.setTimeout(() => {
+        if (window.matchMedia('(min-width: 768px)').matches) inputRef.current?.focus();
+      }, 180);
       return () => window.clearTimeout(timer);
     }
   }, [open, onOpenChange]);
@@ -84,14 +109,15 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     if (!open || !session || !chatEnabled) return;
     let current = true;
     const refresh = async () => {
+      const version = syncVersionRef.current;
       try {
         const result = await transport.sync(session);
-        if (!current || busy) return;
+        if (!current || busy || version !== syncVersionRef.current) return;
         setMode(result.status);
         setMessages([
           INITIAL[0],
-          ...result.messages.filter(m => m.sender !== 'system').map((m, i) => ({
-            id: i + 1, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const,
+          ...result.messages.filter(m => m.sender !== 'system').map(m => ({
+            id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const,
             text: m.body,
           })),
         ]);
@@ -147,16 +173,26 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       setTransportError('Please complete verification before sending a message.');
       return;
     }
+    syncVersionRef.current += 1;
     setBusy(true);
     setTransportError(null);
     try {
       const result = await transport.send(visitor, message, 'auto');
       if(result.language && ['en','es','fr','pt','zh'].includes(result.language))setLanguage(result.language);
-      setMessages(previous => [
-        ...previous,
-        { id: Date.now(), role: 'visitor', text: message },
-        ...(result.reply ? [{ id: Date.now() + 1, role: 'concierge' as const, text: result.reply }] : [])
-      ]);
+      // Reload canonical IDs/sequence after the successful send; local fallback only on sync failure.
+      try {
+        const updated=await transport.sync(visitor);
+        setMessages([INITIAL[0],...updated.messages.filter(m=>m.sender!=='system').map(m=>({
+          id:m.id,role:m.sender==='visitor'?'visitor' as const:'concierge' as const,text:m.body,
+        }))]);
+        setMode(updated.status);
+      } catch {
+        setMessages(previous=>[
+          ...previous,
+          {id:'local-visitor-'+Date.now(),role:'visitor',text:message},
+          ...(result.reply?[{id:'local-reply-'+Date.now(),role:'concierge' as const,text:result.reply}]:[])
+        ]);
+      }
       if (result.status === 'human') setMode('human');
       setDraft('');
     } catch (error) {
@@ -166,8 +202,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         const latest = await transport.sync(visitor);
         const lastVisitor = [...latest.messages].reverse().find(m => m.sender === 'visitor');
         setMode(latest.status);
-        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map((m, i) => ({
-          id: i + 1, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
+          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
         }))]);
         if (lastVisitor?.body === message) {
           setDraft('');
@@ -196,6 +232,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
 
   const requestHuman = async () => {
     if (!session || busy || mode !== 'ai' || !callbackConsent || callbackName.trim().length<2) return;
+    syncVersionRef.current += 1;
     setBusy(true);
     setTransportError(null);
     try {
@@ -205,7 +242,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       await transport.handoff(session, note, {name:callbackName.trim(),phone:callbackPhone.trim(),contact_consent:callbackConsent});
       setMode('waiting_human');
       setHandoffOpen(false);
-      setMessages(previous => [...previous, { id: Date.now(), role: 'visitor', text: note }]);
+      setMessages(previous => [...previous, { id: 'local-handoff-'+Date.now(), role: 'visitor', text: note }]);
       setDraft('');
     } catch {
       // The handoff may have committed before the network connection failed.
@@ -213,8 +250,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       try {
         const latest = await transport.sync(session);
         setMode(latest.status);
-        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map((m, i) => ({
-          id: i + 1, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
+          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, text: m.body,
         }))]);
         if (latest.status === 'waiting_human' || latest.status === 'human') {
           setDraft('');
@@ -256,7 +293,17 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {privateQA && <p className="rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">PRIVATE TEST ONLY. This is not a customer inquiry. Use the reserved callback details and clear the test when finished.</p>}
             <div className="missy-concierge-intro mx-auto max-w-sm py-2 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 font-serif text-lg tracking-wide text-[#ebd5ae]">Imagine the Life That Awaits.</p></div>
             {messages.map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
-              <p className={`max-w-[87%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-relaxed ${m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf] shadow-[0_8px_24px_rgba(0,0,0,.22)]'}`}>{m.text}</p>
+              <div className="flex max-w-[87%] flex-col items-start">
+                <p className={`whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-md bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-md border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.text}</p>
+                {!privateQA && session && <div className="relative mt-1 flex items-center gap-1">
+                  <button type="button" aria-label={`React to message ${m.id}`} aria-expanded={reactionPicker===String(m.id)} onClick={()=>setReactionPicker(current=>current===String(m.id)?null:String(m.id))} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/15 bg-[#1b1b1e] px-2 text-[13px] text-[#d5d5d8] hover:border-[#007AFF]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">
+                    <SmilePlus size={15} aria-hidden="true"/>{reactions[String(m.id)] && <span aria-label="Your reaction">{reactions[String(m.id)]}</span>}
+                  </button>
+                  {reactionPicker===String(m.id) && <div role="group" aria-label="Choose a message reaction" className="flex items-center gap-1 rounded-full border border-white/20 bg-[#242428] p-1 shadow-xl">
+                    {REACTION_OPTIONS.map(emoji=><button key={emoji} type="button" aria-label={`React with ${emoji}`} aria-pressed={reactions[String(m.id)]===emoji} onClick={()=>toggleReaction(String(m.id),emoji)} className="flex h-9 w-9 items-center justify-center rounded-full text-xl hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">{emoji}</button>)}
+                  </div>}
+                </div>}
+              </div>
             </div>)}
             {!chatEnabled && <div className="missy-concierge-fallback rounded-2xl border border-[#c7a568]/35 bg-gradient-to-br from-[#3a2c17]/55 to-[#18140f] px-5 py-4 text-xs leading-relaxed text-[#f0dbb4] shadow-[inset_0_1px_0_rgba(255,231,180,.07)]">
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
@@ -268,10 +315,10 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               <p className="font-serif text-base text-[#f1d39a]">Connect with Missy’s team</p>
               <p className="text-xs text-[#e5d4ba]">{privateQA?'QA mode: use the prefilled reserved test name and phone number. They do not belong to a real customer.':'In case we get disconnected, please leave a name and phone number where Missy can reach you. We’ll use it for this request.'}</p>
               <label className="block text-xs text-[#e5d4ba]">Your name
-                <input required maxLength={100} minLength={2} autoComplete="name" readOnly={privateQA} value={callbackName} onChange={e=>setCallbackName(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-sm text-white" placeholder="Full name"/>
+                <input required maxLength={100} minLength={2} autoComplete="name" readOnly={privateQA} value={callbackName} onChange={e=>setCallbackName(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-base text-white" placeholder="Full name"/>
               </label>
               <label className="block text-xs text-[#e5d4ba]">Callback phone number
-                <input required type="tel" autoComplete="tel" readOnly={privateQA} minLength={10} maxLength={24} pattern="[+0-9 ()-]+" value={callbackPhone} onChange={e=>setCallbackPhone(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-sm text-white" placeholder="(555) 555-0123"/>
+                <input required type="tel" autoComplete="tel" readOnly={privateQA} minLength={10} maxLength={24} pattern="[+0-9 ()-]+" value={callbackPhone} onChange={e=>setCallbackPhone(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-base text-white" placeholder="(555) 555-0123"/>
               </label>
               <label className="flex items-start gap-2 text-xs text-[#e5d4ba]">
                 <input type="checkbox" required checked={callbackConsent} onChange={e=>setCallbackConsent(e.target.checked)} className="mt-0.5"/>
@@ -298,7 +345,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] p-4 md:px-6">
             <p className="mb-2 text-right text-[11px] text-[#c8ab79]">Automatic language assistance{language!=='en' ? ' · Translation available' : ''}</p>
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
-              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-sm text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
+              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] min-w-0 flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-base text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
               <button type="submit" disabled={!chatEnabled || busy || !session || !draft.trim() || mode === 'waiting_human' || mode === 'closed'} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
             </form>
             <p className="mt-2 text-center text-[10px] text-[#988b77]">AI information may be incomplete. Missy confirms property availability and details.</p>

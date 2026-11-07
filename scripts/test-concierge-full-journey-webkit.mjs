@@ -54,6 +54,22 @@ try {
  await composer.fill('¿Puede ayudarme a comprar una casa?');
  await dialog.getByRole('button',{name:'Send message'}).click();
  await dialog.getByText('Gracias. Missy confirmará los detalles.').waitFor();
+ // iOS form zoom prevention: mobile text fields must compute to >=16px.
+ assert.equal(await composer.evaluate(el=>Number.parseFloat(getComputedStyle(el).fontSize)>=16),true);
+ // The visitor's blue bubble must precede the concierge reply in DOM order.
+ const bubbleLabels=await dialog.locator('.missy-concierge-body p.whitespace-pre-wrap').allTextContents();
+ assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')>=0);
+ assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')<bubbleLabels.indexOf('Gracias. Missy confirmará los detalles.'));
+ const visitorBubble=dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true});
+ assert.ok((await visitorBubble.getAttribute('class')).includes('bg-[#007AFF]'));
+ // Five deliberate Tapback-style choices, no full emoji keyboard.
+ await dialog.getByRole('button',{name:'React to message m2'}).click();
+ const choices=dialog.getByRole('group',{name:'Choose a message reaction'});
+ assert.equal(await choices.getByRole('button').count(),5);
+ await choices.getByRole('button',{name:'React with ❤️'}).click();
+ assert.equal(await dialog.getByRole('button',{name:'React to message m2'}).getByText('❤️').count(),1);
+ assert.ok(await page.evaluate(()=>sessionStorage.getItem('missy_concierge_reactions_11111111-1111-4111-8111-111111111111')?.includes('❤️')));
+
  await dialog.getByText('Automatic language assistance · Translation available').waitFor();
  await dialog.getByRole('button',{name:'Speak with Missy’s team'}).click();
  const form=dialog.getByRole('form',{name:'Request a callback'});
