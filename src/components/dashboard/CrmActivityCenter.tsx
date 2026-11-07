@@ -21,19 +21,26 @@ export default function CrmActivityCenter(){
  const [refreshing,setRefreshing]=useState(false);
  const refreshInbox=async()=>{if(refreshing)return;setRefreshing(true);try{await refresh();}finally{setRefreshing(false);}};
  const visible=useMemo(()=>items.filter(e=>{
-  if(filter==='history')return Boolean(e.archived_at||e.lead_archived);
-  if(e.archived_at||e.lead_archived)return false;
+  // Completed-task events are audit history, never a new item of work.
+  const auditOnly=e.event_key.startsWith('staff:completed:');
+  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly);
+  if(e.archived_at||e.lead_archived||auditOnly)return false;
   if(filter==='all')return true;
   if(filter==='unread')return !e.read_at;
   if(filter==='urgent')return e.category==='escalation';
   return e.category===filter;
  }),[items,filter]);
+ const requiresAction=(item:CrmActivity)=>Boolean(!item.lead_archived&&!item.archived_at &&
+   (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'));
+ const isInProgress=(item:CrmActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
+ const isResolved=(item:CrmActivity)=>item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
  const execute=async(task:()=>Promise<void>)=>{
   if(working)return;setWorking(true);setNotice('');
   try{await task();}catch(e){setNotice(e instanceof Error?e.message:'Unable to update notification');}
   finally{setWorking(false);}
  };
  const hideNotice=(item:CrmActivity)=>{
+  if(requiresAction(item)){setNotice('Resolve this request from its lead record, or acknowledge it without hiding the work.');return;}
   if(!window.confirm('Hide only this notification? The lead, callback and conversation will remain unchanged.'))return;
   void execute(()=>archive(item.id));
  };
@@ -75,28 +82,28 @@ export default function CrmActivityCenter(){
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
-   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(item.lead_status==='new'&&!item.lead_archived&&!item.archived_at?'crm-actionable-notification relative isolate overflow-hidden border-red-500/55 bg-[#1b1510]/90':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
+   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(requiresAction(item)?'crm-actionable-notification relative isolate overflow-hidden border-red-500/55 bg-[#281316]/90':isResolved(item)?'border-emerald-500/35 bg-emerald-950/20':isInProgress(item)?'border-[#c8a96e]/55 bg-[#c8a96e]/10':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
     <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1">
      <div className="flex flex-wrap items-center gap-2">
       <strong className="text-sm text-[#f0dfc4]">{item.title}</strong>
       <span className="rounded border border-[#c8a96e]/25 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#c8a96e]">{categoryLabel(item.category)}</span>
-      {item.lead_status==='new'&&!item.lead_archived&&!item.archived_at&&<span className="inline-flex items-center gap-1 rounded-full border border-red-400/55 bg-red-700/20 px-2.5 py-1 text-[10px] font-semibold tracking-[0.025em] text-red-200"><AlertTriangle size={11} aria-hidden="true"/> Needs Attention</span>}
+      {requiresAction(item)&&<span className="inline-flex items-center gap-1 rounded-full border border-red-400/55 bg-red-700/20 px-2.5 py-1 text-[10px] font-semibold tracking-[0.025em] text-red-200"><AlertTriangle size={11} aria-hidden="true"/> Needs Attention</span>}
       {!item.read_at&&!item.archived_at&&!item.lead_archived&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
-     {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
+     {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.event_key.startsWith('staff:completed:')?'Completed task audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{friendlySummary(item.summary)}</p>
-     {item.lead_status==='new'&&!item.lead_archived&&!item.archived_at&&<div className="mt-3 space-y-1.5">
+     {requiresAction(item)&&<div className="mt-3 space-y-1.5">
       <p className="inline-flex items-center gap-1.5 rounded-md border border-red-400/35 bg-red-900/20 px-3 py-2 text-xs font-semibold text-red-200"><AlertTriangle size={13} aria-hidden="true"/> Follow-up required</p>
-      <p className="text-xs italic leading-relaxed text-[#cbbbaa]"><span className="block">This inquiry hasn't been handled yet.</span><span className="block">Open the lead to review the details and take the next step.</span></p>
+      <p className="text-xs italic leading-relaxed text-[#cbbbaa]"><span className="block">This inquiry hasn't been handled yet.</span><span className="block">Open the lead or conversation to record the next action.</span></p>
      </div>}
      <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
     </div></div>
     <div className="mt-3 flex flex-wrap items-center gap-2">
-     <Link to={safeTarget(item.target_path)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}}
-      className={'crm-open-notification inline-flex items-center gap-2 rounded-md border border-[#c8a96e]/50 px-3.5 py-2 text-xs font-medium tracking-[0.025em] text-[#f1d7a6] '+(item.lead_status==='new'&&!item.lead_archived&&!item.archived_at?'crm-open-attention':'')}>{actionLabel(item)}{item.target_path.startsWith('/dashboard/leads?lead=')?<ArrowUpRight size={15} strokeWidth={1.45} aria-hidden="true" className="crm-open-notification-arrow"/>:<ExternalLink size={13} strokeWidth={1.5} aria-hidden="true"/>}</Link>
+     <Link to={item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:safeTarget(item.target_path)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}}
+      className={'crm-open-notification inline-flex items-center gap-2 rounded-md border border-[#c8a96e]/50 px-3.5 py-2 text-xs font-medium tracking-[0.025em] text-[#f1d7a6] '+(requiresAction(item)?'crm-open-attention':'')}>{item.callback_lead_id && item.category==='handoff'?'Open Lead · Record Outcome':actionLabel(item)}{(item.target_path.startsWith('/dashboard/leads?lead=')||Boolean(item.callback_lead_id))?<ArrowUpRight size={15} strokeWidth={1.45} aria-hidden="true" className="crm-open-notification-arrow"/>:<ExternalLink size={13} strokeWidth={1.5} aria-hidden="true"/>}</Link>
      {!item.read_at&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
       className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40"><Check size={13}/> Mark read</button>}
-     {!item.lead_archived&&<button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)}
+     {!item.lead_archived&&!requiresAction(item)&&<button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)}
       className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">
       {item.archived_at?<RotateCcw size={13}/>:<Archive size={13}/>} {item.archived_at?'Restore notification':'Hide notification'}</button>}
     </div>
