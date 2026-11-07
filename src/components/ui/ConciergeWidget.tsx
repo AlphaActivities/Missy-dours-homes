@@ -3,7 +3,7 @@ import { MessageCircle, X, Send, ArrowLeft, SmilePlus } from 'lucide-react';
 import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type VisitorSession } from '../../lib/conciergeTransport';
 
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string };
-const REACTION_OPTIONS = ['👍','❤️','😂','😮','🙏'] as const;
+const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy, what can we help answer for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const SESSION_KEY = 'missy_concierge_visitor_session_v1';
