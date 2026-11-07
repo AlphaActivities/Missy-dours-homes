@@ -46,7 +46,7 @@ jobs:
           test "$status" = 401
           echo "PASS: unauthenticated model requests remain blocked"
 
-      - name: Enforce public chat OFF, Josh-only AI smoke and push sender OFF
+      - name: Require safe unauthenticated rejection in either concierge launch state
         shell: bash
         run: |
           set -euo pipefail
@@ -55,15 +55,24 @@ jobs:
             status=$(curl --silent --show-error --max-time 20 -o /tmp/missy-guard.json -w '%{http_code}' \
               -X POST "$base/$path" \
               -H 'Content-Type: application/json' \
-              -H 'Origin: https://missydours.com' -d '{"scenario":"listing"}')
-            case "$path" in
-              concierge-api/session) expected=503 ;;
-              concierge-api/staff-ai-smoke) expected=401 ;;
-              concierge-push-delivery) expected=503 ;;
+              -H 'Origin: https://missydours.com' \
+              -d '{"scenario":"listing"}')
+            # Session without Turnstile: 400 live or 503 paused.
+            # Staff AI smoke: 401 without owner authentication.
+            # Push sender: 401 if enabled, 503 if disabled.
+            case "$path:$status" in
+              concierge-api/session:400|concierge-api/session:503|concierge-api/staff-ai-smoke:401|concierge-push-delivery:401|concierge-push-delivery:503) ;;
+              *) echo "Unexpected auth/status $status on $path"; exit 1 ;;
             esac
-            if [ "$status" != "$expected" ]; then
-              echo "Unexpected status $status on $path (expected $expected)"
-              exit 1
-            fi
-            echo "PASS: $path fails closed ($status)"
+            python3 - "$path" <<'PY'
+          import json,sys
+          path=sys.argv[1]
+          payload=json.load(open('/tmp/missy-guard.json'))
+          assert 'token' not in payload and 'conversation_id' not in payload
+          if path == 'concierge-push-delivery':
+              assert payload.get('error') == 'Unauthorized' or payload.get('status') == 'disabled'
+          else:
+              assert isinstance(payload.get('error'),str) and payload['error']
+          PY
+            echo "PASS: $path fails closed for anonymous/invalid input (HTTP $status)"
           done
