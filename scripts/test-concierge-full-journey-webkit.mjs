@@ -86,6 +86,10 @@ try {
  assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')<bubbleLabels.indexOf('Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr https://www.consumerfinance.gov/owning-a-home/loan-estimate/ https://www.trec.texas.gov/public/consumer-information/ https://missydours.com.evil.test/phishing'));
  const visitorBubble=dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true});
  assert.ok((await visitorBubble.getAttribute('class')).includes('bg-[#007AFF]'));
+ assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-[26px]'),'Visitor messages need iPhone-like rounded corners');
+ assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-br-[12px]'),'Visitor tail corner should be softened');
+ const replyBubble=dialog.locator('.missy-concierge-body p.whitespace-pre-wrap').filter({hasText:'Gracias. Missy confirmará los detalles.'});
+ assert.ok((await replyBubble.getAttribute('class')).includes('rounded-bl-[12px]'),'Incoming message tail corner should be softened');
  // Reactions must be hidden for the welcome bubble, AI replies, and visitor messages.
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),0);
 
@@ -115,6 +119,26 @@ try {
  await phone.fill('+12025550147');
  assert.equal(await phone.inputValue(),'(202) 555-0147');
  await submit.click();
+ await dialog.getByText(/Waiting for a team member/).waitFor();
+ // A consented visitor can leave the full-screen chat to reach the very same
+ // Contact section as the website navbar (not a blocked /#contact anchor).
+ const directContact=dialog.getByRole('button',{name:'Contact Missy directly'});
+ assert.ok(await directContact.isVisible());
+ assert.ok((await directContact.getAttribute('class')).includes('min-h-12'),'Contact action must have a large touch target');
+ await directContact.click();
+ await dialog.waitFor({state:'hidden'});
+ await page.waitForFunction(()=> {
+   const section=document.getElementById('contact');
+   if (!section || getComputedStyle(document.body).position==='fixed') return false;
+   const wrapper=section.firstElementChild;
+   const target=wrapper || section;
+   const rect=target.getBoundingClientRect();
+   const header=document.querySelector('header');
+   const offset=(header?.getBoundingClientRect().height||0)+24;
+   return Math.abs(rect.top-offset)<140;
+ },{timeout:10000});
+ await launcher.click();
+ await dialog.waitFor({state:'visible'});
  await dialog.getByText(/Waiting for a team member/).waitFor();
  mode='human';
  history.push({id:'m3',sender:'human',body:'Hi! This is Missy’s team. How can we help?',created_at:new Date().toISOString()});
