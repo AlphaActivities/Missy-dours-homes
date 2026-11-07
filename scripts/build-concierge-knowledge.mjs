@@ -29,6 +29,22 @@ const data={
   source:'missydours.com website listings source',
   generated_at:new Date().toISOString(),
   important_notice:'Website snapshot, NOT independently verified live MLS data. Never assert current status or price without confirmation from Missy.',
+  site_facts: {
+    source:'https://missydours.com',
+    agent:'Missy Dours',
+    brokerage:'Clancy Realty',
+    overview:'Dallas–Fort Worth real estate guidance for buyers and sellers, with a client-first, concierge-level approach.',
+    about_url:'https://missydours.com/#about',
+    communities_url:'https://missydours.com/#communities',
+    contact_url:'https://missydours.com/#contact',
+    listings_url:'https://missydours.com/listings',
+    focus_areas:['Dallas','Fort Worth','Carrollton','Farmers Branch','Addison','Coppell','North Dallas','North Texas'],
+    showcased_communities:['Preston Hollow','Highland Park','Southlake','Uptown Dallas','Brookhaven','Vista Point'],
+    // Website contact number and brokerage office are public details, not personal lead data.
+    phone:'214-861-0665',
+    brokerage_office:'14114 N Dallas Parkway, Suite 420, Dallas, Texas 75254',
+    buyer_seller_note:'The public website has buyer and seller calls to action and published listing records. Listing records are not independently verified current MLS inventory.'
+  },
   listings
 };
 mkdirSync(dirname(target),{recursive:true});
