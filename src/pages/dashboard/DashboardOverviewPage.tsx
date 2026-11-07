@@ -276,12 +276,12 @@ export default function DashboardOverviewPage() {
 
   const reveal = () => reducedMotion ? { opacity: 1, y: 0 } : {
     opacity: entranceComplete ? 1 : 0,
-    y: entranceComplete ? 0 : 12,
+    y: entranceComplete ? 0 : 14,
   };
   const revealTransition = (index: number) => ({
-    duration: reducedMotion ? 0 : 0.42,
-    delay: reducedMotion ? 0 : index * 0.11,
-    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    duration: reducedMotion ? 0 : 0.54,
+    delay: reducedMotion ? 0 : index * 0.095,
+    ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
   });
 
   useEffect(() => {
