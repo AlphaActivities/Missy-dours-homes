@@ -66,6 +66,8 @@ try {
  await dialog.getByRole('button',{name:'React to message m2'}).click();
  const choices=dialog.getByRole('group',{name:'Choose a message reaction'});
  assert.equal(await choices.getByRole('button').count(),5);
+ assert.equal(await choices.getByRole('button',{name:'React with 😊'}).count(),1);
+ assert.equal(await choices.getByRole('button',{name:'React with 😂'}).count(),0);
  await choices.getByRole('button',{name:'React with ❤️'}).click();
  assert.equal(await dialog.getByRole('button',{name:'React to message m2'}).getByText('❤️').count(),1);
  assert.ok(await page.evaluate(()=>sessionStorage.getItem('missy_concierge_reactions_11111111-1111-4111-8111-111111111111')?.includes('❤️')));
