@@ -176,7 +176,7 @@ function DrawerContent({
 
 
   const handleLogContact = async (channel: ContactChannel, notes: string, outcome: string, resolve: boolean, followupAt: string | null) => {
-    const {data,error} = await supabase.rpc('crm_record_contact_outcome',{
+    const {error} = await supabase.rpc('crm_record_contact_outcome',{
       p_lead:lead.id,p_channel:channel,p_outcome:outcome,p_notes:notes,
       p_resolve:resolve,p_followup_at:followupAt
     });
