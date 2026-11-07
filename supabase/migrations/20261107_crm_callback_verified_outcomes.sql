@@ -78,7 +78,7 @@ BEGIN
  END IF;
  INSERT INTO public.lead_contact_events(lead_id,channel,notes,contacted_by,outcome,resolved_callback,created_at)
  VALUES(p_lead,p_channel,btrim(p_notes),v_staff,p_outcome,p_resolve,v_now);
- UPDATE public.leads SET last_contacted_at=v_now,
+ UPDATE public.leads SET last_contacted_at=CASE WHEN p_outcome IN ('spoke','replied') THEN v_now ELSE last_contacted_at END,
    status=CASE WHEN status='new' AND p_outcome IN ('spoke','replied') THEN 'contacted' ELSE status END
  WHERE id=p_lead;
  v_label:=CASE p_channel WHEN 'call' THEN 'Call' WHEN 'text' THEN 'Text' ELSE 'Email' END;
