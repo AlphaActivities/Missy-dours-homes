@@ -58,7 +58,7 @@ export default function AnalyticsPage(){
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{tile('Active users',data.metrics.activeUsers)}{tile('Sessions',data.metrics.sessions)}{tile('Page views',data.metrics.screenPageViews)}{tile('Key events',data.metrics.keyEvents)}</div>
     <section className="mt-4 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><Activity size={19}/>Daily traffic · Page views</h2><Bars rows={data.trend}/></section>
     <div className="mt-4 grid gap-4 md:grid-cols-2">
-     <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="font-serif text-xl text-[#edcfa0]">Top pages</h2><Bars rows={data.pages}/></section>
+     <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="font-serif text-xl text-[#edcfa0]">Top pages</h2><Bars rows={data.pages.map(page=>({...page,label:page.label==='/'?'Homepage':page.label}))}/></section>
      <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="font-serif text-xl text-[#edcfa0]">Acquisition channels</h2><Bars rows={data.channels}/></section>
      <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4 md:col-span-2"><h2 className="font-serif text-xl text-[#edcfa0]">Top tracked events</h2><Bars rows={data.events}/></section>
     </div>
