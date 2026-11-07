@@ -29,7 +29,7 @@ try {
  assert.equal(await dialog.getByRole('button',{name:'Close concierge'}).count(),0,'Redundant back arrow must be removed');
  assert.equal(await dialog.getByText(/Automatic language assistance/).count(),0,'Composer language label must be removed');
  assert.equal(await dialog.getByRole('button',{name:'Speak with Missy’s team'}).count(),0,'Human handoff action should not clutter the initial welcome');
- await dialog.getByText('We help people find their happy, what can we help answer for you?').waitFor({state:'visible'});
+ await dialog.getByText('We help people find their happy, what could we help answer for you?').waitFor({state:'visible'});
  assert.equal(await dialog.locator('header').getByText('IMAGINE THE LIFE THAT AWAITS').count(),0,'Header tagline should be removed while preserving the in-chat headline');
  const locked=await page.evaluate(()=>({
   position:getComputedStyle(document.body).position,
