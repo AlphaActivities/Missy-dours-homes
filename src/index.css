@@ -587,20 +587,20 @@
   }
 }
 
-/* Scoped luxury entrance, runs only when a Leads/Conversations page mounts.
-   Static DOM classes ensure searches, polling and live messages never replay it. */
+/* Premium compositor-only section reveal shared by Leads and Conversations.
+   Timing matches Overview and the other dashboard pages; positions do not change. */
 @keyframes ds-page-reveal-in {
-  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 .ds-shell .ds-page-reveal {
-  animation: ds-page-reveal-in 420ms cubic-bezier(.22, 1, .36, 1) both;
+  animation: ds-page-reveal-in 540ms cubic-bezier(.16, 1, .3, 1) both;
 }
 .ds-shell .ds-page-reveal-0 { animation-delay: 0ms; }
-.ds-shell .ds-page-reveal-1 { animation-delay: 110ms; }
-.ds-shell .ds-page-reveal-2 { animation-delay: 220ms; }
-.ds-shell .ds-page-reveal-3 { animation-delay: 330ms; }
-.ds-shell .ds-page-reveal-4 { animation-delay: 440ms; }
+.ds-shell .ds-page-reveal-1 { animation-delay: 95ms; }
+.ds-shell .ds-page-reveal-2 { animation-delay: 190ms; }
+.ds-shell .ds-page-reveal-3 { animation-delay: 285ms; }
+.ds-shell .ds-page-reveal-4 { animation-delay: 380ms; }
 @media (prefers-reduced-motion: reduce) {
   .ds-shell .ds-page-reveal { animation: none !important; }
 }
@@ -852,6 +852,11 @@
 }
 .crm-bell-wobble {
   animation: crm-notification-bell-wobble 3.1s ease-in-out infinite;
+}
+/* Delay only the cinematic bell's first sway, not the navigation bell.
+   Bell and text still reveal together immediately after the greeting. */
+.crm-entrance-notice .crm-bell-wobble {
+  animation-delay: 1s;
 }
 @keyframes crm-notification-bell-wobble {
   0%, 3%, 37%, 100% { transform: rotate(0deg); }
