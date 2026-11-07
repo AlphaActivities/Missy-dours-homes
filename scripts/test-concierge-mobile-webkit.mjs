@@ -20,16 +20,17 @@ try {
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  await dialog.waitFor({state:'visible',timeout:8000});
  assert.equal(await dialog.getByText('Imagine the Life That Awaits.').count()>0,true);
- await dialog.getByText('Personalized AI messaging is being prepared.').waitFor({state:'visible'});
+ // The public concierge is live and requires human verification before messaging.
+ await dialog.getByLabel('Verify you are human').waitFor({state:'attached'});
  const composer=dialog.getByRole('textbox',{name:"Message Missy's concierge"});
- assert.equal(await composer.isDisabled(),true,'Public messaging must be disabled before launch');
- assert.equal(await dialog.getByRole('link',{name:'Contact Missy'}).getAttribute('href'),' /#contact'.trim());
+ assert.equal(await composer.isDisabled(),true,'Messaging must require a verified visitor session');
+ assert.ok(await composer.evaluate(el=>Number.parseFloat(getComputedStyle(el).fontSize)>=16),'iOS composer must be at least 16px to avoid Safari focus zoom');
  const geometry=await dialog.evaluate(el=>({width:el.getBoundingClientRect().width,viewport:window.innerWidth}));
  assert.ok(geometry.width<=geometry.viewport+2,'Chat dialog must fit the mobile viewport');
  await dialog.getByRole('button',{name:'Close',exact:true}).click();
  await launcher.waitFor({state:'visible'});
  assert.equal(await dialog.count(),0,'Chat must close and restore the launcher');
  if(failed.length)throw new Error('Browser runtime errors: '+failed.join(' | '));
- console.log('PASS: WebKit iPhone viewport, visitor chat disabled, dialog open/close, and contact fallback');
+ console.log('PASS: WebKit iPhone viewport, pre-session verification, non-zooming composer, and dialog open/close');
  await context.close();
 } finally {await browser.close();}
