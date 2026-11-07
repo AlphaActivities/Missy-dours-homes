@@ -761,8 +761,9 @@
 }
 
 
-/* Premium CRM action affordances: a paired thick-and-thin champagne sweep
-   for both actions. Buttons remain clickable, labels stay above the light. */
+/* Distinct premium CRM action signatures: View Conversation keeps two
+   champagne streaks; Open Lead gets one slower, softer gold highlight.
+   Button layout, labels and hit targets remain unchanged. */
 .ds-shell .crm-open-notification.crm-action-chat,
 .ds-shell .crm-open-notification.crm-action-lead {
   position: relative;
@@ -791,7 +792,7 @@
     rgba(255, 232, 185, .08) 82%, transparent 100%);
   filter: blur(3px);
   box-shadow: 0 0 18px rgba(255, 240, 205, .42), 0 0 36px rgba(230, 191, 116, .22);
-  animation: crm-double-sweep-thick 2.55s linear infinite;
+  animation: crm-double-sweep-thick 2.8s linear infinite;
 }
 .ds-shell .crm-open-notification.crm-action-chat::after,
 .ds-shell .crm-open-notification.crm-action-lead::after {
@@ -810,7 +811,29 @@
     rgba(255, 241, 208, .05) 80%, transparent 100%);
   filter: blur(1.5px);
   box-shadow: 0 0 10px rgba(255, 247, 225, .48), 0 0 22px rgba(255, 220, 150, .18);
-  animation: crm-double-sweep-thin 2.55s linear infinite;
+  animation: crm-double-sweep-thin 2.8s linear infinite;
+}
+/* Open Lead: a SINGLE wider, diffused golden reflection that crosses the
+   entire button at a more measured pace, 1.2s after the chat sweep begins.
+   Its own after-beam is deliberately disabled, avoiding identical motion. */
+.ds-shell .crm-open-notification.crm-action-lead::before {
+  left: -44%;
+  width: 33%;
+  transform: translateX(-220%) rotate(24deg);
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(255, 229, 166, .035) 18%,
+    rgba(255, 224, 160, .55) 50%,
+    rgba(255, 229, 166, .035) 82%, transparent 100%);
+  filter: blur(6px);
+  box-shadow: 0 0 18px rgba(255, 218, 141, .25), 0 0 30px rgba(224, 180, 100, .12);
+  animation: crm-lead-soft-sweep 3.6s linear 1.2s infinite;
+}
+.ds-shell .crm-open-notification.crm-action-lead::after {
+  content: none;
+}
+@keyframes crm-lead-soft-sweep {
+  from { transform: translateX(-220%) rotate(24deg); }
+  to { transform: translateX(680%) rotate(24deg); }
 }
 /* Both diagonal beams start fully outside the left edge and end fully
    beyond the right edge. Their linear loop resets only while clipped out
