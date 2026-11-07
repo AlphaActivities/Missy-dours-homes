@@ -26,7 +26,7 @@ try {
    const {language,message}=request.postDataJSON();
    assert.equal(language,'auto');
    history.push({id:'m1',sender:'visitor',body:message,created_at:new Date().toISOString()});
-   const reply='Gracias. Missy confirmará los detalles.';
+   const reply='Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr';
    history.push({id:'m2',sender:'ai',body:reply,created_at:new Date().toISOString()});
    return send({reply,language:'es'});
   }
@@ -55,13 +55,18 @@ try {
  assert.equal(await dialog.getByRole('button',{name:'Request a team member'}).count(),0,'Human option should appear after first visitor message');
  await composer.fill('¿Puede ayudarme a comprar una casa?');
  await dialog.getByRole('button',{name:'Send message'}).click();
- await dialog.getByText('Gracias. Missy confirmará los detalles.').waitFor();
+ await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).waitFor();
+ const listingLink=dialog.getByRole('link',{name:'https://missydours.com/listings/14636-southern-pines-dr'});
+ await listingLink.waitFor();
+ assert.equal(await listingLink.getAttribute('href'),'https://missydours.com/listings/14636-southern-pines-dr');
+ assert.equal(await listingLink.getAttribute('target'),'_blank');
+ assert.equal(await listingLink.getAttribute('rel'),'noopener noreferrer');
  // iOS form zoom prevention: mobile text fields must compute to >=16px.
  assert.equal(await composer.evaluate(el=>Number.parseFloat(getComputedStyle(el).fontSize)>=16),true);
  // The visitor's blue bubble must precede the concierge reply in DOM order.
  const bubbleLabels=await dialog.locator('.missy-concierge-body p.whitespace-pre-wrap').allTextContents();
  assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')>=0);
- assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')<bubbleLabels.indexOf('Gracias. Missy confirmará los detalles.'));
+ assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')<bubbleLabels.indexOf('Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr'));
  const visitorBubble=dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true});
  assert.ok((await visitorBubble.getAttribute('class')).includes('bg-[#007AFF]'));
  // Reactions must be hidden for the welcome bubble, AI replies, and visitor messages.

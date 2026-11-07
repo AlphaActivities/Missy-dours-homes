@@ -134,3 +134,48 @@ test('Substantive questions use a non-scripted, concise system instruction',asyn
  assert.match(instruction,/Never introduce yourself with a formal name/);
  assert.match(instruction,/one or two concise conversational sentences/);
 });
+
+test('Broad home pricing question offers the published property and verified-link disclaimer', async () => {
+ const original=globalThis.fetch;
+ globalThis.fetch=async()=>new Response(JSON.stringify({
+  schema_version:1,source:'missydours.com website listings source',
+  generated_at:'2026-11-06T00:00:00Z',
+  listings:[
+   {address:'Sold example',status:'sold',price_display:'$300,000',url:'https://missydours.com/listings/sold-example'},
+   {address:'14636 Southern Pines Dr, Farmers Branch, TX',status:'active',price_display:'$2,487,000',beds:4,baths:3.5,sqft:6005,url:'https://missydours.com/listings/14636-southern-pines-dr'}
+  ]
+ }),{status:200});
+ try {
+  let modelCalls=0;
+  const response=await worker.fetch(request({language:'en',messages:[
+   {role:'user',content:'Hey'},
+   {role:'assistant',content:'Hey! Welcome. What can I help you with?'},
+   {role:'user',content:'Just wanting to know prices on a new house.'}
+  ]}),{
+   CONCIERGE_BRIDGE_SECRET:secret,AI:{run:async()=>{modelCalls++;return {response:'Contact Missy instead'};}}
+  });
+  assert.equal(response.status,200);
+  const {reply}=await response.json();
+  assert.match(reply,/\$2,487,000/);
+  assert.match(reply,/https:\/\/missydours\.com\/listings\/14636-southern-pines-dr/);
+  assert.match(reply,/not a verified live quote/);
+  assert.match(reply,/What price range and area/);
+  assert.doesNotMatch(reply,/Sold example/);
+  assert.equal(modelCalls,0);
+ }finally{globalThis.fetch=original;}
+});
+
+test('Unreachable website reference uses a clearly dated fallback rather than claiming a live price', async()=>{
+ const original=globalThis.fetch;
+ globalThis.fetch=async()=>{throw new Error('offline')};
+ try {
+  const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'What are prices for a new house?'}]}),{
+    CONCIERGE_BRIDGE_SECRET:secret,AI:{run:async()=>({response:'not reached'})}
+  });
+  assert.equal(response.status,200);
+  const {reply}=await response.json();
+  assert.match(reply,/last updated April 6, 2026/);
+  assert.match(reply,/not verified as current/);
+  assert.match(reply,/https:\/\/missydours\.com\/listings\/14636-southern-pines-dr/);
+ }finally{globalThis.fetch=original;}
+});

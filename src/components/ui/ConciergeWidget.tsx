@@ -6,6 +6,16 @@ type Message = { id: number | string; role: 'concierge' | 'visitor'; text: strin
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy, what could we help answer for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
+/** Safely linkify only Missy's public website URLs in assistant messages. */
+function renderConciergeText(text: string) {
+  return text.split(/(https:\/\/missydours\.com(?:\/[^\s<>"']*)?)/gi).map((part,index) => {
+    if (!/^https:\/\/missydours\.com(?:\/|$)/i.test(part)) return part;
+    const url = part.replace(/[.,!?;:)]*$/, '');
+    const suffix = part.slice(url.length);
+    return <span key={index}><a href={url} target="_blank" rel="noopener noreferrer" className="font-medium text-[#92c7ff] underline underline-offset-2 decoration-[#92c7ff]/65 break-all hover:text-[#c8e3ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#92c7ff]">{url}</a>{suffix}</span>;
+  });
+}
+
 const SESSION_KEY = 'missy_concierge_visitor_session_v1';
 const LANGUAGE_KEY = 'missy_concierge_language_v1';
 const SESSION_LIFETIME = 24 * 60 * 60 * 1000;
@@ -328,7 +338,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             <div className="missy-concierge-intro mx-auto max-w-sm py-2 text-center"><span className="mx-auto mb-4 block h-px w-24 bg-gradient-to-r from-transparent via-[#d5b477]/65 to-transparent" aria-hidden="true" /><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 font-serif text-lg tracking-wide text-[#ebd5ae]">Imagine the Life That Awaits.</p></div>
             {messages.map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className="flex max-w-[87%] flex-col items-start">
-                <p className={`whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-md bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-md border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.text}</p>
+                <p className={`whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-md bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-md border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
                 {!privateQA && session && mode === 'human' && m.sender === 'human' && <div className="relative mt-1 flex items-center gap-1">
                   <button type="button" aria-label={`React to message ${m.id}`} aria-expanded={reactionPicker===String(m.id)} onClick={()=>setReactionPicker(current=>current===String(m.id)?null:String(m.id))} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/15 bg-[#1b1b1e] px-2 text-[13px] text-[#d5d5d8] hover:border-[#007AFF]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">
                     <SmilePlus size={15} aria-hidden="true"/>{reactions[String(m.id)] && <span aria-label="Your reaction">{reactions[String(m.id)]}</span>}
