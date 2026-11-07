@@ -3,6 +3,10 @@
 ALTER TABLE public.lead_contact_events
   ADD COLUMN IF NOT EXISTS outcome text,
   ADD COLUMN IF NOT EXISTS resolved_callback boolean NOT NULL DEFAULT false;
+ALTER TABLE public.lead_followups
+  ADD COLUMN IF NOT EXISTS concierge_conversation_id uuid REFERENCES public.ai_conversations(id);
+CREATE INDEX IF NOT EXISTS lead_followups_concierge_active_idx
+  ON public.lead_followups(concierge_conversation_id) WHERE status='active';
 
 CREATE OR REPLACE FUNCTION public.crm_guard_callback_task_completion()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
@@ -47,6 +51,7 @@ DECLARE
  v_now timestamptz := now();
  v_count integer := 0;
  v_label text;
+ v_conversation uuid;
 BEGIN
  IF v_staff NOT IN ('missydourshomes@gmail.com','yourcustomerflowguy@gmail.com','heberherrera92@gmail.com') THEN
    RAISE EXCEPTION 'Not authorized';
@@ -80,12 +85,23 @@ BEGIN
  INSERT INTO public.lead_activities(lead_id,event_type,description,actor)
  VALUES(p_lead,'contact_logged',v_label||' ('||replace(p_outcome,'_',' ')||'): '||btrim(p_notes),v_staff);
  IF p_followup_at IS NOT NULL AND NOT p_resolve THEN
-   INSERT INTO public.lead_followups(lead_id,due_at,task,status,created_by)
-   VALUES(p_lead,p_followup_at,'Follow up on '||v_label||' ('||replace(p_outcome,'_',' ')||')','active',v_staff);
+   SELECT id INTO v_conversation FROM public.ai_conversations
+   WHERE lead_id=p_lead AND status IN ('waiting_human','human')
+   ORDER BY updated_at DESC LIMIT 1;
+   IF v_conversation IS NOT NULL THEN
+     UPDATE public.lead_followups SET status='cancelled'
+     WHERE concierge_conversation_id=v_conversation AND status='active';
+   END IF;
+   INSERT INTO public.lead_followups(lead_id,due_at,task,status,created_by,concierge_conversation_id)
+   VALUES(p_lead,p_followup_at,'Follow up on '||v_label||' ('||replace(p_outcome,'_',' ')||')','active',v_staff,v_conversation);
    INSERT INTO public.lead_activities(lead_id,event_type,description,actor)
    VALUES(p_lead,'followup_scheduled','Next contact due '||to_char(p_followup_at,'YYYY-MM-DD HH24:MI TZ'),v_staff);
  END IF;
  IF p_resolve THEN
+   UPDATE public.lead_followups SET status='completed',completed_at=v_now
+   WHERE lead_id=p_lead AND status='active' AND concierge_conversation_id IN (
+     SELECT id FROM public.ai_conversations WHERE lead_id=p_lead AND status IN ('waiting_human','human')
+   );
    UPDATE public.ai_concierge_tasks t SET status='completed',completed_at=v_now,updated_at=v_now
    FROM public.ai_conversations c
    WHERE t.conversation_id=c.id AND c.lead_id=p_lead AND t.status IN ('pending','claimed');
