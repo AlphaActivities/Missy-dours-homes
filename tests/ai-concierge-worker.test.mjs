@@ -226,7 +226,7 @@ test('Official consumer resources and non-manipulative follow ups are available 
  const scenarios=[
   ['How can I compare a mortgage and my loan estimate?','consumerfinance.gov/owning-a-home/loan-estimate/'],
   ['Where do I find the Texas IABS disclosure?','missydours.com/docs/IABS.pdf'],
-  ['What areas are shown on the website?','missydours.com/#communities'],
+  ['Which neighborhoods are showcased on the website?','missydours.com/#communities'],
   ['What should I know about disability accessibility?','hud.gov/program_offices/fair_housing_equal_opp']
  ];
  try{
