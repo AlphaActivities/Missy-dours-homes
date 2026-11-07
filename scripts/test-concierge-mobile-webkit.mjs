@@ -25,7 +25,7 @@ try {
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  await dialog.waitFor({state:'visible',timeout:8000});
  assert.equal(await dialog.getByText('Imagine the Life That Awaits.').count()>0,true);
- await dialog.getByText('Message Missy’s Team',{exact:true}).waitFor({state:'visible'});
+ await dialog.getByText('Message Missy’s Direct Team',{exact:true}).waitFor({state:'visible'});
  await dialog.getByText('We’re here to help you find your happy place. How can I assist you?').waitFor({state:'visible'});
  assert.equal(await dialog.locator('header').getByText('IMAGINE THE LIFE THAT AWAITS').count(),0,'Header tagline should be removed while preserving the in-chat headline');
  const locked=await page.evaluate(()=>({
@@ -47,7 +47,17 @@ try {
  assert.equal(await composer.isDisabled(),true,'Messaging must require a verified visitor session');
  assert.ok(await composer.evaluate(el=>Number.parseFloat(getComputedStyle(el).fontSize)>=16),'iOS composer must be at least 16px to avoid Safari focus zoom');
  const geometry=await dialog.evaluate(el=>({width:el.getBoundingClientRect().width,viewport:window.innerWidth}));
- assert.ok(geometry.width<=geometry.viewport+2,'Chat dialog must fit the mobile viewport');
+ assert.ok(Math.abs(geometry.width-geometry.viewport)<=2,'Chat dialog must occupy the entire mobile width');
+ const viewport=await dialog.evaluate(el=>({
+  height:el.getBoundingClientRect().height, innerHeight:window.innerHeight,
+  backdropWidth:el.parentElement.getBoundingClientRect().width
+ }));
+ assert.ok(Math.abs(viewport.height-viewport.innerHeight)<=2,'Full-screen dialog must occupy the full iPhone height');
+ assert.ok(Math.abs(viewport.backdropWidth-geometry.viewport)<=2,'Backdrop must span the full page width');
+ const footer=dialog.locator('.missy-concierge-composer');
+ assert.deepEqual(await footer.locator('p').allTextContents().then(rows=>rows.map(t=>t.trim()).filter(t=>t.startsWith('AI information')||t.startsWith('Missy confirms'))),
+  ['AI information may be incomplete.','Missy confirms property availability and details.'],'Disclaimer must consist of two deliberate lines');
+
  await dialog.getByRole('button',{name:'Close',exact:true}).click();
  await launcher.waitFor({state:'visible'});
  assert.equal(await dialog.count(),0,'Chat must close and restore the launcher');
