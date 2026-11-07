@@ -7,7 +7,7 @@ const encode=(value:unknown)=>b64url(new TextEncoder().encode(JSON.stringify(val
 type GoogleCredentials={client_email:string;private_key:string;token_uri?:string};
 type GaRow={dimensionValues?:{value:string}[];metricValues?:{value:string}[]};
 type GaResponse={rows?:GaRow[];error?:{message?:string}};
-type IssueCode='GA4_PROPERTY_ID_MISSING'|'GA4_PROPERTY_ID_INVALID'|'GA4_CREDENTIALS_MISSING'|'GA4_CREDENTIALS_INVALID'|'GA4_CREDENTIALS_REJECTED'|'GA4_ACCESS_DENIED'|'GA4_PROPERTY_NOT_FOUND'|'GA4_RATE_LIMITED'|'GA4_REPORT_FAILED';
+type IssueCode='GA4_PROPERTY_ID_MISSING'|'GA4_PROPERTY_ID_INVALID'|'GA4_CREDENTIALS_MISSING'|'GA4_CREDENTIALS_INVALID'|'GA4_CREDENTIALS_REJECTED'|'GA4_OAUTH_NOT_CONFIGURED'|'GA4_OAUTH_TOKEN_REJECTED'|'GA4_ACCESS_DENIED'|'GA4_PROPERTY_NOT_FOUND'|'GA4_RATE_LIMITED'|'GA4_REPORT_FAILED';
 class ReportingIssue extends Error {
  constructor(readonly code:IssueCode,message:string,readonly status=502,readonly setupRequired=false){super(message);this.name='ReportingIssue';}
 }
@@ -27,6 +27,24 @@ async function accessToken(creds:GoogleCredentials){
  if(!response.ok||!data.access_token)throw issue('GA4_CREDENTIALS_REJECTED','Google rejected the reporting service-account credentials. Confirm the key is valid and active.');
  return String(data.access_token);
 }
+// Use a Google user consented OAuth refresh token when organization policy forbids
+// downloading service-account keys. These values exist only as Edge Function secrets.
+async function oauthAccessToken(clientId:string,clientSecret:string,refreshToken:string){
+ const response=await fetch('https://oauth2.googleapis.com/token',{
+  method:'POST',
+  headers:{'Content-Type':'application/x-www-form-urlencoded'},
+  body:new URLSearchParams({
+   grant_type:'refresh_token',client_id:clientId,client_secret:clientSecret,refresh_token:refreshToken
+  }),
+  signal:AbortSignal.timeout(10000)
+ });
+ const payload=await response.json().catch(()=>({}));
+ if(!response.ok||typeof payload.access_token!=='string'){
+  // Never log or return OAuth tokens or secret details.
+  throw issue('GA4_OAUTH_TOKEN_REJECTED','Google rejected the saved authorization. Reconnect the Google Analytics reporting account; test-mode authorizations may expire after seven days.',503,true);
+ }
+ return payload.access_token as string;
+}
 Deno.serve(async(req)=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
  if(req.method!=='GET')return json({error:'Method not allowed'},405);
@@ -44,15 +62,28 @@ Deno.serve(async(req)=>{
   if(!property)return json({code:'GA4_PROPERTY_ID_MISSING',error:'The numeric GA4 Property ID has not been configured.',setupRequired:true},503);
   // A GA4 property is a numeric ID, not a G- measurement ID.
   if(!/^\d+$/.test(property))return json({code:'GA4_PROPERTY_ID_INVALID',error:'The configured GA4 Property ID is invalid. Use the numeric property ID, not the G- measurement ID.',setupRequired:true},503);
-  if(!credentials)return json({code:'GA4_CREDENTIALS_MISSING',error:'Read-only Google reporting credentials have not been configured.',setupRequired:true},503);
-  let creds:GoogleCredentials;
-  try{
-   creds=JSON.parse(credentials) as GoogleCredentials;
-   if(typeof creds.client_email!=='string'||!creds.client_email.endsWith('.gserviceaccount.com')||typeof creds.private_key!=='string'||!creds.private_key.includes('BEGIN PRIVATE KEY'))throw new Error('invalid');
-  }catch{return json({code:'GA4_CREDENTIALS_INVALID',error:'The Google reporting credential format is invalid. Check the service-account JSON secret.',setupRequired:true},503);}
+  const oauthClientId=String(Deno.env.get('GA4_OAUTH_CLIENT_ID')||'').trim();
+  const oauthClientSecret=String(Deno.env.get('GA4_OAUTH_CLIENT_SECRET')||'').trim();
+  const oauthRefreshToken=String(Deno.env.get('GA4_OAUTH_REFRESH_TOKEN')||'').trim();
   let token:string;
-  try{token=await accessToken(creds);}
-  catch(e){if(e instanceof ReportingIssue)throw e;throw issue('GA4_CREDENTIALS_INVALID','Unable to read or sign with the Google reporting private key. Verify the service-account JSON.');}
+  if(oauthClientId&&oauthClientSecret&&oauthRefreshToken){
+   // Prefer OAuth when configured; service-account credentials remain supported.
+   token=await oauthAccessToken(oauthClientId,oauthClientSecret,oauthRefreshToken);
+  }else if(credentials){
+   let creds:GoogleCredentials;
+   try{
+    creds=JSON.parse(credentials) as GoogleCredentials;
+    if(typeof creds.client_email!=='string'||!creds.client_email.endsWith('.gserviceaccount.com')||typeof creds.private_key!=='string'||!creds.private_key.includes('BEGIN PRIVATE KEY'))throw new Error('invalid');
+   }catch{return json({code:'GA4_CREDENTIALS_INVALID',error:'The Google reporting credential format is invalid. Check the service-account JSON secret.',setupRequired:true},503);}
+   try{token=await accessToken(creds);}
+   catch(e){if(e instanceof ReportingIssue)throw e;throw issue('GA4_CREDENTIALS_INVALID','Unable to read or sign with the Google reporting private key. Verify the service account JSON.');}
+  }else{
+   return json({
+    code:'GA4_OAUTH_NOT_CONFIGURED',
+    error:'The GA4 property is configured, but Google OAuth authorization is not connected. The owner must securely configure the OAuth client ID, client secret, and consented refresh token.',
+    setupRequired:true
+   },503);
+  }
   const range=[{startDate:(days-1)+'daysAgo',endDate:'today'}];
   const report=async(dimensions:string[],metrics:string[],limit:number):Promise<GaResponse>=>{
    const response=await fetch('https://analyticsdata.googleapis.com/v1beta/properties/'+property+':runReport',{
@@ -61,10 +92,10 @@ Deno.serve(async(req)=>{
     signal:AbortSignal.timeout(12000)
    });
    if(!response.ok){
-    if(response.status===403)throw issue('GA4_ACCESS_DENIED','Google denied access to this GA4 property. Grant the service account Viewer access and check the Analytics Data API configuration.');
+    if(response.status===403)throw issue('GA4_ACCESS_DENIED','Google denied access to this GA4 property. Confirm the authorized Google account has access to this property and the Analytics Data API is enabled.');
     if(response.status===404)throw issue('GA4_PROPERTY_NOT_FOUND','Google could not find the configured GA4 property. Check the numeric Property ID and service-account access.');
     if(response.status===429)throw issue('GA4_RATE_LIMITED','Google Analytics is temporarily rate-limiting reports. Try refreshing later.',429);
-    if(response.status===401)throw issue('GA4_CREDENTIALS_REJECTED','Google rejected the reporting token. Recheck the service-account credentials.');
+    if(response.status===401)throw issue('GA4_CREDENTIALS_REJECTED','Google rejected the reporting access token. Review the reporting connection.');
     throw issue('GA4_REPORT_FAILED','The Google Analytics reporting request failed ('+response.status+').');
    }
    return response.json();
