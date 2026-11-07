@@ -1,6 +1,5 @@
 import {createContext,useCallback,useContext,useEffect,useRef,useState,type ReactNode} from 'react';
 import {supabase} from '../../lib/supabase';
-import {preloadCrmAttention} from '../../lib/crmAttentionPreload';
 import {useAuth} from '../../contexts/AuthContext';
 import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound,type CrmSound} from './crmSounds';
 
@@ -11,7 +10,7 @@ export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escala
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
 type ActivityState={
  items:CrmActivity[];unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
- prefs:NotificationPrefs;loading:boolean;error:string|null;attentionLoading:boolean;attentionError:boolean;refresh:()=>Promise<void>;
+ prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;
  markRead:(eventId:string)=>Promise<void>;archive:(eventId:string)=>Promise<void>;restore:(eventId:string)=>Promise<void>;
  markAllRead:()=>Promise<void>;setPreference:(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>Promise<void>;
  setSoundPreference:(name:SoundPreferenceKey,value:CrmSound)=>Promise<void>;
@@ -29,10 +28,6 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const [loadingMore,setLoadingMore]=useState(false);
  const [prefs,setPrefs]=useState<NotificationPrefs>(defaults(email));
  const [attentionCount,setAttentionCount]=useState(0);
- const [attentionReady,setAttentionReady]=useState(false);
- const [attentionFailed,setAttentionFailed]=useState(false);
- const activeUserId=useRef(user?.id);
- activeUserId.current=user?.id;
  const [attentionBreakdown,setBreakdown]=useState({new_leads:0,open_tasks:0,waiting_conversations:0});
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState<string|null>(null);
@@ -105,27 +100,13 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   if(!permitted.includes(email)||inFlight.current)return;
   inFlight.current=true;
   try {
-   // The count is prefetched during authentication and published immediately,
-   // without waiting for the inbox, preferences, totals and lead lookups.
-   const id=user?.id??'';
-   const summaryRequest=preloadCrmAttention(id).then(c=>{
-    if(activeUserId.current===id){
-     setAttentionCount(Math.max(0,Number(c.attention_count??0)));
-     setBreakdown({new_leads:Number(c.new_leads??0),open_tasks:Number(c.open_tasks??0),waiting_conversations:Number(c.waiting_conversations??0)});
-     setAttentionReady(true);setAttentionFailed(false);
-    }
-    return c;
-   }).catch(error=>{
-    if(activeUserId.current===id){setAttentionReady(true);setAttentionFailed(true);}
-    throw error;
-   });
-   const [events,_summary,preferences,totals]=await Promise.all([
+   const [events,summary,preferences,totals]=await Promise.all([
     supabase.rpc('crm_activity_page',{p_offset:0,p_limit:PAGE_SIZE}),
-    summaryRequest,
+    supabase.rpc('crm_attention_summary'),
     supabase.from('crm_notification_preferences').select('staff_email,handoff_enabled,escalation_enabled,staff_enabled,in_app_sound,sound_lead,sound_handoff,sound_escalation,sound_staff,updated_at').eq('staff_email',email).maybeSingle(),
     supabase.rpc('crm_activity_totals')
    ]);
-   if(events.error||preferences.error||totals.error)throw events.error||preferences.error||totals.error;
+   if(events.error||summary.error||preferences.error||totals.error)throw events.error||summary.error||preferences.error||totals.error;
    const newest=await attachLeadStatuses((events.data??[]) as CrmActivity[]);
    const recent=newest;
    const rawPrefs=preferences.data as Partial<NotificationPrefs>|null;
@@ -159,10 +140,13 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    setHasMore(previous=>next.length>PAGE_SIZE?previous:recent.length===PAGE_SIZE);
    const t=totals.data as {unread?:number;urgent?:number;today?:number;hidden?:number}|null;
    setCounts({unread:Number(t?.unread??0),urgent:Number(t?.urgent??0),today:Number(t?.today??0),hidden:Number(t?.hidden??0)});
+   const c=summary.data as {attention_count?:number;new_leads?:number;open_tasks?:number;waiting_conversations?:number}|null;
+   setAttentionCount(Math.max(0,Number(c?.attention_count??0)));
+   setBreakdown({new_leads:Number(c?.new_leads??0),open_tasks:Number(c?.open_tasks??0),waiting_conversations:Number(c?.waiting_conversations??0)});
    setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Unable to load activity');}
   finally{setLoading(false);inFlight.current=false;}
- },[email,user?.id]);
+ },[email]);
  const loadMore=async()=>{
   if(loadingMore||!hasMore||!permitted.includes(email))return;
   setLoadingMore(true);
@@ -177,7 +161,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   }catch(e){setError(e instanceof Error?e.message:'Could not load older notifications');}
   finally{setLoadingMore(false);}
  };
- useEffect(()=>{firstLoaded.current=false;lastEvent.current=null;loadedRef.current=[];setItems([]);setHasMore(false);setCounts({unread:0,urgent:0,today:0,hidden:0});setPrefs(defaults(email));setAttentionReady(false);setAttentionFailed(false);setAttentionCount(0);setLoading(true);if(!permitted.includes(email))return;void refresh();const timer=window.setInterval(()=>void refresh(),15000);const visible=()=>{if(document.visibilityState==='visible')void refresh();};document.addEventListener('visibilitychange',visible);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};},[email,refresh]);
+ useEffect(()=>{firstLoaded.current=false;lastEvent.current=null;loadedRef.current=[];setItems([]);setHasMore(false);setCounts({unread:0,urgent:0,today:0,hidden:0});setPrefs(defaults(email));setLoading(true);if(!permitted.includes(email))return;void refresh();const timer=window.setInterval(()=>void refresh(),15000);const visible=()=>{if(document.visibilityState==='visible')void refresh();};document.addEventListener('visibilitychange',visible);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};},[email,refresh]);
  useEffect(()=>{
   // Use work requiring attention, never the number of notification banners.
   // Some browsers/platforms do not implement the Badging API.
@@ -212,6 +196,6 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   setPrefs(old=>({...old,[name]:value}));
  };
  const unreadCount=counts.unread;
- return <Context.Provider value={{items,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,attentionLoading:!attentionReady,attentionError:attentionFailed,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>{children}</Context.Provider>;
+ return <Context.Provider value={{items,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>{children}</Context.Provider>;
 }
 export function useCrmActivity(){const ctx=useContext(Context);if(!ctx)throw new Error('CRM activity provider missing');return ctx;}
