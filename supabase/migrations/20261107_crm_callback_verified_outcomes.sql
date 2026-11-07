@@ -132,3 +132,109 @@ BEGIN
  END IF;
  RETURN NEW;
 END $$;
+
+-- Require a contact event before a new lead can be advanced to contacted,
+-- qualified or closed by a separate status picker.
+CREATE OR REPLACE FUNCTION public.crm_guard_lead_contact_stage()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+ IF OLD.status='new' AND NEW.status IN ('contacted','qualified','closed')
+   AND NOT EXISTS (
+     SELECT 1 FROM public.lead_contact_events e
+     WHERE e.lead_id=NEW.id AND e.created_at >= OLD.created_at
+   ) THEN
+   RAISE EXCEPTION 'Record a call, text or email outcome before advancing this lead';
+ END IF;
+ RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS crm_guard_lead_contact_stage ON public.leads;
+CREATE TRIGGER crm_guard_lead_contact_stage BEFORE UPDATE OF status ON public.leads
+FOR EACH ROW EXECUTE FUNCTION public.crm_guard_lead_contact_stage();
+
+-- Identity reconciliation happens only after explicit staff selection.
+-- A phone match is required; an ambiguous shared-number match is never automatic.
+CREATE OR REPLACE FUNCTION public.crm_link_reviewed_callback(
+ p_conversation uuid,p_lead uuid
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE v_staff text:=lower(coalesce(auth.jwt()->>'email',''));
+ v_phone text; v_lead_phone text;
+BEGIN
+ IF v_staff NOT IN ('missydourshomes@gmail.com','yourcustomerflowguy@gmail.com','heberherrera92@gmail.com') THEN
+   RAISE EXCEPTION 'Not authorized';
+ END IF;
+ SELECT regexp_replace(coalesce(visitor_phone,''),'[^0-9]','','g') INTO v_phone
+ FROM public.ai_conversations WHERE id=p_conversation AND lead_id IS NULL
+   AND contact_consent_at IS NOT NULL AND status='waiting_human' FOR UPDATE;
+ IF v_phone IS NULL THEN RETURN false; END IF;
+ SELECT regexp_replace(coalesce(phone,''),'[^0-9]','','g') INTO v_lead_phone
+ FROM public.leads WHERE id=p_lead;
+ IF length(v_phone)=11 AND left(v_phone,1)='1' THEN v_phone:=right(v_phone,10); END IF;
+ IF length(v_lead_phone)=11 AND left(v_lead_phone,1)='1' THEN v_lead_phone:=right(v_lead_phone,10); END IF;
+ IF length(v_phone)<>10 OR v_phone IS DISTINCT FROM v_lead_phone THEN RETURN false; END IF;
+ UPDATE public.ai_conversations SET lead_id=p_lead,updated_at=now() WHERE id=p_conversation AND lead_id IS NULL;
+ RETURN found;
+END $$;
+REVOKE ALL ON FUNCTION public.crm_link_reviewed_callback(uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.crm_link_reviewed_callback(uuid,uuid) TO authenticated;
+
+-- If staff confirms the caller is a distinct person even though the phone is
+-- shared, explicitly create a separate lead rather than silently merging.
+CREATE OR REPLACE FUNCTION public.crm_create_reviewed_callback_lead(
+ p_conversation uuid
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE v_staff text:=lower(coalesce(auth.jwt()->>'email',''));
+ v_name text;v_phone text;v_lead uuid;
+BEGIN
+ IF v_staff NOT IN ('missydourshomes@gmail.com','yourcustomerflowguy@gmail.com','heberherrera92@gmail.com') THEN
+   RAISE EXCEPTION 'Not authorized';
+ END IF;
+ SELECT visitor_name,visitor_phone INTO v_name,v_phone FROM public.ai_conversations
+ WHERE id=p_conversation AND lead_id IS NULL AND contact_consent_at IS NOT NULL
+   AND status='waiting_human' FOR UPDATE;
+ IF v_name IS NULL OR v_phone IS NULL THEN RAISE EXCEPTION 'Callback is not eligible for reviewed lead creation'; END IF;
+ INSERT INTO public.leads(name,phone,email,message,source_page,status)
+ VALUES(v_name,v_phone,'','Staff-reviewed concierge callback','AI Concierge','new')
+ RETURNING id INTO v_lead;
+ UPDATE public.ai_conversations SET lead_id=v_lead,updated_at=now() WHERE id=p_conversation;
+ RETURN v_lead;
+END $$;
+REVOKE ALL ON FUNCTION public.crm_create_reviewed_callback_lead(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.crm_create_reviewed_callback_lead(uuid) TO authenticated;
+
+-- Keep completed-task audit events in History, but do not count them in the
+-- active notification totals. One request remains one outstanding job.
+CREATE OR REPLACE FUNCTION public.crm_activity_totals()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE v_staff text:=lower(coalesce(auth.jwt()->>'email',''));
+BEGIN
+ IF v_staff NOT IN ('yourcustomerflowguy@gmail.com','missydourshomes@gmail.com','heberherrera92@gmail.com') THEN
+   RAISE EXCEPTION 'not authorized';
+ END IF;
+ RETURN (
+ SELECT jsonb_build_object(
+   'total',count(*) FILTER(WHERE r.archived_at IS NULL AND NOT coalesce(l.status='archived',false)
+      AND e.event_key NOT LIKE 'staff:completed:%'),
+   'unread',count(*) FILTER(WHERE r.archived_at IS NULL AND r.read_at IS NULL AND NOT coalesce(l.status='archived',false)
+      AND e.event_key NOT LIKE 'staff:completed:%'),
+   'urgent',count(*) FILTER(WHERE r.archived_at IS NULL AND e.category='escalation' AND NOT coalesce(l.status='archived',false)
+      AND e.event_key NOT LIKE 'staff:completed:%'),
+   'today',count(*) FILTER(WHERE r.archived_at IS NULL AND e.created_at>=now()-interval '24 hours' AND NOT coalesce(l.status='archived',false)
+      AND e.event_key NOT LIKE 'staff:completed:%'),
+   'hidden',count(*) FILTER(WHERE r.archived_at IS NOT NULL OR coalesce(l.status='archived',false)
+      OR e.event_key LIKE 'staff:completed:%')
+ )
+ FROM public.crm_activity_events e
+ LEFT JOIN public.crm_activity_receipts r ON r.event_id=e.id AND r.staff_email=v_staff
+ LEFT JOIN public.leads l ON e.target_path='/dashboard/leads?lead='||l.id::text
+ WHERE NOT EXISTS (
+   SELECT 1 FROM public.crm_activity_events canonical
+   WHERE e.event_key='lead:existing:'||l.id::text
+     AND canonical.event_key='lead:'||l.id::text
+     AND canonical.category='lead' AND canonical.target_path=e.target_path
+ )
+ );
+END $$;
