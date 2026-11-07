@@ -759,3 +759,67 @@
   background: linear-gradient(110deg, rgba(196, 164, 106, .3), rgba(68, 46, 24, .55));
   box-shadow: inset 0 0 0 1px rgba(225, 194, 133, .12), 0 0 12px rgba(196, 164, 106, .14);
 }
+
+
+/* CRM notification affordances: independent premium motion for each action.
+   The sweep is for a chatbot response; website leads use a slow gold glow.
+   Neither treatment changes the actual actions or the red alert containers. */
+.ds-shell .crm-open-notification.crm-action-chat {
+  background: linear-gradient(120deg, rgba(86, 57, 29, .86), rgba(144, 103, 54, .52), rgba(73, 47, 27, .88));
+  border-color: rgba(230, 191, 121, .72);
+  box-shadow: inset 0 1px 0 rgba(255, 231, 184, .18), 0 0 14px rgba(196, 164, 106, .18);
+}
+.ds-shell .crm-open-notification.crm-action-chat::before {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  inset: -65% auto -65% -65%;
+  width: 42%;
+  transform: translateX(-100%) rotate(24deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 231, 176, .05) 20%, rgba(255, 241, 208, .6) 50%, rgba(255, 231, 176, .05) 80%, transparent);
+  filter: blur(6px);
+  animation: crm-chat-action-sweep 5.2s ease-in-out infinite;
+}
+@keyframes crm-chat-action-sweep {
+  0%, 14% { transform: translateX(-100%) rotate(24deg); opacity: 0; }
+  20% { opacity: .9; }
+  52% { transform: translateX(560%) rotate(24deg); opacity: .85; }
+  60%, 100% { transform: translateX(560%) rotate(24deg); opacity: 0; }
+}
+.ds-shell .crm-open-notification.crm-action-lead {
+  border-color: rgba(236, 198, 125, .74);
+  background: radial-gradient(ellipse at 15% 50%, rgba(205, 163, 87, .3), transparent 65%), linear-gradient(110deg, rgba(90, 61, 30, .83), rgba(42, 31, 19, .95));
+  box-shadow: inset 0 1px 0 rgba(255, 235, 200, .2), 0 0 11px rgba(207, 165, 88, .17);
+  animation: crm-lead-action-glow 4.5s ease-in-out infinite;
+}
+@keyframes crm-lead-action-glow {
+  0%, 100% { box-shadow: inset 0 1px 0 rgba(255, 235, 200, .13), 0 0 7px rgba(207, 165, 88, .12); border-color: rgba(226, 183, 111, .65); }
+  50% { box-shadow: inset 0 1px 0 rgba(255, 245, 215, .28), 0 0 22px rgba(232, 191, 116, .46), 0 0 5px rgba(255, 227, 173, .28); border-color: rgba(255, 225, 164, .95); }
+}
+.ds-shell .crm-open-notification.crm-action-chat > svg,
+.ds-shell .crm-open-notification.crm-action-lead > svg {
+  position: relative;
+  z-index: 1;
+}
+
+/* A quick, gentle sway, then a long quiet pause. Animate only the bell glyph,
+   never the notification badge or the whole tap target. */
+.crm-bell-wobble {
+  transform-origin: 50% 16%;
+  animation: crm-notification-bell-wobble 6.2s ease-in-out infinite;
+}
+@keyframes crm-notification-bell-wobble {
+  0%, 4%, 17%, 100% { transform: rotate(0); }
+  7% { transform: rotate(-15deg); }
+  10% { transform: rotate(12deg); }
+  13% { transform: rotate(-8deg); }
+  15% { transform: rotate(4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-shell .crm-open-notification.crm-action-chat::before,
+  .ds-shell .crm-open-notification.crm-action-lead,
+  .crm-bell-wobble {
+    animation: none !important;
+  }
+}
