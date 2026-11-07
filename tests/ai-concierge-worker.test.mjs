@@ -53,7 +53,7 @@ test('Uncertain language detection fails back to English', async () => {
   let calls = [];
   const response = await worker.fetch(request({
     language: 'auto',
-    messages: [{role:'user',content:'hello'}]
+    messages: [{role:'user',content:'I need help comparing homes'}]
   }), {
     CONCIERGE_BRIDGE_SECRET: secret,
     AI: { run: async (_model,opts) => {
@@ -93,7 +93,7 @@ test('Published website feed remains a non-authoritative reference', async () =>
 });
 
 test('AI reply with no visible content fails with safe diagnostic and no leaked details',async()=>{
- const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'hi'}]}),{
+ const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'What neighborhoods do you cover?'}]}),{
   CONCIERGE_BRIDGE_SECRET:secret,
   AI:{run:async()=>({choices:[{message:{content:'',reasoning_content:'private chain'}}]})}
  });
@@ -103,7 +103,7 @@ test('AI reply with no visible content fails with safe diagnostic and no leaked 
  assert.doesNotMatch(JSON.stringify(data),/private chain/);
 });
 test('Model rejection returns a safe code without exposing internal errors',async()=>{
- const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'hi'}]}),{
+ const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'What neighborhoods do you cover?'}]}),{
   CONCIERGE_BRIDGE_SECRET:secret,
   AI:{run:async()=>{throw new Error('Sensitive provider details');}}
  });
@@ -111,4 +111,26 @@ test('Model rejection returns a safe code without exposing internal errors',asyn
  const data=await response.json();
  assert.equal(data.code,'model_execution_failed');
  assert.doesNotMatch(JSON.stringify(data),/Sensitive provider details/);
+});
+
+test('First greeting is natural, short and does not launch a scripted biography', async () => {
+ let calls=0;
+ const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'Hey'}]}),{
+  CONCIERGE_BRIDGE_SECRET:secret,
+  AI:{run:async()=>{calls++;return {response:'Unnecessarily long business introduction'};}}
+ });
+ assert.equal(response.status,200);
+ assert.deepEqual(await response.json(),{reply:'Hey! Welcome. What can I help you with?',language:'en'});
+ assert.equal(calls,0,'Simple greeting should not invoke the model');
+});
+
+test('Substantive questions use a non-scripted, concise system instruction',async()=>{
+ let instruction='';
+ const response=await worker.fetch(request({language:'en',messages:[{role:'user',content:'I want to sell a home'}]}),{
+  CONCIERGE_BRIDGE_SECRET:secret,
+  AI:{run:async (_model,opts)=>{instruction=opts.messages[0].content;return {response:'Absolutely. What area is your home in?'};}}
+ });
+ assert.equal(response.status,200);
+ assert.match(instruction,/Never introduce yourself with a formal name/);
+ assert.match(instruction,/one or two concise conversational sentences/);
 });

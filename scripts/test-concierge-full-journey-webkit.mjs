@@ -52,7 +52,7 @@ try {
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  const composer=dialog.getByRole('textbox',{name:"Message Missy's concierge"});
  assert.equal(await dialog.getByRole('button',{name:'Close concierge'}).count(),0);
- assert.equal(await dialog.getByRole('button',{name:'Speak with Missy’s team'}).count(),0,'Human option should appear after first visitor message');
+ assert.equal(await dialog.getByRole('button',{name:'Request a team member'}).count(),0,'Human option should appear after first visitor message');
  await composer.fill('¿Puede ayudarme a comprar una casa?');
  await dialog.getByRole('button',{name:'Send message'}).click();
  await dialog.getByText('Gracias. Missy confirmará los detalles.').waitFor();
@@ -68,10 +68,10 @@ try {
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),0);
 
  assert.equal(await dialog.getByText(/Automatic language assistance/).count(),0);
- const humanButton=dialog.getByRole('button',{name:'Speak with Missy’s team'});
+ const humanButton=dialog.getByRole('button',{name:'Request a team member'});
  await humanButton.waitFor({state:'visible'});
- assert.ok((await humanButton.getAttribute('class')).includes('bg-gradient-to-r'),'Human handoff needs a prominent button appearance');
- await dialog.getByRole('button',{name:'Speak with Missy’s team'}).click();
+ assert.ok((await humanButton.getAttribute('class')).includes('border-[#b99b68]/45'),'Human handoff should be a subtle secondary action');
+ await dialog.getByRole('button',{name:'Request a team member'}).click();
  const form=dialog.getByRole('form',{name:'Request a callback'});
  await form.getByPlaceholder('Full name').fill('Example Visitor');
  await form.getByPlaceholder('(555) 555-0123').fill('(555) 555-0147');
