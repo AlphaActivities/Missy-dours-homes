@@ -10,7 +10,9 @@ try {
  // Preview intentionally has no live database credentials; unrelated review
  // requests can fail against placeholder.supabase.co and do not exercise chat.
  page.on('pageerror',error=>{
-  if(!error.message.includes('placeholder.supabase.co'))failed.push(error.message);
+  // Local HTTP preview cannot embed Cloudflare's HTTPS Turnstile challenge.
+  const expectedPreviewTurnstile=/challenges\.cloudflare\.com.*frame.*origin.*127\.0\.0\.1/i.test(error.message);
+  if(!error.message.includes('placeholder.supabase.co')&&!expectedPreviewTurnstile)failed.push(error.message);
  });
  const response=await page.goto(base,{waitUntil:'domcontentloaded',timeout:30000});
  assert.ok(response?.ok(),'Public page must load successfully');
