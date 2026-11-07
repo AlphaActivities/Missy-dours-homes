@@ -53,10 +53,10 @@ Deno.serve(async(req)=>{
   try{token=await accessToken(creds);}
   catch(e){if(e instanceof ReportingIssue)throw e;throw issue('GA4_CREDENTIALS_INVALID','Unable to read or sign with the Google reporting private key. Verify the service-account JSON.');}
   const range=[{startDate:(days-1)+'daysAgo',endDate:'today'}];
-  const report=async(dimensions:string[],metric:string,limit:number):Promise<GaResponse>=>{
+  const report=async(dimensions:string[],metrics:string[],limit:number):Promise<GaResponse>=>{
    const response=await fetch('https://analyticsdata.googleapis.com/v1beta/properties/'+property+':runReport',{
     method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-    body:JSON.stringify({dateRanges:range,dimensions:dimensions.map(name=>({name})),metrics:[{name:metric}],limit:String(limit),orderBys:dimensions[0]==='date'?[{dimension:{dimensionName:'date'}}]:[{metric:{metricName:metric},desc:true}]}),
+    body:JSON.stringify({dateRanges:range,dimensions:dimensions.map(name=>({name})),metrics:metrics.map(name=>({name})),limit:String(limit),orderBys:dimensions.length===0?[]:dimensions[0]==='date'?[{dimension:{dimensionName:'date'}}]:[{metric:{metricName:metrics[0]},desc:true}]}),
     signal:AbortSignal.timeout(12000)
    });
    if(!response.ok){
@@ -68,12 +68,12 @@ Deno.serve(async(req)=>{
    }
    return response.json();
   };
-  const totals=await Promise.all(['activeUsers','sessions','screenPageViews','keyEvents'].map(async metric=>{
-   const r=await report([],metric,1);return Number(r.rows?.[0]?.metricValues?.[0]?.value??0);
-  }));
+  // Request all headline metrics together to minimize GA4 quota usage.
+  const summary=await report([],['activeUsers','sessions','screenPageViews','keyEvents'],1);
+  const totals=['activeUsers','sessions','screenPageViews','keyEvents'].map((_,index)=>Number(summary.rows?.[0]?.metricValues?.[index]?.value??0));
   const [daily,pages,channels,events]=await Promise.all([
-   report(['date'],'screenPageViews',90),report(['pagePath'],'screenPageViews',8),
-   report(['sessionDefaultChannelGroup'],'sessions',8),report(['eventName'],'eventCount',10)
+   report(['date'],['screenPageViews'],90),report(['pagePath'],['screenPageViews'],8),
+   report(['sessionDefaultChannelGroup'],['sessions'],8),report(['eventName'],['eventCount'],10)
   ]);
   return json({rangeDays:days,metrics:{activeUsers:totals[0],sessions:totals[1],screenPageViews:totals[2],keyEvents:totals[3]},trend:toRows(daily),pages:toRows(pages),channels:toRows(channels),events:toRows(events)});
  }catch(e){
