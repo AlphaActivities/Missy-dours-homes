@@ -38,7 +38,8 @@ Deno.serve(async(req)=>{
   if(error||!data.user||!approved.has((data.user.email??'').toLowerCase()))return json({error:'Not authorized'},403);
   const days=Number(new URL(req.url).searchParams.get('days')||30);
   if(![7,30,90].includes(days))return json({error:'Invalid reporting range'},400);
-  const property=String(Deno.env.get('GA4_PROPERTY_ID')||'').trim();
+  // Missy Dours GA4 property (not the G- measurement ID); a secret override remains supported.
+  const property=String(Deno.env.get('GA4_PROPERTY_ID')||'515902392').trim();
   const credentials=String(Deno.env.get('GA4_SERVICE_ACCOUNT_JSON')||'').trim();
   if(!property)return json({code:'GA4_PROPERTY_ID_MISSING',error:'The numeric GA4 Property ID has not been configured.',setupRequired:true},503);
   // A GA4 property is a numeric ID, not a G- measurement ID.
