@@ -213,15 +213,15 @@ BEGIN
  RETURN (
  SELECT jsonb_build_object(
    'total',count(*) FILTER(WHERE r.archived_at IS NULL AND NOT coalesce(l.status='archived',false)
-      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%'),
+      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%' AND NOT (coalesce(l.source_page='AI Concierge',false) AND EXISTS (SELECT 1 FROM public.ai_conversations c WHERE c.lead_id=l.id))),
    'unread',count(*) FILTER(WHERE r.archived_at IS NULL AND r.read_at IS NULL AND NOT coalesce(l.status='archived',false)
-      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%'),
+      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%' AND NOT (coalesce(l.source_page='AI Concierge',false) AND EXISTS (SELECT 1 FROM public.ai_conversations c WHERE c.lead_id=l.id))),
    'urgent',count(*) FILTER(WHERE r.archived_at IS NULL AND e.category='escalation' AND NOT coalesce(l.status='archived',false)
-      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%'),
+      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%' AND NOT (coalesce(l.source_page='AI Concierge',false) AND EXISTS (SELECT 1 FROM public.ai_conversations c WHERE c.lead_id=l.id))),
    'today',count(*) FILTER(WHERE r.archived_at IS NULL AND e.created_at>=now()-interval '24 hours' AND NOT coalesce(l.status='archived',false)
-      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%'),
+      AND e.event_key NOT LIKE 'staff:completed:%' AND e.event_key NOT LIKE 'staff:claimed:%' AND NOT (coalesce(l.source_page='AI Concierge',false) AND EXISTS (SELECT 1 FROM public.ai_conversations c WHERE c.lead_id=l.id))),
    'hidden',count(*) FILTER(WHERE r.archived_at IS NOT NULL OR coalesce(l.status='archived',false)
-      OR e.event_key LIKE 'staff:completed:%' OR e.event_key LIKE 'staff:claimed:%')
+      OR e.event_key LIKE 'staff:completed:%' OR e.event_key LIKE 'staff:claimed:%' OR (coalesce(l.source_page='AI Concierge',false) AND EXISTS (SELECT 1 FROM public.ai_conversations c WHERE c.lead_id=l.id)))
  )
  FROM public.crm_activity_events e
  LEFT JOIN public.crm_activity_receipts r ON r.event_id=e.id AND r.staff_email=v_staff
@@ -234,3 +234,40 @@ BEGIN
  )
  );
 END $$;
+
+-- One lead + one active callback + one waiting conversation is ONE job.
+CREATE OR REPLACE FUNCTION public.crm_attention_summary()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE v_staff text:=lower(coalesce(auth.jwt()->>'email',''));
+ v_new integer;v_uncovered_new integer;v_tasks integer;v_waiting integer;v_uncovered_waiting integer;
+BEGIN
+ IF v_staff NOT IN ('yourcustomerflowguy@gmail.com','missydourshomes@gmail.com','heberherrera92@gmail.com') THEN
+   RAISE EXCEPTION 'not authorized';
+ END IF;
+ SELECT count(*)::integer INTO v_new FROM public.leads WHERE status='new';
+ SELECT count(*)::integer INTO v_uncovered_new FROM public.leads l WHERE l.status='new'
+   AND NOT EXISTS (
+     SELECT 1 FROM public.ai_conversations c
+     WHERE c.lead_id=l.id AND (
+        c.status='waiting_human'
+        OR EXISTS (SELECT 1 FROM public.ai_concierge_tasks t WHERE t.conversation_id=c.id AND t.status IN ('pending','claimed'))
+     )
+   );
+ SELECT count(*)::integer INTO v_tasks FROM public.ai_concierge_tasks WHERE status IN ('pending','claimed');
+ SELECT count(*)::integer, count(*) FILTER(
+  WHERE NOT EXISTS (
+    SELECT 1 FROM public.ai_concierge_tasks t
+    WHERE t.conversation_id=c.id AND t.status IN ('pending','claimed')
+  )
+ )::integer INTO v_waiting,v_uncovered_waiting
+ FROM public.ai_conversations c WHERE c.status='waiting_human';
+ RETURN jsonb_build_object(
+   'new_leads',v_new,'new_leads_without_callback',v_uncovered_new,
+   'open_tasks',v_tasks,'waiting_conversations',v_waiting,
+   'waiting_conversations_without_task',v_uncovered_waiting,
+   'attention_count',v_uncovered_new+v_tasks+v_uncovered_waiting);
+END $$;
+
+-- Suppress synthetic Concierge lead creation activity in active totals when
+-- it is already represented by the linked handoff notification.
