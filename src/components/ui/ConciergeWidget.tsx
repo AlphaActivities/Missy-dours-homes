@@ -9,6 +9,24 @@ const GREETING = 'We help people find their happy, what could we help answer for
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const AI_TYPING_MIN_MS = 5000;
 
+// NANP structural validation, not proof a number is assigned or reachable.
+function callbackPhoneDigits(input: string) {
+  const digits = input.replace(/\D/g, '');
+  return digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
+}
+function validCallbackPhone(input: string) {
+  const digits = callbackPhoneDigits(input);
+  return /^[2-9]\d{2}[2-9]\d{6}$/.test(digits)
+    && digits.slice(1,3) !== '11' && digits.slice(4,6) !== '11';
+}
+function formatCallbackPhone(value: string) {
+  const digits = callbackPhoneDigits(value).slice(0,10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return '('+digits.slice(0,3)+') '+digits.slice(3);
+  return '('+digits.slice(0,3)+') '+digits.slice(3,6)+'-'+digits.slice(6);
+}
+
+
 /** A native-style incoming typing bubble, visible only while awaiting an AI reply. */
 function AssistantTypingBubble() {
   const reducedMotion = useReducedMotion();
@@ -79,7 +97,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [uploadFeedback, setUploadFeedback] = useState<string|null>(null);
   const [handoffOpen, setHandoffOpen] = useState(false);
   const [callbackName, setCallbackName] = useState(privateQA ? 'QA VISITOR TEST' : '');
-  const [callbackPhone, setCallbackPhone] = useState(privateQA ? '2025550147' : '');
+  const [callbackPhone, setCallbackPhone] = useState(privateQA ? '(202) 555-0147' : '');
+  const [callbackPhoneTouched, setCallbackPhoneTouched] = useState(false);
   const [callbackConsent, setCallbackConsent] = useState(false);
   const [transportError, setTransportError] = useState<string | null>(null);
   const [mode, setMode] = useState<'ai'|'human'|'waiting_human'|'closed'>('ai');
@@ -323,7 +342,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   };
 
   const requestHuman = async () => {
-    if (!session || busy || mode !== 'ai' || !callbackConsent || callbackName.trim().length<2) return;
+    if (!session || busy || mode !== 'ai' || !callbackConsent || callbackName.trim().length<2 || !validCallbackPhone(callbackPhone)) { setCallbackPhoneTouched(true); return; }
     syncVersionRef.current += 1;
     setBusy(true);
     setTransportError(null);
@@ -409,14 +428,15 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                 <input required maxLength={100} minLength={2} autoComplete="name" readOnly={privateQA} value={callbackName} onChange={e=>setCallbackName(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-base text-white" placeholder="Full name"/>
               </label>
               <label className="block text-xs text-[#e5d4ba]">Callback phone number
-                <input required type="tel" autoComplete="tel" readOnly={privateQA} minLength={10} maxLength={24} pattern="[+0-9 ()-]+" value={callbackPhone} onChange={e=>setCallbackPhone(e.target.value)} className="mt-1 w-full rounded-lg border border-[#b9945d]/40 bg-[#14110d] p-2 text-base text-white" placeholder="(555) 555-0123"/>
+                <input required type="tel" inputMode="tel" autoComplete="tel-national" readOnly={privateQA} maxLength={14} pattern="\\([2-9][0-9]{2}\\) [2-9][0-9]{2}-[0-9]{4}" aria-invalid={callbackPhoneTouched && !validCallbackPhone(callbackPhone)} aria-describedby="callback-phone-hint" value={callbackPhone} onChange={e=>{setCallbackPhone(formatCallbackPhone(e.target.value));setCallbackPhoneTouched(true);}} onBlur={()=>setCallbackPhoneTouched(true)} className={`mt-1 w-full rounded-lg border bg-[#14110d] p-2 text-base text-white ${callbackPhoneTouched && !validCallbackPhone(callbackPhone) ? "border-red-400/80 focus:outline-red-400" : "border-[#b9945d]/40"}`} placeholder="(402) 555-0123"/>
+                <span id="callback-phone-hint" className={`mt-1 block text-[11px] ${callbackPhoneTouched && !validCallbackPhone(callbackPhone) ? "text-red-300" : "text-[#ae9b7f]"}`}>{callbackPhoneTouched && !validCallbackPhone(callbackPhone) ? "Enter a valid 10-digit U.S. phone number, including area code." : "U.S. number, formatted automatically as (402) 555-0123."}</span>
               </label>
               <label className="flex items-start gap-2 text-xs text-[#e5d4ba]">
                 <input type="checkbox" required checked={callbackConsent} onChange={e=>setCallbackConsent(e.target.checked)} className="mt-0.5"/>
                 <span>{privateQA?'I consent to creating this synthetic QA callback request; no actual call will be made.':'I agree to be contacted at this number about my request.'}</span>
               </label>
               <div className="flex items-center gap-3">
-                <button type="submit" disabled={busy||!callbackConsent||callbackName.trim().length<2} className="rounded-lg bg-[#c5a16a] px-4 py-2 text-xs font-semibold text-black disabled:opacity-40">Request a callback</button>
+                <button type="submit" disabled={busy||!callbackConsent||callbackName.trim().length<2||!validCallbackPhone(callbackPhone)} className="rounded-lg bg-[#c5a16a] px-4 py-2 text-xs font-semibold text-black disabled:opacity-40">Request a callback</button>
                 <button type="button" onClick={()=>setHandoffOpen(false)} className="text-xs text-[#e5d4ba] underline">Keep chatting</button>
               </div>
             </form>}
