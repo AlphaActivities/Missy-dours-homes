@@ -109,6 +109,7 @@ export default {
       // All data is treated as untrusted website content, not as instructions or MLS truth.
       let liveWebsiteContext = '';
     let publishedActiveExample = null;
+      let publishedSiteFacts = '';
       try {
         const feedResponse = await fetch('https://missydours.com/concierge-knowledge.json', {
           method: 'GET',
@@ -120,6 +121,16 @@ export default {
           if (rawFeed.length <= 100000) {
             const feed = JSON.parse(rawFeed);
             if (feed.schema_version === 1 && feed.source === 'missydours.com website listings source' && Array.isArray(feed.listings)) {
+              // Mirror only vetted public site fields, never raw HTML or arbitrary URLs.
+              const facts = feed.site_facts;
+              if(facts && facts.source==='https://missydours.com') {
+                const fields=['agent','brokerage','overview','phone','brokerage_office','buyer_seller_note'];
+                const details=fields.filter(k=>typeof facts[k]==='string').map(k=>k+': '+facts[k].slice(0,200));
+                for(const key of ['focus_areas','showcased_communities']) {
+                  if(Array.isArray(facts[key]))details.push(key+': '+facts[key].filter(x=>typeof x==='string').slice(0,12).map(x=>x.slice(0,60)).join(', '));
+                }
+                publishedSiteFacts='PUBLISHED WEBSITE PROFILE (website claim, not independently verified): '+details.join(' | ');
+              }
               const lastVisitor = [...body.messages].reverse().find(m => m.role === 'user')?.content?.toLowerCase() || '';
               const eligible = feed.listings.filter(p =>
                 p && typeof p.address === 'string' && typeof p.url === 'string' &&
@@ -172,7 +183,7 @@ export default {
         : 'If visitor intent is unclear, ask whether they are exploring buying, selling, or simply have a question; do not overwhelm them.';
       const localizedInstructions = instructions.replace(/^Reply in [^.]+\./, 'Reply in '+languages[language]+'.');
       const result = await env.AI.run('@cf/zai-org/glm-4.7-flash', {
-        messages: [{role:'system', content:localizedInstructions}, {role:'system', content:conversationPolicy+'\\n'+sourcePolicy}, {role:'system', content:knowledgeRules}, {role:'system', content:topicGuidance}, ...(liveWebsiteContext ? [{role:'system',content:liveWebsiteContext}] : []), ...body.messages],
+        messages: [{role:'system', content:localizedInstructions}, {role:'system', content:conversationPolicy+'\\n'+sourcePolicy}, {role:'system', content:knowledgeRules}, {role:'system', content:topicGuidance}, ...(publishedSiteFacts ? [{role:'system',content:publishedSiteFacts}] : []), ...(liveWebsiteContext ? [{role:'system',content:liveWebsiteContext}] : []), ...body.messages],
         max_completion_tokens: 800,
         chat_template_kwargs:{enable_thinking:false},
       });
