@@ -4,7 +4,7 @@ import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type 
 
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string; sender?: 'ai' | 'human' | 'visitor' };
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
-const GREETING = 'We help people find their happy, what can we help answer for you?';
+const GREETING = 'We help people find their happy, what could we help answer for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const SESSION_KEY = 'missy_concierge_visitor_session_v1';
 const LANGUAGE_KEY = 'missy_concierge_language_v1';
