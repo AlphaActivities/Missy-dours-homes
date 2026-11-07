@@ -276,12 +276,12 @@ export default function DashboardOverviewPage() {
 
   const reveal = () => reducedMotion ? { opacity: 1, y: 0 } : {
     opacity: entranceComplete ? 1 : 0,
-    y: entranceComplete ? 0 : 12,
+    y: entranceComplete ? 0 : 14,
   };
   const revealTransition = (index: number) => ({
-    duration: reducedMotion ? 0 : 0.42,
-    delay: reducedMotion ? 0 : index * 0.11,
-    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    duration: reducedMotion ? 0 : 0.54,
+    delay: reducedMotion ? 0 : index * 0.095,
+    ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
   });
 
   useEffect(() => {
@@ -391,7 +391,7 @@ export default function DashboardOverviewPage() {
       style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
     >
       {/* ── Greeting ─────────────────────────────────────── */}
-      <motion.div initial={reducedMotion ? false : {opacity: 0, y: 12}} animate={reveal()} transition={revealTransition(0)} className="mb-10">
+      <motion.div initial={reducedMotion ? false : {opacity: 0, y: 14}} animate={reveal()} transition={revealTransition(0)} className="mb-10">
         <h1
           className="text-3xl sm:text-4xl font-light tracking-tight"
           style={{
@@ -426,19 +426,19 @@ export default function DashboardOverviewPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <motion.div initial={reducedMotion ? false : {opacity: 0, y: 12}} animate={reveal()} transition={revealTransition(1)}><StatCard
+          <motion.div initial={reducedMotion ? false : {opacity: 0, y: 14}} animate={reveal()} transition={revealTransition(1)}><StatCard
             label="Total leads"
             value={totalLeads}
             icon={<Users size={15} />}
             onClick={() => navigate('/dashboard/leads?filter=all')}
           /></motion.div>
-          <motion.div initial={reducedMotion ? false : {opacity: 0, y: 12}} animate={reveal()} transition={revealTransition(2)}><StatCard
+          <motion.div initial={reducedMotion ? false : {opacity: 0, y: 14}} animate={reveal()} transition={revealTransition(2)}><StatCard
             label="This week"
             value={weekLeads}
             icon={<TrendingUp size={15} />}
             onClick={() => navigate('/dashboard/leads?filter=all')}
           /></motion.div>
-          <motion.div initial={reducedMotion ? false : {opacity: 0, y: 12}} animate={reveal()} transition={revealTransition(3)}><StatCard
+          <motion.div initial={reducedMotion ? false : {opacity: 0, y: 14}} animate={reveal()} transition={revealTransition(3)}><StatCard
             label="New and Uncontacted"
             value={newLeads}
             icon={<Zap size={15} />}
@@ -450,7 +450,7 @@ export default function DashboardOverviewPage() {
       )}
 
       {/* ── Needs Attention ──────────────────────────────── */}
-      <motion.div initial={reducedMotion ? false : {opacity: 0, y: 12}} animate={reveal()} transition={revealTransition(4)}>
+      <motion.div initial={reducedMotion ? false : {opacity: 0, y: 14}} animate={reveal()} transition={revealTransition(4)}>
         <NeedsAttentionSection
           items={attentionItems}
           loading={attentionLoading}
@@ -459,7 +459,7 @@ export default function DashboardOverviewPage() {
       </motion.div>
 
       {/* ── Recent leads ─────────────────────────────────── */}
-      <motion.div initial={reducedMotion ? false : {opacity: 0, y: 12}} animate={reveal()} transition={revealTransition(5)}>
+      <motion.div initial={reducedMotion ? false : {opacity: 0, y: 14}} animate={reveal()} transition={revealTransition(5)}>
         <div className="flex items-center justify-between mb-4">
           <h2
             className="text-sm font-semibold tracking-tight"

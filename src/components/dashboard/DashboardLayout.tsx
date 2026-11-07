@@ -125,8 +125,8 @@ function DashboardLayoutInner() {
     refreshAnimations.current.forEach(animation => animation.cancel());
     refreshAnimations.current = candidates.slice(0, 12).map((section, index) =>
       section.animate(
-        [{ opacity: 0, transform: 'translate3d(0,12px,0)' }, { opacity: 1, transform: 'translate3d(0,0,0)' }],
-        { duration: 420, delay: Math.min(index, 7) * 110, easing: 'cubic-bezier(.22,1,.36,1)' }
+        [{ opacity: 0, transform: 'translate3d(0,14px,0)' }, { opacity: 1, transform: 'translate3d(0,0,0)' }],
+        { duration: 540, delay: Math.min(index, 7) * 95, easing: 'cubic-bezier(.16,1,.3,1)' }
       )
     );
   };
@@ -389,25 +389,25 @@ function DashboardLayoutInner() {
           </IosNativeTap>
         </header>
 
-        {/* Page: retain Overview's own 110ms card stagger; apply matching
-            section entrance timing to the other dashboard routes. */}
+        {/* Premium, consistent reveal cadence across all dashboard pages.
+            Overview and Leads/Conversations retain their own scoped animations. */}
         <main ref={pageScrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain animate-ds-fade-in" onClickCapture={replayRefreshStagger}>
           <style>{`
             @keyframes crmSectionEnter {
-              from { opacity: 0; transform: translate3d(0, 12px, 0); }
+              from { opacity: 0; transform: translate3d(0, 14px, 0); }
               to { opacity: 1; transform: translate3d(0, 0, 0); }
             }
             .ds-crm-page-stagger > main > :nth-child(-n+12) {
-              animation: crmSectionEnter 420ms cubic-bezier(.22,1,.36,1) both;
+              animation: crmSectionEnter 540ms cubic-bezier(.16,1,.3,1) both;
             }
             .ds-crm-page-stagger > main > :nth-child(1) {animation-delay:0ms}
-            .ds-crm-page-stagger > main > :nth-child(2) {animation-delay:110ms}
-            .ds-crm-page-stagger > main > :nth-child(3) {animation-delay:220ms}
-            .ds-crm-page-stagger > main > :nth-child(4) {animation-delay:330ms}
-            .ds-crm-page-stagger > main > :nth-child(5) {animation-delay:440ms}
-            .ds-crm-page-stagger > main > :nth-child(6) {animation-delay:550ms}
-            .ds-crm-page-stagger > main > :nth-child(7) {animation-delay:660ms}
-            .ds-crm-page-stagger > main > :nth-child(n+8) {animation-delay:770ms}
+            .ds-crm-page-stagger > main > :nth-child(2) {animation-delay:95ms}
+            .ds-crm-page-stagger > main > :nth-child(3) {animation-delay:190ms}
+            .ds-crm-page-stagger > main > :nth-child(4) {animation-delay:285ms}
+            .ds-crm-page-stagger > main > :nth-child(5) {animation-delay:380ms}
+            .ds-crm-page-stagger > main > :nth-child(6) {animation-delay:475ms}
+            .ds-crm-page-stagger > main > :nth-child(7) {animation-delay:570ms}
+            .ds-crm-page-stagger > main > :nth-child(n+8) {animation-delay:665ms}
             @media (prefers-reduced-motion: reduce) {
               .ds-crm-page-stagger > main > * {animation:none!important;}
             }

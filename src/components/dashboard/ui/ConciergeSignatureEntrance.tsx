@@ -122,23 +122,21 @@ export default function ConciergeSignatureEntrance() {
    role="status" aria-label="Opening Missy Dours private CRM" aria-live="polite">
    <style>{`@keyframes crmGoldSheen { 0% { transform: translate3d(-155px,-170px,0) rotate(35deg); opacity:0; } 12% {opacity:1;} 72% {opacity:1;} 100% {transform:translate3d(210px,195px,0) rotate(35deg);opacity:0;} } @keyframes crmGoldRim { 0%,100% {opacity:0;} 30% {opacity:.15;} 55% {opacity:.75;} 80% {opacity:.08;} } .crm-logo-sheen {animation:crmGoldSheen 1900ms linear 90ms 1 both;} .crm-logo-sheen-rim {animation:crmGoldRim 1900ms ease-in-out 90ms 1 both;} @keyframes crmLuxurySpin {to{transform:rotate(360deg)}} @keyframes crmLuxuryType {from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}} @keyframes crmLuxuryCursor {0%,49%{opacity:1}50%,100%{opacity:0}} .crm-date-type {animation:crmLuxuryType 1.15s steps(31,end) 1.5s both;} .crm-date-cursor {animation:crmLuxuryCursor .5s steps(1,end) 3;} .crm-luxury-ring {animation:crmLuxurySpin 1.667s linear infinite;filter:drop-shadow(0 0 5px rgba(255,212,122,.65));} @media (prefers-reduced-motion:reduce) {.crm-luxury-ring{animation:none;} .crm-logo-sheen,.crm-logo-sheen-rim{animation:none;opacity:0;}}`}</style>
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
-   {/* Notification is driven by greeting completion, never a timer unrelated
-       to the verified attention count or the visual entrance sequence. */}
-   {greetingFinished&&entranceAttention!==null&&<div
-     className="pointer-events-none absolute inset-x-0 top-[calc(38%-244px)] max-lg:top-[calc(38%-236px)] mx-auto flex w-full flex-col items-center justify-center gap-2 px-3 text-center text-[#edd2a3]"
+   {/* Bell, badge and verified notification text are one premium reveal,
+       triggered by greeting completion. Wobble waits another full second. */}
+   {greetingFinished&&entranceAttention!==null&&<motion.div
+     className="crm-entrance-notice pointer-events-none absolute inset-x-0 top-[calc(38%-244px)] max-lg:top-[calc(38%-236px)] mx-auto flex w-full flex-col items-center justify-center gap-2 px-3 text-center text-[#edd2a3]"
+     initial={{opacity:0,y:10}} animate={{opacity:phase==='welcome'?1:0,y:0}}
+     transition={phase==='welcome'?{duration:.48,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}
      aria-label={entranceAttention.count===null?'Notifications unavailable':entranceAttention.count+' '+(entranceAttention.count===1?'notification':'notifications')+' requiring attention'}>
-     <motion.span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#ddbb7c]"
-       initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}}
-       transition={phase==='welcome'?{duration:.35,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}>
+     <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#ddbb7c]">
       <span className={entranceAttention.count!==null&&entranceAttention.count>0?'crm-bell-top-hinge crm-bell-wobble':'crm-bell-top-hinge'} aria-hidden="true"><BellRing size={26} strokeWidth={1.8}/></span>
       {entranceAttention.count!==null&&entranceAttention.count>0&&<span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0a08,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{entranceAttention.count>99?'99+':entranceAttention.count}</span>}
-     </motion.span>
-     <motion.span className="inline-flex min-h-[34px] max-w-[90vw] items-center justify-center rounded-full border border-[#c4a369]/45 bg-[#17120e]/75 px-5 py-2 text-center text-[13px] font-semibold leading-snug tracking-[.025em] text-[#edd2a3] shadow-[0_0_16px_rgba(196,164,106,.11),inset_0_1px_0_rgba(255,232,185,.06)] backdrop-blur-sm"
-       initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}}
-       transition={phase==='welcome'?{duration:.38,delay:.11,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}>
+     </span>
+     <span className="inline-flex min-h-[34px] max-w-[90vw] items-center justify-center rounded-full border border-[#c4a369]/45 bg-[#17120e]/75 px-5 py-2 text-center text-[13px] font-semibold leading-snug tracking-[.025em] text-[#edd2a3] shadow-[0_0_16px_rgba(196,164,106,.11),inset_0_1px_0_rgba(255,232,185,.06)] backdrop-blur-sm">
       {entranceAttention.count===null?'Notifications unavailable':entranceAttention.count===0?'All caught up':entranceAttention.count+' new '+(entranceAttention.count===1?'notification':'notifications')}
-     </motion.span>
-   </div>}
+     </span>
+   </motion.div>}
    {greeting && entranceAttention!==null && <motion.p className="pointer-events-none absolute inset-x-0 top-[calc(38%-112px)] max-lg:top-[calc(38%-142px)] px-4 text-center text-[18px] sm:text-[21px] font-medium tracking-[.09em] text-[#f0d8a0] drop-shadow-[0_0_14px_rgba(196,164,106,.2)]"
      initial={{opacity:0,y:8}} animate={{opacity:phase==='welcome'?1:0,y:0}} transition={phase==='welcome'?{duration:.55,delay:.30,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}} onAnimationComplete={()=>{if(phase==='welcome')setGreetingFinished(true);}}>{greeting}</motion.p>}
    <div className="absolute left-1/2 top-[38%] max-lg:top-[calc(38%-30px)]" style={{transform:'translate(-50%, -50%)'}}>
