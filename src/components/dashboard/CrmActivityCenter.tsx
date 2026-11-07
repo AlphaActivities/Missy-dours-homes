@@ -32,6 +32,9 @@ export default function CrmActivityCenter(){
  }),[items,filter]);
  const requiresAction=(item:CrmActivity)=>Boolean(!item.lead_archived&&!item.archived_at &&
    (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'));
+ // Only one animated border in the entire inbox, regardless of lead volume or filter.
+ const newestActionableId=items.find(item=>requiresAction(item))?.id;
+ const isFeatured=(item:CrmActivity)=>requiresAction(item)&&item.id===newestActionableId;
  const isInProgress=(item:CrmActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
  const isResolved=(item:CrmActivity)=>item.callback_status==='closed'||item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:');
  const execute=async(task:()=>Promise<void>)=>{
@@ -82,11 +85,11 @@ export default function CrmActivityCenter(){
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
-   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(requiresAction(item)?'crm-actionable-notification relative isolate overflow-hidden border-red-500/55 bg-[#281316]/90':isResolved(item)?'border-emerald-500/35 bg-emerald-950/20':isInProgress(item)?'border-[#c8a96e]/55 bg-[#c8a96e]/10':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
+   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(requiresAction(item)?(isFeatured(item)?'crm-actionable-notification relative isolate overflow-hidden border-red-500/65 bg-[#281316]/90 ':'border-red-500/55 bg-[#281316]/90 ')+(item.category==='handoff'?'border-2 border-red-400/75 bg-gradient-to-br from-[#3a161b] to-[#241115] ':''):isResolved(item)?'border-emerald-500/35 bg-emerald-950/20':isInProgress(item)?'border-[#c8a96e]/55 bg-[#c8a96e]/10':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
     <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1">
      <div className="flex flex-wrap items-center gap-2">
-      <strong className="text-sm text-[#f0dfc4]">{item.title}</strong>
-      <span className="rounded border border-[#c8a96e]/25 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#c8a96e]">{categoryLabel(item.category)}</span>
+      <strong className="text-sm text-[#f0dfc4]">{item.category==='handoff' && item.title==='Concierge handoff requested'?'Callback Requested':item.title}</strong>
+      <span className={item.category==='handoff'?'rounded border-2 border-[#c8a96e]/60 bg-[#c8a96e]/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#f0d09b]':'rounded border border-[#c8a96e]/25 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#c8a96e]'}>{categoryLabel(item.category)}</span>
       {requiresAction(item)&&<span className="inline-flex items-center gap-1 rounded-full border border-red-400/55 bg-red-700/20 px-2.5 py-1 text-[10px] font-semibold tracking-[0.025em] text-red-200"><AlertTriangle size={11} aria-hidden="true"/> Needs Attention</span>}
       {!item.read_at&&!item.archived_at&&!item.lead_archived&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
@@ -96,7 +99,7 @@ export default function CrmActivityCenter(){
       <p className="inline-flex items-center gap-1.5 rounded-md border border-red-400/35 bg-red-900/20 px-3 py-2 text-xs font-semibold text-red-200"><AlertTriangle size={13} aria-hidden="true"/> Follow-up required</p>
       <p className="text-xs italic leading-relaxed text-[#cbbbaa]"><span className="block">This inquiry hasn't been handled yet.</span><span className="block">Open the lead or conversation to record the next action.</span></p>
      </div>}
-     <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
+     <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString(undefined,{year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</time>
     </div></div>
     <div className="mt-3 flex flex-wrap items-center gap-2">
      <Link to={item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:safeTarget(item.target_path)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}}
