@@ -83,11 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [retrySession]);
 
   const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     // Authentication is established; warm the count while the route changes.
-    const current=await supabase.auth.getUser();
-    if(current.data.user?.id&&APPROVED_EMAILS.includes(current.data.user.email??''))void preloadCrmAttention(current.data.user.id).catch(()=>{});
+    if(data.user?.id&&APPROVED_EMAILS.includes(data.user.email??''))void preloadCrmAttention(data.user.id).catch(()=>{});
     return { error: null };
   };
 
