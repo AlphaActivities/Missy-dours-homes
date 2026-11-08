@@ -492,6 +492,10 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           <div ref={chatHistoryRef} className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y space-y-4 px-5 py-4 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-live="polite">
             {privateQA && <p className="rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">PRIVATE TEST ONLY. This is not a customer inquiry. Use the reserved callback details and clear the test when finished.</p>}
             <div className="missy-concierge-intro mx-auto w-full max-w-sm py-2 text-center"><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 min-h-[28px] font-serif text-lg tracking-wide text-[#ebd5ae]" aria-label={INTRO_TITLE}><motion.span className="inline-block max-w-full text-left align-top" aria-hidden="true" initial={false} animate={{clipPath: introAnimating || introDone ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)'}} transition={{duration:0.85,ease:'linear'}} onAnimationComplete={()=>{if(introAnimating){setIntroAnimating(false);setIntroDone(true);}}}>{INTRO_TITLE}</motion.span></p></div>
+            {chatEnabled && introDone && !session && <section aria-label="Security check explanation" className="mx-auto w-full max-w-sm rounded-2xl border border-[#b9945d]/35 bg-gradient-to-br from-[#211b14]/95 to-[#12100e]/95 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,230,174,.06)]">
+              <p className="text-center text-xs font-semibold uppercase tracking-[.15em] text-[#e7c58d]">Secure connection</p>
+              <p className="mt-1.5 text-center text-xs leading-relaxed text-[#c3af8d]">Security check: confirming this is a real visitor, not an automated bot. This helps protect your conversation. It may take a moment.</p>
+            </section>}
             {messages.filter(m=>m.id!==0 || welcomeReady).map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[87%] flex-col ${m.role==='visitor'?'items-end':'items-start'}`}>
                 <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'missy-ios-outgoing-bubble rounded-br-[9px] bg-[#0A84FF] text-white shadow-[0_4px_14px_rgba(10,132,255,.17)]' : 'missy-ios-incoming-bubble rounded-bl-[9px] bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
@@ -511,7 +515,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <button type="button" onClick={goToContact} className="mt-2 rounded-full border border-[#dfbf82] bg-[#c5a16a] px-4 py-2 font-semibold text-black transition-transform hover:brightness-110 active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Contact Missy</button>
             </div>}
-            {chatEnabled && introDone && !session && <SecurityCheckCard siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} />}
+            
             {chatEnabled && session && mode === 'ai' && messages.some(m => m.role === 'visitor') && !handoffOpen && <button type="button" onClick={() => setHandoffOpen(true)} disabled={busy} className="inline-flex min-h-9 items-center justify-center rounded-lg border border-[#b99b68]/45 bg-[#211a12]/75 px-3 py-2 text-xs font-medium text-[#d8bc8b] transition-[background-color,border-color,transform] duration-150 hover:border-[#dfbf82] hover:bg-[#33291b] active:scale-[.97] active:bg-[#483722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a] disabled:cursor-not-allowed disabled:opacity-50">Request a team member</button>}
             {chatEnabled && session && mode === 'ai' && handoffOpen && <form onSubmit={e=>{e.preventDefault();void requestHuman();}} className="space-y-3 rounded-2xl border border-[#c6a16c]/45 bg-[#231a11]/80 p-4" aria-label="Request a callback">
               <p className="font-serif text-base text-[#f1d39a]">Connect with Missy’s team</p>
@@ -549,6 +553,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
+          {chatEnabled && introDone && !session && <div className="shrink-0 border-t border-[#b9945d]/15 px-4 pt-3 pb-2 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]"><SecurityCheckCard siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} /></div>}
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
               <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>{
@@ -576,7 +581,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   );
 }
 
-/** One stable security card: real preparation animation, then the actual Cloudflare challenge.
+/** Bottom-anchored verification control: a preparation animation followed by real Cloudflare.
  * The loading bar does not imply that Cloudflare has verified the visitor. */
 function SecurityCheckCard({siteKey,onToken}:{siteKey:string;onToken:(token:string)=>void}) {
  const reducedMotion=useReducedMotion();
@@ -586,10 +591,8 @@ function SecurityCheckCard({siteKey,onToken}:{siteKey:string;onToken:(token:stri
   const timer=window.setTimeout(()=>setChallengeReady(true),1200);
   return()=>window.clearTimeout(timer);
  },[reducedMotion]);
- return <section aria-label="Secure visitor verification" className="mx-auto mb-3 w-full max-w-sm overflow-hidden rounded-2xl border border-[#b9945d]/35 bg-gradient-to-br from-[#211b14]/95 to-[#12100e]/95 p-4 shadow-[inset_0_1px_0_rgba(255,230,174,.06),0_8px_28px_rgba(0,0,0,.18)]">
-  <p className="text-center text-xs font-semibold uppercase tracking-[.15em] text-[#e7c58d]">Secure connection</p>
-  <p className="mt-2 text-center text-xs leading-relaxed text-[#c3af8d]">We check for automated traffic to help protect your conversation. Please complete the security check below.</p>
-  <div className="mt-4 flex min-h-[74px] items-center justify-center">
+ return <section aria-label="Verify you are human" className="mx-auto w-full max-w-sm rounded-xl border border-[#b9945d]/25 bg-[#16130f]/90 px-3 py-2">
+  <div className="flex min-h-[74px] items-center justify-center">
    {challengeReady
     ? <TurnstileVerifier siteKey={siteKey} onToken={onToken}/>
     : <div className="w-full" role="status" aria-label="Preparing secure verification">
