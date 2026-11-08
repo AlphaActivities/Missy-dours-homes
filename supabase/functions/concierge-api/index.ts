@@ -262,6 +262,8 @@ Deno.serve(async req=>{
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   if(ids.length>150||ids.some((id:unknown)=>typeof id!=='string'||!uuid.test(id)))return answer({error:'Invalid receipt list'},400,origin);
   if(ids.length===0)return answer({ok:true},200,origin);
+  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'receipt:'+hash,p_max:240,p_window_seconds:3600});
+  if(limit.error||limit.data!==true)return answer({error:'Receipt limit reached'},429,origin);
   const read=body.read===true;
   const {data:ackErrorData,error:ackError}=await db.from('ai_conversation_messages')
    .update({delivered_to_visitor_at:new Date().toISOString()})
