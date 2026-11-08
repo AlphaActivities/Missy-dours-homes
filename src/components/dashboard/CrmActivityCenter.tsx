@@ -67,7 +67,7 @@ export default function CrmActivityCenter(){
   if(filter==='handoff')return e.category==='handoff'||e.category==='escalation';
   return e.category===filter;
  }),[items,activeEvents,filter,previewActive]);
- const requiresAction=(item:CrmActivity)=>Boolean(!item.lead_archived&&!item.archived_at &&
+ const requiresAction=(item:CrmActivity)=>Boolean(item.category!=='opportunity'&&!item.lead_archived&&!item.archived_at &&
    (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'));
  // Every actionable card receives a matching category-colored border sweep;
  // informational or completed cards keep a quiet, premium static border.
