@@ -713,6 +713,24 @@
 .ds-shell .crm-category-notification[data-category="escalation"][data-work-state="action"] {
   border-color: rgba(225, 101, 105, .82);
 }
+/* Same card identity survives the handoff -> escalation transition.
+   A restrained 650ms color handover conveys elevated urgency without a flash. */
+.ds-shell .crm-category-notification[data-urgent-transition="true"] {
+  animation: crm-request-escalate-in 650ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes crm-request-escalate-in {
+  from {
+    border-color: rgba(125, 187, 181, .65);
+    box-shadow: 0 0 0 1px rgba(125, 187, 181, .25), 0 0 17px rgba(125, 187, 181, .15);
+  }
+  to {
+    border-color: rgba(225, 101, 105, .82);
+    box-shadow: 0 0 0 1px rgba(207, 119, 100, .25), 0 0 20px rgba(207, 119, 100, .18);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-shell .crm-category-notification[data-urgent-transition="true"] { animation: none; }
+}
 
 /* The featured outstanding item retains its living border, now tinted by
    the notification's own category. Red urgency remains on Needs Attention. */
