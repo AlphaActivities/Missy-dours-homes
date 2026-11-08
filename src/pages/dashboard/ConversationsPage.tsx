@@ -23,21 +23,30 @@ export default function ConversationsPage() {
  const selectedDeepLinkRef=useRef<string|null>(null);
  const [selected,setSelected]=useState<string|null>(null);
  const transcriptRef=useRef<HTMLElement|null>(null);
+ const sessionStatusRef=useRef<HTMLDivElement|null>(null);
+ const pendingScrollRef=useRef<string|null>(null);
  const focusConversation=(id:string)=>{
+  pendingScrollRef.current=id;
   setSelected(id);
   setOutcomeOpen(false);
-  // Dashboard uses its own scrolling <main> below a sticky mobile header.
-  // Scroll that container, not the document, after the selection is rendered.
-  window.requestAnimationFrame(()=>{
-   window.requestAnimationFrame(()=>{
-    const target=transcriptRef.current;
-    const scroller=target?.closest('main');
-    if(!target||!scroller)return;
-    const offset=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
-    scroller.scrollTo({top:Math.max(0,scroller.scrollTop+offset-8),behavior:'smooth'});
-   });
-  });
  };
+ // Scroll the dashboard's internal main scroller only after the selected
+ // session panel has actually mounted, not while the card list is still visible.
+ useEffect(()=>{
+  if(!selected||pendingScrollRef.current!==selected)return;
+  const target=sessionStatusRef.current;
+  if(!target)return;
+  pendingScrollRef.current=null;
+  const scroll=()=>{
+   const scroller=target.closest('main');
+   if(!scroller)return;
+   const delta=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
+   scroller.scrollTo({top:Math.max(0,scroller.scrollTop+delta-8),behavior:'instant'});
+  };
+  const frame=window.requestAnimationFrame(()=>window.requestAnimationFrame(scroll));
+  const timeout=window.setTimeout(scroll,160);
+  return()=>{window.cancelAnimationFrame(frame);window.clearTimeout(timeout);};
+ },[selected,items]);
 
  const [messages,setMessages]=useState<Message[]>([]);
  const [attachments,setAttachments]=useState<Attachment[]>([]);
@@ -80,7 +89,14 @@ export default function ConversationsPage() {
   if(tasks.error)throw tasks.error;
   setPendingTasks(tasks.data??[]);
  }catch(e){if(showLoading)setError(e instanceof Error?e.message:'Could not load conversations');}finally{if(showLoading)setLoading(false);}};
- useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(false),15000);return()=>window.clearInterval(timer);},[]);
+ useEffect(()=>{
+  void refresh();
+  const channel=supabase.channel('staff-conversations-live')
+   .on('postgres_changes',{event:'*',schema:'public',table:'ai_conversations'},()=>{void refresh(false);})
+   .subscribe();
+  const timer=window.setInterval(()=>void refresh(false),10000);
+  return()=>{window.clearInterval(timer);void supabase.removeChannel(channel);};
+ },[]);
  useEffect(()=>{
   if(!requestedConversation||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation))return;
   if(selectedDeepLinkRef.current===requestedConversation)return;
@@ -135,8 +151,11 @@ export default function ConversationsPage() {
   };
   setLoadingMessages(true);
   void fetchTranscript();
+  const channel=supabase.channel('staff-transcript-'+selected)
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'ai_conversation_messages',filter:'conversation_id=eq.'+selected},()=>{void fetchTranscript();})
+   .subscribe();
   const interval=window.setInterval(()=>void fetchTranscript(),5000);
-  return()=>{active=false;window.clearInterval(interval);};
+  return()=>{active=false;window.clearInterval(interval);void supabase.removeChannel(channel);};
  },[selected]);
  const openAttachment=async(file:Attachment)=>{
   if(attachmentBusy)return;
@@ -345,7 +364,7 @@ export default function ConversationsPage() {
      <button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>
     </div>
    </div>}
-   {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs" role="status" aria-label="Visitor session status">
+   {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div ref={sessionStatusRef} className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs" role="status" aria-label="Visitor session status">
     {active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='online'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)}
     <strong className={active&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]'}>{active?sessionDisplay(active):'Session status unavailable'}</strong>
     <span className="text-[#bdb1a1]">{active&&sessionState(active)==='expired'?'Visitor cannot continue with the expired token. Use contact details for follow-up.':active&&sessionState(active)==='online'?'A recent verified heartbeat confirms the visitor has this chat open and visible.':active&&sessionState(active)==='away'?'The session is connected, but the visitor has closed or hidden the chat.':'No verified active connection. Message recency and token validity do not prove the visitor is online.'}</span>
