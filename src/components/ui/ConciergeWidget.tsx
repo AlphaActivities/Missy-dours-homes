@@ -1,10 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, X, Send, SmilePlus } from 'lucide-react';
+import { MessageCircle, X, ArrowUp, Plus, Mic, MicOff, SmilePlus, Paperclip } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { navigateToSection } from '../../utils/scrollToSection';
 import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type VisitorSession } from '../../lib/conciergeTransport';
 
+type SpeechResultList = { length: number; [index: number]: { isFinal: boolean; [index: number]: { transcript: string } } };
+type BrowserSpeechRecognition = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: { results: SpeechResultList }) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+type SpeechWindow = Window & {
+  SpeechRecognition?: new () => BrowserSpeechRecognition;
+  webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
+};
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string; sender?: 'ai' | 'human' | 'visitor'; delivered_to_staff_at?:string|null;read_by_staff_at?:string|null };
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy. What happy answer can we find for you?';
@@ -97,6 +113,12 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [invitation, setInvitation] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const speechRef = useRef<BrowserSpeechRecognition | null>(null);
+  const speechStartDraftRef = useRef('');
+  const [listening, setListening] = useState(false);
+  const [voiceFeedback, setVoiceFeedback] = useState<string | null>(null);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
@@ -116,6 +138,75 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [transportError, setTransportError] = useState<string | null>(null);
   const [mode, setMode] = useState<'ai'|'human'|'waiting_human'|'closed'>('ai');
   const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '0x4AAAAAAFoyCod-DYcyxjUw');
+  const chatEnabled = privateQA || Boolean(turnstileSiteKey);
+  const mayUpload = chatEnabled && !!session && !uploadBusy && (privateQA || mode === 'human');
+  const mayCompose = chatEnabled && welcomeReady && !!session && !busy && mode !== 'closed' && mode !== 'waiting_human';
+  // Browsers may supply recognition through Apple's webkit-prefixed API.
+  // Never claim it works until the microphone actually starts.
+  const stopDictation = () => {
+    if (speechRef.current) speechRef.current.stop();
+  };
+  const startDictation = () => {
+    setVoiceFeedback(null);
+    if (!mayCompose) return;
+    if (listening) { stopDictation(); return; }
+    const browser = window as SpeechWindow;
+    const Engine = browser.SpeechRecognition || browser.webkitSpeechRecognition;
+    if (!Engine) {
+      setVoiceFeedback('Speech recognition is unavailable in this browser. Use the microphone on your phone keyboard instead.');
+      inputRef.current?.focus();
+      return;
+    }
+    const recognition = new Engine();
+    speechStartDraftRef.current = draft;
+    recognition.lang = ({en:'en-US',es:'es-ES',fr:'fr-FR',pt:'pt-BR',zh:'zh-CN'} as Record<string,string>)[language] || 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = event => {
+      const parts: string[] = [];
+      for (let i = 0; i < event.results.length; i++) {
+        const transcript = event.results[i]?.[0]?.transcript;
+        if (transcript) parts.push(transcript.trim());
+      }
+      const spoken = parts.join(' ').trim();
+      const prefix = speechStartDraftRef.current.trim();
+      setDraft([prefix, spoken].filter(Boolean).join(' ').slice(0, 2000));
+    };
+    recognition.onerror = event => {
+      const reason = event.error;
+      if (reason === 'no-speech') setVoiceFeedback('No speech detected. Tap the microphone to try again.');
+      else if (reason === 'not-allowed' || reason === 'service-not-allowed') setVoiceFeedback('Microphone permission was denied. Enable it in browser settings or use keyboard dictation.');
+      else if (reason !== 'aborted') setVoiceFeedback('Voice transcription could not continue. Your text is saved; use keyboard dictation if needed.');
+      setListening(false);
+    };
+    recognition.onend = () => {
+      if (speechRef.current === recognition) speechRef.current = null;
+      setListening(false);
+    };
+    try {
+      speechRef.current = recognition;
+      recognition.start();
+      setListening(true);
+    } catch {
+      speechRef.current = null;
+      setListening(false);
+      setVoiceFeedback('Could not start microphone. Check permissions or use the keyboard microphone.');
+    }
+  };
+  useEffect(() => () => { speechRef.current?.abort(); speechRef.current = null; }, []);
+  useEffect(() => {
+    if (!open) {
+      speechRef.current?.abort();
+      setListening(false);
+      setAttachmentMenuOpen(false);
+    }
+  }, [open]);
+  useEffect(() => {
+    const textarea = inputRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 112) + 'px';
+  }, [draft, open]);
   const sessionRef = useRef<VisitorSession | null>(null);
   const transport = privateQA ? conciergeQaTransport : conciergeTransport;
   const sessionKey = privateQA ? PRIVATE_QA_SESSION_KEY : SESSION_KEY;
@@ -138,7 +229,6 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     setReactionPicker(null);
   };
   // UI-only feature flag. This is not a security boundary.
-  const chatEnabled = privateQA || Boolean(turnstileSiteKey); // Public launch approved; backend launch control enforces whether visitor API requests are accepted.
 
   useEffect(() => { sessionStorage.setItem(LANGUAGE_KEY, language); }, [language]);
 
@@ -421,12 +511,12 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
 
   const uploadAttachment = async (file: File) => {
     const visitor = sessionRef.current ?? session;
-    if (!visitor || mode !== 'human' || uploadBusy || !chatEnabled || privateQA) return;
+    if (!visitor || (mode !== 'human' && !privateQA) || uploadBusy || !chatEnabled) return;
     setUploadBusy(true);
     setUploadFeedback(null);
     try {
-      const response = await conciergeTransport.uploadAttachment(visitor, file);
-      setUploadFeedback('Securely received ' + (response.filename || 'your attachment') + '. Missy’s team can review it.');
+      const response = privateQA ? await conciergeQaTransport.uploadAttachment(visitor, file) : await conciergeTransport.uploadAttachment(visitor, file);
+      setUploadFeedback('Securely received ' + (response.filename || 'your attachment') + (privateQA ? ' in private QA.' : '. Missy’s team can review it.'));
     } catch (error) {
       setUploadFeedback(error instanceof Error ? error.message : 'Could not upload attachment.');
     } finally {setUploadBusy(false);}
@@ -536,14 +626,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                 <button type="button" onClick={()=>setHandoffOpen(false)} className="text-xs text-[#e5d4ba] underline">Keep chatting</button>
               </div>
             </form>}
-            {mode === 'human' && <div className="space-y-2"><p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation.</p>
-              {!privateQA && <label className="inline-flex cursor-pointer items-center rounded-lg border border-[#c6a16c]/50 px-3 py-2 text-xs text-[#ebca90]">
-                {uploadBusy ? 'Uploading attachment…' : 'Share a photo or PDF with Missy’s team'}
-                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={uploadBusy||!chatEnabled} className="sr-only" onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAttachment(file);e.target.value='';}}/>
-              </label>}
-              {!privateQA && <p className="text-[11px] text-[#ae9b7f]">Human assistance only · Max 10 MB · JPG, PNG, WEBP, or PDF</p>}
-              {uploadFeedback && <p role="status" className="text-xs text-[#eedab5]">{uploadFeedback}</p>}
-            </div>}
+            {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation. You can now share photos or PDFs using the + button.</p>}
             {mode === 'waiting_human' && <div className="space-y-3 rounded-2xl border border-[#c6a16c]/30 bg-[#21190f]/60 p-4">
               <p className="text-sm leading-relaxed text-[#f0d6a5]">Waiting for a team member. Need a faster response? You can also reach Missy through the website.</p>
               <button type="button" onClick={goToContact} className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center rounded-xl border border-[#f0d49d] bg-gradient-to-r from-[#efd49f] via-[#d9b878] to-[#c6a065] px-6 py-3 text-sm font-semibold text-[#1c150c] shadow-[0_8px_24px_rgba(197,161,106,.22)] transition-[transform,filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_10px_28px_rgba(197,161,106,.34)] active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">
@@ -554,25 +637,36 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
           {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-4 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
-          <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
-            <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
-              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>{
-                const nextDraft=e.target.value;
-                setDraft(nextDraft);
-                // One early engagement alert per verified conversation.
-                // Do not capture drafts, notify on every keystroke, or use private QA.
-                const visitor=sessionRef.current??session;
-                if(!privateQA&&visitor&&mode==='ai'&&nextDraft.trim().length>=2
-                   &&!typingNotifiedRef.current.has(visitor.conversation_id)){
-                  typingNotifiedRef.current.add(visitor.conversation_id);
-                  void conciergeTransport.typing(visitor).catch(()=>{
-                   // A failed alert must not turn every subsequent keystroke
-                   // into a retry storm. Chat remains fully usable.
-                  });
-                }
-               }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] min-w-0 flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-base text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
-              <button type="submit" disabled={!chatEnabled || !welcomeReady || busy || !session || !draft.trim() || mode === 'waiting_human' || mode === 'closed'} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
+          <div className="missy-concierge-composer relative z-10 shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
+            <form onSubmit={e => {e.preventDefault();if(mayCompose&&!listening)sendMessage();}} className="flex items-end gap-2" aria-label="Message composer">
+              <div className="relative shrink-0">
+                <button type="button" onClick={()=>setAttachmentMenuOpen(opened=>!opened)} aria-label="Attachments" aria-expanded={attachmentMenuOpen} className="flex h-11 w-11 items-center justify-center rounded-full border border-[#99856b]/45 bg-[#302920] text-[#e4cba2] transition-colors hover:bg-[#453827] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e4c58b]"><Plus size={24}/></button>
+                {attachmentMenuOpen && <div className="absolute bottom-[calc(100%+12px)] left-0 z-30 w-[min(290px,calc(100vw-40px))] rounded-2xl border border-[#b9945d]/40 bg-[#211c19] p-3 text-[#f0e5d4] shadow-[0_18px_45px_rgba(0,0,0,.55)]" role="group" aria-label="Attachment options">
+                  <button type="button" disabled={!mayUpload} onClick={()=>{setAttachmentMenuOpen(false);fileInputRef.current?.click();}} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"><Paperclip size={20}/> Photos or files</button>
+                  <p className="mt-2 px-2 text-xs leading-relaxed text-[#c2ae8f]">{privateQA?'Owner-only QA: test uploads are permitted here before handoff.':'For privacy, attachments become available once you connect with Missy’s team.'}</p>
+                  <p className="mt-1 px-2 text-[11px] text-[#ab987f]">JPG, PNG, WEBP or PDF, up to 10 MB</p>
+                </div>}
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" aria-label="Choose a photo or document" className="sr-only" disabled={!mayUpload} onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAttachment(file);e.target.value='';}}/>
+              </div>
+              <div className="relative min-w-0 flex-1">
+                <textarea ref={inputRef} rows={1} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!mayCompose} readOnly={listening} value={draft} onChange={e=>{
+                  const nextDraft=e.target.value;
+                  setDraft(nextDraft);
+                  const visitor=sessionRef.current??session;
+                  if(!privateQA&&visitor&&mode==='ai'&&nextDraft.trim().length>=2
+                    &&!typingNotifiedRef.current.has(visitor.conversation_id)){
+                    typingNotifiedRef.current.add(visitor.conversation_id);
+                    void conciergeTransport.typing(visitor).catch(()=>{});
+                  }
+                }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(mayCompose&&!listening)sendMessage();}}} className="block max-h-28 min-h-[48px] w-full resize-none overflow-y-auto rounded-[25px] border border-[#6d6662]/60 bg-[#242427] px-4 py-[11px] pr-12 text-base leading-6 text-white outline-none placeholder:text-[#898991] focus:border-[#d3bb93] disabled:cursor-not-allowed disabled:opacity-50" />
+                {(!draft.trim() || listening) && <button type="button" onClick={startDictation} disabled={!mayCompose} aria-label={listening?'Stop dictation':'Dictate message'} aria-pressed={listening} className={`absolute bottom-[5px] right-[5px] flex h-[38px] w-[38px] items-center justify-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5d89a] disabled:opacity-40 ${listening?'bg-[#773e42] text-white':'text-[#bdbec4] hover:bg-white/10'}`}>{listening?<MicOff size={20}/>:<Mic size={20}/>}</button>}
+              </div>
+              {draft.trim() && !listening && <button type="submit" disabled={!mayCompose||listening} aria-label="Send message" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#c5a16a] text-[#16110b] transition-[transform,opacity] active:scale-95 disabled:opacity-40"><ArrowUp size={23} strokeWidth={2.7}/></button>}
             </form>
+            {listening && <p role="status" className="mt-2 text-center text-xs text-[#efd3a5]">Listening… tap the microphone to finish. Review your text before sending.</p>}
+            {voiceFeedback && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">{voiceFeedback}</p>}
+            {uploadBusy && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">Uploading your attachment securely…</p>}
+            {uploadFeedback && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">{uploadFeedback}</p>}
             <div className="mt-2 text-center text-[10px] leading-relaxed text-[#988b77]"><p>AI information may be incomplete.</p><p>Missy confirms property availability and details.</p></div>
           </div>
         </section>

@@ -93,7 +93,30 @@ async function qaRequest<T>(path:string,data:unknown,visitorToken?:string):Promi
   if(!response.ok)throw new Error(result.error||'Private visitor test failed.');
   return result;
 }
+async function qaUploadAttachment(session: VisitorSession, file: File): Promise<{id:string;filename:string;bytes:number}> {
+  if(!qaEndpoint||!publicKey) throw new Error('Private test is not configured.');
+  if(file.size <= 0 || file.size > 10485760) throw new Error('Choose a file smaller than 10 MB.');
+  if(!['image/jpeg','image/png','image/webp','application/pdf'].includes(file.type)) throw new Error('Only JPG, PNG, WEBP and PDF files are supported.');
+  const {supabase}=await import('./supabase');
+  const {data:auth,error}=await supabase.auth.getSession();
+  const ownerToken=auth.session?.access_token;
+  if(error||!ownerToken||auth.session?.user?.email?.toLowerCase()!=='yourcustomerflowguy@gmail.com') throw new Error('Sign in as owner to test attachments.');
+  const response=await fetch(qaEndpoint+'/attachment-upload',{
+    method:'POST',mode:'cors',
+    headers:{apikey:publicKey,Authorization:'Bearer '+session.token,
+      'X-Concierge-QA-Authorization':'Bearer '+ownerToken,
+      'Content-Type':'application/octet-stream',
+      'X-File-Name':encodeURIComponent(file.name),
+      'X-File-Type':file.type},
+    body:file,signal:AbortSignal.timeout(60000)
+  });
+  const payload=await response.json().catch(()=>({})) as {id?:string;filename?:string;bytes?:number;error?:string};
+  if(!response.ok)throw new Error(payload.error||'Private attachment test failed.');
+  if(!payload.id)throw new Error('No attachment receipt was returned.');
+  return {id:payload.id,filename:payload.filename||file.name,bytes:payload.bytes||file.size};
+}
 export const conciergeQaTransport={
+  uploadAttachment: qaUploadAttachment,
   start:(challenge:string)=>qaRequest<VisitorSession>('/session',{challenge}),
   send:(session:VisitorSession,message:string,language='auto')=>qaRequest<{reply?:string;language?:string;conversation_id:string;status?:string}>('/message',{message,language},session.token),
   handoff:(session:VisitorSession,message:string,contact:{name:string;phone:string;contact_consent:boolean})=>qaRequest<{status:string;conversation_id:string}>('/handoff',{message,...contact},session.token),
