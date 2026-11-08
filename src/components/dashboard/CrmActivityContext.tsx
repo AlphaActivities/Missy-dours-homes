@@ -4,7 +4,7 @@ import {useAuth} from '../../contexts/AuthContext';
 import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound,type CrmSound} from './crmSounds';
 
 export type ActivityCategory='lead'|'handoff'|'escalation'|'staff';
-export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;chat_lead_audit?:boolean;}
+export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;chat_lead_audit?:boolean;}
 export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'sound_staff';
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
@@ -72,7 +72,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const callback_status=task?.status==='claimed'?'claimed':convo?.status==='waiting_human'?'waiting_human':
     convo?.status==='closed'?'closed':task?.status??null;
    return {...e,lead_status:id?(statuses.get(id)??null):null,
-    callback_status,callback_lead_id:convo?.lead_id??null,
+    callback_status,callback_lead_id:convo?.lead_id??null,callback_conversation_id:task?.conversation_id??null,
     chat_lead_audit:e.category==='lead'&&Boolean(id)&&sources.get(id)==='AI Concierge'&&chatLeadIds.has(id)};
   });
  };
