@@ -157,14 +157,14 @@ try {
  // The real human agent's message is reactable, never the welcome, AI, or visitor messages.
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),1);
  assert.equal(await dialog.getByRole('button',{name:'React to message 0'}).count(),0);
- assert.equal(await dialog.getByRole('button',{name:'React to message m2'}).count(),0);
- await dialog.getByRole('button',{name:'React to message m3'}).click();
+ assert.equal(await dialog.getByRole('button',{name:'React to message 11111111-1111-4111-8111-111111111113'}).count(),0);
+ await dialog.getByRole('button',{name:'React to message 11111111-1111-4111-8111-111111111114'}).click();
  const choices=dialog.getByRole('group',{name:'Choose a message reaction'});
  assert.equal(await choices.getByRole('button').count(),5);
  assert.equal(await choices.getByRole('button',{name:'React with 😊'}).count(),1);
  assert.equal(await choices.getByRole('button',{name:'React with 😂'}).count(),0);
  await choices.getByRole('button',{name:'React with ❤️'}).click();
- assert.equal(await dialog.getByRole('button',{name:'React to message m3'}).getByText('❤️').count(),1);
+ assert.equal(await dialog.getByRole('button',{name:'React to message 11111111-1111-4111-8111-111111111114'}).getByText('❤️').count(),1);
  assert.ok(await page.evaluate(()=>sessionStorage.getItem('missy_concierge_reactions_11111111-1111-4111-8111-111111111111')?.includes('❤️')));
  await dialog.locator('input[type=file]').setInputFiles({
   name:'sample.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 fake file')
