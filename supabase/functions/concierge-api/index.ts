@@ -114,7 +114,7 @@ Deno.serve(async req=>{
   if(!verdict.success||!['missydours.com','www.missydours.com'].includes(verdict.hostname??''))return answer({error:'Verification failed'},403,origin);
   const ip=(req.headers.get('x-forwarded-for')??'').split(',')[0].trim();
   const ipKey=await digest('ip:'+ip);
-  const limited=await db.rpc('ai_concierge_consume_limit',{p_bucket:'session:'+ipKey,p_max:8,p_window_seconds:3600});
+  const limited=await db.rpc('ai_concierge_consume_limit',{p_bucket:'session:'+ipKey,p_max:20,p_window_seconds:3600});
   if(limited.error||limited.data!==true)return answer({error:'Please try again later'},429,origin);
   const token=randomToken(), hash=await digest(token);
   const {data,error}=await db.from('ai_conversations').insert({visitor_token_hash:hash,visitor_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),title:'New conversation',status:'ai'}).select('id').single();
