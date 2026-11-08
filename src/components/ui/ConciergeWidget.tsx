@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, X, ArrowUp, Plus, Mic, MicOff, SmilePlus, Paperclip } from 'lucide-react';
+import { MessageCircle, X, ArrowUp, Plus, Mic, Square, SmilePlus, Paperclip } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { navigateToSection } from '../../utils/scrollToSection';
@@ -45,6 +45,21 @@ function formatCallbackPhone(value: string) {
   return '('+digits.slice(0,3)+') '+digits.slice(3,6)+'-'+digits.slice(6);
 }
 
+
+/** Active speech recognition indicator. The animated bars signal an open
+ * listening session; they deliberately do not pretend to measure audio volume. */
+function ListeningWaveform() {
+  const reducedMotion = useReducedMotion();
+  return <span className="inline-flex h-5 items-center justify-center gap-[3px]" aria-hidden="true">
+    {[9, 16, 12, 18].map((height, index) => <motion.span
+      key={index}
+      className="block w-[3px] rounded-full bg-current"
+      style={{ height }}
+      animate={reducedMotion ? { scaleY: 1 } : { scaleY: [0.45, 1, 0.6, 0.85, 0.45] }}
+      transition={reducedMotion ? { duration: 0 } : { duration: 1.05, repeat: Infinity, delay: index * 0.12, ease: 'easeInOut' }}
+    />)}
+  </span>;
+}
 
 /** Compact iMessage-inspired incoming typing indicator, without exaggerated dot bouncing. */
 function AssistantTypingBubble() {
@@ -658,12 +673,12 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                     typingNotifiedRef.current.add(visitor.conversation_id);
                     void conciergeTransport.typing(visitor).catch(()=>{});
                   }
-                }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(mayCompose&&!listening)sendMessage();}}} className="block max-h-28 min-h-[48px] w-full resize-none overflow-y-auto rounded-[25px] border border-[#6d6662]/60 bg-[#242427] px-4 py-[11px] pr-12 text-base leading-6 text-white outline-none placeholder:text-[#898991] focus:border-[#d3bb93] disabled:cursor-not-allowed disabled:opacity-50" />
-                {(!draft.trim() || listening) && <button type="button" onClick={startDictation} disabled={!mayCompose} aria-label={listening?'Stop dictation':'Dictate message'} aria-pressed={listening} className={`absolute bottom-[5px] right-[5px] flex h-[38px] w-[38px] items-center justify-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5d89a] disabled:opacity-40 ${listening?'bg-[#773e42] text-white':'text-[#bdbec4] hover:bg-white/10'}`}>{listening?<MicOff size={20}/>:<Mic size={20}/>}</button>}
+                }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(mayCompose&&!listening)sendMessage();}}} className={`block max-h-28 min-h-[48px] w-full resize-none overflow-y-auto rounded-[25px] border bg-[#242427] px-4 py-[11px] text-base leading-6 text-white outline-none placeholder:text-[#898991] focus:border-[#d3bb93] disabled:cursor-not-allowed disabled:opacity-50 ${listening?'border-[#c5a16a]/75 pr-[80px]':'border-[#6d6662]/60 pr-12'}`} />
+                {(!draft.trim() || listening) && <button type="button" onClick={startDictation} disabled={!mayCompose} aria-label={listening?'Stop dictation and keep transcribed text':'Start voice dictation'} aria-pressed={listening} title={listening?'Tap to stop listening':'Dictate your message'} className={`absolute bottom-[5px] right-[5px] flex h-[38px] items-center justify-center gap-[5px] rounded-full transition-[width,background-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5d89a] disabled:opacity-40 ${listening?'w-[66px] bg-[#c5a16a] text-[#18130c] shadow-[0_0_0_3px_rgba(197,161,106,.16)]':'w-[38px] text-[#bdbec4] hover:bg-white/10'}`}>{listening?<><ListeningWaveform/><Square size={10} strokeWidth={2.4} fill="currentColor"/></>:<Mic size={20}/>}</button>}
               </div>
               {draft.trim() && !listening && <button type="submit" disabled={!mayCompose||listening} aria-label="Send message" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#c5a16a] text-[#16110b] transition-[transform,opacity] active:scale-95 disabled:opacity-40"><ArrowUp size={23} strokeWidth={2.7}/></button>}
             </form>
-            {listening && <p role="status" className="mt-2 text-center text-xs text-[#efd3a5]">Listening… tap the microphone to finish. Review your text before sending.</p>}
+            {listening && <div role="status" aria-live="polite" className="mt-2 flex items-center justify-center gap-2 text-xs text-[#efd3a5]"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#c5a16a] animate-pulse motion-reduce:animate-none"/><span><strong className="font-semibold">Listening live</strong> · Your words appear above. Tap the waveform to finish.</span></div>}
             {voiceFeedback && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">{voiceFeedback}</p>}
             {uploadBusy && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">Uploading your attachment securely…</p>}
             {uploadFeedback && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">{uploadFeedback}</p>}
