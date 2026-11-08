@@ -201,6 +201,12 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       setAttachmentMenuOpen(false);
     }
   }, [open]);
+  useEffect(() => {
+    const textarea = inputRef.current;
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 112) + 'px';
+  }, [draft, open]);
   const sessionRef = useRef<VisitorSession | null>(null);
   const transport = privateQA ? conciergeQaTransport : conciergeTransport;
   const sessionKey = privateQA ? PRIVATE_QA_SESSION_KEY : SESSION_KEY;
@@ -631,25 +637,36 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
           {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-4 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
-          <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
-            <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
-              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>{
-                const nextDraft=e.target.value;
-                setDraft(nextDraft);
-                // One early engagement alert per verified conversation.
-                // Do not capture drafts, notify on every keystroke, or use private QA.
-                const visitor=sessionRef.current??session;
-                if(!privateQA&&visitor&&mode==='ai'&&nextDraft.trim().length>=2
-                   &&!typingNotifiedRef.current.has(visitor.conversation_id)){
-                  typingNotifiedRef.current.add(visitor.conversation_id);
-                  void conciergeTransport.typing(visitor).catch(()=>{
-                   // A failed alert must not turn every subsequent keystroke
-                   // into a retry storm. Chat remains fully usable.
-                  });
-                }
-               }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] min-w-0 flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-base text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
-              <button type="submit" disabled={!chatEnabled || !welcomeReady || busy || !session || !draft.trim() || mode === 'waiting_human' || mode === 'closed'} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
+          <div className="missy-concierge-composer relative z-10 shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
+            <form onSubmit={e => {e.preventDefault();if(mayCompose&&!listening)sendMessage();}} className="flex items-end gap-2" aria-label="Message composer">
+              <div className="relative shrink-0">
+                <button type="button" onClick={()=>setAttachmentMenuOpen(opened=>!opened)} aria-label="Attachments" aria-expanded={attachmentMenuOpen} className="flex h-11 w-11 items-center justify-center rounded-full border border-[#99856b]/45 bg-[#302920] text-[#e4cba2] transition-colors hover:bg-[#453827] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e4c58b]"><Plus size={24}/></button>
+                {attachmentMenuOpen && <div className="absolute bottom-[calc(100%+12px)] left-0 z-30 w-[min(290px,calc(100vw-40px))] rounded-2xl border border-[#b9945d]/40 bg-[#211c19] p-3 text-[#f0e5d4] shadow-[0_18px_45px_rgba(0,0,0,.55)]" role="group" aria-label="Attachment options">
+                  <button type="button" disabled={!mayUpload} onClick={()=>{setAttachmentMenuOpen(false);fileInputRef.current?.click();}} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"><Paperclip size={20}/> Photos or files</button>
+                  <p className="mt-2 px-2 text-xs leading-relaxed text-[#c2ae8f]">{privateQA?'Owner-only QA: test uploads are permitted here before handoff.':'For privacy, attachments become available once you connect with Missy’s team.'}</p>
+                  <p className="mt-1 px-2 text-[11px] text-[#ab987f]">JPG, PNG, WEBP or PDF, up to 10 MB</p>
+                </div>}
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" aria-label="Choose a photo or document" className="sr-only" disabled={!mayUpload} onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAttachment(file);e.target.value='';}}/>
+              </div>
+              <div className="relative min-w-0 flex-1">
+                <textarea ref={inputRef} rows={1} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!mayCompose} readOnly={listening} value={draft} onChange={e=>{
+                  const nextDraft=e.target.value;
+                  setDraft(nextDraft);
+                  const visitor=sessionRef.current??session;
+                  if(!privateQA&&visitor&&mode==='ai'&&nextDraft.trim().length>=2
+                    &&!typingNotifiedRef.current.has(visitor.conversation_id)){
+                    typingNotifiedRef.current.add(visitor.conversation_id);
+                    void conciergeTransport.typing(visitor).catch(()=>{});
+                  }
+                }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(mayCompose&&!listening)sendMessage();}}} className="block max-h-28 min-h-[48px] w-full resize-none overflow-y-auto rounded-[25px] border border-[#6d6662]/60 bg-[#242427] px-4 py-[11px] pr-12 text-base leading-6 text-white outline-none placeholder:text-[#898991] focus:border-[#d3bb93] disabled:cursor-not-allowed disabled:opacity-50" />
+                {!draft.trim() && <button type="button" onClick={startDictation} disabled={!mayCompose} aria-label={listening?'Stop dictation':'Dictate message'} aria-pressed={listening} className={`absolute bottom-[5px] right-[5px] flex h-[38px] w-[38px] items-center justify-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5d89a] disabled:opacity-40 ${listening?'bg-[#773e42] text-white':'text-[#bdbec4] hover:bg-white/10'}`}>{listening?<MicOff size={20}/>:<Mic size={20}/>}</button>}
+              </div>
+              {draft.trim() && <button type="submit" disabled={!mayCompose||listening} aria-label="Send message" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#c5a16a] text-[#16110b] transition-[transform,opacity] active:scale-95 disabled:opacity-40"><ArrowUp size={23} strokeWidth={2.7}/></button>}
             </form>
+            {listening && <p role="status" className="mt-2 text-center text-xs text-[#efd3a5]">Listening… tap the microphone to finish. Review your text before sending.</p>}
+            {voiceFeedback && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">{voiceFeedback}</p>}
+            {uploadBusy && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">Uploading your attachment securely…</p>}
+            {uploadFeedback && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">{uploadFeedback}</p>}
             <div className="mt-2 text-center text-[10px] leading-relaxed text-[#988b77]"><p>AI information may be incomplete.</p><p>Missy confirms property availability and details.</p></div>
           </div>
         </section>
