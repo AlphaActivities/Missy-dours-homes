@@ -54,7 +54,9 @@ export default function ConversationsPage() {
  const [handoffNotes,setHandoffNotes]=useState('');
  const [followupAt,setFollowupAt]=useState('');
  const [reply,setReply]=useState('');
- const [leadCandidates,setLeadCandidates]=useState<Array<{id:string;name:string;phone:string|null}>>([]);
+ type LeadCandidate = {id:string;name:string;phone:string|null;created_at:string|null;status:string|null};
+ const [leadCandidates,setLeadCandidates]=useState<LeadCandidate[]>([]);
+ const [showAllCandidates,setShowAllCandidates]=useState(false);
  const [candidateId,setCandidateId]=useState('');
  const [linkBusy,setLinkBusy]=useState(false);
  const [translatedDraft,setTranslatedDraft]=useState<{text:string;conversation:string;original:string;language:string}|null>(null);
@@ -171,14 +173,25 @@ export default function ConversationsPage() {
 
  useEffect(()=>{
   let live=true;
-  setCandidateId('');setLeadCandidates([]);
+  setCandidateId('');setLeadCandidates([]);setShowAllCandidates(false);
   const c=items.find(x=>x.id===selected);
   if(!c || c.lead_id || !c.visitor_phone || !['waiting_human','human'].includes(c.status))return;
-  const digits=(value:string)=>value.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
-  void supabase.from('leads').select('id,name,phone').limit(500).then(({data,error})=>{
+  void supabase.rpc('crm_review_phone_lead_candidates',{p_phone:c.visitor_phone}).then(({data,error})=>{
    if(!live)return;
    if(error){setError(error.message);return;}
-   setLeadCandidates((data??[]).filter(lead=>lead.phone && digits(lead.phone)===digits(c.visitor_phone??'')));
+   const normalize=(value:string)=>value.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+   const visitor=normalize(c.visitor_name??'');
+   const candidates=((data??[]) as LeadCandidate[]).slice();
+   candidates.sort((a,b)=>{
+    const score=(lead:LeadCandidate)=>{
+     const name=normalize(lead.name||'');
+     return visitor&&name===visitor?2:visitor&&name&&(visitor.includes(name)||name.includes(visitor))?1:0;
+    };
+    const aTime=Date.parse(a.created_at??'')||0;
+    const bTime=Date.parse(b.created_at??'')||0;
+    return score(b)-score(a)||bTime-aTime||a.id.localeCompare(b.id);
+   });
+   setLeadCandidates(candidates);
   });
   return()=>{live=false;};
  },[selected,active?.lead_id,active?.visitor_phone,active?.status]);
@@ -284,12 +297,28 @@ export default function ConversationsPage() {
    {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
     <strong className="text-amber-200">Contact identity review required</strong>
     <p className="text-[#dec9a5]">This callback is not linked to a lead. Verify the visitor’s name and phone. Do not merge different people who share a number.</p>
-    {leadCandidates.length>0&&<label className="block text-[#efd5a5]">Matching phone records
-     <select aria-label="Select reviewed lead" className="mt-2 w-full rounded-lg border border-[#c8a96e]/30 bg-[#21190f] p-3 text-white" value={candidateId} onChange={e=>setCandidateId(e.target.value)}>
-      <option value="">Choose the confirmed person…</option>
-      {leadCandidates.map(lead=><option key={lead.id} value={lead.id}>{lead.name} · {lead.phone}</option>)}
-     </select>
-    </label>}
+    <div className="space-y-3">
+     <div className="flex flex-wrap items-center justify-between gap-2">
+      <h3 className="text-sm font-semibold text-[#efd5a5]">Potential phone matches {leadCandidates.length>0&&<span className="font-normal text-[#bfae93]">({leadCandidates.length})</span>}</h3>
+      <span className="rounded-full border border-amber-400/25 px-2 py-1 text-[10px] text-amber-200">Identity not verified</span>
+     </div>
+     {leadCandidates.length===0?<p className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">No existing records matched this callback number. Create a separate lead after verifying the caller.</p>:
+      <div role="group" aria-label="Potential matching CRM leads" className="space-y-2">
+       {leadCandidates.slice(0,showAllCandidates?leadCandidates.length:4).map(lead=><button key={lead.id} type="button" aria-pressed={candidateId===lead.id}
+         onClick={()=>setCandidateId(current=>current===lead.id?'':lead.id)}
+         className={'flex min-h-[82px] w-full items-start gap-3 rounded-xl border p-3 text-left transition-[border-color,background-color,box-shadow] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e7bd72] '+(candidateId===lead.id?'border-[#e9c47b] bg-[#8a6229]/25 shadow-[inset_0_1px_0_rgba(255,226,163,.12),0_0_14px_rgba(216,172,88,.10)]':'border-[#a8844f]/35 bg-[#211910]/75 hover:border-[#d3ad71]/60')}>
+          <span className={'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border '+(candidateId===lead.id?'border-[#f4d18c] bg-[#e5ba71] text-black':'border-[#b79d70] text-transparent')} aria-hidden="true">✓</span>
+          <span className="min-w-0 flex-1 space-y-1">
+           <span className="block break-words text-sm font-semibold text-[#f5e1bc]">{lead.name||'Unnamed contact'}</span>
+           <span className="block text-xs text-[#d6c4aa]">{lead.phone||'Phone unavailable'}</span>
+           <span className="block text-[11px] text-[#b7a58e]">Created {lead.created_at?new Date(lead.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'date unavailable'}{lead.status?' · '+lead.status:''}</span>
+          </span>
+          {candidateId===lead.id&&<span className="shrink-0 text-[10px] font-medium text-[#f0ce8d]">Selected</span>}
+         </button>)}
+       {leadCandidates.length>4&&<button type="button" className="min-h-11 w-full rounded-lg border border-[#c8a96e]/35 px-3 py-2 text-sm text-[#e5c78f]" onClick={()=>setShowAllCandidates(value=>!value)}>{showAllCandidates?'Show fewer matches':`Show all ${leadCandidates.length} matches`}</button>}
+       <p className="text-[11px] leading-relaxed text-[#bca887]">Candidates share a phone number, not necessarily an identity. Confirm the person before linking.</p>
+      </div>}
+    </div>}
     <div className="flex flex-wrap gap-2">
      {leadCandidates.length>0&&<button type="button" disabled={!candidateId||linkBusy} onClick={()=>void linkReviewed(false)} className="rounded-lg bg-[#c8a96e] px-3 py-2 font-semibold text-black disabled:opacity-40">Link Confirmed Lead</button>}
      <button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>
