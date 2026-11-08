@@ -75,3 +75,29 @@ create trigger crm_live_opportunity_changed
  after update of opportunity_kind on public.ai_conversations
  for each row when (new.opportunity_kind is distinct from old.opportunity_kind)
  execute function public.crm_record_live_opportunity();
+
+-- Keep Activity Inbox totals consistent with the active/live-only card policy.
+-- Opportunity cards are informational; once a staff member claims or the chat
+-- closes, they belong to History without remaining in active or unread counts.
+do $migration$
+declare fn text;
+begin
+ select pg_catalog.pg_get_functiondef(p.oid) into fn
+ from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+ where n.nspname='public' and p.proname='crm_activity_totals';
+ if fn is null then raise exception 'crm_activity_totals not found'; end if;
+ if pg_catalog.strpos(fn,'LEFT JOIN public.ai_concierge_tasks ht ON')=0
+    or pg_catalog.strpos(fn,'AND (ht.id IS NULL OR ht.status NOT IN')=0 then
+   raise exception 'CRM totals SQL changed; review before applying migration';
+ end if;
+ fn:=pg_catalog.replace(fn,
+  'LEFT JOIN public.ai_concierge_tasks ht ON',
+  'LEFT JOIN public.ai_conversations oc ON e.event_key=''opportunity:''||oc.id::text LEFT JOIN public.ai_concierge_tasks ht ON');
+ fn:=pg_catalog.replace(fn,
+  'AND (ht.id IS NULL OR ht.status NOT IN (''completed'',''cancelled''))',
+  'AND (ht.id IS NULL OR ht.status NOT IN (''completed'',''cancelled'')) AND (e.category<>''opportunity'' OR oc.status=''ai'')');
+ fn:=pg_catalog.replace(fn,
+  'OR (ht.status IN (''completed'',''cancelled''))',
+  'OR (ht.status IN (''completed'',''cancelled'')) OR (e.category=''opportunity'' AND oc.status<>''ai'')');
+ execute fn;
+end $migration$;
