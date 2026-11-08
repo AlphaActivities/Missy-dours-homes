@@ -495,6 +495,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {chatEnabled && introDone && !session && <section aria-label="Security check explanation" className="mx-auto w-full max-w-sm rounded-2xl border border-[#b9945d]/35 bg-gradient-to-br from-[#211b14]/95 to-[#12100e]/95 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,230,174,.06)]">
               <p className="text-center text-xs font-semibold uppercase tracking-[.15em] text-[#e7c58d]">Secure connection</p>
               <p className="mt-1.5 text-center text-xs leading-relaxed text-[#c3af8d]">Security check: confirming this is a real visitor, not an automated bot. This helps protect your conversation. It may take a moment.</p>
+              <div className="mt-3 flex justify-center"><TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} /></div>
             </section>}
             {messages.filter(m=>m.id!==0 || welcomeReady).map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[87%] flex-col ${m.role==='visitor'?'items-end':'items-start'}`}>
@@ -553,7 +554,6 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
-          {chatEnabled && introDone && !session && <div className="shrink-0 border-t border-[#b9945d]/15 px-4 pt-3 pb-2 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]"><SecurityCheckCard siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} /></div>}
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
               <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>{
@@ -581,30 +581,6 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   );
 }
 
-/** Bottom-anchored verification control: a preparation animation followed by real Cloudflare.
- * The loading bar does not imply that Cloudflare has verified the visitor. */
-function SecurityCheckCard({siteKey,onToken}:{siteKey:string;onToken:(token:string)=>void}) {
- const reducedMotion=useReducedMotion();
- const [challengeReady,setChallengeReady]=useState(false);
- useEffect(()=>{
-  if(reducedMotion){setChallengeReady(true);return;}
-  const timer=window.setTimeout(()=>setChallengeReady(true),1200);
-  return()=>window.clearTimeout(timer);
- },[reducedMotion]);
- return <section aria-label="Verify you are human" className="mx-auto w-full max-w-sm rounded-xl border border-[#b9945d]/25 bg-[#16130f]/90 px-3 py-2">
-  <div className="flex min-h-[74px] items-center justify-center">
-   {challengeReady
-    ? <TurnstileVerifier siteKey={siteKey} onToken={onToken}/>
-    : <div className="w-full" role="status" aria-label="Preparing secure verification">
-       <p className="mb-3 text-center text-xs text-[#e0c9a1]">Preparing secure verification…</p>
-       <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#4b3d29]/80">
-        <motion.div className="h-full rounded-full bg-gradient-to-r from-[#a88049] via-[#f2d39c] to-[#d4aa67]" initial={{width:'0%'}} animate={{width:'100%'}} transition={{duration:1.2,ease:'linear'}}/>
-       </div>
-      </div>}
-  </div>
- </section>;
-}
-
 type TurnstileInstance = { render: (element: HTMLElement, options: { sitekey: string; callback: (token:string)=>void; 'error-callback':()=>void; 'expired-callback':()=>void }) => string; remove: (id:string)=>void };
 declare global { interface Window { turnstile?: TurnstileInstance } }
 function TurnstileVerifier({siteKey,onToken}:{siteKey:string;onToken:(token:string)=>void}) {
@@ -620,5 +596,5 @@ function TurnstileVerifier({siteKey,onToken}:{siteKey:string;onToken:(token:stri
   script.addEventListener('load',start);start();
   return()=>{mounted=false;script?.removeEventListener('load',start);if(widget&&window.turnstile)window.turnstile.remove(widget);};
  },[siteKey]);
- return <div className="flex justify-center mb-3" ref={root} aria-label="Verify you are human"/>;
+ return <div className="flex justify-center" ref={root} aria-label="Verify you are human"/>;
 }
