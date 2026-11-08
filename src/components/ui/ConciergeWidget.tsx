@@ -553,7 +553,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
-          {(aiTyping || welcomeTyping) && <div className="shrink-0 px-5 pb-3 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
+          {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-7 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
               <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>{
