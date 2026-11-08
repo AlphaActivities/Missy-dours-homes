@@ -57,6 +57,7 @@ export default function ConversationsPage() {
  type LeadCandidate = {id:string;name:string;phone:string|null;created_at:string|null;status:string|null};
  const [leadCandidates,setLeadCandidates]=useState<LeadCandidate[]>([]);
  const [showAllCandidates,setShowAllCandidates]=useState(false);
+ const [loadingCandidates,setLoadingCandidates]=useState(false);
  const [candidateId,setCandidateId]=useState('');
  const [linkBusy,setLinkBusy]=useState(false);
  const [translatedDraft,setTranslatedDraft]=useState<{text:string;conversation:string;original:string;language:string}|null>(null);
@@ -173,10 +174,12 @@ export default function ConversationsPage() {
 
  useEffect(()=>{
   let live=true;
-  setCandidateId('');setLeadCandidates([]);setShowAllCandidates(false);
+  setCandidateId('');setLeadCandidates([]);setShowAllCandidates(false);setLoadingCandidates(false);
   const c=items.find(x=>x.id===selected);
   if(!c || c.lead_id || !c.visitor_phone || !['waiting_human','human'].includes(c.status))return;
+  setLoadingCandidates(true);
   void supabase.rpc('crm_review_phone_lead_candidates',{p_phone:c.visitor_phone}).then(({data,error})=>{
+   setLoadingCandidates(false);
    if(!live)return;
    if(error){setError(error.message);return;}
    const normalize=(value:string)=>value.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
@@ -302,7 +305,7 @@ export default function ConversationsPage() {
       <h3 className="text-sm font-semibold text-[#efd5a5]">Potential phone matches {leadCandidates.length>0&&<span className="font-normal text-[#bfae93]">({leadCandidates.length})</span>}</h3>
       <span className="rounded-full border border-amber-400/25 px-2 py-1 text-[10px] text-amber-200">Identity not verified</span>
      </div>
-     {leadCandidates.length===0?<p className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">No existing records matched this callback number. Create a separate lead after verifying the caller.</p>:
+     {loadingCandidates?<p role="status" className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">Checking CRM records…</p>:leadCandidates.length===0?<p className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">No matching records found. Verify the caller before creating a separate lead.</p>:
       <div role="group" aria-label="Potential matching CRM leads" className="space-y-2">
        {leadCandidates.slice(0,showAllCandidates?leadCandidates.length:4).map(lead=><button key={lead.id} type="button" aria-pressed={candidateId===lead.id}
          onClick={()=>setCandidateId(current=>current===lead.id?'':lead.id)}
