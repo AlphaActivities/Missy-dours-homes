@@ -318,7 +318,7 @@ export default function ConversationsPage() {
        {leadCandidates.length>4&&<button type="button" className="min-h-11 w-full rounded-lg border border-[#c8a96e]/35 px-3 py-2 text-sm text-[#e5c78f]" onClick={()=>setShowAllCandidates(value=>!value)}>{showAllCandidates?'Show fewer matches':`Show all ${leadCandidates.length} matches`}</button>}
        <p className="text-[11px] leading-relaxed text-[#bca887]">Candidates share a phone number, not necessarily an identity. Confirm the person before linking.</p>
       </div>}
-    </div>}
+    </div>
     <div className="flex flex-wrap gap-2">
      {leadCandidates.length>0&&<button type="button" disabled={!candidateId||linkBusy} onClick={()=>void linkReviewed(false)} className="rounded-lg bg-[#c8a96e] px-3 py-2 font-semibold text-black disabled:opacity-40">Link Confirmed Lead</button>}
      <button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>
