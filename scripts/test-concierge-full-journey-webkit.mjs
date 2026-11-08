@@ -93,11 +93,11 @@ try {
  assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')>=0);
  assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')<bubbleLabels.indexOf('Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr https://www.consumerfinance.gov/owning-a-home/loan-estimate/ https://www.trec.texas.gov/public/consumer-information/ https://missydours.com.evil.test/phishing'));
  const visitorBubble=dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true});
- assert.ok((await visitorBubble.getAttribute('class')).includes('bg-[#007AFF]'));
+ assert.ok((await visitorBubble.getAttribute('class')).includes('bg-[#0A84FF]'));
  assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-[26px]'),'Visitor messages need iPhone-like rounded corners');
- assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-br-[12px]'),'Visitor tail corner should be softened');
+ assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-br-[9px]'),'Visitor tail corner should be softened');
  const replyBubble=dialog.locator('.missy-concierge-body p.whitespace-pre-wrap').filter({hasText:'Gracias. Missy confirmará los detalles.'});
- assert.ok((await replyBubble.getAttribute('class')).includes('rounded-bl-[12px]'),'Incoming message tail corner should be softened');
+ assert.ok((await replyBubble.getAttribute('class')).includes('rounded-bl-[9px]'),'Incoming message tail corner should be softened');
  // Reactions must be hidden for the welcome bubble, AI replies, and visitor messages.
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),0);
 
