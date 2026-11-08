@@ -255,6 +255,28 @@ Deno.serve(async req=>{
   if(requested!==true)return answer({error:'Conversation status changed'},409,origin);
   return answer({status:'waiting_human',conversation_id:chat.id},200,origin);
  }
+ if(url.pathname.endsWith('/ack')) {
+  // Visitor token was authenticated above. Only messages the browser
+  // explicitly reports as received can be acknowledged.
+  const ids=Array.isArray(body.message_ids)?body.message_ids:[];
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if(ids.length>150||ids.some((id:unknown)=>typeof id!=='string'||!uuid.test(id)))return answer({error:'Invalid receipt list'},400,origin);
+  if(ids.length===0)return answer({ok:true},200,origin);
+  const read=body.read===true;
+  const {data:ackErrorData,error:ackError}=await db.from('ai_conversation_messages')
+   .update({delivered_to_visitor_at:new Date().toISOString()})
+   .eq('conversation_id',chat.id).in('id',ids).in('sender',['human','ai'])
+   .is('delivered_to_visitor_at',null).select('id');
+  if(ackError)return answer({error:'Receipt unavailable'},503,origin);
+  if(read) {
+   const {error:readError}=await db.from('ai_conversation_messages')
+    .update({read_by_visitor_at:new Date().toISOString()})
+    .eq('conversation_id',chat.id).in('id',ids).in('sender',['human','ai'])
+    .is('read_by_visitor_at',null);
+   if(readError)return answer({error:'Read acknowledgement unavailable'},503,origin);
+  }
+  return answer({ok:true,updated:ackErrorData?.length??0},200,origin);
+ }
  if(url.pathname.endsWith('/sync')) {
   const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'sync:'+hash,p_max:360,p_window_seconds:3600});
   if(limit.error||limit.data!==true)return answer({error:'Refresh limit reached'},429,origin);
