@@ -25,7 +25,10 @@ try {
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  await dialog.waitFor({state:'visible',timeout:8000});
  const intro=dialog.locator('.missy-concierge-intro');
- assert.equal(await intro.evaluate(el=>getComputedStyle(el).textAlign),'left','Headline typing must be left-anchored');
+ // The heading itself is centered, while typed characters in its text
+ // grid grow from left to right. This matches the current desired design.
+ assert.equal(await intro.evaluate(el=>getComputedStyle(el).textAlign),'center','Intro heading should remain centered');
+ assert.equal(await intro.locator('span.inline-grid').evaluate(el=>getComputedStyle(el).textAlign),'left','Typewriter characters must grow from the left');
  assert.equal(await intro.locator('.border-r').count(),0,'Typewriter must not show a blinking cursor');
  assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'AI bubble must not precede finished title');
  await dialog.getByText('Imagine the Life That Awaits.',{exact:true}).waitFor({state:'visible'});
