@@ -11,7 +11,11 @@ type Conversation = {
 };
 type Attachment = {id:string;original_filename:string;mime_type:string;file_size_bytes:number;storage_path:string;created_at:string};
 type Message = {id:string; sender:'visitor'|'ai'|'human'|'system';body:string;translated_body:string|null; original_language:string|null;created_at:string;sender_actor:string|null;delivered_to_staff_at:string|null;read_by_staff_at:string|null;delivered_to_visitor_at:string|null;read_by_visitor_at:string|null;};
-const time = (s:string|null) => s ? new Date(s).toLocaleString() : 'Not yet';
+// All conversation-related timestamps display date, hour and minute, never seconds.
+const time = (s:string|null) => s ? new Date(s).toLocaleString(undefined,{
+ year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'
+}) : 'Not yet';
+const visitorPreview = (c:Conversation) => c.summary?.match(/^Visitor:\s*(.+)$/is)?.[1]?.trim()||null;
 export default function ConversationsPage() {
  const {user}=useAuth();
  const staffEmail=user?.email?.toLowerCase()??'';
@@ -27,6 +31,7 @@ export default function ConversationsPage() {
  const joinActionRef=useRef<HTMLDivElement|null>(null);
  const pendingSourceRef=useRef<'manual'|'notification'>('manual');
  const pendingScrollRef=useRef<string|null>(null);
+ const followupFrameRef=useRef<number>(0);
  const focusConversation=(id:string,source:'manual'|'notification'='manual')=>{
   pendingSourceRef.current=source;
   pendingScrollRef.current=id;
@@ -154,28 +159,12 @@ export default function ConversationsPage() {
   finally{setAttachmentBusy(null);}
  };
  const active=items.find(c=>c.id===selected);
- // Restore the previous manual conversation selection behavior exactly.
- // Deep links from Notifications have their own target and timing.
+ // Leave the previous working manual conversation-selection behavior intact.
  useEffect(()=>{
-  if(!selected||pendingScrollRef.current!==selected||!active)return;
-  const fromNotification=pendingSourceRef.current==='notification';
-  const target=fromNotification?(joinActionRef.current??sessionStatusRef.current):sessionStatusRef.current;
+  if(!selected||pendingScrollRef.current!==selected||!active||pendingSourceRef.current!=='manual')return;
+  const target=sessionStatusRef.current;
   const scroller=target?.closest('main');
   if(!target||!scroller)return;
-  if(fromNotification){
-   // The dashboard route reset and transcript mount settle before alignment.
-   // No delayed second scroll, which caused the observed jump.
-   const frame=window.requestAnimationFrame(()=>{
-    window.requestAnimationFrame(()=>{
-     if(pendingScrollRef.current!==selected)return;
-     const delta=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
-     scroller.scrollTo({top:Math.max(0,scroller.scrollTop+delta-8),behavior:'instant'});
-     pendingScrollRef.current=null;
-    });
-   });
-   return()=>window.cancelAnimationFrame(frame);
-  }
-  // Restore the previously working manual navigation code from PR #218.
   pendingScrollRef.current=null;
   const scroll=()=>{
    const delta=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
@@ -185,6 +174,26 @@ export default function ConversationsPage() {
   const timeout=window.setTimeout(scroll,160);
   return()=>{window.cancelAnimationFrame(frame);window.clearTimeout(timeout);};
  },[selected,items]);
+
+ // Notification links align the OUTER transcript card below the navbar, not
+ // the Connection Inactive box or Join Chat button inside that card.
+ useEffect(()=>{
+  if(!selected||pendingScrollRef.current!==selected||!active
+     ||pendingSourceRef.current!=='notification'||loading||loadingMessages)return;
+  const target=transcriptRef.current;
+  const scroller=target?.closest('main');
+  if(!target||!scroller)return;
+  const first=window.requestAnimationFrame(()=>{
+   const second=window.requestAnimationFrame(()=>{
+    if(pendingScrollRef.current!==selected)return;
+    const delta=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
+    scroller.scrollTo({top:Math.max(0,scroller.scrollTop+delta-2),left:0,behavior:'instant'});
+    pendingScrollRef.current=null;
+   });
+   followupFrameRef.current=second;
+  });
+  return()=>{window.cancelAnimationFrame(first);window.cancelAnimationFrame(followupFrameRef.current);};
+ },[selected,loading,loadingMessages,active?.id,pendingTasks.length]);
  // A recent, token-verified heartbeat is the only basis for confirmed
  // connection. A valid session or last message does not mean 'Online'.
  const sessionState=(c:Conversation):'expired'|'online'|'away'|'inactive'|'recent'|'available'|'unknown' => {
@@ -346,9 +355,17 @@ export default function ConversationsPage() {
   <select aria-label="Filter conversations" className="bg-neutral-900 border border-white/15 rounded-lg px-3 py-2 text-sm" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">All conversations</option><option value="ai">AI conversations</option><option value="waiting_human">Needs attention</option><option value="human">Human conversations</option><option value="closed">Closed</option></select></div>
   <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4">
    <section aria-label="Conversation list" className="ds-page-reveal ds-page-reveal-3 max-h-[315px] min-h-64 overflow-y-auto overscroll-contain touch-pan-y rounded-xl border border-[#c8a96e]/30 bg-black/20 [scrollbar-color:#8c734b_#17130f] [scrollbar-width:thin]">
-   {filtered.length===0?<p className="p-6 text-sm" style={{color:'var(--ds-text-secondary)'}}>{loading?'Loading conversations…':'No conversations match. Visitor chat is not live yet.'}</p>:filtered.map(c=><button key={c.id} onClick={()=>focusConversation(c.id)} className="block w-full text-left px-4 py-4 border-b border-white/10 hover:bg-white/5" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
-    <div className="flex justify-between gap-2 mb-1"><strong className="text-sm truncate">{c.title}</strong>{c.priority!=='unrated'&&<span className="text-xs uppercase" title="AI conversation priority" style={{color:'var(--ds-gold)'}}>{c.priority}</span>}</div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p>{c.opportunity_kind&&<span className="mt-2 inline-flex rounded-md border border-[#c7a66e]/45 bg-[#b69a65]/10 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#efd5a2]">{c.opportunity_kind==='both'?'Buyer & Seller':c.opportunity_kind==='investor'?'Investor':c.opportunity_kind==='seller'?'Seller Interest':'Buyer Interest'} · {c.priority==='hot'?'High Intent':'Qualified Interest'}</span>}<div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-70"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div><div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
-   </button>)}</section>
+   {filtered.length===0?<p className="p-6 text-sm" style={{color:'var(--ds-text-secondary)'}}>{loading?'Loading conversations…':'No conversations match. Visitor chat is not live yet.'}</p>:filtered.map(c=>{
+    const preview=visitorPreview(c);
+    return <button key={c.id} onClick={()=>focusConversation(c.id)} className="block w-full text-left px-4 py-4 border-b border-white/10 hover:bg-white/5" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
+     {preview?<div className="flex justify-end"><span className="max-w-[90%] rounded-[19px] rounded-br-[6px] bg-[#176bc6] px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-[0_4px_14px_rgba(12,80,170,.18)] line-clamp-3 break-words">{preview}</span></div>
+      :<><div className="flex justify-between gap-2 mb-1"><strong className="text-sm break-words">{c.title}</strong>{c.priority!=='unrated'&&<span className="text-xs uppercase" title="AI conversation priority" style={{color:'var(--ds-gold)'}}>{c.priority}</span>}</div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p></>}
+     {preview&&c.priority!=='unrated'&&<div className="mt-1 text-right text-[10px] uppercase" style={{color:'var(--ds-gold)'}}>{c.priority}</div>}
+     {c.opportunity_kind&&<span className="mt-2 inline-flex rounded-md border border-[#c7a66e]/45 bg-[#b69a65]/10 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#efd5a2]">{c.opportunity_kind==='both'?'Buyer & Seller':c.opportunity_kind==='investor'?'Investor':c.opportunity_kind==='seller'?'Seller Interest':'Buyer Interest'} · {c.priority==='hot'?'High Intent':'Qualified Interest'}</span>}
+     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-70"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div>
+     <div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
+    </button>;
+   })}</section>
    <section ref={transcriptRef} aria-label="Conversation transcript" className={(requestedConversation&&selectedDeepLinkRef.current===selected?'':'ds-page-reveal ds-page-reveal-4 ')+'rounded-xl border border-white/10 bg-black/20 min-h-80 p-5'}>
    {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && !loadingCandidates && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
     <strong className="text-amber-200">Contact identity check needed</strong>
