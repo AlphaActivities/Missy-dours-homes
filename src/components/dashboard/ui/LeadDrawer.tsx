@@ -298,7 +298,7 @@ function DrawerContent({
                 }}
               >
                 <ClipboardList size={14} />
-                Record Interaction
+                {callbackPending ? 'Record Contact Outcome' : 'Record Interaction'}
               </button>
             </div>
           </div>
@@ -309,7 +309,7 @@ function DrawerContent({
           <p className="mt-2">Assigned to: {callbackWork?.owner??'Unassigned'}</p>
           <p className="mt-1">Next action: Contact customer, record a Call, Text, or Email outcome, then resolve or schedule follow-up.</p>
           <p className="mt-1">Due: {callbackWork?.due?new Date(callbackWork.due).toLocaleString():'Awaiting staff review'}</p>
-          <button type="button" onClick={()=>setShowLogModal(true)} className="mt-3 rounded-lg bg-[#c8a96e] px-4 py-2 font-semibold text-black">Record Contact Outcome</button>
+          <p className="mt-3 text-xs text-[#e6c89c]">Use the Record Contact Outcome action in Quick Actions above to log the call, text, or email and resolve or schedule follow-up.</p>
         </section>}
 
         {/* Follow-up section */}
