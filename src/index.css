@@ -1176,10 +1176,9 @@
 }
 
 
-/* Shared iPhone-inspired speech-bubble geometry. Every public chatbot,
-   typing, CRM preview and CRM transcript bubble uses this same tail mask.
-   Separate the tapered tail from the small corner overlap so Safari cannot
-   reveal a hard vertical seam where the two shapes meet. */
+/* Shared message-tail silhouette for public concierge and CRM conversations.
+   A single curved mask handles incoming/typing and mirrored outgoing bubbles.
+   No seam-cover rectangles: those created the notched shape on iPhone Safari. */
 .missy-ios-incoming-bubble,
 .missy-ios-outgoing-bubble,
 .crm-ios-visitor-bubble,
@@ -1187,74 +1186,32 @@
 .crm-ios-team-bubble {
   position: relative;
   overflow: visible;
-  isolation: isolate;
 }
-.missy-ios-incoming-bubble { --ios-bubble: #29292d; }
-.crm-ios-ai-bubble { --ios-bubble: #18385a; }
-.crm-ios-team-bubble { --ios-bubble: #342a1c; }
-.missy-ios-outgoing-bubble,
-.crm-ios-visitor-bubble { --ios-bubble: #0a84ff; }
-
-.missy-ios-incoming-bubble::before,
-.missy-ios-outgoing-bubble::before,
-.crm-ios-visitor-bubble::before,
-.crm-ios-ai-bubble::before,
-.crm-ios-team-bubble::before {
+.missy-ios-incoming-bubble::after,
+.missy-ios-outgoing-bubble::after,
+.crm-ios-visitor-bubble::after,
+.crm-ios-ai-bubble::after,
+.crm-ios-team-bubble::after {
   content: '';
   pointer-events: none;
   position: absolute;
   width: 22px;
   height: 29px;
-  left: -10px;
-  bottom: -9px;
-  z-index: 1;
-  background: var(--ios-bubble);
+  left: -3px;
+  bottom: -8px;
+  z-index: 0;
+  background: #29292d;
   -webkit-mask: url('/images/chat-bubble-tail.svg') center / 100% 100% no-repeat;
   mask: url('/images/chat-bubble-tail.svg') center / 100% 100% no-repeat;
 }
-.missy-ios-outgoing-bubble::before,
-.crm-ios-visitor-bubble::before {
+.crm-ios-ai-bubble::after { background: #18385a; }
+.crm-ios-team-bubble::after { background: #342a1c; }
+.missy-ios-outgoing-bubble::after,
+.crm-ios-visitor-bubble::after {
   left: auto;
-  right: -10px;
+  right: -3px;
   transform: scaleX(-1);
-}
-
-/* Blend the masked tail with the bubble at the lower corner: the old
-   mask alone left a visible squared edge at the attachment. */
-.missy-ios-incoming-bubble::after,
-.crm-ios-ai-bubble::after,
-.crm-ios-team-bubble::after,
-.missy-ios-outgoing-bubble::after,
-.crm-ios-visitor-bubble::after {
-  content: '';
-  pointer-events: none;
-  position: absolute;
-  z-index: 2;
-  width: 10px;
-  height: 16px;
-  bottom: 0;
-  background: var(--ios-bubble);
-}
-.missy-ios-incoming-bubble::after,
-.crm-ios-ai-bubble::after,
-.crm-ios-team-bubble::after {
-  left: 0;
-  border-bottom-left-radius: 10px;
-}
-.missy-ios-outgoing-bubble::after,
-.crm-ios-visitor-bubble::after {
-  right: 0;
-  border-bottom-right-radius: 10px;
-}
-
-/* Text, badges and animated dots must always paint over the join layers. */
-.missy-ios-incoming-bubble > *,
-.missy-ios-outgoing-bubble > *,
-.crm-ios-visitor-bubble > *,
-.crm-ios-ai-bubble > *,
-.crm-ios-team-bubble > * {
-  position: relative;
-  z-index: 3;
+  background: #0a84ff;
 }
 
 /* Three quick hops per 3-second cycle: middle hop is highest.
