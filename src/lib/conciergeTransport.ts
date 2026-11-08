@@ -55,6 +55,18 @@ export const conciergeTransport = {
     request<{ reply?: string; language?: string; conversation_id: string; status?: string; saved?: boolean }>('/message', { message, language }, session.token),
   handoff: (session: VisitorSession, message: string, contact: {name:string;phone:string;contact_consent:boolean}) => request<{status:string;conversation_id:string}>('/handoff', {message,...contact}, session.token),
   sync: (session: VisitorSession) => request<{status: 'ai'|'human'|'waiting_human'|'closed';messages: Array<{id:string;sender:'visitor'|'ai'|'human'|'system';body:string;created_at:string;sender_actor:string|null}>}>('/sync', {}, session.token),
+  heartbeat: async (session: VisitorSession, visible: boolean) => {
+    if(!configured())return;
+    // A separate, token-validated endpoint: never make a chat message just
+    // to infer presence, and do not expose service credentials to the browser.
+    const response=await fetch(endpoint.replace(/\/concierge-api$/, '/concierge-presence'),{
+      method:'POST',mode:'cors',keepalive:true,
+      headers:{'Content-Type':'application/json',apikey:publicKey,Authorization:'Bearer '+session.token},
+      body:JSON.stringify({visible}),
+      signal:AbortSignal.timeout(9000)
+    });
+    if(!response.ok)throw new Error('Presence heartbeat unavailable');
+  },
 };
 
 /** Owner-only private browser QA. An owner JWT is checked by the private Edge Function on every request. */
