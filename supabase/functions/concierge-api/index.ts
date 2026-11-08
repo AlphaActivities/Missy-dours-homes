@@ -256,7 +256,7 @@ Deno.serve(async req=>{
   return answer({status:'waiting_human',conversation_id:chat.id},200,origin);
  }
  if(url.pathname.endsWith('/sync')) {
-  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'sync:'+hash,p_max:120,p_window_seconds:3600});
+  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'sync:'+hash,p_max:360,p_window_seconds:3600});
   if(limit.error||limit.data!==true)return answer({error:'Refresh limit reached'},429,origin);
   const {data:recent,error:syncError}=await db.from('ai_conversation_messages').select('id,sender,body,created_at,sender_actor').eq('conversation_id',chat.id).order('created_at',{ascending:false}).order('sender',{ascending:true}).limit(150);
   if(syncError)return answer({error:'Could not refresh conversation'},503,origin);
