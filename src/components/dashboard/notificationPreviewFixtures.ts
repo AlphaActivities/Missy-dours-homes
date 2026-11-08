@@ -7,9 +7,9 @@ export const notificationPreviewFixtures:CrmActivity[]=[
  { ...base,id:'preview-lead',event_key:'lead:preview',category:'lead',title:'Lead received',
    summary:'Example Buyer · Source: Homepage',lead_status:'new'},
  { ...base,id:'preview-chat',event_key:'handoff:preview',category:'handoff',title:'Chat Request Received',
-   summary:'Example Visitor · Chatbot assistance requested',callback_status:'waiting_human'},
+   summary:'Example Visitor · Chatbot assistance requested',callback_status:'waiting_human',callback_requested_at:'2026-11-07T18:30:00Z'},
  { ...base,id:'preview-urgent',event_key:'escalation:preview',category:'escalation',title:'Urgent Chat Request',
-   summary:'Example Visitor · A visitor needs immediate assistance',callback_status:'waiting_human'},
+   summary:'Example Visitor · A visitor needs immediate assistance',callback_status:'waiting_human',callback_requested_at:'2026-11-07T17:30:00Z',callback_escalated_at:'2026-11-07T19:00:00Z',callback_urgency:'urgent'},
  { ...base,id:'preview-staff-completed',event_key:'staff:completed:preview',category:'staff',title:'Follow-up Completed',
    summary:'Example Team Member · Follow-up completed',callback_status:'completed'},
  { ...base,id:'preview-staff-claimed',event_key:'staff:claimed:preview',category:'staff',title:'Team Member Joined',
@@ -17,5 +17,5 @@ export const notificationPreviewFixtures:CrmActivity[]=[
  { ...base,id:'preview-lead-progress',event_key:'lead:preview-progress',category:'lead',title:'Lead Follow-up In Progress',
    summary:'Example Seller · Consultation underway',lead_status:'contacted',read_at:'2026-11-07T19:05:00Z'},
  { ...base,id:'preview-chat-done',event_key:'handoff:preview-done',category:'handoff',title:'Chat Request Received',
-   summary:'Example Visitor · Team follow-up resolved',callback_status:'completed',read_at:'2026-11-07T19:05:00Z'}
+   summary:'Example Visitor · Team follow-up resolved',callback_status:'completed',callback_requested_at:'2026-11-07T17:10:00Z',read_at:'2026-11-07T19:05:00Z'}
 ];
