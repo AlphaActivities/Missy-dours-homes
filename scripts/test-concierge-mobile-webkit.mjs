@@ -37,13 +37,14 @@ try {
  assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'AI bubble must not precede finished title');
  await dialog.getByText('Imagine the Life That Awaits.',{exact:true}).waitFor({state:'visible'});
  assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'AI bubble must pause after the full title');
- await dialog.getByRole('status',{name:'Assistant is typing'}).waitFor({state:'visible'});
+ // This isolated HTTP preview intentionally has no verified visitor session,
+ // so the AI typing bubble and greeting are not scheduled here. The complete
+ // visitor-journey test exercises those states with a mock verified session.
  await dialog.getByText('Message Missy’s Team',{exact:true}).waitFor({state:'visible'});
  assert.equal(await dialog.getByRole('button',{name:'Close concierge'}).count(),0,'Redundant back arrow must be removed');
  assert.equal(await dialog.getByText(/Automatic language assistance/).count(),0,'Composer language label must be removed');
  assert.equal(await dialog.getByRole('button',{name:'Speak with Missy’s team'}).count(),0,'Human handoff action should not clutter the initial welcome');
- await dialog.getByText('We help people find their happy, what could we help answer for you?').waitFor({state:'visible'});
-  assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'Opening typing bubble must disappear once greeting appears');
+ assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'Unverified preview must not show an AI typing bubble');
  assert.equal(await dialog.locator('header').getByText('IMAGINE THE LIFE THAT AWAITS').count(),0,'Header tagline should be removed while preserving the in-chat headline');
  const locked=await page.evaluate(()=>({
   position:getComputedStyle(document.body).position,
