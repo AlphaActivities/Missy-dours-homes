@@ -10,7 +10,7 @@ export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
 type ActivityState={
- items:CrmActivity[];liveAlert:CrmActivity|null;dismissLiveAlert:()=>void;previewNotification:(category:ActivityCategory,variant?:'completed'|'claimed')=>void;previewActive:boolean;unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
+ items:CrmActivity[];liveAlert:CrmActivity|null;dismissLiveAlert:()=>void;unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
  prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;
  markRead:(eventId:string)=>Promise<void>;archive:(eventId:string)=>Promise<void>;restore:(eventId:string)=>Promise<void>;
  markAllRead:()=>Promise<void>;setPreference:(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>Promise<void>;
@@ -34,25 +34,6 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState<string|null>(null);
  const [liveAlert,setLiveAlert]=useState<CrmActivity|null>(null);
- const [previewAlert,setPreviewAlert]=useState<CrmActivity|null>(null);
- const previewActive=Boolean(previewAlert);
- // Visual samples never enter the database or notification counters.
- const previewNotification=(category:ActivityCategory,variant?:'completed'|'claimed')=>{
-  if(email!=='yourcustomerflowguy@gmail.com')return;
-  const details:Record<ActivityCategory,{title:string;summary:string;target_path:string}>={
-   lead:{title:'New Lead Received',summary:'Alex Morgan submitted a website contact form. Review their inquiry and respond.',target_path:'/dashboard/leads'},
-   opportunity:{title:'New Buyer Opportunity',summary:'A visitor is exploring their next home. Review the conversation and preferences.',target_path:'/dashboard/conversations'},
-   handoff:{title:'New Chat Request',summary:'Alex Morgan requested a callback from Missy’s team.',target_path:'/dashboard/conversations'},
-   escalation:{title:'Urgent Chat Request',summary:'A direct chat request needs a timely team response.',target_path:'/dashboard/conversations'},
-   staff:{title:variant==='completed'?'Follow-up Completed':'Team Member Joined',summary:variant==='completed'?'The team recorded the outcome of a recent follow-up.':'A team member joined the visitor conversation.',target_path:'/dashboard/conversations'}
-  };
-  const sample=details[category];
-  setPreviewAlert({
-   ...sample,id:'preview-'+category+'-'+(variant??'new'),event_key:'preview:'+category,category,
-   created_at:new Date().toISOString(),read_at:null,archived_at:null,lead_archived:false
-  });
- };
-
  const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false),loadedRef=useRef<CrmActivity[]>([]);
  const PAGE_SIZE=60;
  // A notification being read does not mean the associated inquiry was handled.
@@ -209,7 +190,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   finally{setLoadingMore(false);}
  };
  useEffect(()=>{
-  firstLoaded.current=false;lastEvent.current=null;loadedRef.current=[];setItems([]);setLiveAlert(null);setPreviewAlert(null);
+  firstLoaded.current=false;lastEvent.current=null;loadedRef.current=[];setItems([]);setLiveAlert(null);
   setHasMore(false);setCounts({unread:0,urgent:0,today:0,hidden:0});setPrefs(defaults(email));setLoading(true);
   if(!permitted.includes(email))return;
   void refresh();
@@ -255,30 +236,27 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   setPrefs(old=>({...old,[name]:value}));
  };
  const unreadCount=counts.unread;
- const dismissLiveAlert=()=>{if(previewAlert)setPreviewAlert(null);else setLiveAlert(null);};
- const displayedAlert=previewAlert??liveAlert;
- const alertTarget=displayedAlert?.category==='handoff'&&displayedAlert.callback_lead_id
-  ?'/dashboard/leads?lead='+displayedAlert.callback_lead_id
-  :displayedAlert?.callback_conversation_id
-   ?'/dashboard/conversations?conversation='+displayedAlert.callback_conversation_id
-   :displayedAlert?.target_path?.startsWith('/dashboard/')?displayedAlert.target_path:'/dashboard/notifications';
- return <Context.Provider value={{items,liveAlert,dismissLiveAlert,previewNotification,previewActive,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
+ const dismissLiveAlert=()=>setLiveAlert(null);
+ const alertTarget=liveAlert?.category==='handoff'&&liveAlert.callback_lead_id
+  ?'/dashboard/leads?lead='+liveAlert.callback_lead_id
+  :liveAlert?.callback_conversation_id
+   ?'/dashboard/conversations?conversation='+liveAlert.callback_conversation_id
+   :liveAlert?.target_path?.startsWith('/dashboard/')?liveAlert.target_path:'/dashboard/notifications';
+ return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
  {children}
- {displayedAlert&&permitted.includes(email)&&
-  <div role="alert" aria-live="assertive" data-category={displayedAlert.category} data-opportunity-kind={displayedAlert.opportunity_kind??undefined} className="crm-live-alert fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[120] mx-auto max-w-md rounded-2xl border p-4 text-[#f0dfbd] backdrop-blur-xl">
+ {liveAlert&&permitted.includes(email)&&
+  <div role="alert" aria-live="assertive" data-category={liveAlert.category} data-opportunity-kind={liveAlert.opportunity_kind??undefined} className="crm-live-alert fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[120] mx-auto max-w-md rounded-2xl border p-4 text-[#f0dfbd] backdrop-blur-xl">
    <div className="flex items-start justify-between gap-3">
     <div className="min-w-0">
-     <p className="crm-live-alert-source text-[10px] font-semibold uppercase tracking-[.15em]">{displayedAlert.category==='escalation'?'Urgent Chat Request':displayedAlert.category==='lead'?'Website Contact Form':displayedAlert.category==='opportunity'?'AI Chat Opportunity':displayedAlert.category==='handoff'?'Direct Chat Request':'Staff Activity'}</p>
-     <p className="mt-1 text-sm font-semibold">{displayedAlert.category==='handoff'?'New Chat Request':displayedAlert.category==='escalation'?'Urgent Chat Request':displayedAlert.category==='lead'?'New Lead Received':displayedAlert.title.replace(/Concierge/gi,'Chatbot')}</p>
-     <p className="mt-1 line-clamp-3 text-xs text-[#d4c4ad]">{displayedAlert.summary.replace(/Concierge activity/gi,'Chatbot activity').replace(/Concierge handoff/gi,'Chat request')}</p>
+     <p className="crm-live-alert-source text-[10px] font-semibold uppercase tracking-[.15em]">{liveAlert.category==='escalation'?'Urgent Chat Request':liveAlert.category==='lead'?'Website Contact Form':liveAlert.category==='opportunity'?'AI Chat Opportunity':liveAlert.category==='handoff'?'Direct Chat Request':'Staff Activity'}</p>
+     <p className="mt-1 text-sm font-semibold">{liveAlert.category==='handoff'?'New Chat Request':liveAlert.category==='escalation'?'Urgent Chat Request':liveAlert.category==='lead'?'New Lead Received':liveAlert.title.replace(/Concierge/gi,'Chatbot')}</p>
+     <p className="mt-1 line-clamp-3 text-xs text-[#d4c4ad]">{liveAlert.summary.replace(/Concierge activity/gi,'Chatbot activity').replace(/Concierge handoff/gi,'Chat request')}</p>
     </div>
     <button type="button" aria-label="Dismiss in-app notification" onClick={dismissLiveAlert} className="shrink-0 rounded-lg border border-white/20 px-2.5 py-1.5 text-sm text-[#e8d4b3]">✕</button>
    </div>
-   {previewActive&&<p className="mt-2 text-center text-[11px] font-semibold uppercase tracking-[.14em] text-[#f0d6a3]">Visual preview only · No notification created</p>}
    <button type="button" onClick={()=>{
-    if(previewActive){setPreviewAlert(null);return;}
     dismissLiveAlert();navigate(alertTarget);
-   }} className="crm-live-alert-action mt-3 flex min-h-11 w-full items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold">{previewActive?'Close preview':'View Notification · Open Details'}</button>
+   }} className="crm-live-alert-action mt-3 flex min-h-11 w-full items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold">View Notification · Open Details</button>
   </div>}
  </Context.Provider>;
 }
