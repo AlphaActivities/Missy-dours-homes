@@ -252,6 +252,10 @@ export default function ConversationsPage() {
   return Number.isFinite(last)&&presenceClock-last<=120000&&last<=presenceClock+30000?'recent':'available';
  };
  const statusLoading=!presenceReady||(focused&&(!focusedRecordReady||!minimumCheckElapsed));
+ // Reserve the naturally wrapped loading and resolved copy in overlapping grid cells.
+ // The hidden copy still participates in layout, eliminating the verification jump.
+ const connectionTitle=presenceUnavailable?'Chatbot Status Temporarily Unavailable':active?(sessionState(active)==='inactive'?'Chatbot Connection Inactive':sessionState(active)==='expired'?'Chatbot Session Expired':sessionState(active)==='online'?'Visitor Online · Chat Open':sessionState(active)==='away'?'Visitor Away · Chat Hidden':sessionState(active)==='recent'?'Recent Chat Activity · Connection Unconfirmed':sessionState(active)==='available'?'Chatbot Session Available · Visitor Unconfirmed':'Chatbot Connection Unknown'):'Chatbot connection status unavailable';
+ const connectionDescription=presenceUnavailable?'Live connection information is temporarily unavailable. Messages are saved; verify the visitor’s status before assuming they are online.':active&&sessionState(active)==='expired'?'The visitor’s chatbot session has expired, so they cannot continue here. Their conversation is saved; use the callback contact details to follow up.':active&&sessionState(active)==='online'?'The visitor currently has the chatbot open. Missy’s team can join the live conversation.':active&&sessionState(active)==='away'?'The visitor recently connected but has hidden or closed the chatbot. Messages remain saved for follow-up.':active&&sessionState(active)==='inactive'?'The visitor is not currently connected to this chatbot conversation. All messages are saved; Missy’s team can follow up using their contact details.':'The chatbot conversation is saved, but the visitor’s online status is not confirmed. Do not assume they are available for an immediate reply.';
  const sessionDisplay=(c:Conversation)=>{
   const state=sessionState(c);
   return state==='expired'?'Session Expired':state==='online'?'Online · Chat Open':state==='away'?'Away · Chat Not Visible'
@@ -481,9 +485,15 @@ export default function ConversationsPage() {
       <span className="inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center" aria-hidden="true">
        {statusLoading?<span className="crm-connection-spinner"/>:active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='online'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)}
       </span>
-      <strong className={active&&!statusLoading&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]'}>{statusLoading?'Verifying chatbot connection…':presenceUnavailable?'Chatbot Status Temporarily Unavailable':active?(sessionState(active)==='inactive'?'Chatbot Connection Inactive':sessionState(active)==='expired'?'Chatbot Session Expired':sessionState(active)==='online'?'Visitor Online · Chat Open':sessionState(active)==='away'?'Visitor Away · Chat Hidden':sessionState(active)==='recent'?'Recent Chat Activity · Connection Unconfirmed':sessionState(active)==='available'?'Chatbot Session Available · Visitor Unconfirmed':'Chatbot Connection Unknown'):'Chatbot connection status unavailable'}</strong>
+       <span className="grid min-w-0 flex-1">
+        <strong className={'[grid-area:1/1] '+(statusLoading?'':'invisible')} aria-hidden={!statusLoading}>Verifying chatbot connection…</strong>
+        <strong className={'[grid-area:1/1] '+(statusLoading?'invisible ':'')+(active&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]')} aria-hidden={statusLoading}>{connectionTitle}</strong>
+       </span>
      </div>
-     <span className="text-[#bdb1a1]">{statusLoading?'Checking live chat availability. The conversation and saved messages are ready.':presenceUnavailable?'Live connection information is temporarily unavailable. Messages are saved; verify the visitor’s status before assuming they are online.':active&&sessionState(active)==='expired'?'The visitor’s chatbot session has expired, so they cannot continue here. Their conversation is saved; use the callback contact details to follow up.':active&&sessionState(active)==='online'?'The visitor currently has the chatbot open. Missy’s team can join the live conversation.':active&&sessionState(active)==='away'?'The visitor recently connected but has hidden or closed the chatbot. Messages remain saved for follow-up.':active&&sessionState(active)==='inactive'?'The visitor is not currently connected to this chatbot conversation. All messages are saved; Missy’s team can follow up using their contact details.':'The chatbot conversation is saved, but the visitor’s online status is not confirmed. Do not assume they are available for an immediate reply.'}</span>
+      <span className="grid min-w-0 text-[#bdb1a1]">
+       <span className={'[grid-area:1/1] '+(statusLoading?'':'invisible')} aria-hidden={!statusLoading}>Checking live chat availability. The conversation and saved messages are ready.</span>
+       <span className={'[grid-area:1/1] '+(statusLoading?'invisible':'')} aria-hidden={statusLoading}>{connectionDescription}</span>
+      </span>
     </div>
    </div><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div className="min-w-0 flex-1">
       <h2 className="font-semibold">Chat History</h2>
