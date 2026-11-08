@@ -74,6 +74,11 @@ export default function CrmActivityCenter(){
  const isFeatured=(item:CrmActivity)=>requiresAction(item);
  const isInProgress=(item:CrmActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
  const isResolved=(item:CrmActivity)=>item.callback_status==='completed'||item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
+ // Preview statistics are derived only from local visual fixtures, never from
+ // the CRM's live counters or push subscriptions.
+ const sampleUnread=notificationPreviewFixtures.filter(e=>!e.read_at&&e.category!=='staff').length;
+ const sampleUrgent=notificationPreviewFixtures.filter(e=>e.category==='escalation'&&Boolean(e.callback_escalated_at)).length;
+ const sampleHistory=notificationPreviewFixtures.filter(e=>e.archived_at||e.lead_archived||e.chat_lead_audit||(['handoff','escalation'].includes(e.category)&&['completed','closed','cancelled'].includes(e.callback_status??''))||((e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:'))&&Boolean(e.read_at))).length;
  const execute=async(task:()=>Promise<void>)=>{
   if(working)return;setWorking(true);setNotice('');
   try{await task();}catch(e){setNotice(e instanceof Error?e.message:'Unable to update notification');}
@@ -111,13 +116,13 @@ export default function CrmActivityCenter(){
     {previewActive?'Exit Sample Preview':'Preview Notification Styles'}
    </button>
    {previewActive&&<span role="status" className="rounded-md border border-orange-400/60 bg-orange-950/35 px-3 py-1.5 text-xs font-bold tracking-wide text-orange-200">
-    SAMPLE CARDS ONLY · No real alerts or database changes
+    SAMPLE CARDS ONLY · No messages, push alerts or database changes
    </span>}
   </div>}
   <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
-   {([{label:'Unread',value:unreadCount,icon:Bell},{label:'Urgent',value:urgentCount,icon:AlertTriangle},{label:'Last 24h',value:todayCount,icon:Clock3}] as const).map(({label,value,icon:Icon})=>
+   {([{label:'Unread',value:previewActive?sampleUnread:unreadCount,icon:Bell},{label:'Urgent',value:previewActive?sampleUrgent:urgentCount,icon:AlertTriangle},{label:'Last 24h',value:previewActive?notificationPreviewFixtures.length:todayCount,icon:Clock3}] as const).map(({label,value,icon:Icon})=>
    <div key={label} className="rounded-xl border border-[#c8a96e]/20 bg-[#14110d]/80 px-3 py-4">
-    <div className="flex items-center gap-1 text-xs text-[#bfb09a]"><Icon size={13}/>{label}</div>
+    <div className="flex items-center gap-1 text-xs text-[#bfb09a]"><Icon size={13}/>{label}{previewActive&&<span className="text-[10px] text-[#e8b96b]">· Sample</span>}</div>
     <p className="mt-2 font-serif text-3xl text-[#ecd19d] tabular-nums">{value}</p>
    </div>)}
   </div>
@@ -125,7 +130,7 @@ export default function CrmActivityCenter(){
    <div role="group" aria-label="Filter activity" className="flex flex-wrap gap-2">
     {filters.map(({key,label})=><IosNativeTap key={key}><button type="button" onClick={()=>setFilter(key)}
      aria-pressed={filter===key} data-filter={key} className="crm-activity-filter relative isolate overflow-hidden rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,box-shadow] duration-300">
-     <span className="relative z-10">{label}{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</span></button></IosNativeTap>)}
+     <span className="relative z-10">{label}{key==='history'&&(previewActive?sampleHistory: hiddenCount)>0?' ('+(previewActive?sampleHistory:hiddenCount)+')':''}</span></button></IosNativeTap>)}
    </div>
   </div>
   {notice&&<p role="alert" className="mt-3 text-sm text-amber-200">{notice}</p>}
