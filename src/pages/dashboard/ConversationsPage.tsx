@@ -479,11 +479,10 @@ export default function ConversationsPage() {
       {c.opportunity_kind?<span className="inline-flex rounded-md border border-[#c7a66e]/45 bg-[#b69a65]/10 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#efd5a2]">{c.opportunity_kind==='both'?'Buyer & Seller':c.opportunity_kind==='investor'?'Investor':c.opportunity_kind==='seller'?'Seller Interest':'Buyer Interest'} · {c.priority==='hot'?'High Intent':'Qualified Interest'}</span>:<span aria-hidden="true"/>}
       <time className="ml-auto text-right text-[11px] leading-relaxed text-[#c6b6a3] tabular-nums" dateTime={preview?(visitorSentAt[c.id]||c.last_message_at||c.started_at):(c.last_message_at||c.started_at)}>{preview&&visitorSentAt[c.id]?'Sent':'Last activity'} {time(preview?(visitorSentAt[c.id]||c.last_message_at||c.started_at):(c.last_message_at||c.started_at))}</time>
      </div>
-     <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#bcb2a5]">
-      <span className="font-medium text-[#e8d4b8]">{statusLabel(c.status)}</span>
-      {c.language_code.toLowerCase()!=='en'&&<span>· {languageLabel(c.language_code)}</span>}
+     <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
+      <span className="font-medium text-[#e8d4b8]">{statusLabel(c.status)}{c.language_code.toLowerCase()!=='en'&&<span className="font-normal text-[#bcb2a5]"> · {languageLabel(c.language_code)}</span>}</span>
+      <span className="inline-flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></span>
      </div>
-     <div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
     </button>;
    })}</section>
    <section ref={transcriptRef} data-focused-transcript={focused?'true':undefined} aria-label="Chat History" className={(focused?'focused-transcript-enter ':'ds-page-reveal ds-page-reveal-4 ')+'crm-transcript-frame relative isolate rounded-xl min-h-80 p-5'}>
