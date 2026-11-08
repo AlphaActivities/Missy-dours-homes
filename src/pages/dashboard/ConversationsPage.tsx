@@ -58,7 +58,11 @@ export default function ConversationsPage() {
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
  const refresh=async(showLoading=true)=>{if(showLoading){setLoading(true);setError(null);}try{
   const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
-  if(error)throw error;setItems((data??[]) as Conversation[]);
+  if(error)throw error;setItems(previous=>{
+   const latest=(data??[]) as Conversation[];
+   const pinned=previous.find(c=>c.id===selectedDeepLinkRef.current);
+   return pinned&&!latest.some(c=>c.id===pinned.id)?[pinned,...latest]:latest;
+  });
   // Presence is independent of the visitor token expiry or message recency.
   const presence=await supabase.from('ai_concierge_visitor_presence').select('conversation_id,last_seen_at,chat_visible').limit(200);
   setVisitorPresence(presence.error?{}:Object.fromEntries((presence.data??[]).map(p=>[p.conversation_id,{last_seen_at:p.last_seen_at,chat_visible:p.chat_visible}])));
