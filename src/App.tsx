@@ -120,7 +120,10 @@ function Layout() {
   );
 
   return (
-    <>
+    // The public homepage needs its own stacking context: the video uses a
+    // negative z-index so it sits behind content, but must remain ABOVE the
+    // dark html/body/#root startup paint shared with the private CRM.
+    <div className={isHomePage ? 'relative isolate min-h-screen' : 'min-h-screen'}>
       {isHomePage && <GlobalVideoBackground />}
       <Navbar />
       <Outlet context={outletContext} />
@@ -134,7 +137,7 @@ function Layout() {
         price={transitionPreview?.price}
         onDismiss={handleDismiss}
       />
-    </>
+    </div>
   );
 }
 
