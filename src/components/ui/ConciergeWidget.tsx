@@ -22,10 +22,29 @@ type SpeechWindow = Window & {
   webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
 };
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string; sender?: 'ai' | 'human' | 'visitor'; delivered_to_staff_at?:string|null;read_by_staff_at?:string|null };
+type SyncedMessage = {id:string;sender:'visitor'|'ai'|'human'|'system';body:string;delivered_to_staff_at?:string|null;read_by_staff_at?:string|null};
+const mapSyncedMessage=(m:SyncedMessage):Message=>({
+ id:m.id,role:m.sender==='visitor'?'visitor':'concierge',
+ sender:m.sender==='system'?undefined:m.sender,text:m.body,
+ delivered_to_staff_at:m.delivered_to_staff_at,read_by_staff_at:m.read_by_staff_at
+});
+function visitorReceipt(m:Message,index:number,all:Message[],mode:'ai'|'human'|'waiting_human'|'closed'){
+ if(m.read_by_staff_at)return 'Read by team';
+ if(m.delivered_to_staff_at)return 'Delivered to team';
+ if(String(m.id).startsWith('pending-'))return 'Sending…';
+ if(mode==='human'||mode==='waiting_human')return 'Sent';
+ if(all.slice(index+1).some(next=>next.sender==='ai'))return 'Received by assistant';
+ return 'Sent';
+}
+function prefersHuman(messages:Message[]){
+ const visitors=messages.filter(m=>m.role==='visitor');
+ return visitors.length>=2||visitors.some(m=>/\b(speak|talk|connect|call|phone|meet|appointment|showing|tour|schedule|representative|person|human|agent|missy|realtor)\b/i.test(m.text));
+}
+
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy. What happy answer can we find for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
-const AI_TYPING_MIN_MS = 3800;
+const AI_TYPING_MIN_MS = 5000;
 const INTRO_TITLE = 'Imagine the Life That Awaits.';
 
 // NANP structural validation, not proof a number is assigned or reachable.
@@ -85,7 +104,7 @@ const CONCIERGE_LINK_HOSTS = new Set([
   'hud.gov', 'www.hud.gov',
 ]);
 function renderConciergeText(text: string) {
-  return text.split(/(https:\/\/[^\s<>"']+)/gi).map((part,index) => {
+  return text.replace(/\s*[—–]\s*/g, '... ').split(/(https:\/\/[^\s<>"']+)/gi).map((part,index) => {
     if (!/^https:\/\//i.test(part)) return part;
     const urlText = part.replace(/[.,!?;:)\]]*$/, '');
     const suffix = part.slice(urlText.length);
@@ -389,11 +408,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         setMode(result.status);
         setMessages([
           INITIAL[0],
-          ...result.messages.filter(m => m.sender !== 'system').map(m => ({
-            id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const,
-            sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
-            delivered_to_staff_at:m.delivered_to_staff_at,read_by_staff_at:m.read_by_staff_at,
-          })),
+          ...result.messages.filter(m => m.sender !== 'system').map(mapSyncedMessage),
         ]);
         // Browser acknowledgement is separate from the server's saved state.
         // Hidden tabs never claim that their visitors have read a message.
@@ -489,9 +504,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       // Reload canonical IDs/sequence after the successful send; local fallback only on sync failure.
       try {
         const updated=await transport.sync(visitor);
-        setMessages([INITIAL[0],...updated.messages.filter(m=>m.sender!=='system').map(m=>({
-          id:m.id,role:m.sender==='visitor'?'visitor' as const:'concierge' as const,sender:m.sender as 'visitor'|'ai'|'human',text:m.body,
-        }))]);
+        setMessages([INITIAL[0],...updated.messages.filter(m=>m.sender!=='system').map(mapSyncedMessage)]);
         setMode(updated.status);
       } catch {
         setMessages(previous=>[
@@ -509,9 +522,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         const latest = await transport.sync(visitor);
         const lastVisitor = [...latest.messages].reverse().find(m => m.sender === 'visitor');
         setMode(latest.status);
-        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
-          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
-        }))]);
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(mapSyncedMessage)]);
         if (lastVisitor?.body === message) {
           setDraft('');
           setTransportError(null);
@@ -559,9 +570,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       try {
         const latest = await transport.sync(session);
         setMode(latest.status);
-        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
-          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
-        }))]);
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(mapSyncedMessage)]);
         if (latest.status === 'waiting_human' || latest.status === 'human') {
           setDraft('');
           setTransportError(null);
@@ -604,10 +613,10 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               <p className="mt-1.5 text-center text-xs leading-relaxed text-[#c3af8d]">Security check: confirming this is a real visitor, not an automated bot. This helps protect your conversation. It may take a moment.</p>
               <div className="mt-3 flex justify-center"><TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} /></div>
             </section>}
-            {messages.filter(m=>m.id!==0 || welcomeReady).map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
+            {messages.filter(m=>m.id!==0 || welcomeReady).map((m,index,visibleMessages) => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[87%] flex-col ${m.role==='visitor'?'items-end':'items-start'}`}>
                 <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'missy-ios-outgoing-bubble rounded-br-[9px] bg-[#0A84FF] text-white shadow-[0_4px_14px_rgba(10,132,255,.17)]' : 'missy-ios-incoming-bubble rounded-bl-[9px] bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
-                {!privateQA&&m.role==='visitor'&&typeof m.id==='string'&&<span className="mt-1 self-end pr-1 text-[10px] text-[#aeb8c5]">{m.read_by_staff_at?'Read by team':m.delivered_to_staff_at?'Delivered to team':'Sent'}</span>}
+                {!privateQA&&m.role==='visitor'&&typeof m.id==='string'&&<span className="mt-1 self-end pr-1 text-[10px] text-[#aeb8c5]">{visitorReceipt(m,index,visibleMessages,mode)}</span>}
                 {!privateQA && session && mode === 'human' && m.sender === 'human' && <div className="relative mt-1 flex items-center gap-1">
                   <button type="button" aria-label={`React to message ${m.id}`} aria-expanded={reactionPicker===String(m.id)} onClick={()=>setReactionPicker(current=>current===String(m.id)?null:String(m.id))} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/15 bg-[#1b1b1e] px-2 text-[13px] text-[#d5d5d8] hover:border-[#007AFF]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">
                     <SmilePlus size={15} aria-hidden="true"/>{reactions[String(m.id)] && <span aria-label="Your reaction">{reactions[String(m.id)]}</span>}
@@ -623,7 +632,13 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               <button type="button" onClick={goToContact} className="mt-2 rounded-full border border-[#dfbf82] bg-[#c5a16a] px-4 py-2 font-semibold text-black transition-transform hover:brightness-110 active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Contact Missy</button>
             </div>}
             
-            {chatEnabled && session && mode === 'ai' && messages.some(m => m.role === 'visitor') && !handoffOpen && <button type="button" onClick={() => setHandoffOpen(true)} disabled={busy} className="inline-flex min-h-9 items-center justify-center rounded-lg border border-[#b99b68]/45 bg-[#211a12]/75 px-3 py-2 text-xs font-medium text-[#d8bc8b] transition-[background-color,border-color,transform] duration-150 hover:border-[#dfbf82] hover:bg-[#33291b] active:scale-[.97] active:bg-[#483722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a] disabled:cursor-not-allowed disabled:opacity-50">Request a team member</button>}
+            {chatEnabled && session && mode === 'ai' && messages.some(m=>m.role==='visitor') && !handoffOpen && (prefersHuman(messages) ?
+              <section aria-label="Personal assistance" className="rounded-2xl border border-[#c6a16c]/35 bg-gradient-to-br from-[#242016]/90 to-[#17130f]/95 px-4 py-4 shadow-[0_9px_30px_rgba(0,0,0,.14)]">
+                <p className="font-serif text-[17px] text-[#f2d6a4]">Prefer a personal touch?</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-[#cebea5]">Missy’s team can help explore the details, arrange a conversation, and guide your next step.</p>
+                <button type="button" disabled={busy} onClick={()=>setHandoffOpen(true)} className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full border border-[#ddb977]/65 bg-[#c5a16a]/15 px-5 text-sm font-semibold text-[#f0d6a3] transition-colors hover:bg-[#c5a16a]/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcb8d] disabled:opacity-40">Connect with Missy’s team <span aria-hidden="true" className="ml-2">→</span></button>
+              </section>
+              : <button type="button" disabled={busy} onClick={()=>setHandoffOpen(true)} className="text-xs font-medium text-[#d5b781] underline decoration-[#b99761]/60 underline-offset-4 hover:text-[#f0d39e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcb8d] disabled:opacity-40">Prefer to speak with Missy’s team?</button>)}
             {chatEnabled && session && mode === 'ai' && handoffOpen && <form onSubmit={e=>{e.preventDefault();void requestHuman();}} className="space-y-3 rounded-2xl border border-[#c6a16c]/45 bg-[#231a11]/80 p-4" aria-label="Request a callback">
               <p className="font-serif text-base text-[#f1d39a]">Connect with Missy’s team</p>
               <p className="text-xs text-[#e5d4ba]">{privateQA?'QA mode: use the prefilled reserved test name and phone number. They do not belong to a real customer.':'In case we get disconnected, please leave a name and phone number where Missy can reach you. We’ll use it for this request.'}</p>
