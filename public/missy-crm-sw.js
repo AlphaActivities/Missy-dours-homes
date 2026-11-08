@@ -1,4 +1,7 @@
 /* Private CRM notifications only. Never cache authenticated pages or message bodies. */
+// Activate routing fixes promptly on installed iPhone apps and desktop PWAs.
+self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
+self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
 /* Accept only concrete, internal CRM destinations; a push payload cannot
    navigate staff to external or arbitrary site URLs. */
 const crmTarget = payload => {
