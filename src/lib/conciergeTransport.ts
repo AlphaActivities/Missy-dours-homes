@@ -55,6 +55,7 @@ export const conciergeTransport = {
     request<{ reply?: string; language?: string; conversation_id: string; status?: string; saved?: boolean }>('/message', { message, language }, session.token),
   handoff: (session: VisitorSession, message: string, contact: {name:string;phone:string;contact_consent:boolean}) => request<{status:string;conversation_id:string}>('/handoff', {message,...contact}, session.token),
   sync: (session: VisitorSession) => request<{status: 'ai'|'human'|'waiting_human'|'closed';messages: Array<{id:string;sender:'visitor'|'ai'|'human'|'system';body:string;created_at:string;sender_actor:string|null}>}>('/sync', {}, session.token),
+  ack: (session: VisitorSession,messageIds:string[],read:boolean) => request<{ok:boolean}>('/ack',{message_ids:messageIds,read},session.token),
   heartbeat: async (session: VisitorSession, visible: boolean) => {
     if(!configured())return;
     // A separate, token-validated endpoint: never make a chat message just
