@@ -37,6 +37,15 @@ export default function ConversationsPage() {
  const requestedConversation=searchParams.get('conversation');
  const focused=Boolean(requestedConversation && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation));
  const [focusedRecordReady,setFocusedRecordReady]=useState(!focused);
+ // Keep the intentional loading indicator visible for at least two seconds
+ // on notification deep links, even when the presence query resolves sooner.
+ const [minimumCheckElapsed,setMinimumCheckElapsed]=useState(!focused);
+ useEffect(()=>{
+  if(!focused){setMinimumCheckElapsed(true);return;}
+  setMinimumCheckElapsed(false);
+  const timer=window.setTimeout(()=>setMinimumCheckElapsed(true),2000);
+  return()=>window.clearTimeout(timer);
+ },[focused,requestedConversation]);
  const selectedDeepLinkRef=useRef<string|null>(null);
  const [selected,setSelected]=useState<string|null>(()=>focused?requestedConversation:null);
  const [loadedConversation,setLoadedConversation]=useState<string|null>(null);
@@ -242,7 +251,7 @@ export default function ConversationsPage() {
   const last=c.last_message_at?Date.parse(c.last_message_at):NaN;
   return Number.isFinite(last)&&presenceClock-last<=120000&&last<=presenceClock+30000?'recent':'available';
  };
- const statusLoading=!presenceReady||(focused&&!focusedRecordReady);
+ const statusLoading=!presenceReady||(focused&&(!focusedRecordReady||!minimumCheckElapsed));
  const sessionDisplay=(c:Conversation)=>{
   const state=sessionState(c);
   return state==='expired'?'Session Expired':state==='online'?'Online · Chat Open':state==='away'?'Away · Chat Not Visible'
