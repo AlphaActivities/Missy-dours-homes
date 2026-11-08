@@ -29,10 +29,12 @@ export default function CrmActivityCenter(){
  const [refreshing,setRefreshing]=useState(false);
  const refreshInbox=async()=>{if(refreshing)return;setRefreshing(true);try{await refresh();}finally{setRefreshing(false);}};
  const visible=useMemo(()=>items.filter(e=>{
-  // Completed requests belong in History; staff updates are informational.
+  // Completed handoff requests belong in History. Team updates appear once
+  // as informational notifications, then move to History when acknowledged.
   const historicalHandoff=e.category==='handoff'&&['completed','closed'].includes(e.callback_status??'');
-  const auditOnly=Boolean(e.chat_lead_audit)||historicalHandoff;
-  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:'));
+  const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
+  const auditOnly=Boolean(e.chat_lead_audit)||historicalHandoff||(teamUpdate&&Boolean(e.read_at));
+  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly);
   if(e.archived_at||e.lead_archived||auditOnly)return false;
   if(filter==='all')return true;
   if(filter==='unread')return !e.read_at&&e.category!=='staff';
