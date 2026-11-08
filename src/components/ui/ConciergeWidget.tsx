@@ -511,7 +511,6 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                 </div>}
               </div>
             </div>)}
-            {(aiTyping || welcomeTyping) && <AssistantTypingBubble />}
             {!chatEnabled && <div className="missy-concierge-fallback rounded-2xl border border-[#c7a568]/35 bg-gradient-to-br from-[#3a2c17]/55 to-[#18140f] px-5 py-4 text-xs leading-relaxed text-[#f0dbb4] shadow-[inset_0_1px_0_rgba(255,231,180,.07)]">
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <button type="button" onClick={goToContact} className="mt-2 rounded-full border border-[#dfbf82] bg-[#c5a16a] px-4 py-2 font-semibold text-black transition-transform hover:brightness-110 active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Contact Missy</button>
@@ -554,6 +553,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
+          {(aiTyping || welcomeTyping) && <div className="shrink-0 px-5 pb-3 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
               <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>{
