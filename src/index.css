@@ -1239,23 +1239,37 @@
 }
 
 
-/* Focused notification deep links: suppress the split-second "Checking…"
-   paint while the independent visitor-presence query resolves. Reserve the
-   card's space so the chat below does not jump. No artificial network delay. */
+/* Chatbot connection check: a purposeful, premium loading affordance instead
+   of an invisible card or a split-second text flash. The panel retains its
+   reserved height, avoiding message reflow as the verified status arrives. */
 .ds-shell .crm-connection-pending {
-  visibility: hidden;
-  opacity: 0;
+  visibility: visible;
+  opacity: 1;
 }
-@keyframes crm-connection-resolved {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.ds-shell .crm-connection-spinner {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(226, 185, 113, .23);
+  border-top-color: #f2d396;
+  border-right-color: #dfb773;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(212, 171, 102, .18);
+  animation: crm-connection-spin 750ms linear infinite;
+}
+@keyframes crm-connection-spin {
+  to { transform: rotate(360deg); }
 }
 .ds-shell [data-focused-transcript="true"] > .crm-connection-ready {
   visibility: visible;
-  animation: crm-connection-resolved 240ms ease-out both;
+  opacity: 1;
+  animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .ds-shell [data-focused-transcript="true"] > .crm-connection-ready {
-    animation: none !important;
+  .ds-shell .crm-connection-spinner {
+    animation: none;
+    border-color: #dfb773;
+    border-right-color: rgba(226,185,113,.23);
   }
 }
