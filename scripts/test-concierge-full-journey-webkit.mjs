@@ -102,10 +102,12 @@ try {
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),0);
 
  assert.equal(await dialog.getByText(/Automatic language assistance/).count(),0);
- const humanButton=dialog.getByRole('button',{name:'Request a team member'});
+ // A discreet one-turn human option must remain accessible without
+ // forcing a lead form or interrupting the assistant's answer.
+ const humanButton=dialog.getByRole('button',{name:'Prefer to speak with Missy’s team?'});
  await humanButton.waitFor({state:'visible'});
- assert.ok((await humanButton.getAttribute('class')).includes('border-[#b99b68]/45'),'Human handoff should be a subtle secondary action');
- await dialog.getByRole('button',{name:'Request a team member'}).click();
+ assert.ok((await humanButton.getAttribute('class')).includes('underline'),'Human handoff should stay discoverable as a subtle action');
+ await humanButton.click();
  const form=dialog.getByRole('form',{name:'Request a callback'});
  await form.getByPlaceholder('Full name').fill('Example Visitor');
  const phone=form.getByRole('textbox',{name:'Callback phone number'});
