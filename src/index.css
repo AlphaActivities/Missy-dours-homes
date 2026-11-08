@@ -683,6 +683,37 @@
   .ds-shell .crm-open-notification-arrow { transition: none; }
 }
 
+/* A single category palette powers the filter chips AND their notice cards.
+   State (needs attention/complete) is separate; category never means urgency. */
+.ds-shell .crm-category-notification {
+  --crm-category-rgb: 209, 177, 112;
+  border-color: rgba(var(--crm-category-rgb), .58);
+  background: linear-gradient(135deg,
+    rgba(var(--crm-category-rgb), .12), rgba(17, 15, 15, .92) 66%);
+  box-shadow: inset 0 1px 0 rgba(var(--crm-category-rgb), .1),
+    0 7px 24px rgba(0, 0, 0, .16), 0 0 15px rgba(var(--crm-category-rgb), .055);
+}
+.ds-shell .crm-category-notification[data-category="lead"] { --crm-category-rgb: 122,169,216; }
+.ds-shell .crm-category-notification[data-category="handoff"] { --crm-category-rgb: 125,187,181; }
+.ds-shell .crm-category-notification[data-category="staff"] { --crm-category-rgb: 133,186,148; }
+.ds-shell .crm-category-notification[data-category="escalation"] { --crm-category-rgb: 207,119,100; }
+.ds-shell .crm-category-notification .crm-notification-source {
+  color: rgb(var(--crm-category-rgb));
+  border-color: rgba(var(--crm-category-rgb), .62);
+  background: rgba(var(--crm-category-rgb), .09);
+}
+.ds-shell .crm-category-notification[data-work-state="action"] {
+  box-shadow: 0 0 0 1px rgba(198, 70, 78, .24),
+    0 0 16px rgba(var(--crm-category-rgb), .08);
+}
+.ds-shell .crm-category-notification[data-work-state="complete"] {
+  background: linear-gradient(135deg,
+    rgba(var(--crm-category-rgb), .16), rgba(15, 19, 16, .9) 70%);
+}
+.ds-shell .crm-category-notification[data-category="escalation"][data-work-state="action"] {
+  border-color: rgba(225, 101, 105, .82);
+}
+
 /* Outstanding CRM work uses the same masked living-border approach as
    Overview's priority stat card, but with a controlled ruby-red palette.
    The moving highlight is confined to the border (no wedge over card copy).
