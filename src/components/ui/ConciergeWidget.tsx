@@ -103,8 +103,8 @@ const CONCIERGE_LINK_HOSTS = new Set([
   'consumerfinance.gov', 'www.consumerfinance.gov',
   'hud.gov', 'www.hud.gov',
 ]);
-function renderConciergeText(text: string) {
-  return text.replace(/\s*[—–]\s*/g, '... ').split(/(https:\/\/[^\s<>"']+)/gi).map((part,index) => {
+function renderConciergeText(text: string, aiGenerated = true) {
+  return (aiGenerated ? text.replace(/\s*[—–]\s*/g, '... ') : text).split(/(https:\/\/[^\s<>"']+)/gi).map((part,index) => {
     if (!/^https:\/\//i.test(part)) return part;
     const urlText = part.replace(/[.,!?;:)\]]*$/, '');
     const suffix = part.slice(urlText.length);
@@ -510,7 +510,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         setMessages(previous=>[
           ...previous.filter(item => item.id !== pendingMessageId),
           {id:'local-visitor-'+Date.now(),role:'visitor',sender:'visitor',text:message},
-          ...(result.reply?[{id:'local-reply-'+Date.now(),role:'concierge' as const,text:result.reply}]:[])
+          ...(result.reply?[{id:'local-reply-'+Date.now(),role:'concierge' as const,sender:'ai' as const,text:result.reply}]:[])
         ]);
       }
       if (result.status === 'human') setMode('human');
@@ -615,7 +615,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             </section>}
             {messages.filter(m=>m.id!==0 || welcomeReady).map((m,index,visibleMessages) => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[87%] flex-col ${m.role==='visitor'?'items-end':'items-start'}`}>
-                <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'missy-ios-outgoing-bubble rounded-br-[9px] bg-[#0A84FF] text-white shadow-[0_4px_14px_rgba(10,132,255,.17)]' : 'missy-ios-incoming-bubble rounded-bl-[9px] bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
+                <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'missy-ios-outgoing-bubble rounded-br-[9px] bg-[#0A84FF] text-white shadow-[0_4px_14px_rgba(10,132,255,.17)]' : 'missy-ios-incoming-bubble rounded-bl-[9px] bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text, m.sender !== 'human')}</p>
                 {!privateQA&&m.role==='visitor'&&typeof m.id==='string'&&<span className="mt-1 self-end pr-1 text-[10px] text-[#aeb8c5]">{visitorReceipt(m,index,visibleMessages,mode)}</span>}
                 {!privateQA && session && mode === 'human' && m.sender === 'human' && <div className="relative mt-1 flex items-center gap-1">
                   <button type="button" aria-label={`React to message ${m.id}`} aria-expanded={reactionPicker===String(m.id)} onClick={()=>setReactionPicker(current=>current===String(m.id)?null:String(m.id))} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/15 bg-[#1b1b1e] px-2 text-[13px] text-[#d5d5d8] hover:border-[#007AFF]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">
