@@ -337,10 +337,12 @@ Deno.serve(async req=>{
  const lower=message.toLowerCase();
  const sellerIntent=/\b(sell(?:ing)? (?:my|our|a) (?:home|house|property)|list (?:my|our) (?:home|house|property)|listing my (?:home|house)|home valuation|what(?:'s| is) my (?:home|house) worth|value of my (?:home|house)|seller consultation)\b/i.test(lower);
  const buyerIntent=/\b(schedule (?:a )?(?:showing|tour)|(?:book|arrange) (?:a )?(?:showing|tour)|(?:tour|see|view) (?:this|that|the) (?:home|house|property)|make an offer|pre-?approved|mortgage pre-?approval|ready to buy|buy(?:ing)? (?:a|my first) (?:home|house)|is (?:this|that|the) (?:home|house|property|listing) (?:still )?available|(?:home|house|property|listing) (?:at|on) [\w\s]+ (?:available|price|showing))\b/i.test(lower);
+ const specificProperty=/\b(?:\d{3,6}\s+[a-z][a-z\s]{2,48}\s+(?:st|street|dr|drive|road|rd|lane|ln|avenue|ave|circle|cir|court|ct)\b|(?:this|that|the)\s+(?:listing|property|home|house)\b)/i.test(lower);
+ const priceForProperty=/\b(price|pricing|asking price|list price|still available|availability|schedule|showing|tour)\b/i.test(lower);
  const investorIntent=/\b(investment property|real estate invest(?:or|ment)|rental property|cap rate|cash flow property)\b/i.test(lower);
  const nearTerm=/\b(today|tomorrow|this week|asap|this weekend|next week|ready to tour|schedule a showing|make an offer|under contract|closing soon|next month)\b/i.test(lower);
  const generalIntent=/\b(buy|buying|sell|selling|relocating|moving|looking for|searching for|view a home|list my home)\b/i.test(lower);
- const qualified=buyerIntent||sellerIntent||investorIntent;
+ const qualified=buyerIntent||sellerIntent||investorIntent||(specificProperty&&priceForProperty);
  const priority=qualified&&nearTerm?'hot':qualified||generalIntent?'warm':'unrated';
  const reason=qualified
   ? (sellerIntent&&buyerIntent?'Buyer and seller request':investorIntent?'Investment property inquiry':sellerIntent?'Seller inquiry': 'Specific buyer or showing inquiry')
@@ -356,7 +358,7 @@ Deno.serve(async req=>{
  if(qualified) {
   const kind=sellerIntent&&buyerIntent?'both':investorIntent?'investor':sellerIntent?'seller':'buyer';
   const existingKind=existing?.opportunity_kind;
-  const finalKind=existingKind&&existingKind!==kind&&existingKind!=='both'?'both':kind;
+  const finalKind=existingKind==='both'||(existingKind==='buyer'&&kind==='seller')||(existingKind==='seller'&&kind==='buyer')?'both':existingKind==='investor'||kind==='investor'?'investor':kind;
   await db.from('ai_conversations').update({opportunity_kind:finalKind})
     .eq('id',chat.id).eq('status','ai');
  }
