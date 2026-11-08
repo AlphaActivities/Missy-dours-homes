@@ -91,7 +91,10 @@ export default function ConversationsPage() {
   return()=>{window.clearInterval(timer);void supabase.removeChannel(channel);};
  },[]);
  useEffect(()=>{
-  if(!requestedConversation||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation))return;
+  if(!requestedConversation){setDeepLinkAligned(true);return;}
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation)){
+   setError('The conversation link is invalid.');setDeepLinkAligned(true);return;
+  }
   if(selectedDeepLinkRef.current===requestedConversation)return;
   let cancelled=false;
   const selectRequested=async()=>{
