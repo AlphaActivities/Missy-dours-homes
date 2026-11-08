@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { ReactNode } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoadingScreen } from './ui/LoadingSpinner';
+import { safeCrmDestination } from '../../lib/crmDeepLinks';
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { session, loading, authError, retrySession, isApproved } = useAuth();
@@ -17,7 +18,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   );
 
   if (!session || !isApproved) {
-    return <Navigate to="/dashboard/login" state={{ from: location.pathname === "/dashboard/concierge-qa" ? "/dashboard/concierge-qa" : "/dashboard" }} replace />;
+    return <Navigate to="/dashboard/login" state={{ from: safeCrmDestination(location.pathname + location.search) ?? "/dashboard" }} replace />;
   }
 
   return <>{children}</>;
