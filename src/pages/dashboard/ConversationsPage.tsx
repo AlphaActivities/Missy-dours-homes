@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MessageCircle, MessagesSquare, RefreshCw, Search, Clock3, WifiOff, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,6 +16,9 @@ export default function ConversationsPage() {
  const {user}=useAuth();
  const staffEmail=user?.email?.toLowerCase()??'';
  const [items,setItems]=useState<Conversation[]>([]);
+ const [searchParams]=useSearchParams();
+ const requestedConversation=searchParams.get('conversation');
+ const selectedDeepLinkRef=useRef<string|null>(null);
  const [selected,setSelected]=useState<string|null>(null);
  const transcriptRef=useRef<HTMLElement|null>(null);
  const focusConversation=(id:string)=>{
@@ -58,6 +62,25 @@ export default function ConversationsPage() {
   setPendingTasks(tasks.data??[]);
  }catch(e){if(showLoading)setError(e instanceof Error?e.message:'Could not load conversations');}finally{if(showLoading)setLoading(false);}};
  useEffect(()=>{void refresh();const timer=window.setInterval(()=>void refresh(false),15000);return()=>window.clearInterval(timer);},[]);
+ useEffect(()=>{
+  if(!requestedConversation||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation))return;
+  if(selectedDeepLinkRef.current===requestedConversation)return;
+  let cancelled=false;
+  const selectRequested=async()=>{
+   // The notification's target may fall outside the most recent 100.
+   if(!items.some(c=>c.id===requestedConversation)){
+    const result=await supabase.from('ai_conversations')
+     .select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at')
+     .eq('id',requestedConversation).maybeSingle();
+    if(cancelled)return;
+    if(result.error||!result.data){setError('The requested conversation is unavailable or you do not have access.');return;}
+    setItems(existing=>existing.some(c=>c.id===requestedConversation)?existing:[result.data as Conversation,...existing]);
+   }
+   if(!cancelled){selectedDeepLinkRef.current=requestedConversation;focusConversation(requestedConversation);}
+  };
+  void selectRequested();
+  return()=>{cancelled=true;};
+ },[requestedConversation,loading]);
  useEffect(()=>{
   previewGeneration.current++;
   setPreviewBusy(false);
