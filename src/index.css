@@ -1273,3 +1273,21 @@
     border-right-color: rgba(226,185,113,.23);
   }
 }
+
+
+/* CRM native scheduling inputs: mobile Safari's date/time control has an
+   intrinsic minimum width that can push past a bordered modal or flex row.
+   Constrain only these fields while keeping the native calendar/time picker. */
+.ds-shell .crm-native-date-control {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+.ds-shell input[type="datetime-local"].crm-native-date-control {
+  display: block;
+  width: 100%;
+}
+.ds-shell .crm-native-date-control::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
