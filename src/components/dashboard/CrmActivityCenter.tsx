@@ -12,7 +12,7 @@ const displayTitle=(item:CrmActivity)=>(item.category==='handoff'||item.category
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'||/^\/dashboard\/conversations\?conversation=[0-9a-f-]{36}$/i.test(value)?value:'/dashboard/conversations';
 const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|·)/gi,'$1Homepage');
 // Keep the CTA's destination, label and next-step guidance consistent.
-const opensLead=(item:CrmActivity)=>Boolean(item.category==='handoff'&&item.callback_lead_id)||item.target_path.startsWith('/dashboard/leads?lead=');
+const opensLead=(item:CrmActivity)=>item.category==='lead'||Boolean(item.category==='handoff'&&item.callback_lead_id)||item.target_path.startsWith('/dashboard/leads?lead=');
 const actionLabel=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'Open Lead · Record Outcome':opensLead(item)?'Open Lead':'View Conversation';
 const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:(item.category==='handoff'||item.category==='escalation')&&item.callback_conversation_id?'/dashboard/conversations?conversation='+item.callback_conversation_id:safeTarget(item.target_path);
 const filters:Array<{key:Filter;label:string}>=[

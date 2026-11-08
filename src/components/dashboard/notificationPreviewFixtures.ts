@@ -14,8 +14,6 @@ export const notificationPreviewFixtures:CrmActivity[]=[
    summary:'Example Team Member · Follow-up completed',callback_status:'completed'},
  { ...base,id:'preview-staff-claimed',event_key:'staff:claimed:preview',category:'staff',title:'Team Member Joined',
    summary:'Example Team Member · Chat assigned to staff',callback_status:'claimed'},
- { ...base,id:'preview-lead-progress',event_key:'lead:preview-progress',category:'lead',title:'Lead Follow-up In Progress',
-   summary:'Example Seller · Consultation underway',lead_status:'contacted',read_at:'2026-11-07T19:05:00Z'},
  { ...base,id:'preview-chat-done',event_key:'handoff:preview-done',category:'handoff',title:'Chat Request Received',
    summary:'Example Visitor · Team follow-up resolved',callback_status:'completed',callback_requested_at:'2026-11-07T17:10:00Z',read_at:'2026-11-07T19:05:00Z'}
 ];
