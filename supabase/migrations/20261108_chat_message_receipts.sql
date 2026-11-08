@@ -28,5 +28,5 @@ begin
  return updated_count;
 end $function$;
 revoke all on function public.ai_concierge_ack_staff_messages(uuid,uuid[],boolean) from public,anon;
-grant execute on function public.ai_concierge_ack_staff_messages(uuid,boolean) to authenticated;
+grant execute on function public.ai_concierge_ack_staff_messages(uuid,uuid[],boolean) to authenticated;
 
