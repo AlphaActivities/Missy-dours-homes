@@ -277,6 +277,14 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
           })),
         ]);
+        // Browser acknowledgement is separate from the server's saved state.
+        // Hidden tabs never claim that their visitors have read a message.
+        if(!privateQA) {
+          const ids=result.messages.filter(m=>m.sender==='human'||m.sender==='ai').map(m=>m.id).filter((id):id is string=>typeof id==='string');
+          if(ids.length)window.requestAnimationFrame(()=>{
+            void conciergeTransport.ack(session,ids,document.visibilityState==='visible'&&open).catch(()=>{});
+          });
+        }
       } catch (error) {
         if(error instanceof Error && /unauthorized|session expired/i.test(error.message)){
           sessionStorage.removeItem(sessionKey);
