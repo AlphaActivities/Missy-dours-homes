@@ -1176,9 +1176,10 @@
 }
 
 
-/* Shared iMessage-inspired tapered Bézier tail across the public chat and CRM.
-   A curved silhouette replaces the flat polygon tab. Keep tail backgrounds
-   matched to sender bubble colors, independent of text, layout and receipts. */
+/* Shared iPhone-inspired speech-bubble geometry. Every public chatbot,
+   typing, CRM preview and CRM transcript bubble uses this same tail mask.
+   Separate the tapered tail from the small corner overlap so Safari cannot
+   reveal a hard vertical seam where the two shapes meet. */
 .missy-ios-incoming-bubble,
 .missy-ios-outgoing-bubble,
 .crm-ios-visitor-bubble,
@@ -1186,37 +1187,75 @@
 .crm-ios-team-bubble {
   position: relative;
   overflow: visible;
+  isolation: isolate;
 }
-.missy-ios-incoming-bubble::after,
-.missy-ios-outgoing-bubble::after,
-.crm-ios-visitor-bubble::after,
-.crm-ios-ai-bubble::after,
-.crm-ios-team-bubble::after {
+.missy-ios-incoming-bubble { --ios-bubble: #29292d; }
+.crm-ios-ai-bubble { --ios-bubble: #18385a; }
+.crm-ios-team-bubble { --ios-bubble: #342a1c; }
+.missy-ios-outgoing-bubble,
+.crm-ios-visitor-bubble { --ios-bubble: #0a84ff; }
+
+.missy-ios-incoming-bubble::before,
+.missy-ios-outgoing-bubble::before,
+.crm-ios-visitor-bubble::before,
+.crm-ios-ai-bubble::before,
+.crm-ios-team-bubble::before {
   content: '';
   pointer-events: none;
   position: absolute;
   width: 22px;
   height: 29px;
-  left: 0;
-  bottom: -10px;
-  z-index: 0;
-  background: #29292d;
-  /* One shared iMessage-style hook: vertical stem follows the bubble edge,
-     then a soft inward curl. Unlike the old tail, it doesn't project beyond
-     the left edge or create an unnatural horizontal spike on iPhone Safari. */
+  left: -10px;
+  bottom: -9px;
+  z-index: 1;
+  background: var(--ios-bubble);
   -webkit-mask: url('/images/chat-bubble-tail.svg') center / 100% 100% no-repeat;
   mask: url('/images/chat-bubble-tail.svg') center / 100% 100% no-repeat;
 }
-.crm-ios-ai-bubble::after { background: #18385a; }
-.crm-ios-team-bubble::after { background: #342a1c; }
-.missy-ios-outgoing-bubble::after,
-.crm-ios-visitor-bubble::after {
+.missy-ios-outgoing-bubble::before,
+.crm-ios-visitor-bubble::before {
   left: auto;
-  right: 0;
+  right: -10px;
   transform: scaleX(-1);
-  background: #0a84ff;
 }
 
+/* Blend the masked tail with the bubble at the lower corner: the old
+   mask alone left a visible squared edge at the attachment. */
+.missy-ios-incoming-bubble::after,
+.crm-ios-ai-bubble::after,
+.crm-ios-team-bubble::after,
+.missy-ios-outgoing-bubble::after,
+.crm-ios-visitor-bubble::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+  width: 10px;
+  height: 16px;
+  bottom: 0;
+  background: var(--ios-bubble);
+}
+.missy-ios-incoming-bubble::after,
+.crm-ios-ai-bubble::after,
+.crm-ios-team-bubble::after {
+  left: 0;
+  border-bottom-left-radius: 10px;
+}
+.missy-ios-outgoing-bubble::after,
+.crm-ios-visitor-bubble::after {
+  right: 0;
+  border-bottom-right-radius: 10px;
+}
+
+/* Text, badges and animated dots must always paint over the join layers. */
+.missy-ios-incoming-bubble > *,
+.missy-ios-outgoing-bubble > *,
+.crm-ios-visitor-bubble > *,
+.crm-ios-ai-bubble > *,
+.crm-ios-team-bubble > * {
+  position: relative;
+  z-index: 3;
+}
 
 /* Three quick hops per 3-second cycle: middle hop is highest.
    Transform-only animation avoids reflow and preserves the transcript scroll
