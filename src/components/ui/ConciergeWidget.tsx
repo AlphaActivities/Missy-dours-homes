@@ -9,7 +9,7 @@ type Message = { id: number | string; role: 'concierge' | 'visitor'; text: strin
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy, what could we help answer for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
-const AI_TYPING_MIN_MS = 1400;
+const AI_TYPING_MIN_MS = 2800;
 const INTRO_TITLE = 'Imagine the Life That Awaits.';
 
 // NANP structural validation, not proof a number is assigned or reachable.
@@ -101,7 +101,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
   const [aiTyping, setAiTyping] = useState(false);
-  const [introCharacters,setIntroCharacters] = useState(0);
+  const [introAnimating,setIntroAnimating] = useState(false);
   const [introDone,setIntroDone] = useState(false);
   const [welcomeReady,setWelcomeReady] = useState(false);
   const [welcomeTyping,setWelcomeTyping] = useState(false);
@@ -184,21 +184,16 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   useEffect(()=>{
     if(!open)return;
     if(introPlayedRef.current || sessionRef.current){
-      setIntroCharacters(INTRO_TITLE.length);setIntroDone(true);setWelcomeTyping(false);setWelcomeReady(true);
+      setIntroAnimating(false);setIntroDone(true);setWelcomeTyping(false);setWelcomeReady(true);
       return;
     }
     introPlayedRef.current=true;
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-      setIntroCharacters(INTRO_TITLE.length);setIntroDone(true);setWelcomeReady(Boolean(sessionRef.current));return;
+      setIntroAnimating(false);setIntroDone(true);setWelcomeReady(Boolean(sessionRef.current));return;
     }
-    setIntroCharacters(0);setIntroDone(false);setWelcomeReady(false);setWelcomeTyping(false);
-    let characters=0;
-    const letters=window.setInterval(()=>{
-      characters=Math.min(INTRO_TITLE.length,characters+1);
-      setIntroCharacters(characters);
-      if(characters===INTRO_TITLE.length){window.clearInterval(letters);setIntroDone(true);}
-    },46);
-    return()=>{window.clearInterval(letters);};
+    setIntroDone(false);setWelcomeReady(false);setWelcomeTyping(false);
+    // Animate a fixed-width text layer rather than inserting characters and relaying out glyphs.
+    setIntroAnimating(true);
   },[open]);
 
   // Verification only appears once the entire typewriter headline finishes.
@@ -209,7 +204,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       setWelcomeTyping(false);setWelcomeReady(true);return;
     }
     const typing=window.setTimeout(()=>setWelcomeTyping(true),350);
-    const reveal=window.setTimeout(()=>{setWelcomeTyping(false);setWelcomeReady(true);},1750);
+    const reveal=window.setTimeout(()=>{setWelcomeTyping(false);setWelcomeReady(true);},3500);
     return()=>{window.clearTimeout(typing);window.clearTimeout(reveal);};
   },[open,introDone,session?.conversation_id,welcomeReady]);
 
@@ -491,7 +486,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           </header>
           <div ref={chatHistoryRef} className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y space-y-4 px-5 py-4 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-live="polite">
             {privateQA && <p className="rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">PRIVATE TEST ONLY. This is not a customer inquiry. Use the reserved callback details and clear the test when finished.</p>}
-            <div className="missy-concierge-intro mx-auto w-full max-w-sm py-2 text-center"><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 min-h-[28px] font-serif text-lg tracking-wide text-[#ebd5ae]" aria-label={INTRO_TITLE}><span className="relative inline-grid max-w-full text-left align-top" aria-hidden="true"><span className="invisible col-start-1 row-start-1">{INTRO_TITLE}</span><span className="col-start-1 row-start-1">{INTRO_TITLE.slice(0,introCharacters)}</span></span></p></div>
+            <div className="missy-concierge-intro mx-auto w-full max-w-sm py-2 text-center"><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 min-h-[28px] font-serif text-lg tracking-wide text-[#ebd5ae]" aria-label={INTRO_TITLE}><motion.span className="inline-block max-w-full text-left align-top" aria-hidden="true" initial={false} animate={{clipPath: introAnimating || introDone ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)'}} transition={{duration:0.85,ease:'linear'}} onAnimationComplete={()=>{if(introAnimating){setIntroAnimating(false);setIntroDone(true);}}}>{INTRO_TITLE}</motion.span></p></div>
             {messages.filter(m=>m.id!==0 || welcomeReady).map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className="flex max-w-[87%] flex-col items-start">
                 <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-[12px] bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-[12px] border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
@@ -511,7 +506,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <button type="button" onClick={goToContact} className="mt-2 rounded-full border border-[#dfbf82] bg-[#c5a16a] px-4 py-2 font-semibold text-black transition-transform hover:brightness-110 active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Contact Missy</button>
             </div>}
-            {chatEnabled && introDone && !session && <TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} />}
+            {chatEnabled && introDone && !session && <div className="mb-3 space-y-2"><p className="text-center text-xs leading-relaxed text-[#c3af8d]">Security check: confirming this is a real visitor, not an automated bot. This helps protect your conversation. It may take a moment.</p><TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} /></div>}
             {chatEnabled && session && mode === 'ai' && messages.some(m => m.role === 'visitor') && !handoffOpen && <button type="button" onClick={() => setHandoffOpen(true)} disabled={busy} className="inline-flex min-h-9 items-center justify-center rounded-lg border border-[#b99b68]/45 bg-[#211a12]/75 px-3 py-2 text-xs font-medium text-[#d8bc8b] transition-[background-color,border-color,transform] duration-150 hover:border-[#dfbf82] hover:bg-[#33291b] active:scale-[.97] active:bg-[#483722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a] disabled:cursor-not-allowed disabled:opacity-50">Request a team member</button>}
             {chatEnabled && session && mode === 'ai' && handoffOpen && <form onSubmit={e=>{e.preventDefault();void requestHuman();}} className="space-y-3 rounded-2xl border border-[#c6a16c]/45 bg-[#231a11]/80 p-4" aria-label="Request a callback">
               <p className="font-serif text-base text-[#f1d39a]">Connect with Missy’s team</p>
