@@ -31,6 +31,7 @@ export default function ConversationsPage() {
  const [visitorPresence,setVisitorPresence]=useState<Record<string,{last_seen_at:string;chat_visible:boolean}>>({});
  const [presenceReady,setPresenceReady]=useState(false);
  const [presenceUnavailable,setPresenceUnavailable]=useState(false);
+ const verifiedPresenceSnapshotRef=useRef(false);
  const [focusedRecordReady,setFocusedRecordReady]=useState(!focused);
  const [presenceClock,setPresenceClock]=useState(Date.now());
  const [searchParams]=useSearchParams();
@@ -87,8 +88,15 @@ export default function ConversationsPage() {
   // Presence is independent of the visitor token expiry or message recency.
   const presence=await supabase.from('ai_concierge_visitor_presence').select('conversation_id,last_seen_at,chat_visible').limit(200);
   // A transient network failure must not erase the last verified status.
-  if(!presence.error)setVisitorPresence(Object.fromEntries((presence.data??[]).map(p=>[p.conversation_id,{last_seen_at:p.last_seen_at,chat_visible:p.chat_visible}])));
-  setPresenceUnavailable(Boolean(presence.error));
+  if(!presence.error){
+   verifiedPresenceSnapshotRef.current=true;
+   setVisitorPresence(Object.fromEntries((presence.data??[]).map(p=>[p.conversation_id,{last_seen_at:p.last_seen_at,chat_visible:p.chat_visible}])));
+   setPresenceUnavailable(false);
+  }else if(!verifiedPresenceSnapshotRef.current){
+   // Only display an unavailable state if no successful snapshot exists.
+   // Intermittent later failures should not flash a replacement status.
+   setPresenceUnavailable(true);
+  }
   setPresenceReady(true);
   setPresenceClock(Date.now());
   const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,escalation_due_at,escalated_at,urgency,status').in('status',['pending','claimed']).order('due_at',{ascending:true}).limit(50);
