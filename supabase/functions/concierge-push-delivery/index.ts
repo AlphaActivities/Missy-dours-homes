@@ -83,22 +83,25 @@ Deno.serve(async request=>{
    const task=event.event_type==='opportunity_detected'
     ?await client.from('ai_concierge_push_outbox').select('conversation_id').eq('id',event.id).maybeSingle()
     :await client.from('ai_concierge_tasks').select('conversation_id').eq('id',event.task_id).maybeSingle();
+   let opportunityKind:string|null=null;
    if(event.event_type==='opportunity_detected') {
     // Suppress stale proactive alerts once a human has joined or the visitor
     // explicitly requested assistance; the normal handoff event owns that alert.
-    const status=await client.from('ai_conversations').select('status').eq('id',task.data?.conversation_id??'').maybeSingle();
+    const status=await client.from('ai_conversations').select('status,opportunity_kind').eq('id',task.data?.conversation_id??'').maybeSingle();
     if(status.error)throw status.error;
     if(!status.data||status.data.status!=='ai'){
      await client.rpc('ai_concierge_finish_push',{p_id:event.id,p_success:true});
      delivered++;
      continue;
     }
+    opportunityKind=['buyer','seller','investor','both'].includes(status.data.opportunity_kind??'')?status.data.opportunity_kind:null;
    }
    // OS icon badge counts unresolved work rather than number of banners.
    const {data:attention,error:attentionError}=await client.rpc('crm_attention_count_service');
    const payload=JSON.stringify({
     kind:['handoff_escalated','handoff_claimed','opportunity_detected'].includes(event.event_type)?event.event_type:'handoff_created',
     id:event.task_id??event.id,
+    ...(opportunityKind?{opportunity_kind:opportunityKind}:{}),
     ...(task.error||!task.data?.conversation_id?{}:{conversation_id:task.data.conversation_id}),
     ...(attentionError?{}:{attention_count:Math.max(0,Number(attention)||0)})
    });
