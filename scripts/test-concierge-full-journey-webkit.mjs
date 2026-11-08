@@ -22,6 +22,7 @@ try {
   const send=(payload,code=200)=>route.fulfill({status:code,contentType:'application/json',
    headers:{'access-control-allow-origin':'*'},body:JSON.stringify(payload)});
   if(operation==='sync')return send({status:mode,messages:history});
+  if(operation==='typing')return send({ok:true});
   if(operation==='ack'){
    const body=request.postDataJSON();
    assert.ok(Array.isArray(body.message_ids));
