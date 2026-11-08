@@ -1237,3 +1237,25 @@
 @media (prefers-reduced-motion: reduce) {
   .ds-shell .crm-jump-in-button { animation: none !important; will-change: auto; }
 }
+
+
+/* Focused notification deep links: suppress the split-second "Checking…"
+   paint while the independent visitor-presence query resolves. Reserve the
+   card's space so the chat below does not jump. No artificial network delay. */
+.ds-shell .crm-connection-pending {
+  visibility: hidden;
+  opacity: 0;
+}
+@keyframes crm-connection-resolved {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.ds-shell [data-focused-transcript="true"] > .crm-connection-ready {
+  visibility: visible;
+  animation: crm-connection-resolved 240ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-shell [data-focused-transcript="true"] > .crm-connection-ready {
+    animation: none !important;
+  }
+}
