@@ -13,9 +13,16 @@ const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|Â
 const opensLead=(item:CrmActivity)=>item.category==='lead'||Boolean(item.category==='handoff'&&item.callback_lead_id)||item.target_path.startsWith('/dashboard/leads?lead=');
 const actionLabel=(item:CrmActivity)=>item.category==='opportunity'?'View Live Conversation':item.category==='handoff'&&item.callback_lead_id?'Open Lead Â· Record Outcome':opensLead(item)?'Open Lead':'View Conversation';
 const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:(item.category==='handoff'||item.category==='escalation')&&item.callback_conversation_id?'/dashboard/conversations?conversation='+item.callback_conversation_id:safeTarget(item.target_path);
-const filters:Array<{key:Filter;label:string}>=[
- {key:'all',label:'All'},{key:'urgent',label:'Urgent'},
- {key:'opportunity',label:'Live Opportunities'},{key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
+// Two purposeful mobile rows: All / Urgent / Live / History, then
+// Submissions / Chat Requests / Staff. Preserve all category labels and actions.
+const filters:Array<{key:Filter;label:string;mobileSpan:string}>=[
+ {key:'all',label:'All',mobileSpan:'col-span-2'},
+ {key:'urgent',label:'Urgent',mobileSpan:'col-span-3'},
+ {key:'opportunity',label:'Live Opportunities',mobileSpan:'col-span-4'},
+ {key:'history',label:'History',mobileSpan:'col-span-3'},
+ {key:'lead',label:'Website Submissions',mobileSpan:'col-span-4'},
+ {key:'handoff',label:'Direct Chat Requests',mobileSpan:'col-span-5'},
+ {key:'staff',label:'Staff Activity',mobileSpan:'col-span-3'}
 ];
 export default function CrmActivityCenter(){
  const {items,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
@@ -99,11 +106,11 @@ export default function CrmActivityCenter(){
     <span className="block">Staff activity, follow-ups, and important updates</span>
    </p>
   </div>
-  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-   <div role="group" aria-label="Filter activity" className="flex flex-wrap gap-2">
-    {filters.map(({key,label})=><IosNativeTap key={key}><button type="button" onClick={()=>setFilter(key)}
-     aria-pressed={filter===key} data-filter={key} className="crm-activity-filter relative isolate overflow-hidden rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,box-shadow] duration-300">
-     <span className="relative z-10">{label}{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</span></button></IosNativeTap>)}
+  <div className="mt-4">
+   <div role="group" aria-label="Filter activity" className="grid w-full min-w-0 grid-cols-12 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+    {filters.map(({key,label,mobileSpan})=><IosNativeTap key={key} className={'relative flex min-w-0 '+mobileSpan+' sm:inline-flex'}><button type="button" onClick={()=>setFilter(key)}
+     aria-pressed={filter===key} data-filter={key} className="crm-activity-filter relative isolate flex min-h-[48px] w-full min-w-0 items-center justify-center overflow-hidden rounded-lg border px-1 py-2 text-center text-[11px] leading-tight font-medium transition-[background-color,box-shadow] duration-300 sm:min-h-0 sm:w-auto sm:px-3 sm:py-1.5 sm:text-xs">
+     <span className="relative z-10 min-w-0 break-normal">{label}{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</span></button></IosNativeTap>)}
    </div>
   </div>
   {notice&&<p role="alert" className="mt-3 text-sm text-amber-200">{notice}</p>}
