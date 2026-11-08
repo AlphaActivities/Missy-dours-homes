@@ -160,10 +160,17 @@ export default function ConversationsPage() {
   const target=joinActionRef.current??transcriptHeadingRef.current;
   const scroller=target?.closest('main');
   if(!target||!scroller)return;
-  pendingScrollRef.current=null;
-  const destination=Math.max(0,scroller.scrollTop+
-   target.getBoundingClientRect().top-scroller.getBoundingClientRect().top-8);
-  scroller.scrollTo({top:destination,left:0,behavior:'instant'});
+  // The parent DashboardLayout resets its main scroller during navigation.
+  // A single animation frame runs AFTER that route-level layout effect and
+  // avoids the prior competing double-frame + timeout scroll attempts.
+  const frame=window.requestAnimationFrame(()=>{
+   if(pendingScrollRef.current!==selected)return;
+   const destination=Math.max(0,scroller.scrollTop+
+    target.getBoundingClientRect().top-scroller.getBoundingClientRect().top-8);
+   scroller.scrollTo({top:destination,left:0,behavior:'instant'});
+   pendingScrollRef.current=null;
+  });
+  return()=>window.cancelAnimationFrame(frame);
  },[selected,active?.id,active?.status,active?.assigned_to]);
 
  // A recent, token-verified heartbeat is the only basis for confirmed
