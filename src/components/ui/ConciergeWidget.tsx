@@ -22,10 +22,29 @@ type SpeechWindow = Window & {
   webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
 };
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string; sender?: 'ai' | 'human' | 'visitor'; delivered_to_staff_at?:string|null;read_by_staff_at?:string|null };
+type SyncedMessage = {id:string;sender:'visitor'|'ai'|'human'|'system';body:string;delivered_to_staff_at?:string|null;read_by_staff_at?:string|null};
+const mapSyncedMessage=(m:SyncedMessage):Message=>({
+ id:m.id,role:m.sender==='visitor'?'visitor':'concierge',
+ sender:m.sender==='system'?undefined:m.sender,text:m.body,
+ delivered_to_staff_at:m.delivered_to_staff_at,read_by_staff_at:m.read_by_staff_at
+});
+function visitorReceipt(m:Message,index:number,all:Message[],mode:'ai'|'human'|'waiting_human'|'closed'){
+ if(m.read_by_staff_at)return 'Read by team';
+ if(m.delivered_to_staff_at)return 'Delivered to team';
+ if(String(m.id).startsWith('pending-'))return 'Sending…';
+ if(mode==='human'||mode==='waiting_human')return 'Sent';
+ if(all.slice(index+1).some(next=>next.sender==='ai'))return 'Received by assistant';
+ return 'Sent';
+}
+function prefersHuman(messages:Message[]){
+ const visitors=messages.filter(m=>m.role==='visitor');
+ return visitors.length>=2||visitors.some(m=>/\b(speak|talk|connect|call|phone|meet|appointment|showing|tour|schedule|representative|person|human|agent|missy|realtor)\b/i.test(m.text));
+}
+
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy. What happy answer can we find for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
-const AI_TYPING_MIN_MS = 3800;
+const AI_TYPING_MIN_MS = 5000;
 const INTRO_TITLE = 'Imagine the Life That Awaits.';
 
 // NANP structural validation, not proof a number is assigned or reachable.
@@ -85,7 +104,7 @@ const CONCIERGE_LINK_HOSTS = new Set([
   'hud.gov', 'www.hud.gov',
 ]);
 function renderConciergeText(text: string) {
-  return text.split(/(https:\/\/[^\s<>"']+)/gi).map((part,index) => {
+  return text.replace(/\s*[—–]\s*/g, '... ').split(/(https:\/\/[^\s<>"']+)/gi).map((part,index) => {
     if (!/^https:\/\//i.test(part)) return part;
     const urlText = part.replace(/[.,!?;:)\]]*$/, '');
     const suffix = part.slice(urlText.length);
@@ -389,11 +408,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         setMode(result.status);
         setMessages([
           INITIAL[0],
-          ...result.messages.filter(m => m.sender !== 'system').map(m => ({
-            id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const,
-            sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
-            delivered_to_staff_at:m.delivered_to_staff_at,read_by_staff_at:m.read_by_staff_at,
-          })),
+          ...result.messages.filter(m => m.sender !== 'system').map(mapSyncedMessage),
         ]);
         // Browser acknowledgement is separate from the server's saved state.
         // Hidden tabs never claim that their visitors have read a message.
@@ -489,9 +504,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       // Reload canonical IDs/sequence after the successful send; local fallback only on sync failure.
       try {
         const updated=await transport.sync(visitor);
-        setMessages([INITIAL[0],...updated.messages.filter(m=>m.sender!=='system').map(m=>({
-          id:m.id,role:m.sender==='visitor'?'visitor' as const:'concierge' as const,sender:m.sender as 'visitor'|'ai'|'human',text:m.body,
-        }))]);
+        setMessages([INITIAL[0],...updated.messages.filter(m=>m.sender!=='system').map(mapSyncedMessage)]);
         setMode(updated.status);
       } catch {
         setMessages(previous=>[
@@ -509,9 +522,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         const latest = await transport.sync(visitor);
         const lastVisitor = [...latest.messages].reverse().find(m => m.sender === 'visitor');
         setMode(latest.status);
-        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
-          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
-        }))]);
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(mapSyncedMessage)]);
         if (lastVisitor?.body === message) {
           setDraft('');
           setTransportError(null);
@@ -559,9 +570,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       try {
         const latest = await transport.sync(session);
         setMode(latest.status);
-        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(m => ({
-          id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const, sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
-        }))]);
+        setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(mapSyncedMessage)]);
         if (latest.status === 'waiting_human' || latest.status === 'human') {
           setDraft('');
           setTransportError(null);
