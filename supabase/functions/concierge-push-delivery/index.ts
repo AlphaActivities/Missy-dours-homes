@@ -80,11 +80,19 @@ Deno.serve(async request=>{
    let successfulDevices=accepted.size;
    // Use the task's authoritative conversation ID, never a guessed URL.
    // On lookup failure the service worker safely opens the notification inbox.
-   const task=event.event_type==='opportunity_detected'
+   const task=['opportunity_detected','visitor_engaged'].includes(event.event_type)
     ?await client.from('ai_concierge_push_outbox').select('conversation_id').eq('id',event.id).maybeSingle()
     :await client.from('ai_concierge_tasks').select('conversation_id').eq('id',event.task_id).maybeSingle();
    let opportunityKind:string|null=null;
-   if(event.event_type==='opportunity_detected') {
+   if(event.event_type==='visitor_engaged'){
+     const current=await client.from('ai_conversations').select('status').eq('id',task.data?.conversation_id??'').maybeSingle();
+     if(current.error)throw current.error;
+     if(!current.data||current.data.status!=='ai'){
+      await client.rpc('ai_concierge_finish_push',{p_id:event.id,p_success:true});
+      delivered++;continue;
+     }
+    }
+    if(event.event_type==='opportunity_detected') {
     // Suppress stale proactive alerts once a human has joined or the visitor
     // explicitly requested assistance; the normal handoff event owns that alert.
     const status=await client.from('ai_conversations').select('status,opportunity_kind').eq('id',task.data?.conversation_id??'').maybeSingle();
@@ -99,7 +107,7 @@ Deno.serve(async request=>{
    // OS icon badge counts unresolved work rather than number of banners.
    const {data:attention,error:attentionError}=await client.rpc('crm_attention_count_service');
    const payload=JSON.stringify({
-    kind:['handoff_escalated','handoff_claimed','opportunity_detected'].includes(event.event_type)?event.event_type:'handoff_created',
+    kind:['handoff_escalated','handoff_claimed','opportunity_detected','visitor_engaged'].includes(event.event_type)?event.event_type:'handoff_created',
     id:event.task_id??event.id,
     ...(opportunityKind?{opportunity_kind:opportunityKind}:{}),
     ...(task.error||!task.data?.conversation_id?{}:{conversation_id:task.data.conversation_id}),
