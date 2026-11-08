@@ -277,6 +277,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           ...result.messages.filter(m => m.sender !== 'system').map(m => ({
             id: m.id, role: m.sender === 'visitor' ? 'visitor' as const : 'concierge' as const,
             sender: m.sender as 'visitor'|'ai'|'human', text: m.body,
+            delivered_to_staff_at:m.delivered_to_staff_at,read_by_staff_at:m.read_by_staff_at,
           })),
         ]);
         // Browser acknowledgement is separate from the server's saved state.
@@ -484,6 +485,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {messages.filter(m=>m.id!==0 || welcomeReady).map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className="flex max-w-[87%] flex-col items-start">
                 <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-[12px] bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-[12px] border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
+                {!privateQA&&m.role==='visitor'&&typeof m.id==='string'&&<span className="mt-1 self-end pr-1 text-[10px] text-[#aeb8c5]">{m.read_by_staff_at?'Read by team':m.delivered_to_staff_at?'Delivered to team':'Sent'}</span>}
                 {!privateQA && session && mode === 'human' && m.sender === 'human' && <div className="relative mt-1 flex items-center gap-1">
                   <button type="button" aria-label={`React to message ${m.id}`} aria-expanded={reactionPicker===String(m.id)} onClick={()=>setReactionPicker(current=>current===String(m.id)?null:String(m.id))} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/15 bg-[#1b1b1e] px-2 text-[13px] text-[#d5d5d8] hover:border-[#007AFF]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">
                     <SmilePlus size={15} aria-hidden="true"/>{reactions[String(m.id)] && <span aria-label="Your reaction">{reactions[String(m.id)]}</span>}
