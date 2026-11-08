@@ -25,6 +25,7 @@ export default function ConversationsPage() {
  const transcriptRef=useRef<HTMLElement|null>(null);
  const focusConversation=(id:string)=>{
   setSelected(id);
+  setOutcomeOpen(false);
   // Dashboard uses its own scrolling <main> below a sticky mobile header.
   // Scroll that container, not the document, after the selection is rendered.
   window.requestAnimationFrame(()=>{
@@ -48,6 +49,10 @@ export default function ConversationsPage() {
  const [loadingMessages,setLoadingMessages]=useState(false);
  const [error,setError]=useState<string|null>(null);
  const [actionBusy,setActionBusy]=useState(false);
+ const [outcomeOpen,setOutcomeOpen]=useState(false);
+ const [handoffDisposition,setHandoffDisposition]=useState<'resolved'|'follow_up'>('resolved');
+ const [handoffNotes,setHandoffNotes]=useState('');
+ const [followupAt,setFollowupAt]=useState('');
  const [reply,setReply]=useState('');
  const [leadCandidates,setLeadCandidates]=useState<Array<{id:string;name:string;phone:string|null}>>([]);
  const [candidateId,setCandidateId]=useState('');
@@ -228,7 +233,22 @@ export default function ConversationsPage() {
    setMessages(((result.data??[]) as Message[]).reverse());
   }catch(e){setError(e instanceof Error?e.message:'Unable to send');}finally{setActionBusy(false);}
  };
- const returnToAi=async()=>{if(!selected||actionBusy)return;setActionBusy(true);try{const {data,error}=await supabase.rpc('ai_concierge_return_to_ai',{p_conversation:selected});if(error)throw error;if(data!==true)throw new Error('Only the assigned agent can return the chat to AI');await refresh();}catch(e){setError(e instanceof Error?e.message:'Unable to return to AI');}finally{setActionBusy(false);}};
+ const returnToAi=async()=>{
+  if(!selected||actionBusy)return;
+  if(handoffNotes.trim().length<10){setError('Record at least 10 characters describing the outcome.');return;}
+  if(handoffDisposition==='follow_up'&&(!followupAt||new Date(followupAt).getTime()<=Date.now())){setError('Choose a future follow-up date before returning to AI.');return;}
+  setActionBusy(true);setError(null);
+  try{
+   const {data,error}=await supabase.rpc('crm_return_chat_to_ai_with_outcome',{
+    p_conversation:selected,p_disposition:handoffDisposition,p_notes:handoffNotes.trim(),
+    p_followup_at:handoffDisposition==='follow_up'?new Date(followupAt).toISOString():null
+   });
+   if(error)throw error;
+   if(data!==true)throw new Error('Only the assigned team member can return this chat to AI.');
+   setOutcomeOpen(false);setHandoffNotes('');setFollowupAt('');await refresh();
+  }catch(e){setError(e instanceof Error?e.message:'Unable to record the outcome');}
+  finally{setActionBusy(false);}
+ };
 
  const escalatedCount=pendingTasks.filter(t=>t.status==='pending' && (Boolean(t.escalated_at)||Boolean(t.escalation_due_at && new Date(t.escalation_due_at).getTime()<Date.now()))).length;
  const filtered=items.filter(c=>(filter==='all'||c.status===filter)&&[c.title,c.summary??'',c.priority,c.language_code].join(' ').toLowerCase().includes(search.toLowerCase()));
@@ -266,7 +286,24 @@ export default function ConversationsPage() {
     {active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='online'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)}
     <strong className={active&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]'}>{active?sessionDisplay(active):'Session status unavailable'}</strong>
     <span className="text-[#bdb1a1]">{active&&sessionState(active)==='expired'?'Visitor cannot continue with the expired token. Use contact details for follow-up.':active&&sessionState(active)==='online'?'A recent verified heartbeat confirms the visitor has this chat open and visible.':active&&sessionState(active)==='away'?'The session is connected, but the visitor has closed or hidden the chat.':'No verified active connection. Message recency and token validity do not prove the visitor is online.'}</span>
-   </div><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div><h2 className="font-semibold">Conversation transcript</h2><p className="text-xs opacity-65">{active?.assigned_to ? `Claimed by ${active.assigned_to}` : 'No human assigned'}{active?.visitor_name && <span className="mt-2 block text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a>{active.lead_id ? ' · CRM contact linked' : ' · Contact review needed'}</span>}</p></div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>void returnToAi()} className="rounded-lg border border-white/20 px-3 py-2 text-sm disabled:opacity-50">Return to AI</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <div className="flex flex-col gap-1.5"><button type="button" disabled={actionBusy} onClick={()=>void claim()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#f3d394] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-5 py-3 text-sm font-bold text-[#191208] shadow-[0_6px_24px_rgba(212,171,102,.24),inset_0_1px_0_rgba(255,250,225,.5)] transition-[filter,transform,box-shadow] duration-200 hover:brightness-110 hover:shadow-[0_8px_28px_rgba(212,171,102,.38)] active:scale-[.97] disabled:opacity-50"><MessagesSquare size={19} aria-hidden="true"/>{actionBusy?'Joining…':sessionState(active)==='expired'?'Assign Conversation to Me':"Join Chat as Missy's Team"}</button><span className="text-[11px] text-[#c5b49b]">Assigns this conversation to you and pauses AI replies. An expired session may require a callback.</span></div>}</div>{loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-3">{messages.map(m=><article key={m.id} className="p-3 rounded-lg border border-white/10"><div className="flex justify-between gap-2 text-xs opacity-65 mb-2"><strong className="uppercase">{m.sender_actor||m.sender}</strong><span>{time(m.created_at)}</span></div><p className="whitespace-pre-wrap text-sm break-words">{m.body}</p>{m.translated_body&&<div className="mt-2 pt-2 border-t border-white/10"><span className="text-xs" style={{color:'var(--ds-gold)'}}>{m.sender==='human' ? 'Staff English original' : 'English translation for staff'}</span><p className="text-sm whitespace-pre-wrap">{m.translated_body}</p></div>}</article>)}</div>}{attachments.length>0&&<div className="mt-4 rounded-lg border border-[#c8a96e]/30 p-3" aria-label="Private conversation attachments">
+   </div><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div><h2 className="font-semibold">Conversation transcript</h2><p className="text-xs opacity-65">{active?.assigned_to ? `Claimed by ${active.assigned_to}` : 'No human assigned'}{active?.visitor_name && <span className="mt-2 block text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a>{active.lead_id ? ' · CRM contact linked' : ' · Contact review needed'}</span>}</p></div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>setOutcomeOpen(open=>!open)} className="rounded-lg border border-[#c8a96e]/60 px-3 py-2 text-sm text-[#efcf97] disabled:opacity-40">{outcomeOpen?'Cancel outcome':'Return to AI · Record Outcome'}</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <div className="flex flex-col gap-1.5"><button type="button" disabled={actionBusy} onClick={()=>void claim()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#f3d394] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-5 py-3 text-sm font-bold text-[#191208] shadow-[0_6px_24px_rgba(212,171,102,.24),inset_0_1px_0_rgba(255,250,225,.5)] transition-[filter,transform,box-shadow] duration-200 hover:brightness-110 hover:shadow-[0_8px_28px_rgba(212,171,102,.38)] active:scale-[.97] disabled:opacity-50"><MessagesSquare size={19} aria-hidden="true"/>{actionBusy?'Joining…':sessionState(active)==='expired'?'Assign Conversation to Me':"Join Chat as Missy's Team"}</button><span className="text-[11px] text-[#c5b49b]">Assigns this conversation to you and pauses AI replies. An expired session may require a callback.</span></div>}</div>
+    {outcomeOpen&&active?.status==='human'&&active.assigned_to===staffEmail&&<form onSubmit={e=>{e.preventDefault();void returnToAi();}} className="mb-5 space-y-3 rounded-xl border border-[#c8a96e]/45 bg-[#211a12]/85 p-4" aria-label="Record chat outcome before returning to AI">
+     <h3 className="text-sm font-semibold text-[#e9ca91]">Record the result before returning control to AI</h3>
+     <p className="text-xs text-[#cbbba3]">Returning control is not proof a customer request was resolved. An unresolved request stays on the team follow-up list.</p>
+     <label className="block text-xs text-[#e6cca0]">Outcome
+      <select className="mt-1 block w-full rounded-lg border border-[#c8a96e]/40 bg-[#18130e] p-3 text-sm text-white" value={handoffDisposition} onChange={e=>setHandoffDisposition(e.target.value as 'resolved'|'follow_up')}>
+       <option value="resolved">Resolved, follow-up complete</option><option value="follow_up">Not resolved, schedule follow-up</option>
+      </select>
+     </label>
+     {handoffDisposition==='follow_up'&&<label className="block text-xs text-[#e6cca0]">Follow-up date and time
+      <input type="datetime-local" required value={followupAt} onChange={e=>setFollowupAt(e.target.value)} className="mt-1 block w-full rounded-lg border border-[#c8a96e]/40 bg-[#18130e] p-3 text-sm text-white"/>
+     </label>}
+     <label className="block text-xs text-[#e6cca0]">What happened?
+      <textarea required minLength={10} maxLength={1000} value={handoffNotes} onChange={e=>setHandoffNotes(e.target.value)} placeholder="Describe the conversation, result, and next step" className="mt-1 min-h-20 w-full rounded-lg border border-[#c8a96e]/40 bg-[#18130e] p-3 text-sm text-white"/>
+     </label>
+     <button type="submit" disabled={actionBusy||handoffNotes.trim().length<10||(handoffDisposition==='follow_up'&&!followupAt)} className="min-h-11 w-full rounded-lg bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-4 py-3 text-sm font-semibold text-[#1a1108] disabled:opacity-40">{actionBusy?'Saving outcome…':'Save Outcome & Return to AI'}</button>
+    </form>}
+    {loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-3">{messages.map(m=><article key={m.id} className="p-3 rounded-lg border border-white/10"><div className="flex justify-between gap-2 text-xs opacity-65 mb-2"><strong className="uppercase">{m.sender_actor||m.sender}</strong><span>{time(m.created_at)}</span></div><p className="whitespace-pre-wrap text-sm break-words">{m.body}</p>{m.translated_body&&<div className="mt-2 pt-2 border-t border-white/10"><span className="text-xs" style={{color:'var(--ds-gold)'}}>{m.sender==='human' ? 'Staff English original' : 'English translation for staff'}</span><p className="text-sm whitespace-pre-wrap">{m.translated_body}</p></div>}</article>)}</div>}{attachments.length>0&&<div className="mt-4 rounded-lg border border-[#c8a96e]/30 p-3" aria-label="Private conversation attachments">
      <h3 className="text-sm font-semibold text-[#e4c58b]">Private attachments</h3>
      <p className="mt-1 text-xs opacity-65">Files provided during a human-assisted conversation. Download links expire automatically.</p>
      <div className="mt-3 space-y-2">{attachments.map(file=><div key={file.id} className="flex flex-wrap items-center gap-2 text-xs">
