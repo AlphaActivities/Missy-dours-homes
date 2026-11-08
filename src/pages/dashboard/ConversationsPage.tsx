@@ -26,6 +26,8 @@ export default function ConversationsPage() {
  const requestedConversation=searchParams.get('conversation');
  const selectedDeepLinkRef=useRef<string|null>(null);
  const [selected,setSelected]=useState<string|null>(null);
+ const [deepLinkAligned,setDeepLinkAligned]=useState(!requestedConversation);
+ const [loadedConversation,setLoadedConversation]=useState<string|null>(null);
  const transcriptRef=useRef<HTMLElement|null>(null);
  const sessionStatusRef=useRef<HTMLDivElement|null>(null);
  const joinActionRef=useRef<HTMLDivElement|null>(null);
@@ -36,6 +38,7 @@ export default function ConversationsPage() {
   pendingSourceRef.current=source;
   pendingScrollRef.current=id;
   setSelected(id);
+  if(source==='notification')setDeepLinkAligned(false);
   setOutcomeOpen(false);
  };
 
@@ -99,7 +102,7 @@ export default function ConversationsPage() {
      .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at')
      .eq('id',requestedConversation).maybeSingle();
     if(cancelled)return;
-    if(result.error||!result.data){setError('The requested conversation is unavailable or you do not have access.');return;}
+    if(result.error||!result.data){setError('The requested conversation is unavailable or you do not have access.');setDeepLinkAligned(true);return;}
     setItems(existing=>existing.some(c=>c.id===requestedConversation)?existing:[result.data as Conversation,...existing]);
    }
    if(!cancelled){selectedDeepLinkRef.current=requestedConversation;focusConversation(requestedConversation,'notification');}
@@ -114,7 +117,7 @@ export default function ConversationsPage() {
   setReply('');
   setAttachments([]);
   setSignedAttachment(null);
-  if(!selected){setMessages([]);return;}
+  if(!selected){setMessages([]);setLoadedConversation(null);return;}
   let active=true;
   const fetchTranscript=async()=>{
    const {data,error}=await supabase.from('ai_conversation_messages')
@@ -139,7 +142,9 @@ export default function ConversationsPage() {
    const files=await supabase.from('ai_conversation_attachments').select('id,original_filename,mime_type,file_size_bytes,storage_path,created_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(50);
    if(active && !files.error)setAttachments((files.data??[]) as Attachment[]);
    setLoadingMessages(false);
+   if(active)setLoadedConversation(selected);
   };
+  setLoadedConversation(null);
   setLoadingMessages(true);
   void fetchTranscript();
   const channel=supabase.channel('staff-transcript-'+selected)
@@ -159,41 +164,27 @@ export default function ConversationsPage() {
   finally{setAttachmentBusy(null);}
  };
  const active=items.find(c=>c.id===selected);
- // Leave the previous working manual conversation-selection behavior intact.
+ // Manual selection and notification links now use the identical outer-card
+ // anchor and 2px offset. For notification deep links keep the page hidden
+ // until the measured scroll completes, preventing a top-of-page paint flash.
  useEffect(()=>{
-  if(!selected||pendingScrollRef.current!==selected||!active||pendingSourceRef.current!=='manual')return;
-  const target=sessionStatusRef.current;
-  const scroller=target?.closest('main');
-  if(!target||!scroller)return;
-  pendingScrollRef.current=null;
-  const scroll=()=>{
-   const delta=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
-   scroller.scrollTo({top:Math.max(0,scroller.scrollTop+delta-8),behavior:'instant'});
-  };
-  const frame=window.requestAnimationFrame(()=>window.requestAnimationFrame(scroll));
-  const timeout=window.setTimeout(scroll,160);
-  return()=>{window.cancelAnimationFrame(frame);window.clearTimeout(timeout);};
- },[selected,items]);
-
- // Notification links align the OUTER transcript card below the navbar, not
- // the Connection Inactive box or Join Chat button inside that card.
- useEffect(()=>{
-  if(!selected||pendingScrollRef.current!==selected||!active
-     ||pendingSourceRef.current!=='notification'||loading||loadingMessages)return;
+  if(!selected||pendingScrollRef.current!==selected||!active||loading
+     ||loadedConversation!==selected)return;
   const target=transcriptRef.current;
   const scroller=target?.closest('main');
   if(!target||!scroller)return;
+  let second=0;
   const first=window.requestAnimationFrame(()=>{
-   const second=window.requestAnimationFrame(()=>{
+   second=window.requestAnimationFrame(()=>{
     if(pendingScrollRef.current!==selected)return;
     const delta=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
     scroller.scrollTo({top:Math.max(0,scroller.scrollTop+delta-2),left:0,behavior:'instant'});
     pendingScrollRef.current=null;
+    if(pendingSourceRef.current==='notification')setDeepLinkAligned(true);
    });
-   followupFrameRef.current=second;
   });
-  return()=>{window.cancelAnimationFrame(first);window.cancelAnimationFrame(followupFrameRef.current);};
- },[selected,loading,loadingMessages,active?.id,pendingTasks.length]);
+  return()=>{window.cancelAnimationFrame(first);window.cancelAnimationFrame(second);};
+ },[selected,loading,loadedConversation,active?.id]);
  // A recent, token-verified heartbeat is the only basis for confirmed
  // connection. A valid session or last message does not mean 'Online'.
  const sessionState=(c:Conversation):'expired'|'online'|'away'|'inactive'|'recent'|'available'|'unknown' => {
@@ -343,7 +334,7 @@ export default function ConversationsPage() {
 
  const escalatedCount=pendingTasks.filter(t=>t.status==='pending' && (Boolean(t.escalated_at)||Boolean(t.escalation_due_at && new Date(t.escalation_due_at).getTime()<Date.now()))).length;
  const filtered=items.filter(c=>(filter==='all'||c.status===filter)&&[c.title,c.summary??'',c.priority,c.language_code].join(' ').toLowerCase().includes(search.toLowerCase()));
- return <div className="px-4 py-7 md:px-8 md:py-9 max-w-7xl mx-auto" style={{color:'var(--ds-text-primary)'}}>
+ return <div className="px-4 py-7 md:px-8 md:py-9 max-w-7xl mx-auto" style={{color:'var(--ds-text-primary)',visibility:requestedConversation&&!deepLinkAligned?'hidden':'visible'}}>
   <div className="ds-page-reveal ds-page-reveal-0 flex flex-wrap gap-3 items-center justify-between mb-6">
    <div><div className="flex items-center gap-2 mb-1"><MessageCircle size={19} style={{color:'var(--ds-gold)'}}/><h1 className="text-2xl" style={{fontFamily:"'Playfair Display', Georgia, serif"}}>Conversations</h1></div><p className="text-sm" style={{color:'var(--ds-text-secondary)'}}>Private chat inbox · Team messaging · Record the outcome before closing a follow-up</p></div>
    <button onClick={()=>void refresh()} data-crm-refresh disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15} className={loading?'animate-spin':''}/><span aria-live="polite">{loading?'Refreshing…':'Refresh'}</span></button>
