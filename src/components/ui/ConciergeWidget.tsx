@@ -91,6 +91,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [reactions, setReactions] = useState<Record<string,string>>({});
   const [reactionPicker, setReactionPicker] = useState<string | null>(null);
   const syncVersionRef = useRef(0);
+  const receivedReceiptIdsRef = useRef<Set<string>>(new Set());
+  const readReceiptIdsRef = useRef<Set<string>>(new Set());
   const [invitation, setInvitation] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -280,9 +282,14 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         // Browser acknowledgement is separate from the server's saved state.
         // Hidden tabs never claim that their visitors have read a message.
         if(!privateQA) {
-          const ids=result.messages.filter(m=>m.sender==='human'||m.sender==='ai').map(m=>m.id).filter((id):id is string=>typeof id==='string');
+          const read=document.visibilityState==='visible'&&open;
+          const ids=result.messages.filter(m=>m.sender==='human'||m.sender==='ai').map(m=>m.id).filter((id):id is string=>typeof id==='string')
+            .filter(id=>read?!readReceiptIdsRef.current.has(id):!receivedReceiptIdsRef.current.has(id));
           if(ids.length)window.requestAnimationFrame(()=>{
-            void conciergeTransport.ack(session,ids,document.visibilityState==='visible'&&open).catch(()=>{});
+            void conciergeTransport.ack(session,ids,document.visibilityState==='visible'&&open).then(()=>{
+              ids.forEach(id=>receivedReceiptIdsRef.current.add(id));
+              if(read&&document.visibilityState==='visible'&&open)ids.forEach(id=>readReceiptIdsRef.current.add(id));
+            }).catch(()=>{});
           });
         }
       } catch (error) {
