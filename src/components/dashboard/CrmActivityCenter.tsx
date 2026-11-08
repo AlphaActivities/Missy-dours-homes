@@ -1,5 +1,5 @@
 import {useMemo,useState} from 'react';
-import {Bell,Archive,Check,RotateCcw,ArrowUpRight,ExternalLink,RefreshCw,AlertTriangle,Inbox,Clock3,MessagesSquare,UserRoundPlus} from 'lucide-react';
+import {Bell,Archive,Check,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,Clock3,MessagesSquare,UserRoundPlus} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 import {IosNativeTap} from './DashboardHaptics';
@@ -8,7 +8,14 @@ type Filter='all'|'unread'|'urgent'|'lead'|'handoff'|'staff'|'history';
 const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent':category==='lead'?'Lead':category==='handoff'?'Direct Chat Request':'Staff Activity';
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'?value:'/dashboard/conversations';
 const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|·)/gi,'$1Homepage');
-const actionLabel=(item:CrmActivity)=>item.target_path.startsWith('/dashboard/leads?lead=')?'Open Lead':'View Conversation';
+// Keep the CTA's destination, label and next-step guidance consistent.
+const opensLead=(item:CrmActivity)=>Boolean(item.category==='handoff'&&item.callback_lead_id)||item.target_path.startsWith('/dashboard/leads?lead=');
+const actionLabel=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'Open Lead · Record Outcome':opensLead(item)?'Open Lead':'View Conversation';
+const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:safeTarget(item.target_path);
+const nextAction=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id
+ ?'Open the lead to review the callback request and record the outcome.'
+ :opensLead(item)?'Open the lead to review the inquiry and contact the prospect.'
+ :'Open the conversation to review the request and respond.';
 const filters:Array<{key:Filter;label:string}>=[
  {key:'all',label:'All'},{key:'unread',label:'Unread'},{key:'urgent',label:'Urgent'},
  {key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
@@ -101,14 +108,18 @@ export default function CrmActivityCenter(){
      {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked concierge lead audit':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Task activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot callback request'):friendlySummary(item.summary)}</p>
      {requiresAction(item)&&<div className="mt-3 space-y-1.5">
-      <p className="inline-flex items-center gap-1.5 rounded-md border border-red-400/35 bg-red-900/20 px-3 py-2 text-xs font-semibold text-red-200"><AlertTriangle size={13} aria-hidden="true"/> Follow-up required</p>
-      <p className="text-xs italic leading-relaxed text-[#cbbbaa]"><span className="block">This inquiry hasn't been handled yet.</span><span className="block">Open the {item.category==='handoff'&&!item.callback_lead_id?'conversation':item.target_path.startsWith('/dashboard/leads?lead=')||Boolean(item.callback_lead_id)?'lead':'conversation'} to proceed with next action.</span></p>
+      <p className="flex items-center gap-2 text-xs font-semibold tracking-[0.025em] text-[#e8bc81]"><AlertTriangle size={16} className="shrink-0" aria-hidden="true"/> Action Needed</p>
+      <p className="text-xs leading-relaxed text-[#cbbbaa]"><span className="block">This request hasn't been handled yet.</span><span className="block">{nextAction(item)}</span></p>
      </div>}
      <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString(undefined,{year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</time>
     </div>
     <div className="mt-2 flex flex-wrap items-center gap-2">
-     <Link to={item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:safeTarget(item.target_path)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}}
-      className={'crm-open-notification '+(item.category==='handoff'?'crm-action-chat ':'crm-action-lead ')+'relative isolate inline-flex items-center gap-2 overflow-hidden rounded-md border border-[#c8a96e]/50 px-3.5 py-2 text-xs font-medium tracking-[0.025em] text-[#f1d7a6] '+(requiresAction(item)?'crm-open-attention':'')}><span className="relative z-[1]">{item.callback_lead_id && item.category==='handoff'?'Open Lead · Record Outcome':actionLabel(item)}</span>{(item.target_path.startsWith('/dashboard/leads?lead=')||Boolean(item.callback_lead_id))?<ArrowUpRight size={15} strokeWidth={1.45} aria-hidden="true" className="crm-open-notification-arrow"/>:<ExternalLink size={13} strokeWidth={1.5} aria-hidden="true"/>}</Link>
+     <Link to={actionTarget(item)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}}
+      className={'crm-open-notification '+(item.category==='handoff'?'crm-action-chat ':'crm-action-lead ')+'relative isolate inline-flex min-h-[48px] w-full items-center gap-3 overflow-hidden rounded-md border border-[#c8a96e]/50 px-4 py-3 text-sm font-medium tracking-[0.025em] text-[#f1d7a6] '+(requiresAction(item)?'crm-open-attention':'')}>
+      <span className="relative z-[1] inline-flex shrink-0 items-center justify-center" aria-hidden="true">{item.category==='handoff'?<MessagesSquare size={18} strokeWidth={1.8}/>:<UserRoundPlus size={18} strokeWidth={1.8}/>}</span>
+      <span className="relative z-[1] min-w-0 flex-1 text-center">{actionLabel(item)}</span>
+      <ArrowRight size={18} strokeWidth={1.7} aria-hidden="true" className="crm-open-notification-arrow shrink-0"/>
+     </Link>
      {!item.read_at&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
       className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40"><Check size={13}/> Mark read</button>}
      {!item.lead_archived&&!requiresAction(item)&&<button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)}
