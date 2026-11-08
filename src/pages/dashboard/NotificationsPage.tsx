@@ -8,6 +8,7 @@ export default function NotificationsPage(){
    <BellRing className="shrink-0 text-[#d7b878]" size={25}/>
    <div><h1 className="font-serif text-2xl">Notifications</h1><p className="mt-1 text-sm text-[#bdb0a0]">Stay informed about new inquiries, conversations, and follow-ups.</p></div>
   </div>
+  <NotificationPreviewStudio/>
   <CrmActivityCenter/>
  </main>;
 }
