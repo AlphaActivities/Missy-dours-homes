@@ -511,7 +511,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <button type="button" onClick={goToContact} className="mt-2 rounded-full border border-[#dfbf82] bg-[#c5a16a] px-4 py-2 font-semibold text-black transition-transform hover:brightness-110 active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Contact Missy</button>
             </div>}
-            {chatEnabled && introDone && !session && <div className="mb-3 space-y-2"><p className="text-center text-xs leading-relaxed text-[#c3af8d]">Security check: confirming this is a real visitor, not an automated bot. This helps protect your conversation. It may take a moment.</p><TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} /></div>}
+            {chatEnabled && introDone && !session && <SecurityCheckCard siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} />}
             {chatEnabled && session && mode === 'ai' && messages.some(m => m.role === 'visitor') && !handoffOpen && <button type="button" onClick={() => setHandoffOpen(true)} disabled={busy} className="inline-flex min-h-9 items-center justify-center rounded-lg border border-[#b99b68]/45 bg-[#211a12]/75 px-3 py-2 text-xs font-medium text-[#d8bc8b] transition-[background-color,border-color,transform] duration-150 hover:border-[#dfbf82] hover:bg-[#33291b] active:scale-[.97] active:bg-[#483722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a] disabled:cursor-not-allowed disabled:opacity-50">Request a team member</button>}
             {chatEnabled && session && mode === 'ai' && handoffOpen && <form onSubmit={e=>{e.preventDefault();void requestHuman();}} className="space-y-3 rounded-2xl border border-[#c6a16c]/45 bg-[#231a11]/80 p-4" aria-label="Request a callback">
               <p className="font-serif text-base text-[#f1d39a]">Connect with Missy’s team</p>
@@ -574,6 +574,32 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       </div>}
     </>
   );
+}
+
+/** One stable security card: real preparation animation, then the actual Cloudflare challenge.
+ * The loading bar does not imply that Cloudflare has verified the visitor. */
+function SecurityCheckCard({siteKey,onToken}:{siteKey:string;onToken:(token:string)=>void}) {
+ const reducedMotion=useReducedMotion();
+ const [challengeReady,setChallengeReady]=useState(false);
+ useEffect(()=>{
+  if(reducedMotion){setChallengeReady(true);return;}
+  const timer=window.setTimeout(()=>setChallengeReady(true),1200);
+  return()=>window.clearTimeout(timer);
+ },[reducedMotion]);
+ return <section aria-label="Secure visitor verification" className="mx-auto mb-3 w-full max-w-sm overflow-hidden rounded-2xl border border-[#b9945d]/35 bg-gradient-to-br from-[#211b14]/95 to-[#12100e]/95 p-4 shadow-[inset_0_1px_0_rgba(255,230,174,.06),0_8px_28px_rgba(0,0,0,.18)]">
+  <p className="text-center text-xs font-semibold uppercase tracking-[.15em] text-[#e7c58d]">Secure connection</p>
+  <p className="mt-2 text-center text-xs leading-relaxed text-[#c3af8d]">We check for automated traffic to help protect your conversation. Please complete the security check below.</p>
+  <div className="mt-4 flex min-h-[74px] items-center justify-center">
+   {challengeReady
+    ? <TurnstileVerifier siteKey={siteKey} onToken={onToken}/>
+    : <div className="w-full" role="status" aria-label="Preparing secure verification">
+       <p className="mb-3 text-center text-xs text-[#e0c9a1]">Preparing secure verification…</p>
+       <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#4b3d29]/80">
+        <motion.div className="h-full rounded-full bg-gradient-to-r from-[#a88049] via-[#f2d39c] to-[#d4aa67]" initial={{width:'0%'}} animate={{width:'100%'}} transition={{duration:1.2,ease:'linear'}}/>
+       </div>
+      </div>}
+  </div>
+ </section>;
 }
 
 type TurnstileInstance = { render: (element: HTMLElement, options: { sitekey: string; callback: (token:string)=>void; 'error-callback':()=>void; 'expired-callback':()=>void }) => string; remove: (id:string)=>void };
