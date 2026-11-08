@@ -15,10 +15,6 @@ const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|�
 const opensLead=(item:CrmActivity)=>Boolean(item.category==='handoff'&&item.callback_lead_id)||item.target_path.startsWith('/dashboard/leads?lead=');
 const actionLabel=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'Open Lead · Record Outcome':opensLead(item)?'Open Lead':'View Conversation';
 const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:(item.category==='handoff'||item.category==='escalation')&&item.callback_conversation_id?'/dashboard/conversations?conversation='+item.callback_conversation_id:safeTarget(item.target_path);
-const nextAction=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id
- ?'Open the lead to review the callback request and record the outcome.'
- :opensLead(item)?'Open the lead to review the inquiry and contact the prospect.'
- :'Open the conversation to review the request and respond.';
 const filters:Array<{key:Filter;label:string}>=[
  {key:'all',label:'All'},{key:'unread',label:'Unread'},{key:'urgent',label:'Urgent'},
  {key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
@@ -162,10 +158,6 @@ export default function CrmActivityCenter(){
       {['completed','closed'].includes(item.callback_status??'')&&<><span aria-hidden="true">→</span><span>Completed</span></>}
      </div>}
      {isInProgress(item)&&!requiresAction(item)&&<p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#dcb979]"><CheckCircle2 size={15} aria-hidden="true"/> Team responding · Outcome not yet recorded</p>}
-     {requiresAction(item)&&<div className="mt-3 space-y-1.5">
-      <p className="flex items-center gap-2 text-xs font-semibold tracking-[0.025em] text-[#e8bc81]"><AlertTriangle size={16} className="shrink-0" aria-hidden="true"/> Action Needed</p>
-      <p className="text-xs leading-relaxed text-[#cbbbaa]"><span className="block">This request hasn't been handled yet.</span><span className="block">{nextAction(item)}</span></p>
-     </div>}
      <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString(undefined,{year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</time>
     </div>
     <div className="mt-2 flex flex-wrap items-center gap-2">
