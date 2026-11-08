@@ -57,6 +57,7 @@ export default function ConversationsPage() {
  type LeadCandidate = {id:string;name:string;phone:string|null;created_at:string|null;status:string|null};
  const [leadCandidates,setLeadCandidates]=useState<LeadCandidate[]>([]);
  const [showAllCandidates,setShowAllCandidates]=useState(false);
+ const [showArchivedCandidates,setShowArchivedCandidates]=useState(false);
  const [loadingCandidates,setLoadingCandidates]=useState(false);
  const [candidateId,setCandidateId]=useState('');
  const [linkBusy,setLinkBusy]=useState(false);
@@ -174,7 +175,7 @@ export default function ConversationsPage() {
 
  useEffect(()=>{
   let live=true;
-  setCandidateId('');setLeadCandidates([]);setShowAllCandidates(false);setLoadingCandidates(false);
+  setCandidateId('');setLeadCandidates([]);setShowAllCandidates(false);setShowArchivedCandidates(false);setLoadingCandidates(false);
   const c=items.find(x=>x.id===selected);
   if(!c || c.lead_id || !c.visitor_phone || !['waiting_human','human'].includes(c.status))return;
   setLoadingCandidates(true);
@@ -198,6 +199,9 @@ export default function ConversationsPage() {
   });
   return()=>{live=false;};
  },[selected,active?.lead_id,active?.visitor_phone,active?.status]);
+ // Archived leads are history, not routine suggestions for new callbacks.
+ const archivedCount=leadCandidates.filter(lead=>lead.status==='archived').length;
+ const visibleCandidates=leadCandidates.filter(lead=>showArchivedCandidates||lead.status!=='archived');
  const linkReviewed=async(createSeparate:boolean)=>{
   if(!active || active.lead_id || linkBusy)return;
   const candidate=leadCandidates.find(x=>x.id===candidateId);
@@ -298,16 +302,16 @@ export default function ConversationsPage() {
    </button>)}</section>
    <section ref={transcriptRef} aria-label="Conversation transcript" className="ds-page-reveal ds-page-reveal-4 rounded-xl border border-white/10 bg-black/20 min-h-80 p-5">
    {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
-    <strong className="text-amber-200">Contact identity review required</strong>
-    <p className="text-[#dec9a5]">This callback is not linked to a lead. Verify the visitor’s name and phone. Do not merge different people who share a number.</p>
+    <strong className="text-amber-200">Contact identity check needed</strong>
+    <p className="text-[#dec9a5]">The CRM couldn't safely identify one existing contact. Confirm the person before linking an existing lead, or create a separate lead.</p>
     <div className="space-y-3">
      <div className="flex flex-wrap items-center justify-between gap-2">
-      <h3 className="text-sm font-semibold text-[#efd5a5]">Potential phone matches {leadCandidates.length>0&&<span className="font-normal text-[#bfae93]">({leadCandidates.length})</span>}</h3>
+      <h3 className="text-sm font-semibold text-[#efd5a5]">Possible existing contacts {visibleCandidates.length>0&&<span className="font-normal text-[#bfae93]">({visibleCandidates.length})</span>}</h3>
       <span className="rounded-full border border-amber-400/25 px-2 py-1 text-[10px] text-amber-200">Identity not verified</span>
      </div>
-     {loadingCandidates?<p role="status" className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">Checking CRM records…</p>:leadCandidates.length===0?<p className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">No matching records found. Verify the caller before creating a separate lead.</p>:
+     {loadingCandidates?<p role="status" className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">Checking CRM records…</p>:visibleCandidates.length===0?<p className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">{archivedCount>0?'Only archived records share this phone number. Review them only if necessary.':'No active matching contacts. Confirm the person before creating a separate lead.'}</p>:
       <div role="group" aria-label="Potential matching CRM leads" className="space-y-2">
-       {leadCandidates.slice(0,showAllCandidates?leadCandidates.length:4).map(lead=><button key={lead.id} type="button" aria-pressed={candidateId===lead.id}
+       {visibleCandidates.slice(0,showAllCandidates?visibleCandidates.length:4).map(lead=><button key={lead.id} type="button" aria-pressed={candidateId===lead.id}
          onClick={()=>setCandidateId(current=>current===lead.id?'':lead.id)}
          className={'flex min-h-[82px] w-full items-start gap-3 rounded-xl border p-3 text-left transition-[border-color,background-color,box-shadow] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e7bd72] '+(candidateId===lead.id?'border-[#e9c47b] bg-[#8a6229]/25 shadow-[inset_0_1px_0_rgba(255,226,163,.12),0_0_14px_rgba(216,172,88,.10)]':'border-[#a8844f]/35 bg-[#211910]/75 hover:border-[#d3ad71]/60')}>
           <span className={'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border '+(candidateId===lead.id?'border-[#f4d18c] bg-[#e5ba71] text-black':'border-[#b79d70] text-transparent')} aria-hidden="true">✓</span>
@@ -318,12 +322,13 @@ export default function ConversationsPage() {
           </span>
           {candidateId===lead.id&&<span className="shrink-0 text-[10px] font-medium text-[#f0ce8d]">Selected</span>}
          </button>)}
-       {leadCandidates.length>4&&<button type="button" className="min-h-11 w-full rounded-lg border border-[#c8a96e]/35 px-3 py-2 text-sm text-[#e5c78f]" onClick={()=>setShowAllCandidates(value=>!value)}>{showAllCandidates?'Show fewer matches':`Show all ${leadCandidates.length} matches`}</button>}
-       <p className="text-[11px] leading-relaxed text-[#bca887]">Candidates share a phone number, not necessarily an identity. Confirm the person before linking.</p>
+       {visibleCandidates.length>4&&<button type="button" className="min-h-11 w-full rounded-lg border border-[#c8a96e]/35 px-3 py-2 text-sm text-[#e5c78f]" onClick={()=>setShowAllCandidates(value=>!value)}>{showAllCandidates?'Show fewer matches':`Show all ${visibleCandidates.length} matches`}</button>}
+       <p className="text-[11px] leading-relaxed text-[#bca887]">A matching phone number alone does not verify identity. Confirm the person before linking.</p>
       </div>}
     </div>
+    {archivedCount>0&&!loadingCandidates&&<button type="button" onClick={()=>{setShowArchivedCandidates(value=>!value);setShowAllCandidates(false);setCandidateId('');}} className="w-full rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-left text-xs text-[#d5b881]">{showArchivedCandidates?'Hide archived contacts':`Review ${archivedCount} archived contact${archivedCount===1?'':'s'}`}</button>}
     <div className="flex flex-wrap gap-2">
-     {leadCandidates.length>0&&<button type="button" disabled={!candidateId||linkBusy} onClick={()=>void linkReviewed(false)} className="rounded-lg bg-[#c8a96e] px-3 py-2 font-semibold text-black disabled:opacity-40">Link Confirmed Lead</button>}
+     {visibleCandidates.length>0&&<button type="button" disabled={!candidateId||linkBusy} onClick={()=>void linkReviewed(false)} className="rounded-lg bg-[#c8a96e] px-3 py-2 font-semibold text-black disabled:opacity-40">Link Confirmed Lead</button>}
      <button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>
     </div>
    </div>}
