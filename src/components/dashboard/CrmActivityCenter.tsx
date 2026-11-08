@@ -1,12 +1,12 @@
 import {useMemo,useState} from 'react';
-import {Bell,Archive,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,Clock3,MessagesSquare,UserRoundPlus,CheckCircle2} from 'lucide-react';
+import {Archive,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,Clock3,MessagesSquare,UserRoundPlus,CheckCircle2} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 import {IosNativeTap} from './DashboardHaptics';
 import {useAuth} from '../../contexts/AuthContext';
 import {notificationPreviewFixtures} from './notificationPreviewFixtures';
 
-type Filter='all'|'unread'|'urgent'|'lead'|'handoff'|'staff'|'history';
+type Filter='all'|'urgent'|'lead'|'handoff'|'staff'|'history';
 const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent Chat Request':category==='lead'?'Website Contact Form':category==='handoff'?'Direct Chat Request':'Staff Activity';
 const displayTitle=(item:CrmActivity)=>(item.category==='handoff'||item.category==='escalation')&&item.callback_status==='claimed'?'Team Member Responding':item.category==='handoff'?'Chat Request Received':item.category==='escalation'?(item.callback_escalated_at?'Urgent Chat Request':'Chat Request Received'):item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot');
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'||/^\/dashboard\/conversations\?conversation=[0-9a-f-]{36}$/i.test(value)?value:'/dashboard/conversations';
@@ -16,11 +16,11 @@ const opensLead=(item:CrmActivity)=>item.category==='lead'||Boolean(item.categor
 const actionLabel=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'Open Lead · Record Outcome':opensLead(item)?'Open Lead':'View Conversation';
 const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:(item.category==='handoff'||item.category==='escalation')&&item.callback_conversation_id?'/dashboard/conversations?conversation='+item.callback_conversation_id:safeTarget(item.target_path);
 const filters:Array<{key:Filter;label:string}>=[
- {key:'all',label:'All'},{key:'unread',label:'Unread'},{key:'urgent',label:'Urgent'},
+ {key:'all',label:'All'},{key:'urgent',label:'Urgent'},
  {key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
 ];
 export default function CrmActivityCenter(){
- const {items,unreadCount,urgentCount,todayCount,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
+ const {items,attentionCount,urgentCount,todayCount,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
  const [filter,setFilter]=useState<Filter>('all');
  const {user}=useAuth();
  const ownerPreviewEnabled=user?.email?.toLowerCase()==='yourcustomerflowguy@gmail.com';
@@ -62,7 +62,6 @@ export default function CrmActivityCenter(){
   if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly);
   if(e.archived_at||e.lead_archived||auditOnly)return false;
   if(filter==='all')return previewActive||e.category!=='staff';
-  if(filter==='unread')return !e.read_at&&e.category!=='staff';
   if(filter==='urgent')return e.category==='escalation'&&Boolean(e.callback_escalated_at);
   if(filter==='handoff')return e.category==='handoff'||e.category==='escalation';
   return e.category===filter;
@@ -76,7 +75,7 @@ export default function CrmActivityCenter(){
  const isResolved=(item:CrmActivity)=>item.callback_status==='completed'||item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
  // Preview statistics are derived only from local visual fixtures, never from
  // the CRM's live counters or push subscriptions.
- const sampleUnread=notificationPreviewFixtures.filter(e=>!e.read_at&&e.category!=='staff').length;
+ const sampleAttention=notificationPreviewFixtures.filter(e=>e.lead_status==='new'||e.callback_status==='pending'||e.callback_status==='waiting_human').length;
  const sampleUrgent=notificationPreviewFixtures.filter(e=>e.category==='escalation'&&Boolean(e.callback_escalated_at)).length;
  const sampleHistory=notificationPreviewFixtures.filter(e=>e.archived_at||e.lead_archived||e.chat_lead_audit||(['handoff','escalation'].includes(e.category)&&['completed','closed','cancelled'].includes(e.callback_status??''))||((e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:'))&&Boolean(e.read_at))).length;
  const execute=async(task:()=>Promise<void>)=>{
@@ -120,7 +119,7 @@ export default function CrmActivityCenter(){
    </span>}
   </div>}
   <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
-   {([{label:'Unread',value:previewActive?sampleUnread:unreadCount,icon:Bell},{label:'Urgent',value:previewActive?sampleUrgent:urgentCount,icon:AlertTriangle},{label:'Last 24h',value:previewActive?notificationPreviewFixtures.length:todayCount,icon:Clock3}] as const).map(({label,value,icon:Icon})=>
+   {([{label:'Needs Attention',value:previewActive?sampleAttention:attentionCount,icon:AlertTriangle},{label:'Urgent',value:previewActive?sampleUrgent:urgentCount,icon:AlertTriangle},{label:'Last 24h',value:previewActive?notificationPreviewFixtures.length:todayCount,icon:Clock3}] as const).map(({label,value,icon:Icon})=>
    <div key={label} className="rounded-xl border border-[#c8a96e]/20 bg-[#14110d]/80 px-3 py-4">
     <div className="flex items-center gap-1 text-xs text-[#bfb09a]"><Icon size={13}/>{label}{previewActive&&<span className="text-[10px] text-[#e8b96b]">· Sample</span>}</div>
     <p className="mt-2 font-serif text-3xl text-[#ecd19d] tabular-nums">{value}</p>
@@ -152,7 +151,6 @@ export default function CrmActivityCenter(){
      </div>
      <div className="mt-1 flex flex-wrap items-center gap-2">
       <span className="crm-notification-source inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] uppercase tracking-wide">{item.category==='handoff'||item.category==='escalation'?<MessagesSquare size={12} aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={12} aria-hidden="true"/>:<CheckCircle2 size={12} aria-hidden="true"/>}{categoryLabel(item.category)}</span>
-      {!item.read_at&&!item.archived_at&&!item.lead_archived&&item.category!=='staff'&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
      {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked chat lead audit':item.category==='handoff'&&['completed','closed'].includes(item.callback_status??'')?'Completed chat request':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Team activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'||item.category==='escalation'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot request'):friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot activity')}</p>
