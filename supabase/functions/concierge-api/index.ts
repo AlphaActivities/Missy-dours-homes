@@ -228,6 +228,19 @@ Deno.serve(async req=>{
  const {data:chat,error:findErr}=await db.from('ai_conversations').select('id,status,visitor_expires_at,language_code').eq('visitor_token_hash',hash).maybeSingle();
  if(findErr||!chat)return answer({error:'Unauthorized'},401,origin);
  if(!chat.visitor_expires_at || new Date(chat.visitor_expires_at).getTime()<=Date.now())return answer({error:'Session expired. Please start a new conversation.'},401,origin);
+ if(url.pathname.endsWith('/typing')) {
+  // Authenticated live visitor and only the first meaningful composition.
+  // Never store typed text, and never send repeated keystroke notifications.
+  if(chat.status!=='ai')return answer({ok:true},200,origin);
+  const limit=await db.rpc('ai_concierge_consume_limit',{
+   p_bucket:'engagement:'+hash,p_max:3,p_window_seconds:3600
+  });
+  if(limit.error||limit.data!==true)return answer({ok:true},200,origin);
+  const {error:queued}=await db.from('ai_concierge_push_outbox')
+   .insert({conversation_id:chat.id,event_type:'visitor_engaged'});
+  // Queue errors should not interrupt normal visitor chat.
+  return answer({ok:!queued||queued.code==='23505'},200,origin);
+ }
  let language=typeof body.language==='string' && ['en','es','fr','pt','zh'].includes(body.language)?body.language:'en';
  if(url.pathname.endsWith('/handoff')) {
   if(chat.status!=='ai')return answer({error:'This conversation has already been transferred.'},409,origin);
