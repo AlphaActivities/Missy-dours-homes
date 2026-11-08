@@ -1288,3 +1288,30 @@
   min-width: 0;
   text-align: left;
 }
+
+
+/* In-app CRM alerts use the same category palette as the Notifications inbox.
+   Native iOS push banners cannot be styled using website CSS. */
+.crm-live-alert {
+  --crm-category-rgb: 209,177,112;
+  border-width: 2px;
+  border-color: rgba(var(--crm-category-rgb), .75);
+  background: radial-gradient(ellipse at 90% 10%,rgba(var(--crm-category-rgb),.15),transparent 70%),
+    linear-gradient(130deg,rgba(28,24,20,.98),rgba(13,13,13,.98));
+  box-shadow: inset 0 1px 0 rgba(255,236,197,.12),0 18px 48px rgba(0,0,0,.65),0 0 22px rgba(var(--crm-category-rgb),.18);
+}
+.crm-live-alert[data-category="lead"] { --crm-category-rgb:255,156,0; }
+.crm-live-alert[data-category="handoff"] { --crm-category-rgb:125,187,181; }
+.crm-live-alert[data-category="staff"] { --crm-category-rgb:76,211,124; }
+.crm-live-alert[data-category="opportunity"] { --crm-category-rgb:93,177,203; }
+.crm-live-alert[data-category="opportunity"][data-opportunity-kind="seller"] { --crm-category-rgb:209,170,101; }
+.crm-live-alert[data-category="opportunity"][data-opportunity-kind="investor"] { --crm-category-rgb:94,194,153; }
+.crm-live-alert[data-category="opportunity"][data-opportunity-kind="both"] { --crm-category-rgb:175,147,215; }
+.crm-live-alert[data-category="escalation"] { --crm-category-rgb:207,119,100; }
+.crm-live-alert-source { color:rgb(var(--crm-category-rgb)); }
+.crm-live-alert-action {
+  color:#f9e9cb;
+  border-color:rgba(var(--crm-category-rgb),.6);
+  background:rgba(var(--crm-category-rgb),.16);
+}
+.crm-live-alert-action:hover { background:rgba(var(--crm-category-rgb),.25); }
