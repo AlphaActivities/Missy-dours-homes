@@ -20,7 +20,7 @@ const devices=[
 ];
 function queryResult(data){
   const query={
-    select(){return query;},eq(){return query;},limit(){return query;},
+    select(){return query;},eq(){return query;},limit(){return query;},maybeSingle(){return query;},
     delete(){return query;},
     then(resolve,reject){return Promise.resolve({data,error:null}).then(resolve,reject);}
   };
