@@ -282,23 +282,11 @@ function DrawerContent({
               <QuickActionBar phone={lead.phone} email={lead.email} compact={false} />
               <button
                 onClick={() => setShowLogModal(true)}
-                className="flex items-center justify-center gap-1.5 rounded-lg w-full h-10 text-[13px] font-medium transition-all duration-150"
-                style={{
-                  color: 'var(--ds-text-secondary)',
-                  background: 'var(--ds-bg-overlay)',
-                  boxShadow: '0 0 0 1px rgba(255,255,255,0.08)',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.color = 'var(--ds-text-primary)';
-                  e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.18)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.color = 'var(--ds-text-secondary)';
-                  e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.08)';
-                }}
+                type="button"
+                className={'flex items-center justify-center gap-1.5 rounded-lg w-full min-h-11 px-3 text-[13px] font-semibold transition-all duration-150 '+(callbackPending?'border border-[#ead19f] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] text-[#191208] shadow-[0_5px_18px_rgba(212,171,102,.2)] hover:brightness-110':'border border-white/10 bg-white/5 text-[#c7b9a3] hover:border-white/25 hover:text-white')}
               >
                 <ClipboardList size={14} />
-                Record Interaction
+                {callbackPending ? 'Record Contact Outcome' : 'Record Interaction'}
               </button>
             </div>
           </div>
@@ -309,7 +297,7 @@ function DrawerContent({
           <p className="mt-2">Assigned to: {callbackWork?.owner??'Unassigned'}</p>
           <p className="mt-1">Next action: Contact customer, record a Call, Text, or Email outcome, then resolve or schedule follow-up.</p>
           <p className="mt-1">Due: {callbackWork?.due?new Date(callbackWork.due).toLocaleString():'Awaiting staff review'}</p>
-          <button type="button" onClick={()=>setShowLogModal(true)} className="mt-3 rounded-lg bg-[#c8a96e] px-4 py-2 font-semibold text-black">Record Contact Outcome</button>
+          <p className="mt-3 text-xs text-[#e6c89c]">Use the Record Contact Outcome action in Quick Actions above to log the call, text, or email and resolve or schedule follow-up.</p>
         </section>}
 
         {/* Follow-up section */}

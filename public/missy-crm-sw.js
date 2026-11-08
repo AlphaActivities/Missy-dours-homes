@@ -24,6 +24,10 @@ self.addEventListener('push', event => {
       title: 'Push Notifications Active',
       body: 'Your device is ready to receive real-time team alerts.'
     },
+    visitor_engaged: {
+      title: 'Visitor Chat Started',
+      body: 'A verified visitor has begun composing a message. Open the live conversation.'
+    },
     handoff_created: {
       title: 'New Chat Request',
       body: 'A visitor has requested assistance. Open the conversation to respond.'

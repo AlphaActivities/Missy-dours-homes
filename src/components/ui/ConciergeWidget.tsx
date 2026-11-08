@@ -91,6 +91,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [reactions, setReactions] = useState<Record<string,string>>({});
   const [reactionPicker, setReactionPicker] = useState<string | null>(null);
   const syncVersionRef = useRef(0);
+  const typingNotifiedRef = useRef<Set<string>>(new Set());
   const receivedReceiptIdsRef = useRef<Set<string>>(new Set());
   const readReceiptIdsRef = useRef<Set<string>>(new Set());
   const [invitation, setInvitation] = useState(false);
@@ -541,7 +542,21 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           </div>
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
-              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] min-w-0 flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-base text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
+              <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>{
+                const nextDraft=e.target.value;
+                setDraft(nextDraft);
+                // One early engagement alert per verified conversation.
+                // Do not capture drafts, notify on every keystroke, or use private QA.
+                const visitor=sessionRef.current??session;
+                if(!privateQA&&visitor&&mode==='ai'&&nextDraft.trim().length>=2
+                   &&!typingNotifiedRef.current.has(visitor.conversation_id)){
+                  typingNotifiedRef.current.add(visitor.conversation_id);
+                  void conciergeTransport.typing(visitor).catch(()=>{
+                   // A failed alert must not turn every subsequent keystroke
+                   // into a retry storm. Chat remains fully usable.
+                  });
+                }
+               }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] min-w-0 flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-base text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
               <button type="submit" disabled={!chatEnabled || !welcomeReady || busy || !session || !draft.trim() || mode === 'waiting_human' || mode === 'closed'} aria-label="Send message" className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-[#c5a16a] text-black disabled:opacity-40"><Send size={19}/></button>
             </form>
             <div className="mt-2 text-center text-[10px] leading-relaxed text-[#988b77]"><p>AI information may be incomplete.</p><p>Missy confirms property availability and details.</p></div>
