@@ -7,7 +7,7 @@ import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type 
 
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string; sender?: 'ai' | 'human' | 'visitor'; delivered_to_staff_at?:string|null;read_by_staff_at?:string|null };
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
-const GREETING = 'We help people find their happy, what could we help answer for you?';
+const GREETING = 'We help people find their happy. What happy answer can we find for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const AI_TYPING_MIN_MS = 2800;
 const INTRO_TITLE = 'Imagine the Life That Awaits.';
@@ -30,18 +30,18 @@ function formatCallbackPhone(value: string) {
 }
 
 
-/** A native-style incoming typing bubble, visible only while awaiting an AI reply. */
+/** Compact iMessage-inspired incoming typing indicator, without exaggerated dot bouncing. */
 function AssistantTypingBubble() {
   const reducedMotion = useReducedMotion();
   return <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
-    <div className="inline-flex min-h-12 items-center gap-1.5 rounded-[26px] rounded-bl-[12px] border border-white/10 bg-[#29292d] px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,.12)]">
+    <div className="inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[9px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
       <span className="sr-only">Assistant is typing</span>
       {[0,1,2].map(index => <motion.span
         key={index}
         aria-hidden="true"
-        className="block h-2 w-2 rounded-full bg-[#b8b8be]"
-        animate={reducedMotion ? {y:0, opacity:0.8} : {y:[0,-4,0],opacity:[0.45,1,0.45]}}
-        transition={reducedMotion ? {duration:0} : {duration:0.9,repeat:Infinity,delay:index*0.16,ease:'easeInOut'}}
+        className="block h-[7px] w-[7px] shrink-0 rounded-full bg-[#b8b8be]"
+        animate={reducedMotion ? {opacity:0.8,scale:1} : {opacity:[0.4,1,0.4],scale:[0.94,1.08,0.94]}}
+        transition={reducedMotion ? {duration:0} : {duration:1.25,repeat:Infinity,delay:index*0.18,ease:'easeInOut'}}
       />)}
     </div>
   </div>;
