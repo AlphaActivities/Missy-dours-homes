@@ -714,7 +714,26 @@
 .ds-shell .crm-category-notification[data-category="lead"] { --crm-category-rgb: 255,156,0; }
 .ds-shell .crm-category-notification[data-category="handoff"] { --crm-category-rgb: 125,187,181; }
 .ds-shell .crm-category-notification[data-category="staff"] { --crm-category-rgb: 76,211,124; }
+.ds-shell .crm-category-notification[data-category="opportunity"] { --crm-category-rgb: 93,177,203; }
+.ds-shell .crm-category-notification[data-category="opportunity"][data-opportunity-kind="seller"] { --crm-category-rgb: 209,170,101; }
+.ds-shell .crm-category-notification[data-category="opportunity"][data-opportunity-kind="investor"] { --crm-category-rgb: 94,194,153; }
+.ds-shell .crm-category-notification[data-category="opportunity"][data-opportunity-kind="both"] { --crm-category-rgb: 175,147,215; }
 .ds-shell .crm-category-notification[data-category="escalation"] { --crm-category-rgb: 207,119,100; }
+/* A restrained luxury finish across all existing notification categories.
+   Preserve established traveling-border and category-specific animations. */
+.ds-shell .crm-category-notification {
+  box-shadow: inset 0 1px 0 rgba(255,236,197,.10), 0 9px 30px rgba(0,0,0,.24), 0 0 18px rgba(var(--crm-category-rgb),.09);
+}
+.ds-shell .crm-category-notification .crm-notification-source {
+  border-radius: .45rem;
+  font-weight: 650;
+  letter-spacing: .075em;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 0 14px rgba(var(--crm-category-rgb),.075);
+}
+.ds-shell .crm-category-notification[data-category="opportunity"] {
+  background: radial-gradient(ellipse 75% 90% at 95% 5%,rgba(var(--crm-category-rgb),.14),transparent 76%), linear-gradient(130deg,#1d1d20 0%,#111416 55%,#10100f 100%);
+}
+.ds-shell .crm-activity-filter[data-filter="opportunity"] { --crm-filter-rgb: 93,177,203; }
 /* Keep notification heading color aligned with the source filter. */
 .ds-shell .crm-category-notification .crm-notification-heading-icon {
   color: rgb(var(--crm-category-rgb));
