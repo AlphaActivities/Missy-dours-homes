@@ -11,6 +11,14 @@ type Conversation = {
 };
 type Attachment = {id:string;original_filename:string;mime_type:string;file_size_bytes:number;storage_path:string;created_at:string};
 type Message = {id:string; sender:'visitor'|'ai'|'human'|'system';body:string;translated_body:string|null; original_language:string|null;created_at:string;sender_actor:string|null;delivered_to_staff_at:string|null;read_by_staff_at:string|null;delivered_to_visitor_at:string|null;read_by_visitor_at:string|null;};
+// Visitor messages and AI replies may share the same database timestamp.
+// Preserve chronology even when Postgres changes the order of tied rows.
+const senderOrder:Record<Message['sender'],number>={visitor:0,ai:1,human:2,system:3};
+const chronologicalMessages=(rows:Message[]):Message[]=>[...rows].sort((a,b)=>
+ a.created_at.localeCompare(b.created_at)
+ || senderOrder[a.sender]-senderOrder[b.sender]
+ || a.id.localeCompare(b.id)
+);
 // All conversation-related timestamps display date, hour and minute, never seconds.
 const time = (s:string|null) => s ? new Date(s).toLocaleString(undefined,{
  year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'
@@ -121,14 +129,16 @@ export default function ConversationsPage() {
   setSignedAttachment(null);
   if(!selected){setMessages([]);setLoadedConversation(null);return;}
   let active=true;
+  let fetchVersion=0;
   const fetchTranscript=async()=>{
+   const version=++fetchVersion;
    const {data,error}=await supabase.from('ai_conversation_messages')
     .select('id,sender,body,translated_body,original_language,created_at,sender_actor,delivered_to_staff_at,read_by_staff_at,delivered_to_visitor_at,read_by_visitor_at')
-    .eq('conversation_id',selected).order('created_at',{ascending:false}).limit(500);
-   if(!active)return;
+    .eq('conversation_id',selected).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(500);
+   if(!active||version!==fetchVersion)return;
    if(error)setError(error.message);
    else {
-    const displayed=((data??[]) as Message[]).reverse();
+    const displayed=chronologicalMessages((data??[]) as Message[]);
     setMessages(displayed);
     // Only loaded visitor messages can be acknowledged. Read requires the
     // dashboard foreground and transcript in view.
@@ -142,9 +152,10 @@ export default function ConversationsPage() {
     }
    }
    const files=await supabase.from('ai_conversation_attachments').select('id,original_filename,mime_type,file_size_bytes,storage_path,created_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(50);
-   if(active && !files.error)setAttachments((files.data??[]) as Attachment[]);
+   if(!active||version!==fetchVersion)return;
+   if(!files.error)setAttachments((files.data??[]) as Attachment[]);
    setLoadingMessages(false);
-   if(active)setLoadedConversation(selected);
+   setLoadedConversation(selected);
   };
   setLoadedConversation(null);
   setLoadingMessages(true);
