@@ -1,5 +1,5 @@
 import {useMemo,useState} from 'react';
-import {Archive,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,Clock3,MessagesSquare,UserRoundPlus,CheckCircle2} from 'lucide-react';
+import {Archive,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,MessagesSquare,UserRoundPlus,CheckCircle2} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 import {IosNativeTap} from './DashboardHaptics';
@@ -20,7 +20,7 @@ const filters:Array<{key:Filter;label:string}>=[
  {key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
 ];
 export default function CrmActivityCenter(){
- const {items,attentionCount,urgentCount,todayCount,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
+ const {items,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
  const [filter,setFilter]=useState<Filter>('all');
  const {user}=useAuth();
  const ownerPreviewEnabled=user?.email?.toLowerCase()==='yourcustomerflowguy@gmail.com';
@@ -73,10 +73,6 @@ export default function CrmActivityCenter(){
  const isFeatured=(item:CrmActivity)=>requiresAction(item);
  const isInProgress=(item:CrmActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
  const isResolved=(item:CrmActivity)=>item.callback_status==='completed'||item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
- // Preview statistics are derived only from local visual fixtures, never from
- // the CRM's live counters or push subscriptions.
- const sampleAttention=notificationPreviewFixtures.filter(e=>e.lead_status==='new'||e.callback_status==='pending'||e.callback_status==='waiting_human').length;
- const sampleUrgent=notificationPreviewFixtures.filter(e=>e.category==='escalation'&&Boolean(e.callback_escalated_at)).length;
  const sampleHistory=notificationPreviewFixtures.filter(e=>e.archived_at||e.lead_archived||e.chat_lead_audit||(['handoff','escalation'].includes(e.category)&&['completed','closed','cancelled'].includes(e.callback_status??''))||((e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:'))&&Boolean(e.read_at))).length;
  const execute=async(task:()=>Promise<void>)=>{
   if(working)return;setWorking(true);setNotice('');
@@ -118,14 +114,7 @@ export default function CrmActivityCenter(){
     SAMPLE CARDS ONLY · No messages, push alerts or database changes
    </span>}
   </div>}
-  <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
-   {([{label:'Needs Attention',value:previewActive?sampleAttention:attentionCount,icon:AlertTriangle},{label:'Urgent',value:previewActive?sampleUrgent:urgentCount,icon:AlertTriangle},{label:'Last 24h',value:previewActive?notificationPreviewFixtures.length:todayCount,icon:Clock3}] as const).map(({label,value,icon:Icon})=>
-   <div key={label} className="rounded-xl border border-[#c8a96e]/20 bg-[#14110d]/80 px-3 py-4">
-    <div className="flex items-center gap-1 text-xs text-[#bfb09a]"><Icon size={13}/>{label}{previewActive&&<span className="text-[10px] text-[#e8b96b]">· Sample</span>}</div>
-    <p className="mt-2 font-serif text-3xl text-[#ecd19d] tabular-nums">{value}</p>
-   </div>)}
-  </div>
-  <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
    <div role="group" aria-label="Filter activity" className="flex flex-wrap gap-2">
     {filters.map(({key,label})=><IosNativeTap key={key}><button type="button" onClick={()=>setFilter(key)}
      aria-pressed={filter===key} data-filter={key} className="crm-activity-filter relative isolate overflow-hidden rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,box-shadow] duration-300">
