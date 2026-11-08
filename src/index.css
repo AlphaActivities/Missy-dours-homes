@@ -620,7 +620,7 @@
 .ds-shell .crm-activity-filter[data-filter="urgent"] { --crm-filter-rgb: 207, 119, 100; }
 .ds-shell .crm-activity-filter[data-filter="lead"] { --crm-filter-rgb: 255, 156, 0; }
 .ds-shell .crm-activity-filter[data-filter="handoff"] { --crm-filter-rgb: 125, 187, 181; }
-.ds-shell .crm-activity-filter[data-filter="staff"] { --crm-filter-rgb: 133, 186, 148; }
+.ds-shell .crm-activity-filter[data-filter="staff"] { --crm-filter-rgb: 76, 211, 124; }
 .ds-shell .crm-activity-filter[data-filter="history"] { --crm-filter-rgb: 158, 155, 153; }
 .ds-shell .crm-activity-filter:hover {
   border-color: rgba(var(--crm-filter-rgb), .8);
@@ -655,6 +655,24 @@
   box-shadow: 0 0 0 1px rgba(var(--crm-filter-rgb), .23), 0 0 12px rgba(var(--crm-filter-rgb), .15);
   animation: crm-notification-filter-orbit 5.5s linear infinite;
 }
+/* Staff Activity should clearly read emerald-green, not muted grey-green. */
+.ds-shell .crm-activity-filter[data-filter="staff"] {
+  border-color: rgba(76, 211, 124, .48);
+  background-color: rgba(36, 112, 67, .075);
+}
+.ds-shell .crm-activity-filter[data-filter="staff"][aria-pressed="true"] {
+  background: linear-gradient(130deg, rgba(76, 211, 124, .24), rgba(12, 19, 14, .95) 72%) padding-box,
+    conic-gradient(from var(--crm-filter-orbit-angle),
+      rgba(76, 211, 124, .2) 0deg,
+      rgba(76, 211, 124, .3) 85deg,
+      rgba(76, 211, 124, .8) 155deg,
+      rgba(76, 211, 124, 1) 180deg,
+      rgba(76, 211, 124, .8) 205deg,
+      rgba(76, 211, 124, .3) 275deg,
+      rgba(76, 211, 124, .2) 360deg) border-box;
+  box-shadow: 0 0 0 1px rgba(76, 211, 124, .35), 0 0 17px rgba(76, 211, 124, .2);
+}
+
 @keyframes crm-notification-filter-orbit {
   to { --crm-filter-orbit-angle: 360deg; }
 }
@@ -696,7 +714,7 @@
 }
 .ds-shell .crm-category-notification[data-category="lead"] { --crm-category-rgb: 255,156,0; }
 .ds-shell .crm-category-notification[data-category="handoff"] { --crm-category-rgb: 125,187,181; }
-.ds-shell .crm-category-notification[data-category="staff"] { --crm-category-rgb: 133,186,148; }
+.ds-shell .crm-category-notification[data-category="staff"] { --crm-category-rgb: 76,211,124; }
 .ds-shell .crm-category-notification[data-category="escalation"] { --crm-category-rgb: 207,119,100; }
 /* Keep notification heading color aligned with the source filter. */
 .ds-shell .crm-category-notification .crm-notification-heading-icon {
