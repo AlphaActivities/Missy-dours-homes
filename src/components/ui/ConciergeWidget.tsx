@@ -9,7 +9,7 @@ type Message = { id: number | string; role: 'concierge' | 'visitor'; text: strin
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy. What happy answer can we find for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
-const AI_TYPING_MIN_MS = 2800;
+const AI_TYPING_MIN_MS = 3800;
 const INTRO_TITLE = 'Imagine the Life That Awaits.';
 
 // NANP structural validation, not proof a number is assigned or reachable.
@@ -34,7 +34,7 @@ function formatCallbackPhone(value: string) {
 function AssistantTypingBubble() {
   const reducedMotion = useReducedMotion();
   return <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
-    <div className="inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[9px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
+    <div className="missy-ios-incoming-bubble inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[9px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
       <span className="sr-only">Assistant is typing</span>
       {[0,1,2].map(index => <motion.span
         key={index}
@@ -204,16 +204,21 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       setWelcomeTyping(false);setWelcomeReady(true);return;
     }
     const typing=window.setTimeout(()=>setWelcomeTyping(true),350);
-    const reveal=window.setTimeout(()=>{setWelcomeTyping(false);setWelcomeReady(true);},3500);
+    const reveal=window.setTimeout(()=>{setWelcomeTyping(false);setWelcomeReady(true);},4500);
     return()=>{window.clearTimeout(typing);window.clearTimeout(reveal);};
   },[open,introDone,session?.conversation_id,welcomeReady]);
 
-  // Scroll only the chat transcript: scrollIntoView can also scroll the page behind the modal.
+  // Keep new messages and the transient typing indicator at the bottom of the
+  // chat pane, not underneath the introduction. Never scroll the page behind the modal.
   useEffect(() => {
     if (!open) return;
     const history = chatHistoryRef.current;
-    if (history) history.scrollTop = history.scrollHeight;
-  }, [messages, open]);
+    if (!history) return;
+    const frame = window.requestAnimationFrame(() => {
+      history.scrollTop = history.scrollHeight;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [messages, open, aiTyping, welcomeTyping]);
 
   // iOS Safari can scroll the body under a fixed dialog unless its position is frozen.
   // Preserve the exact document position so closing the chat does not jump to the top.
@@ -488,8 +493,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {privateQA && <p className="rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">PRIVATE TEST ONLY. This is not a customer inquiry. Use the reserved callback details and clear the test when finished.</p>}
             <div className="missy-concierge-intro mx-auto w-full max-w-sm py-2 text-center"><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 min-h-[28px] font-serif text-lg tracking-wide text-[#ebd5ae]" aria-label={INTRO_TITLE}><motion.span className="inline-block max-w-full text-left align-top" aria-hidden="true" initial={false} animate={{clipPath: introAnimating || introDone ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)'}} transition={{duration:0.85,ease:'linear'}} onAnimationComplete={()=>{if(introAnimating){setIntroAnimating(false);setIntroDone(true);}}}>{INTRO_TITLE}</motion.span></p></div>
             {messages.filter(m=>m.id!==0 || welcomeReady).map(m => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
-              <div className="flex max-w-[87%] flex-col items-start">
-                <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'rounded-br-[12px] bg-[#007AFF] text-white shadow-[0_4px_14px_rgba(0,122,255,.17)]' : 'rounded-bl-[12px] border border-white/10 bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
+              <div className={`flex max-w-[87%] flex-col ${m.role==='visitor'?'items-end':'items-start'}`}>
+                <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'missy-ios-outgoing-bubble rounded-br-[9px] bg-[#0A84FF] text-white shadow-[0_4px_14px_rgba(10,132,255,.17)]' : 'missy-ios-incoming-bubble rounded-bl-[9px] bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text)}</p>
                 {!privateQA&&m.role==='visitor'&&typeof m.id==='string'&&<span className="mt-1 self-end pr-1 text-[10px] text-[#aeb8c5]">{m.read_by_staff_at?'Read by team':m.delivered_to_staff_at?'Delivered to team':'Sent'}</span>}
                 {!privateQA && session && mode === 'human' && m.sender === 'human' && <div className="relative mt-1 flex items-center gap-1">
                   <button type="button" aria-label={`React to message ${m.id}`} aria-expanded={reactionPicker===String(m.id)} onClick={()=>setReactionPicker(current=>current===String(m.id)?null:String(m.id))} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/15 bg-[#1b1b1e] px-2 text-[13px] text-[#d5d5d8] hover:border-[#007AFF]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">
