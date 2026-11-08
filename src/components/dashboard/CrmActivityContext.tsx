@@ -235,6 +235,25 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  };
  const unreadCount=counts.unread;
  const dismissLiveAlert=()=>setLiveAlert(null);
- return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>{children}</Context.Provider>;
+ const alertTarget=liveAlert?.category==='handoff'&&liveAlert.callback_lead_id
+  ?'/dashboard/leads?lead='+liveAlert.callback_lead_id
+  :liveAlert?.callback_conversation_id
+   ?'/dashboard/conversations?conversation='+liveAlert.callback_conversation_id
+   :liveAlert?.target_path?.startsWith('/dashboard/')?liveAlert.target_path:'/dashboard/notifications';
+ return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
+ {children}
+ {liveAlert&&permitted.includes(email)&&
+  <div role="alert" aria-live="assertive" className="fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[120] mx-auto max-w-md rounded-2xl border border-[#cba867]/75 bg-[#18150f]/95 p-4 text-[#f0dfbd] shadow-[0_18px_48px_rgba(0,0,0,.65),0_0_20px_rgba(206,157,73,.18)] backdrop-blur-xl">
+   <div className="flex items-start justify-between gap-3">
+    <div className="min-w-0">
+     <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-[#d4ae70]">New CRM notification</p>
+     <p className="mt-1 text-sm font-semibold">{liveAlert.title}</p>
+     <p className="mt-1 line-clamp-2 text-xs text-[#d4c4ad]">{liveAlert.summary}</p>
+    </div>
+    <button type="button" aria-label="Dismiss in-app notification" onClick={dismissLiveAlert} className="shrink-0 rounded-lg border border-white/20 px-2.5 py-1.5 text-sm text-[#e8d4b3]">✕</button>
+   </div>
+   <a href={alertTarget} onClick={dismissLiveAlert} className="mt-3 flex min-h-11 items-center justify-center rounded-lg border border-[#d2ab6a]/55 bg-[#69512e]/60 px-3 py-2 text-xs font-semibold text-[#ffe6b5]">View Notification · Open Details</a>
+  </div>}
+ </Context.Provider>;
 }
 export function useCrmActivity(){const ctx=useContext(Context);if(!ctx)throw new Error('CRM activity provider missing');return ctx;}
