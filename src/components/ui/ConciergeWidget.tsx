@@ -39,7 +39,7 @@ function AssistantTypingBubble() {
       {[0,1,2].map(index => <motion.span
         key={index}
         aria-hidden="true"
-        className="relative block h-[7px] w-[7px] shrink-0 rounded-full bg-[#b8b8be]"
+        className="relative z-10 block h-[7px] w-[7px] shrink-0 rounded-full bg-[#b8b8be]"
         animate={reducedMotion ? {opacity:0.8,scale:1} : {opacity:[0.4,1,0.4],scale:[0.94,1.08,0.94]}}
         transition={reducedMotion ? {duration:0} : {duration:1.25,repeat:Infinity,delay:index*0.18,ease:'easeInOut'}}
       />)}
