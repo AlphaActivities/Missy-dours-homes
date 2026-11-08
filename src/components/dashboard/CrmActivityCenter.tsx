@@ -131,7 +131,7 @@ export default function CrmActivityCenter(){
    </div>}
    {visible.map(item=><article key={filter!=='history'&&groupKey(item)&&(item.category==='handoff'||item.category==='escalation')?'active-chat:'+groupKey(item):item.id} data-category={item.category} data-urgent-transition={item.category==='escalation'&&Boolean(item.callback_escalated_at)?'true':'false'} data-work-state={requiresAction(item)?'action':isResolved(item)?'complete':isInProgress(item)?'progress':'info'} className={'crm-category-notification relative isolate overflow-hidden rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(isFeatured(item)?'crm-actionable-notification ':'')}>
     <div className="min-w-0">
-     <div className="flex items-center justify-between gap-2">
+     <div className="flex min-h-[32px] items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
        {item.category==='handoff'||item.category==='escalation'?<MessagesSquare size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>:<CheckCircle2 size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>}
        <strong className="min-w-0 text-sm text-[#f0dfc4]">{displayTitle(item)}</strong>
