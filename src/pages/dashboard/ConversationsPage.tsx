@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MessageCircle, MessagesSquare, RefreshCw, Search, Clock3, WifiOff, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -23,10 +23,12 @@ export default function ConversationsPage() {
  const selectedDeepLinkRef=useRef<string|null>(null);
  const [selected,setSelected]=useState<string|null>(null);
  const transcriptRef=useRef<HTMLElement|null>(null);
+ const sessionStatusRef=useRef<HTMLDivElement|null>(null);
  const joinActionRef=useRef<HTMLDivElement|null>(null);
- const transcriptHeadingRef=useRef<HTMLHeadingElement|null>(null);
+ const pendingSourceRef=useRef<'manual'|'notification'>('manual');
  const pendingScrollRef=useRef<string|null>(null);
- const focusConversation=(id:string)=>{
+ const focusConversation=(id:string,source:'manual'|'notification'='manual')=>{
+  pendingSourceRef.current=source;
   pendingScrollRef.current=id;
   setSelected(id);
   setOutcomeOpen(false);
@@ -95,7 +97,7 @@ export default function ConversationsPage() {
     if(result.error||!result.data){setError('The requested conversation is unavailable or you do not have access.');return;}
     setItems(existing=>existing.some(c=>c.id===requestedConversation)?existing:[result.data as Conversation,...existing]);
    }
-   if(!cancelled){selectedDeepLinkRef.current=requestedConversation;focusConversation(requestedConversation);}
+   if(!cancelled){selectedDeepLinkRef.current=requestedConversation;focusConversation(requestedConversation,'notification');}
   };
   void selectRequested();
   return()=>{cancelled=true;};
@@ -152,27 +154,37 @@ export default function ConversationsPage() {
   finally{setAttachmentBusy(null);}
  };
  const active=items.find(c=>c.id===selected);
- // Both notification deep links and manual conversation selection focus the
- // same action area. Reposition only after the selected card has mounted,
- // using layout effects so WebKit does not paint an intermediate scroll jump.
- useLayoutEffect(()=>{
+ // Restore the previous manual conversation selection behavior exactly.
+ // Deep links from Notifications have their own target and timing.
+ useEffect(()=>{
   if(!selected||pendingScrollRef.current!==selected||!active)return;
-  const target=joinActionRef.current??transcriptHeadingRef.current;
+  const fromNotification=pendingSourceRef.current==='notification';
+  const target=fromNotification?(joinActionRef.current??sessionStatusRef.current):sessionStatusRef.current;
   const scroller=target?.closest('main');
   if(!target||!scroller)return;
-  // The parent DashboardLayout resets its main scroller during navigation.
-  // A single animation frame runs AFTER that route-level layout effect and
-  // avoids the prior competing double-frame + timeout scroll attempts.
-  const frame=window.requestAnimationFrame(()=>{
-   if(pendingScrollRef.current!==selected)return;
-   const destination=Math.max(0,scroller.scrollTop+
-    target.getBoundingClientRect().top-scroller.getBoundingClientRect().top-8);
-   scroller.scrollTo({top:destination,left:0,behavior:'instant'});
-   pendingScrollRef.current=null;
-  });
-  return()=>window.cancelAnimationFrame(frame);
- },[selected,active?.id,active?.status,active?.assigned_to]);
-
+  if(fromNotification){
+   // The dashboard route reset and transcript mount settle before alignment.
+   // No delayed second scroll, which caused the observed jump.
+   const frame=window.requestAnimationFrame(()=>{
+    window.requestAnimationFrame(()=>{
+     if(pendingScrollRef.current!==selected)return;
+     const delta=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
+     scroller.scrollTo({top:Math.max(0,scroller.scrollTop+delta-8),behavior:'instant'});
+     pendingScrollRef.current=null;
+    });
+   });
+   return()=>window.cancelAnimationFrame(frame);
+  }
+  // Restore the previously working manual navigation code from PR #218.
+  pendingScrollRef.current=null;
+  const scroll=()=>{
+   const delta=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
+   scroller.scrollTo({top:Math.max(0,scroller.scrollTop+delta-8),behavior:'instant'});
+  };
+  const frame=window.requestAnimationFrame(()=>window.requestAnimationFrame(scroll));
+  const timeout=window.setTimeout(scroll,160);
+  return()=>{window.cancelAnimationFrame(frame);window.clearTimeout(timeout);};
+ },[selected,items]);
  // A recent, token-verified heartbeat is the only basis for confirmed
  // connection. A valid session or last message does not mean 'Online'.
  const sessionState=(c:Conversation):'expired'|'online'|'away'|'inactive'|'recent'|'available'|'unknown' => {
@@ -338,7 +350,7 @@ export default function ConversationsPage() {
     <div className="flex justify-between gap-2 mb-1"><strong className="text-sm truncate">{c.title}</strong>{c.priority!=='unrated'&&<span className="text-xs uppercase" title="AI conversation priority" style={{color:'var(--ds-gold)'}}>{c.priority}</span>}</div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p>{c.opportunity_kind&&<span className="mt-2 inline-flex rounded-md border border-[#c7a66e]/45 bg-[#b69a65]/10 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#efd5a2]">{c.opportunity_kind==='both'?'Buyer & Seller':c.opportunity_kind==='investor'?'Investor':c.opportunity_kind==='seller'?'Seller Interest':'Buyer Interest'} · {c.priority==='hot'?'High Intent':'Qualified Interest'}</span>}<div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-70"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div><div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
    </button>)}</section>
    <section ref={transcriptRef} aria-label="Conversation transcript" className={(requestedConversation&&selectedDeepLinkRef.current===selected?'':'ds-page-reveal ds-page-reveal-4 ')+'rounded-xl border border-white/10 bg-black/20 min-h-80 p-5'}>
-   {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
+   {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && !loadingCandidates && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
     <strong className="text-amber-200">Contact identity check needed</strong>
     <p className="text-[#dec9a5]">The CRM couldn't safely identify one existing contact. Confirm the person before linking an existing lead, or create a separate lead.</p>
     <div className="space-y-3">
@@ -369,11 +381,11 @@ export default function ConversationsPage() {
      <button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>
     </div>
    </div>}
-   {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs" role="status" aria-label="Visitor session status">
+   {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div ref={sessionStatusRef} className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs" role="status" aria-label="Visitor session status">
     {active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='online'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)}
     <strong className={active&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]'}>{active?sessionDisplay(active):'Session status unavailable'}</strong>
     <span className="text-[#bdb1a1]">{active&&sessionState(active)==='expired'?'Visitor cannot continue with the expired token. Use contact details for follow-up.':active&&sessionState(active)==='online'?'A recent verified heartbeat confirms the visitor has this chat open and visible.':active&&sessionState(active)==='away'?'The session is connected, but the visitor has closed or hidden the chat.':'No verified active connection. Message recency and token validity do not prove the visitor is online.'}</span>
-   </div><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div><h2 ref={transcriptHeadingRef} className="font-semibold">Conversation transcript</h2><p className="text-xs opacity-65">{active?.assigned_to ? `Claimed by ${active.assigned_to}` : 'No human assigned'}{active?.visitor_name && <span className="mt-2 block text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a>{active.lead_id ? ' · CRM contact linked' : ' · Contact review needed'}</span>}</p></div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>setOutcomeOpen(open=>!open)} className="rounded-lg border border-[#c8a96e]/60 px-3 py-2 text-sm text-[#efcf97] disabled:opacity-40">{outcomeOpen?'Cancel outcome':'Return to AI · Record Outcome'}</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <div ref={joinActionRef} className="flex flex-col gap-1.5"><button type="button" disabled={actionBusy} onClick={()=>void claim()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#f3d394] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-5 py-3 text-sm font-bold text-[#191208] shadow-[0_6px_24px_rgba(212,171,102,.24),inset_0_1px_0_rgba(255,250,225,.5)] transition-[filter,transform,box-shadow] duration-200 hover:brightness-110 hover:shadow-[0_8px_28px_rgba(212,171,102,.38)] active:scale-[.97] disabled:opacity-50"><MessagesSquare size={19} aria-hidden="true"/>{actionBusy?'Joining…':sessionState(active)==='expired'?'Assign Conversation to Me':"Join Chat as Missy's Team"}</button><span className="text-[11px] text-[#c5b49b]">Assigns this conversation to you and pauses AI replies. An expired session may require a callback.</span></div>}</div>
+   </div><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div><h2 className="font-semibold">Conversation transcript</h2><p className="text-xs opacity-65">{active?.assigned_to ? `Claimed by ${active.assigned_to}` : 'No human assigned'}{active?.visitor_name && <span className="mt-2 block text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a>{active.lead_id ? ' · CRM contact linked' : ' · Contact review needed'}</span>}</p></div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>setOutcomeOpen(open=>!open)} className="rounded-lg border border-[#c8a96e]/60 px-3 py-2 text-sm text-[#efcf97] disabled:opacity-40">{outcomeOpen?'Cancel outcome':'Return to AI · Record Outcome'}</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <div ref={joinActionRef} className="flex flex-col gap-1.5"><button type="button" disabled={actionBusy} onClick={()=>void claim()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#f3d394] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-5 py-3 text-sm font-bold text-[#191208] shadow-[0_6px_24px_rgba(212,171,102,.24),inset_0_1px_0_rgba(255,250,225,.5)] transition-[filter,transform,box-shadow] duration-200 hover:brightness-110 hover:shadow-[0_8px_28px_rgba(212,171,102,.38)] active:scale-[.97] disabled:opacity-50"><MessagesSquare size={19} aria-hidden="true"/>{actionBusy?'Joining…':sessionState(active)==='expired'?'Assign Conversation to Me':"Join Chat as Missy's Team"}</button><span className="text-[11px] text-[#c5b49b]">Assigns this conversation to you and pauses AI replies. An expired session may require a callback.</span></div>}</div>
     {outcomeOpen&&active?.status==='human'&&active.assigned_to===staffEmail&&<form onSubmit={e=>{e.preventDefault();void returnToAi();}} className="mb-5 space-y-3 rounded-xl border border-[#c8a96e]/45 bg-[#211a12]/85 p-4" aria-label="Record chat outcome before returning to AI">
      <h3 className="text-sm font-semibold text-[#e9ca91]">Record the result before returning control to AI</h3>
      <p className="text-xs text-[#cbbba3]">Returning control is not proof a customer request was resolved. An unresolved request stays on the team follow-up list.</p>
