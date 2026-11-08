@@ -9,7 +9,7 @@ export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
 type ActivityState={
- items:CrmActivity[];unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
+ items:CrmActivity[];liveAlert:CrmActivity|null;dismissLiveAlert:()=>void;unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
  prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;
  markRead:(eventId:string)=>Promise<void>;archive:(eventId:string)=>Promise<void>;restore:(eventId:string)=>Promise<void>;
  markAllRead:()=>Promise<void>;setPreference:(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>Promise<void>;
@@ -31,6 +31,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const [attentionBreakdown,setBreakdown]=useState({new_leads:0,open_tasks:0,waiting_conversations:0});
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState<string|null>(null);
+ const [liveAlert,setLiveAlert]=useState<CrmActivity|null>(null);
  const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false),loadedRef=useRef<CrmActivity[]>([]);
  const PAGE_SIZE=60;
  // A notification being read does not mean the associated inquiry was handled.
@@ -144,14 +145,17 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const seen=loadedRef.current;
    const newestIds=new Set(newest.map(e=>e.id));
    const newArrivals=firstLoaded.current?newest.filter(e=>!seen.some(x=>x.id===e.id)):[]; 
-   if(newArrivals.length && document.visibilityState==='visible' && (nextPrefs?.in_app_sound??prefsRef.current.in_app_sound)){
-    // Play once per polling batch, prioritized by urgency.
+   if(newArrivals.length && document.visibilityState==='visible'){
+    // In-app banner and optional sound reference exactly the same event.
     const priority:ActivityCategory[]=['escalation','handoff','opportunity','lead','staff'];
     const actionable=newArrivals.filter(e=>!e.read_at&&!e.archived_at&&!e.lead_archived);
     const first=priority.map(category=>actionable.find(e=>e.category===category)).find(Boolean);
     if(first){
-     const name=('sound_'+(first.category==='opportunity'?'handoff':first.category)) as SoundPreferenceKey;
-     playCrmSound(defaults(email)[name]);
+     setLiveAlert(first);
+     if(nextPrefs?.in_app_sound??prefsRef.current.in_app_sound){
+      const name=('sound_'+(first.category==='opportunity'?'handoff':first.category)) as SoundPreferenceKey;
+      playCrmSound((nextPrefs??prefsRef.current)[name]);
+     }
     }
    }
    firstLoaded.current=true;lastEvent.current=newest[0]?.id??null;
@@ -183,7 +187,19 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   }catch(e){setError(e instanceof Error?e.message:'Could not load older notifications');}
   finally{setLoadingMore(false);}
  };
- useEffect(()=>{firstLoaded.current=false;lastEvent.current=null;loadedRef.current=[];setItems([]);setHasMore(false);setCounts({unread:0,urgent:0,today:0,hidden:0});setPrefs(defaults(email));setLoading(true);if(!permitted.includes(email))return;void refresh();const timer=window.setInterval(()=>void refresh(),15000);const visible=()=>{if(document.visibilityState==='visible')void refresh();};document.addEventListener('visibilitychange',visible);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};},[email,refresh]);
+ useEffect(()=>{
+  firstLoaded.current=false;lastEvent.current=null;loadedRef.current=[];setItems([]);setLiveAlert(null);
+  setHasMore(false);setCounts({unread:0,urgent:0,today:0,hidden:0});setPrefs(defaults(email));setLoading(true);
+  if(!permitted.includes(email))return;
+  void refresh();
+  const channel=supabase.channel('crm-activity-'+email)
+   .on('postgres_changes',{event:'*',schema:'public',table:'crm_activity_events'},()=>{void refresh();})
+   .subscribe();
+  const timer=window.setInterval(()=>void refresh(),15000); // Reconnection fallback.
+  const visible=()=>{if(document.visibilityState==='visible')void refresh();};
+  document.addEventListener('visibilitychange',visible);
+  return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);void supabase.removeChannel(channel);};
+ },[email,refresh]);
  useEffect(()=>{
   // Use work requiring attention, never the number of notification banners.
   // Some browsers/platforms do not implement the Badging API.
@@ -218,6 +234,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   setPrefs(old=>({...old,[name]:value}));
  };
  const unreadCount=counts.unread;
- return <Context.Provider value={{items,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>{children}</Context.Provider>;
+ const dismissLiveAlert=()=>setLiveAlert(null);
+ return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>{children}</Context.Provider>;
 }
 export function useCrmActivity(){const ctx=useContext(Context);if(!ctx)throw new Error('CRM activity provider missing');return ctx;}
