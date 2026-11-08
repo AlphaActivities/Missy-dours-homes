@@ -16,16 +16,41 @@ const crmTarget = payload => {
 self.addEventListener('push', event => {
   let payload = {};
   try { payload = event.data ? event.data.json() : {}; } catch { payload = {}; }
-  const title = 'Missy Dours CRM';
-  const body = payload.kind === 'device_test'
-    ? 'Test notification received. This device can receive team alerts.'
-    : payload.kind === 'handoff_escalated'
-      ? 'An urgent chat request needs attention.'
-    : payload.kind === 'handoff_claimed'
-      ? 'Missy has joined a visitor conversation.'
-    : payload.kind === 'opportunity_detected'
-      ? 'A visitor is discussing a real estate opportunity. Review the live conversation.'
-      : 'A visitor has requested assistance from Missy’s team.';
+  // iOS already attributes native notifications to the installed "Missy CRM"
+  // app. Use the notification title to describe the event instead of repeating
+  // the app name. Keep lock-screen copy free of visitor contact information.
+  const messages = {
+    device_test: {
+      title: 'Push Notifications Active',
+      body: 'Your device is ready to receive real-time team alerts.'
+    },
+    handoff_created: {
+      title: 'New Chat Request',
+      body: 'A visitor has requested assistance. Open the conversation to respond.'
+    },
+    handoff_escalated: {
+      title: 'Urgent Chat Request',
+      body: 'An unanswered visitor request has escalated and needs attention.'
+    },
+    handoff_claimed: {
+      title: 'Team Member Responding',
+      body: 'A team member has joined a visitor conversation.'
+    },
+    opportunity_detected: {
+      title: payload.opportunity_kind === 'seller' ? 'Live Seller Interest'
+        : payload.opportunity_kind === 'buyer' ? 'Live Buyer Interest'
+        : payload.opportunity_kind === 'investor' ? 'Live Investor Interest'
+        : payload.opportunity_kind === 'both' ? 'Live Buyer & Seller Interest'
+        : 'Live Real Estate Opportunity',
+      body: 'A visitor is discussing real estate. Review the conversation while it is active.'
+    },
+    lead_received: {
+      title: 'New Lead Received',
+      body: 'A new website inquiry is ready for review.'
+    }
+  };
+  const notification = messages[payload.kind] || messages.handoff_created;
+  const {title,body} = notification;
   event.waitUntil((async () => {
     // Test pushes do not increment the business-work badge.
     // The server supplies an authoritative count for real concierge events.
