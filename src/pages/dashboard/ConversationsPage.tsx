@@ -16,6 +16,8 @@ export default function ConversationsPage() {
  const {user}=useAuth();
  const staffEmail=user?.email?.toLowerCase()??'';
  const [items,setItems]=useState<Conversation[]>([]);
+ const [visitorPresence,setVisitorPresence]=useState<Record<string,{last_seen_at:string;chat_visible:boolean}>>({});
+ const [presenceClock,setPresenceClock]=useState(Date.now());
  const [searchParams]=useSearchParams();
  const requestedConversation=searchParams.get('conversation');
  const selectedDeepLinkRef=useRef<string|null>(null);
@@ -57,6 +59,10 @@ export default function ConversationsPage() {
  const refresh=async(showLoading=true)=>{if(showLoading){setLoading(true);setError(null);}try{
   const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
   if(error)throw error;setItems((data??[]) as Conversation[]);
+  // Presence is independent of the visitor token expiry or message recency.
+  const presence=await supabase.from('ai_concierge_visitor_presence').select('conversation_id,last_seen_at,chat_visible').limit(200);
+  setVisitorPresence(presence.error?{}:Object.fromEntries((presence.data??[]).map(p=>[p.conversation_id,{last_seen_at:p.last_seen_at,chat_visible:p.chat_visible}])));
+  setPresenceClock(Date.now());
   const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,escalation_due_at,escalated_at,urgency,status').in('status',['pending','claimed']).order('due_at',{ascending:true}).limit(50);
   if(tasks.error)throw tasks.error;
   setPendingTasks(tasks.data??[]);
@@ -117,17 +123,28 @@ export default function ConversationsPage() {
   finally{setAttachmentBusy(null);}
  };
  const active=items.find(c=>c.id===selected);
- // Token validity and recent messages are evidence, NOT live presence.
- const sessionState=(c:Conversation):'expired'|'recent'|'available'|'unknown' => {
+ // A recent, token-verified heartbeat is the only basis for confirmed
+ // connection. A valid session or last message does not mean 'Online'.
+ const sessionState=(c:Conversation):'expired'|'online'|'away'|'inactive'|'recent'|'available'|'unknown' => {
   const expires=c.visitor_expires_at?Date.parse(c.visitor_expires_at):NaN;
   if(!Number.isFinite(expires))return 'unknown';
-  if(expires<=Date.now()||c.status==='closed')return 'expired';
+  if(expires<=presenceClock||c.status==='closed')return 'expired';
+  const signal=visitorPresence[c.id];
+  if(signal){
+   const seen=Date.parse(signal.last_seen_at);
+   if(Number.isFinite(seen)&&seen<=presenceClock+30000&&presenceClock-seen<75000){
+    return signal.chat_visible?'online':'away';
+   }
+   return 'inactive';
+  }
   const last=c.last_message_at?Date.parse(c.last_message_at):NaN;
-  return Number.isFinite(last)&&Date.now()-last<=120000&&last<=Date.now()+30000?'recent':'available';
+  return Number.isFinite(last)&&presenceClock-last<=120000&&last<=presenceClock+30000?'recent':'available';
  };
  const sessionDisplay=(c:Conversation)=>{
   const state=sessionState(c);
-  return state==='expired'?'Session Expired':state==='recent'?'Recently Active':state==='available'?'Session Available · Online Unconfirmed':'Session Status Unknown';
+  return state==='expired'?'Session Expired':state==='online'?'Online · Chat Open':state==='away'?'Away · Chat Not Visible'
+   :state==='inactive'?'Connection Inactive':state==='recent'?'Recently Active · Online Unconfirmed'
+   :state==='available'?'Session Available · Online Unconfirmed':'Session Status Unknown';
  };
 
  useEffect(()=>{
@@ -224,7 +241,7 @@ export default function ConversationsPage() {
   <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4">
    <section aria-label="Conversation list" className="ds-page-reveal ds-page-reveal-3 max-h-[315px] min-h-64 overflow-y-auto overscroll-contain touch-pan-y rounded-xl border border-[#c8a96e]/30 bg-black/20 [scrollbar-color:#8c734b_#17130f] [scrollbar-width:thin]">
    {filtered.length===0?<p className="p-6 text-sm" style={{color:'var(--ds-text-secondary)'}}>{loading?'Loading conversations…':'No conversations match. Visitor chat is not live yet.'}</p>:filtered.map(c=><button key={c.id} onClick={()=>focusConversation(c.id)} className="block w-full text-left px-4 py-4 border-b border-white/10 hover:bg-white/5" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
-    <div className="flex justify-between gap-2 mb-1"><strong className="text-sm truncate">{c.title}</strong>{c.priority!=='unrated'&&<span className="text-xs uppercase" title="AI conversation priority" style={{color:'var(--ds-gold)'}}>{c.priority}</span>}</div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p><div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-70"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div><div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='recent'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
+    <div className="flex justify-between gap-2 mb-1"><strong className="text-sm truncate">{c.title}</strong>{c.priority!=='unrated'&&<span className="text-xs uppercase" title="AI conversation priority" style={{color:'var(--ds-gold)'}}>{c.priority}</span>}</div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p><div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-70"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div><div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
    </button>)}</section>
    <section ref={transcriptRef} aria-label="Conversation transcript" className="ds-page-reveal ds-page-reveal-4 rounded-xl border border-white/10 bg-black/20 min-h-80 p-5">
    {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
@@ -242,9 +259,9 @@ export default function ConversationsPage() {
     </div>
    </div>}
    {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs" role="status" aria-label="Visitor session status">
-    {active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='recent'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)}
+    {active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='online'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)}
     <strong className={active&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]'}>{active?sessionDisplay(active):'Session status unavailable'}</strong>
-    <span className="text-[#bdb1a1]">{active&&sessionState(active)==='expired'?'Visitor cannot continue with the expired token. Use contact details for follow-up.':'This indicates recent activity or token validity, not confirmed live presence.'}</span>
+    <span className="text-[#bdb1a1]">{active&&sessionState(active)==='expired'?'Visitor cannot continue with the expired token. Use contact details for follow-up.':sessionState(active)==='online'?'A recent verified heartbeat confirms the visitor has this chat open and visible.':sessionState(active)==='away'?'The session is connected, but the visitor has closed or hidden the chat.':'No verified active connection. Message recency and token validity do not prove the visitor is online.'}</span>
    </div><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div><h2 className="font-semibold">Conversation transcript</h2><p className="text-xs opacity-65">{active?.assigned_to ? `Claimed by ${active.assigned_to}` : 'No human assigned'}{active?.visitor_name && <span className="mt-2 block text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a>{active.lead_id ? ' · CRM contact linked' : ' · Contact review needed'}</span>}</p></div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>void returnToAi()} className="rounded-lg border border-white/20 px-3 py-2 text-sm disabled:opacity-50">Return to AI</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <div className="flex flex-col gap-1.5"><button type="button" disabled={actionBusy} onClick={()=>void claim()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#f3d394] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-5 py-3 text-sm font-bold text-[#191208] shadow-[0_6px_24px_rgba(212,171,102,.24),inset_0_1px_0_rgba(255,250,225,.5)] transition-[filter,transform,box-shadow] duration-200 hover:brightness-110 hover:shadow-[0_8px_28px_rgba(212,171,102,.38)] active:scale-[.97] disabled:opacity-50"><MessagesSquare size={19} aria-hidden="true"/>{actionBusy?'Joining…':sessionState(active)==='expired'?'Assign Conversation to Me':"Join Chat as Missy's Team"}</button><span className="text-[11px] text-[#c5b49b]">Assigns this conversation to you and pauses AI replies. An expired session may require a callback.</span></div>}</div>{loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-3">{messages.map(m=><article key={m.id} className="p-3 rounded-lg border border-white/10"><div className="flex justify-between gap-2 text-xs opacity-65 mb-2"><strong className="uppercase">{m.sender_actor||m.sender}</strong><span>{time(m.created_at)}</span></div><p className="whitespace-pre-wrap text-sm break-words">{m.body}</p>{m.translated_body&&<div className="mt-2 pt-2 border-t border-white/10"><span className="text-xs" style={{color:'var(--ds-gold)'}}>{m.sender==='human' ? 'Staff English original' : 'English translation for staff'}</span><p className="text-sm whitespace-pre-wrap">{m.translated_body}</p></div>}</article>)}</div>}{attachments.length>0&&<div className="mt-4 rounded-lg border border-[#c8a96e]/30 p-3" aria-label="Private conversation attachments">
      <h3 className="text-sm font-semibold text-[#e4c58b]">Private attachments</h3>
      <p className="mt-1 text-xs opacity-65">Files provided during a human-assisted conversation. Download links expire automatically.</p>
