@@ -1174,3 +1174,44 @@
   .ds-shell .crm-assignment-panel { border-color: #f0cf91; }
   .ds-shell .crm-inbox-item { border-bottom-color: #cfaf79; }
 }
+
+
+/* iPhone-inspired messaging contours, scoped only to actual chatbot/CRM bubbles.
+   Keep message sender colors and existing delivery/read receipts unchanged. */
+.missy-ios-incoming-bubble,
+.missy-ios-outgoing-bubble,
+.crm-ios-visitor-bubble,
+.crm-ios-ai-bubble,
+.crm-ios-team-bubble {
+  position: relative;
+  isolation: isolate;
+}
+.missy-ios-incoming-bubble::after,
+.crm-ios-ai-bubble::after,
+.crm-ios-team-bubble::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 12px;
+  height: 13px;
+  left: -3px;
+  bottom: -2px;
+  background: #29292d;
+  clip-path: polygon(23% 0, 100% 0, 100% 100%, 0 100%);
+  border-bottom-left-radius: 8px;
+}
+.crm-ios-ai-bubble::after { background: #18385a; }
+.crm-ios-team-bubble::after { background: #342a1c; }
+.missy-ios-outgoing-bubble::after,
+.crm-ios-visitor-bubble::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 12px;
+  height: 13px;
+  right: -3px;
+  bottom: -2px;
+  background: #0a84ff;
+  clip-path: polygon(0 0, 77% 0, 100% 100%, 0 100%);
+  border-bottom-right-radius: 8px;
+}
