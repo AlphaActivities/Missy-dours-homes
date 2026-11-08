@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="20" height="28" viewBox="0 0 20 28">
-  <!-- Reusable mobile message-tail mask; mirrored in CSS for outgoing messages. -->
-  <path fill="#fff" d="M 13 0 C 16 0 18 1 20 2 L 20 17 C 17 22 12 27 2 27 C 8 23 10 18 10 13 C 10 7 11 2 13 0 Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="29" viewBox="0 0 22 29">
+  <!-- Single iMessage-inspired mask for incoming, typing, and mirrored outgoing tails.
+       Vertical first, then a narrow inward hook with a softly rounded tip. -->
+  <path fill="#fff" d="M0 0 H22 V12 C19.5 19.5 12.5 25.5 4.5 27.2 C3 27.7 2.3 27.1 3.8 25.4 C7.3 21.8 8.5 18.6 5.2 15.3 C1.8 11.8 0 7 0 0 Z"/>
 </svg>
