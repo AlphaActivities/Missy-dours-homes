@@ -119,7 +119,7 @@ export default function ConversationsPage() {
     if(document.visibilityState==='visible'&&displayed.length){
      const bounds=transcriptRef.current?.getBoundingClientRect();
      const inView=Boolean(bounds&&bounds.top<window.innerHeight&&bounds.bottom>0);
-     const ids=displayed.filter(m=>m.sender==='visitor').map(m=>m.id);
+     const ids=displayed.filter(m=>m.sender==='visitor'&&(!m.delivered_to_staff_at||(inView&&!m.read_by_staff_at))).map(m=>m.id);
      if(ids.length)void supabase.rpc('ai_concierge_ack_staff_messages',{
       p_conversation:selected,p_message_ids:ids,p_read:inView
      }).then(()=>{},()=>{});
