@@ -179,9 +179,21 @@ export default function ConversationsPage() {
   const c=items.find(x=>x.id===selected);
   if(!c || c.lead_id || !c.visitor_phone || !['waiting_human','human'].includes(c.status))return;
   setLoadingCandidates(true);
-  void supabase.rpc('crm_review_phone_lead_candidates',{p_phone:c.visitor_phone}).then(({data,error})=>{
-   setLoadingCandidates(false);
+  // Historical archived-only callbacks can safely receive a fresh active
+  // lead without forcing staff to select an unrelated archived contact.
+  const loadMatches=async()=>{
+   const resolved=await supabase.rpc('crm_resolve_archived_only_callback',{p_conversation:c.id});
    if(!live)return;
+   if(resolved.error){setError(resolved.error.message);setLoadingCandidates(false);return;}
+   if(resolved.data){
+    setItems(previous=>previous.map(item=>item.id===c.id?{...item,lead_id:String(resolved.data)}:item));
+    setLoadingCandidates(false);
+    await refresh(false);
+    return;
+   }
+   const {data,error}=await supabase.rpc('crm_review_phone_lead_candidates',{p_phone:c.visitor_phone});
+   if(!live)return;
+   setLoadingCandidates(false);
    if(error){setError(error.message);return;}
    const normalize=(value:string)=>value.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
    const visitor=normalize(c.visitor_name??'');
@@ -196,7 +208,8 @@ export default function ConversationsPage() {
     return score(b)-score(a)||bTime-aTime||a.id.localeCompare(b.id);
    });
    setLeadCandidates(candidates);
-  });
+  };
+  void loadMatches();
   return()=>{live=false;};
  },[selected,active?.lead_id,active?.visitor_phone,active?.status]);
  // Archived leads are history, not routine suggestions for new callbacks.
