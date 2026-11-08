@@ -1215,3 +1215,25 @@
   clip-path: polygon(0 0, 77% 0, 100% 100%, 0 100%);
   border-bottom-right-radius: 8px;
 }
+
+
+/* Three quick hops per 3-second cycle: middle hop is highest.
+   Transform-only animation avoids reflow and preserves the transcript scroll
+   position. Reduced motion, active presses, and disabled states are respected. */
+@keyframes crm-jump-in-three-hops {
+  0%, 3%, 12%, 20%, 29%, 37%, 100% { transform: translate3d(0,0,0); }
+  7% { transform: translate3d(0,-3px,0); }
+  24% { transform: translate3d(0,-9px,0); }
+  33% { transform: translate3d(0,-4px,0); }
+}
+.ds-shell .crm-jump-in-button:not(:disabled) {
+  animation: crm-jump-in-three-hops 3s ease-in-out infinite;
+  will-change: transform;
+}
+.ds-shell .crm-jump-in-button:not(:disabled):active {
+  animation-play-state: paused;
+  transform: scale(.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-shell .crm-jump-in-button { animation: none !important; will-change: auto; }
+}
