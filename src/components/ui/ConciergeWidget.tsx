@@ -138,6 +138,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [transportError, setTransportError] = useState<string | null>(null);
   const [mode, setMode] = useState<'ai'|'human'|'waiting_human'|'closed'>('ai');
   const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '0x4AAAAAAFoyCod-DYcyxjUw');
+  const chatEnabled = privateQA || Boolean(turnstileSiteKey);
   const mayUpload = chatEnabled && !!session && !uploadBusy && (privateQA || mode === 'human');
   const mayCompose = chatEnabled && welcomeReady && !!session && !busy && mode !== 'closed' && mode !== 'waiting_human';
   // Browsers may supply recognition through Apple's webkit-prefixed API.
@@ -222,7 +223,6 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     setReactionPicker(null);
   };
   // UI-only feature flag. This is not a security boundary.
-  const chatEnabled = privateQA || Boolean(turnstileSiteKey); // Public launch approved; backend launch control enforces whether visitor API requests are accepted.
 
   useEffect(() => { sessionStorage.setItem(LANGUAGE_KEY, language); }, [language]);
 
@@ -505,12 +505,12 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
 
   const uploadAttachment = async (file: File) => {
     const visitor = sessionRef.current ?? session;
-    if (!visitor || mode !== 'human' || uploadBusy || !chatEnabled || privateQA) return;
+    if (!visitor || (mode !== 'human' && !privateQA) || uploadBusy || !chatEnabled) return;
     setUploadBusy(true);
     setUploadFeedback(null);
     try {
-      const response = await conciergeTransport.uploadAttachment(visitor, file);
-      setUploadFeedback('Securely received ' + (response.filename || 'your attachment') + '. Missy’s team can review it.');
+      const response = privateQA ? await conciergeQaTransport.uploadAttachment(visitor, file) : await conciergeTransport.uploadAttachment(visitor, file);
+      setUploadFeedback('Securely received ' + (response.filename || 'your attachment') + (privateQA ? ' in private QA.' : '. Missy’s team can review it.'));
     } catch (error) {
       setUploadFeedback(error instanceof Error ? error.message : 'Could not upload attachment.');
     } finally {setUploadBusy(false);}
@@ -620,14 +620,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                 <button type="button" onClick={()=>setHandoffOpen(false)} className="text-xs text-[#e5d4ba] underline">Keep chatting</button>
               </div>
             </form>}
-            {mode === 'human' && <div className="space-y-2"><p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation.</p>
-              {!privateQA && <label className="inline-flex cursor-pointer items-center rounded-lg border border-[#c6a16c]/50 px-3 py-2 text-xs text-[#ebca90]">
-                {uploadBusy ? 'Uploading attachment…' : 'Share a photo or PDF with Missy’s team'}
-                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" disabled={uploadBusy||!chatEnabled} className="sr-only" onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAttachment(file);e.target.value='';}}/>
-              </label>}
-              {!privateQA && <p className="text-[11px] text-[#ae9b7f]">Human assistance only · Max 10 MB · JPG, PNG, WEBP, or PDF</p>}
-              {uploadFeedback && <p role="status" className="text-xs text-[#eedab5]">{uploadFeedback}</p>}
-            </div>}
+            {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation. You can now share photos or PDFs using the + button.</p>}
             {mode === 'waiting_human' && <div className="space-y-3 rounded-2xl border border-[#c6a16c]/30 bg-[#21190f]/60 p-4">
               <p className="text-sm leading-relaxed text-[#f0d6a5]">Waiting for a team member. Need a faster response? You can also reach Missy through the website.</p>
               <button type="button" onClick={goToContact} className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center rounded-xl border border-[#f0d49d] bg-gradient-to-r from-[#efd49f] via-[#d9b878] to-[#c6a065] px-6 py-3 text-sm font-semibold text-[#1c150c] shadow-[0_8px_24px_rgba(197,161,106,.22)] transition-[transform,filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_10px_28px_rgba(197,161,106,.34)] active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">
