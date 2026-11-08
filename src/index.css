@@ -1196,13 +1196,15 @@
   pointer-events: none;
   position: absolute;
   width: 24px;
-  height: 23px;
+  height: 29px;
   left: -7px;
-  bottom: -6px;
+  bottom: -10px;
+  z-index: 0;
   background: #29292d;
-  /* Curve flows from the bubble corner to a narrow point instead of a
-     squared-off extension; fixed-size geometry behaves consistently on iOS. */
-  clip-path: path('M 15 0 H 24 V 8 C 24 16 16 22 1 22 C 10 18 12 12 12 6 C 12 3 13 1 15 0 Z');
+  /* Taller flowing hook: a vertical drop beside the bubble, then a smooth
+     taper back to the point, matching the iMessage incoming silhouette.
+     Keep the tail behind animated dots instead of painting over them. */
+  clip-path: path('M 19 0 H 24 V 13 C 24 21 14 28 1 28 C 9 24 13 18 14 11 C 15 5 16 2 19 0 Z');
 }
 .crm-ios-ai-bubble::after { background: #18385a; }
 .crm-ios-team-bubble::after { background: #342a1c; }
