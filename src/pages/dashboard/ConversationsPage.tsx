@@ -32,9 +32,9 @@ export default function ConversationsPage() {
  const [presenceClock,setPresenceClock]=useState(Date.now());
  const [searchParams]=useSearchParams();
  const requestedConversation=searchParams.get('conversation');
+ const focused=Boolean(requestedConversation && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation));
  const selectedDeepLinkRef=useRef<string|null>(null);
- const [selected,setSelected]=useState<string|null>(null);
- const [deepLinkAligned,setDeepLinkAligned]=useState(!requestedConversation);
+ const [selected,setSelected]=useState<string|null>(()=>focused?requestedConversation:null);
  const [loadedConversation,setLoadedConversation]=useState<string|null>(null);
  const transcriptRef=useRef<HTMLElement|null>(null);
  const sessionStatusRef=useRef<HTMLDivElement|null>(null);
@@ -45,7 +45,6 @@ export default function ConversationsPage() {
   pendingSourceRef.current=source;
   pendingScrollRef.current=id;
   setSelected(id);
-  if(source==='notification')setDeepLinkAligned(false);
   setOutcomeOpen(false);
  };
 
@@ -98,28 +97,39 @@ export default function ConversationsPage() {
   const timer=window.setInterval(()=>void refresh(false),10000);
   return()=>{window.clearInterval(timer);void supabase.removeChannel(channel);};
  },[]);
+ // Notification deep links open a focused transcript immediately at main
+ // scrollTop=0. Fetch the selected record independently of the inbox so there
+ // is no list -> detail -> attachment -> scroll dependency chain.
  useEffect(()=>{
-  if(!requestedConversation){setDeepLinkAligned(true);return;}
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation)){
-   setError('The conversation link is invalid.');setDeepLinkAligned(true);return;
+  if(!requestedConversation){
+   selectedDeepLinkRef.current=null;
+   return;
   }
-  if(selectedDeepLinkRef.current===requestedConversation)return;
+  if(!focused){
+   setError('The conversation link is invalid.');
+   return;
+  }
   let cancelled=false;
-  const selectRequested=async()=>{
-   // The notification's target may fall outside the most recent 100.
-   if(!items.some(c=>c.id===requestedConversation)){
-    const result=await supabase.from('ai_conversations')
-     .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at')
-     .eq('id',requestedConversation).maybeSingle();
-    if(cancelled)return;
-    if(result.error||!result.data){setError('The requested conversation is unavailable or you do not have access.');setDeepLinkAligned(true);return;}
-    setItems(existing=>existing.some(c=>c.id===requestedConversation)?existing:[result.data as Conversation,...existing]);
+  selectedDeepLinkRef.current=requestedConversation;
+  pendingSourceRef.current='notification';
+  pendingScrollRef.current=null;
+  setSelected(requestedConversation);
+  const fetchRequested=async()=>{
+   const result=await supabase.from('ai_conversations')
+    .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at')
+    .eq('id',requestedConversation).maybeSingle();
+   if(cancelled)return;
+   if(result.error||!result.data){
+    setError('The requested conversation is unavailable or you do not have access.');
+    return;
    }
-   if(!cancelled){selectedDeepLinkRef.current=requestedConversation;focusConversation(requestedConversation,'notification');}
+   setItems(existing=>existing.some(c=>c.id===requestedConversation)
+    ?existing.map(c=>c.id===requestedConversation?result.data as Conversation:c)
+    :[result.data as Conversation,...existing]);
   };
-  void selectRequested();
+  void fetchRequested();
   return()=>{cancelled=true;};
- },[requestedConversation,loading]);
+ },[requestedConversation,focused]);
  useEffect(()=>{
   previewGeneration.current++;
   setPreviewBusy(false);
@@ -151,11 +161,12 @@ export default function ConversationsPage() {
      }).then(()=>{},()=>{});
     }
    }
-   const files=await supabase.from('ai_conversation_attachments').select('id,original_filename,mime_type,file_size_bytes,storage_path,created_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(50);
-   if(!active||version!==fetchVersion)return;
-   if(!files.error)setAttachments((files.data??[]) as Attachment[]);
+   // Reveal the chat as soon as messages arrive. Attachment metadata loads
+   // independently and cannot hold up the transcript's initial presentation.
    setLoadingMessages(false);
    setLoadedConversation(selected);
+   const files=await supabase.from('ai_conversation_attachments').select('id,original_filename,mime_type,file_size_bytes,storage_path,created_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(50);
+   if(active&&version===fetchVersion&&!files.error)setAttachments((files.data??[]) as Attachment[]);
   };
   setLoadedConversation(null);
   setLoadingMessages(true);
@@ -177,12 +188,12 @@ export default function ConversationsPage() {
   finally{setAttachmentBusy(null);}
  };
  const active=items.find(c=>c.id===selected);
- // Manual selection and notification links now use the identical outer-card
- // anchor and 2px offset. For notification deep links keep the page hidden
- // until the measured scroll completes, preventing a top-of-page paint flash.
+ // Manual selection retains its existing outer-card alignment. A notification
+ // deep link needs no scroll at all: its focused transcript is the first item
+ // in the dashboard main viewport from the initial paint.
  useEffect(()=>{
-  if(!selected||pendingScrollRef.current!==selected||!active||loading
-     ||loadedConversation!==selected)return;
+  if(focused||!selected||pendingScrollRef.current!==selected||!active||loading
+    ||loadedConversation!==selected)return;
   const target=transcriptRef.current;
   const scroller=target?.closest('main');
   if(!target||!scroller)return;
@@ -193,11 +204,10 @@ export default function ConversationsPage() {
     const delta=target.getBoundingClientRect().top-scroller.getBoundingClientRect().top;
     scroller.scrollTo({top:Math.max(0,scroller.scrollTop+delta-2),left:0,behavior:'instant'});
     pendingScrollRef.current=null;
-    if(pendingSourceRef.current==='notification')setDeepLinkAligned(true);
    });
   });
   return()=>{window.cancelAnimationFrame(first);window.cancelAnimationFrame(second);};
- },[selected,loading,loadedConversation,active?.id]);
+ },[focused,selected,loading,loadedConversation,active?.id]);
  // A recent, token-verified heartbeat is the only basis for confirmed
  // connection. A valid session or last message does not mean 'Online'.
  const sessionState=(c:Conversation):'expired'|'online'|'away'|'inactive'|'recent'|'available'|'unknown' => {
@@ -347,7 +357,8 @@ export default function ConversationsPage() {
 
  const escalatedCount=pendingTasks.filter(t=>t.status==='pending' && (Boolean(t.escalated_at)||Boolean(t.escalation_due_at && new Date(t.escalation_due_at).getTime()<Date.now()))).length;
  const filtered=items.filter(c=>(filter==='all'||c.status===filter)&&[c.title,c.summary??'',c.priority,c.language_code].join(' ').toLowerCase().includes(search.toLowerCase()));
- return <div className="px-4 py-7 md:px-8 md:py-9 max-w-7xl mx-auto" style={{color:'var(--ds-text-primary)',visibility:requestedConversation&&!deepLinkAligned?'hidden':'visible'}}>
+ return <div className={(focused?'px-4 pt-1 pb-7 md:px-8 md:pt-2 md:pb-9 ':'px-4 py-7 md:px-8 md:py-9 ')+'max-w-7xl mx-auto'} style={{color:'var(--ds-text-primary)'}}>
+   <div className={focused?'hidden':''}>
   <div className="ds-page-reveal ds-page-reveal-0 flex flex-wrap gap-3 items-center justify-between mb-6">
    <div><div className="flex items-center gap-2 mb-1"><MessageCircle size={19} style={{color:'var(--ds-gold)'}}/><h1 className="text-2xl" style={{fontFamily:"'Playfair Display', Georgia, serif"}}>Conversations</h1></div><p className="text-sm" style={{color:'var(--ds-text-secondary)'}}>Private chat inbox · Team messaging · Record the outcome before closing a follow-up</p></div>
    <button onClick={()=>void refresh()} data-crm-refresh disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15} className={loading?'animate-spin':''}/><span aria-live="polite">{loading?'Refreshing…':'Refresh'}</span></button>
@@ -357,8 +368,9 @@ export default function ConversationsPage() {
   {pendingTasks.length>0&&<section className="mb-5 rounded-xl border border-[#c8a96e]/35 bg-[#c8a96e]/10 p-4" aria-label="Team follow-up tasks"><h2 className="text-sm font-semibold mb-2 text-[#e5c486]">Callback requests needing an outcome ({pendingTasks.length})</h2><div className="flex flex-wrap gap-2">{pendingTasks.map(t=><div key={t.id} className="flex items-center gap-2 rounded-lg border border-[#c8a96e]/30 px-2 py-1"><button onClick={()=>focusConversation(t.conversation_id)} type="button" className="px-2 py-1 text-xs text-[#f1dec1]">{t.escalated_at ? 'ESCALATED' : t.escalation_due_at && new Date(t.escalation_due_at).getTime() < Date.now() ? 'OVERDUE' : t.urgency.toUpperCase()} · {time(t.due_at)} · View</button>{items.find(c=>c.id===t.conversation_id)?.lead_id ? <a href={'/dashboard/leads?lead='+items.find(c=>c.id===t.conversation_id)!.lead_id} className="rounded-md bg-[#c8a96e] px-2 py-1 text-xs font-semibold text-black">Open Lead · Record Outcome</a> : <button type="button" onClick={()=>focusConversation(t.conversation_id)} className="rounded-md border border-amber-400/50 px-2 py-1 text-xs text-amber-200">Review Contact Link</button>}</div>)}</div></section>}
   <div className="ds-page-reveal ds-page-reveal-2 flex flex-wrap gap-3 mb-5"><label className="relative flex-1 min-w-48"><Search size={16} className="absolute left-3 top-3 opacity-60"/><input aria-label="Search conversations" className="w-full bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 py-2 outline-none" placeholder="Search conversations" value={search} onChange={e=>setSearch(e.target.value)}/></label>
   <select aria-label="Filter conversations" className="bg-neutral-900 border border-white/15 rounded-lg px-3 py-2 text-sm" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">All conversations</option><option value="ai">AI conversations</option><option value="waiting_human">Needs attention</option><option value="human">Human conversations</option><option value="closed">Closed</option></select></div>
-  <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4">
-   <section aria-label="Conversation list" className="ds-page-reveal ds-page-reveal-3 max-h-[315px] min-h-64 overflow-y-auto overscroll-contain touch-pan-y rounded-xl border border-[#c8a96e]/30 bg-black/20 [scrollbar-color:#8c734b_#17130f] [scrollbar-width:thin]">
+   </div>
+  <div className={focused?'grid grid-cols-1 gap-4':'grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4'}>
+   <section aria-label="Conversation list" className={(focused?'hidden ':'')+'ds-page-reveal ds-page-reveal-3 max-h-[315px] min-h-64 overflow-y-auto overscroll-contain touch-pan-y rounded-xl border border-[#c8a96e]/30 bg-black/20 [scrollbar-color:#8c734b_#17130f] [scrollbar-width:thin]'}>
    {filtered.length===0?<p className="p-6 text-sm" style={{color:'var(--ds-text-secondary)'}}>{loading?'Loading conversations…':'No conversations match. Visitor chat is not live yet.'}</p>:filtered.map(c=>{
     const preview=visitorPreview(c);
     return <button key={c.id} onClick={()=>focusConversation(c.id)} className="block w-full text-left px-4 py-4 border-b border-white/10 hover:bg-white/5" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
@@ -370,7 +382,7 @@ export default function ConversationsPage() {
      <div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
     </button>;
    })}</section>
-   <section ref={transcriptRef} aria-label="Conversation transcript" className={(requestedConversation&&selectedDeepLinkRef.current===selected?'':'ds-page-reveal ds-page-reveal-4 ')+'rounded-xl border border-white/10 bg-black/20 min-h-80 p-5'}>
+   <section ref={transcriptRef} data-focused-transcript={focused?'true':undefined} aria-label="Conversation transcript" className={(focused?'focused-transcript-enter ':'ds-page-reveal ds-page-reveal-4 ')+'rounded-xl border border-white/10 bg-black/20 min-h-80 p-5'}>
    {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && !loadingCandidates && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
     <strong className="text-amber-200">Contact identity check needed</strong>
     <p className="text-[#dec9a5]">The CRM couldn't safely identify one existing contact. Confirm the person before linking an existing lead, or create a separate lead.</p>
