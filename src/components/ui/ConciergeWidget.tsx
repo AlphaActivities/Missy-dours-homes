@@ -34,12 +34,17 @@ function formatCallbackPhone(value: string) {
 function AssistantTypingBubble() {
   const reducedMotion = useReducedMotion();
   return <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
-    <div className="missy-ios-incoming-bubble inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[9px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
+    <div className="relative inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[9px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
+      {/* An actual curved tail, not the shared polygon pseudo-element whose flat
+          bottom looked clipped in Safari. Its shape is independent of overflow. */}
+      <svg className="pointer-events-none absolute -bottom-[7px] -left-[6px] h-[19px] w-[23px]" viewBox="0 0 23 19" aria-hidden="true" focusable="false">
+        <path d="M16 0H23V11C19 16 11 19 0 18C8 15 12 10 13 4C14 2 15 1 16 0Z" fill="#29292d" />
+      </svg>
       <span className="sr-only">Assistant is typing</span>
       {[0,1,2].map(index => <motion.span
         key={index}
         aria-hidden="true"
-        className="block h-[7px] w-[7px] shrink-0 rounded-full bg-[#b8b8be]"
+        className="relative block h-[7px] w-[7px] shrink-0 rounded-full bg-[#b8b8be]"
         animate={reducedMotion ? {opacity:0.8,scale:1} : {opacity:[0.4,1,0.4],scale:[0.94,1.08,0.94]}}
         transition={reducedMotion ? {duration:0} : {duration:1.25,repeat:Infinity,delay:index*0.18,ease:'easeInOut'}}
       />)}
@@ -553,7 +558,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
-          {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-7 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
+          {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-4 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
           <div className="missy-concierge-composer shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <form onSubmit={e => {e.preventDefault();sendMessage();}} className="flex items-end gap-2">
               <textarea ref={inputRef} rows={2} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!chatEnabled || !welcomeReady || busy || !session || mode === 'closed' || mode === 'waiting_human'} value={draft} onChange={e=>{
