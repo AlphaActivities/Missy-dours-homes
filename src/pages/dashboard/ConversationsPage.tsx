@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 type Conversation = {
   id:string; title:string; summary:string|null; status:'ai'|'waiting_human'|'human'|'closed';
-  priority:'unrated'|'hot'|'warm'|'cold'; priority_reason:string|null;
+  priority:'unrated'|'hot'|'warm'|'cold'; priority_reason:string|null;opportunity_kind:'buyer'|'seller'|'both'|'investor'|null;
   language_code:string; last_message_at:string|null; started_at:string; lead_id:string|null; assigned_to:string|null; visitor_name:string|null; visitor_phone:string|null; visitor_expires_at:string|null;
 };
 type Attachment = {id:string;original_filename:string;mime_type:string;file_size_bytes:number;storage_path:string;created_at:string};
@@ -62,7 +62,7 @@ export default function ConversationsPage() {
  const previewGeneration=useRef(0);
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
  const refresh=async(showLoading=true)=>{if(showLoading){setLoading(true);setError(null);}try{
-  const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
+  const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
   if(error)throw error;setItems(previous=>{
    const latest=(data??[]) as Conversation[];
    const pinned=previous.find(c=>c.id===selectedDeepLinkRef.current);
@@ -85,7 +85,7 @@ export default function ConversationsPage() {
    // The notification's target may fall outside the most recent 100.
    if(!items.some(c=>c.id===requestedConversation)){
     const result=await supabase.from('ai_conversations')
-     .select('id,title,summary,status,priority,priority_reason,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at')
+     .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at')
      .eq('id',requestedConversation).maybeSingle();
     if(cancelled)return;
     if(result.error||!result.data){setError('The requested conversation is unavailable or you do not have access.');return;}
@@ -265,7 +265,7 @@ export default function ConversationsPage() {
   <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4">
    <section aria-label="Conversation list" className="ds-page-reveal ds-page-reveal-3 max-h-[315px] min-h-64 overflow-y-auto overscroll-contain touch-pan-y rounded-xl border border-[#c8a96e]/30 bg-black/20 [scrollbar-color:#8c734b_#17130f] [scrollbar-width:thin]">
    {filtered.length===0?<p className="p-6 text-sm" style={{color:'var(--ds-text-secondary)'}}>{loading?'Loading conversations…':'No conversations match. Visitor chat is not live yet.'}</p>:filtered.map(c=><button key={c.id} onClick={()=>focusConversation(c.id)} className="block w-full text-left px-4 py-4 border-b border-white/10 hover:bg-white/5" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
-    <div className="flex justify-between gap-2 mb-1"><strong className="text-sm truncate">{c.title}</strong>{c.priority!=='unrated'&&<span className="text-xs uppercase" title="AI conversation priority" style={{color:'var(--ds-gold)'}}>{c.priority}</span>}</div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p><div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-70"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div><div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
+    <div className="flex justify-between gap-2 mb-1"><strong className="text-sm truncate">{c.title}</strong>{c.priority!=='unrated'&&<span className="text-xs uppercase" title="AI conversation priority" style={{color:'var(--ds-gold)'}}>{c.priority}</span>}</div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p>{c.opportunity_kind&&<span className="mt-2 inline-flex rounded-md border border-[#c7a66e]/45 bg-[#b69a65]/10 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#efd5a2]">{c.opportunity_kind==='both'?'Buyer & Seller':c.opportunity_kind==='investor'?'Investor':c.opportunity_kind==='seller'?'Seller Interest':'Buyer Interest'} · {c.priority==='hot'?'High Intent':'Qualified Interest'}</span>}<div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-70"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div><div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
    </button>)}</section>
    <section ref={transcriptRef} aria-label="Conversation transcript" className="ds-page-reveal ds-page-reveal-4 rounded-xl border border-white/10 bg-black/20 min-h-80 p-5">
    {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">

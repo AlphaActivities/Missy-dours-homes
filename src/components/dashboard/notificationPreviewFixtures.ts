@@ -6,6 +6,10 @@ const base={target_path:'/dashboard/notifications',created_at:'2026-11-07T19:00:
 export const notificationPreviewFixtures:CrmActivity[]=[
  { ...base,id:'preview-lead',event_key:'lead:preview',category:'lead',title:'Lead received',
    summary:'Example Buyer · Source: Homepage',lead_status:'new'},
+ { ...base,id:'preview-buyer',event_key:'opportunity:preview-buyer',category:'opportunity',title:'Live Buyer Interest',
+   summary:'A visitor is discussing a specific property or showing.',callback_status:'ai',opportunity_kind:'buyer',opportunity_online:true},
+ { ...base,id:'preview-seller',event_key:'opportunity:preview-seller',category:'opportunity',title:'Live Seller Interest',
+   summary:'A visitor is discussing selling a property.',callback_status:'ai',opportunity_kind:'seller',opportunity_online:false},
  { ...base,id:'preview-chat',event_key:'handoff:preview',category:'handoff',title:'Chat Request Received',
    summary:'Example Visitor · Chatbot assistance requested',callback_status:'waiting_human',callback_requested_at:'2026-11-07T18:30:00Z'},
  { ...base,id:'preview-urgent',event_key:'escalation:preview',category:'escalation',title:'Urgent Chat Request',

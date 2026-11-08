@@ -256,7 +256,7 @@ Deno.serve(async req=>{
   return answer({status:'waiting_human',conversation_id:chat.id},200,origin);
  }
  if(url.pathname.endsWith('/sync')) {
-  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'sync:'+hash,p_max:120,p_window_seconds:3600});
+  const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'sync:'+hash,p_max:360,p_window_seconds:3600});
   if(limit.error||limit.data!==true)return answer({error:'Refresh limit reached'},429,origin);
   const {data:recent,error:syncError}=await db.from('ai_conversation_messages').select('id,sender,body,created_at,sender_actor').eq('conversation_id',chat.id).order('created_at',{ascending:false}).order('sender',{ascending:true}).limit(150);
   if(syncError)return answer({error:'Could not refresh conversation'},503,origin);
@@ -332,17 +332,35 @@ Deno.serve(async req=>{
   } catch { /* Never block a successfully saved visitor conversation for translation. */ }
  }
 
- // Conservative, explainable internal triage only. Never assume budget or purchase readiness.
+ // Explainable, conservative real estate triage: never infer financing or
+ // purchase readiness from a generic price question or website visit alone.
  const lower=message.toLowerCase();
- const urgent=/\b(today|tomorrow|this week|asap|ready to tour|schedule a showing|make an offer|under contract|closing soon)\b/i.test(lower);
- const activeIntent=/\b(buy|buying|sell|selling|relocating|moving|looking for|searching for|view a home|list my home)\b/i.test(lower);
- const priority=urgent?'hot':activeIntent?'warm':'unrated';
- const reason=urgent?'Visitor expressed a near-term property or appointment need':activeIntent?'Visitor discussed a real estate goal':'Insufficient signals to classify';
- const {data:existing}=await db.from('ai_conversations').select('summary,priority').eq('id',chat.id).single();
+ const sellerIntent=/\b(sell(?:ing)? (?:my|our|a) (?:home|house|property)|list (?:my|our) (?:home|house|property)|listing my (?:home|house)|home valuation|what(?:'s| is) my (?:home|house) worth|value of my (?:home|house)|seller consultation)\b/i.test(lower);
+ const buyerIntent=/\b(schedule (?:a )?(?:showing|tour)|(?:book|arrange) (?:a )?(?:showing|tour)|(?:tour|see|view) (?:this|that|the) (?:home|house|property)|make an offer|pre-?approved|mortgage pre-?approval|ready to buy|buy(?:ing)? (?:a|my first) (?:home|house)|is (?:this|that|the) (?:home|house|property|listing) (?:still )?available|(?:home|house|property|listing) (?:at|on) [\w\s]+ (?:available|price|showing))\b/i.test(lower);
+ const specificProperty=/\b(?:\d{3,6}\s+[a-z][a-z\s]{2,48}\s+(?:st|street|dr|drive|road|rd|lane|ln|avenue|ave|circle|cir|court|ct)\b|(?:this|that|the)\s+(?:listing|property|home|house)\b)/i.test(lower);
+ const priceForProperty=/\b(price|pricing|asking price|list price|still available|availability|schedule|showing|tour)\b/i.test(lower);
+ const investorIntent=/\b(investment property|real estate invest(?:or|ment)|rental property|cap rate|cash flow property)\b/i.test(lower);
+ const nearTerm=/\b(today|tomorrow|this week|asap|this weekend|next week|ready to tour|schedule a showing|make an offer|under contract|closing soon|next month)\b/i.test(lower);
+ const generalIntent=/\b(buy|buying|sell|selling|relocating|moving|looking for|searching for|view a home|list my home)\b/i.test(lower);
+ const qualified=buyerIntent||sellerIntent||investorIntent||(specificProperty&&priceForProperty);
+ const priority=qualified&&nearTerm?'hot':qualified||generalIntent?'warm':'unrated';
+ const reason=qualified
+  ? (sellerIntent&&buyerIntent?'Buyer and seller request':investorIntent?'Investment property inquiry':sellerIntent?'Seller inquiry': 'Specific buyer or showing inquiry')
+  :generalIntent?'Visitor discussed a real estate goal':'Insufficient signals to classify';
+ const {data:existing}=await db.from('ai_conversations').select('summary,priority,opportunity_kind').eq('id',chat.id).single();
  const currentPriority=existing?.priority??'unrated';
  const rank:Record<string,number>={unrated:0,cold:1,warm:2,hot:3};
  const finalPriority=(rank[priority]??0)>=(rank[currentPriority]??0)?priority:currentPriority;
  const summary=[existing?.summary, 'Visitor: '+message.trim().slice(0,220)].filter(Boolean).join(' | ').slice(-1350);
  await db.rpc('ai_concierge_set_intelligence',{p_conversation:chat.id,p_summary:summary,p_priority:finalPriority,p_reason:finalPriority===priority?reason:'Previous priority retained',p_language:language});
+ // Opportunity notices are written server-side, once per conversation.
+ // A generic price question never qualifies; no visitor text appears in a push.
+ if(qualified) {
+  const kind=sellerIntent&&buyerIntent?'both':investorIntent?'investor':sellerIntent?'seller':'buyer';
+  const existingKind=existing?.opportunity_kind;
+  const finalKind=existingKind==='both'||(existingKind==='buyer'&&kind==='seller')||(existingKind==='seller'&&kind==='buyer')?'both':existingKind==='investor'||kind==='investor'?'investor':kind;
+  await db.from('ai_conversations').update({opportunity_kind:finalKind})
+    .eq('id',chat.id).eq('status','ai');
+ }
  return answer({reply,language,conversation_id:chat.id},200,origin);
 });
