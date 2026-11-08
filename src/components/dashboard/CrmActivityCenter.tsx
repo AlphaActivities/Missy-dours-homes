@@ -11,7 +11,7 @@ const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|Â
 // Keep the CTA's destination, label and next-step guidance consistent.
 const opensLead=(item:CrmActivity)=>Boolean(item.category==='handoff'&&item.callback_lead_id)||item.target_path.startsWith('/dashboard/leads?lead=');
 const actionLabel=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'Open Lead Â· Record Outcome':opensLead(item)?'Open Lead':'View Conversation';
-const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:safeTarget(item.target_path);
+const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:item.category==='handoff'&&item.callback_conversation_id?'/dashboard/conversations?conversation='+item.callback_conversation_id:safeTarget(item.target_path);
 const nextAction=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id
  ?'Open the lead to review the callback request and record the outcome.'
  :opensLead(item)?'Open the lead to review the inquiry and contact the prospect.'

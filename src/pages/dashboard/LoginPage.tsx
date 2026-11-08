@@ -4,14 +4,15 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import LoadingSpinner, { LoadingScreen } from '../../components/dashboard/ui/LoadingSpinner';
 import { resetConciergeEntranceForLogin } from '../../components/dashboard/ui/ConciergeSignatureEntrance';
+import { safeCrmDestination } from '../../lib/crmDeepLinks';
 
 export default function LoginPage() {
   const { session, loading, isApproved, authError, retrySession, signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  // Only allow the explicitly approved QA return route; never redirect to an arbitrary URL.
-  const loginDestination = (location.state as {from?:unknown}|null)?.from === '/dashboard/concierge-qa'
-    ? '/dashboard/concierge-qa' : '/dashboard';
+  // Preserve exact, allowlisted notification targets across authentication.
+  const loginDestination = safeCrmDestination((location.state as {from?:unknown}|null)?.from)
+    ?? safeCrmDestination(new URLSearchParams(location.search).get('returnTo')) ?? '/dashboard';
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);

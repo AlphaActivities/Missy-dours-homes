@@ -238,6 +238,29 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       window.scrollTo(0, scrollY);
     };
   }, [open]);
+  // Actual visitor presence: connected session + open, visible chat.
+  // Closing the chat, hiding the tab or losing heartbeats clears the claim
+  // of being online on the staff dashboard. Private QA is never counted.
+  useEffect(() => {
+    if(privateQA || !session || !chatEnabled || !open)return;
+    let current=true;
+    const signal=()=>{
+      if(!current)return;
+      void conciergeTransport.heartbeat(session,open&&document.visibilityState==='visible').catch(()=>{});
+    };
+    signal();
+    const timer=window.setInterval(signal,30_000);
+    document.addEventListener('visibilitychange',signal);
+    window.addEventListener('focus',signal);
+    return()=>{
+      current=false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange',signal);
+      window.removeEventListener('focus',signal);
+      void conciergeTransport.heartbeat(session,false).catch(()=>{});
+    };
+  },[privateQA,session?.conversation_id,session?.token,open,chatEnabled]);
+
   useEffect(() => {
     if (!open || !session || !chatEnabled) return;
     let current = true;
