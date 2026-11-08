@@ -23,6 +23,8 @@ self.addEventListener('push', event => {
       ? 'An urgent chat request needs attention.'
     : payload.kind === 'handoff_claimed'
       ? 'Missy has joined a visitor conversation.'
+    : payload.kind === 'opportunity_detected'
+      ? 'A visitor is discussing a real estate opportunity. Review the live conversation.'
       : 'A visitor has requested assistance from Missy’s team.';
   event.waitUntil((async () => {
     // Test pushes do not increment the business-work badge.
