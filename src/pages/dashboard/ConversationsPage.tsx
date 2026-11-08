@@ -32,11 +32,11 @@ export default function ConversationsPage() {
  const [presenceReady,setPresenceReady]=useState(false);
  const [presenceUnavailable,setPresenceUnavailable]=useState(false);
  const verifiedPresenceSnapshotRef=useRef(false);
- const [focusedRecordReady,setFocusedRecordReady]=useState(!focused);
  const [presenceClock,setPresenceClock]=useState(Date.now());
  const [searchParams]=useSearchParams();
  const requestedConversation=searchParams.get('conversation');
  const focused=Boolean(requestedConversation && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation));
+ const [focusedRecordReady,setFocusedRecordReady]=useState(!focused);
  const selectedDeepLinkRef=useRef<string|null>(null);
  const [selected,setSelected]=useState<string|null>(()=>focused?requestedConversation:null);
  const [loadedConversation,setLoadedConversation]=useState<string|null>(null);
