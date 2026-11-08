@@ -6,7 +6,7 @@ import {IosNativeTap} from './DashboardHaptics';
 
 type Filter='all'|'unread'|'urgent'|'lead'|'handoff'|'staff'|'history';
 const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent Chat Request':category==='lead'?'Website Contact Form':category==='handoff'?'Direct Chat Request':'Staff Activity';
-const displayTitle=(item:CrmActivity)=>item.category==='handoff'?'Chat Request Received':item.category==='escalation'?'Urgent Chat Request':item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot');
+const displayTitle=(item:CrmActivity)=>item.category==='handoff'?'Chat Request Received':item.category==='escalation'?(item.callback_escalated_at?'Urgent Chat Request':'Chat Request Received'):item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot');
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'||/^\/dashboard\/conversations\?conversation=[0-9a-f-]{36}$/i.test(value)?value:'/dashboard/conversations';
 const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|·)/gi,'$1Homepage');
 // Keep the CTA's destination, label and next-step guidance consistent.
@@ -31,23 +31,26 @@ export default function CrmActivityCenter(){
  // Collapse only events that belong to the SAME real handoff task.
  // Escalation updates the existing card; both original events remain in
  // the database and are shown independently in History after resolution.
+ const groupKey=(item:CrmActivity)=>item.callback_conversation_id??item.callback_task_id;
  const activeEvents=useMemo(()=>{
-  const byTask=new Map<string,CrmActivity>();
+  const byConversation=new Map<string,CrmActivity>();
   for(const item of items){
-   if((item.category==='handoff'||item.category==='escalation')&&item.callback_task_id
+   const key=groupKey(item);
+   if((item.category==='handoff'||item.category==='escalation')&&key
       &&!['completed','closed','cancelled'].includes(item.callback_status??'')){
-    const existing=byTask.get(item.callback_task_id);
+    const existing=byConversation.get(key);
     const urgent=Boolean(item.callback_escalated_at);
     if(!existing||(urgent&&item.category==='escalation'&&existing.category!=='escalation')
        ||(!urgent&&item.category==='handoff'&&existing.category==='escalation')){
-      byTask.set(item.callback_task_id,item);
+      byConversation.set(key,item);
     }
    }
   }
   return items.filter(item=>{
-   if((item.category!=='handoff'&&item.category!=='escalation')||!item.callback_task_id)return true;
+   const key=groupKey(item);
+   if((item.category!=='handoff'&&item.category!=='escalation')||!key)return true;
    if(['completed','closed','cancelled'].includes(item.callback_status??''))return true;
-   return byTask.get(item.callback_task_id)?.id===item.id;
+   return byConversation.get(key)?.id===item.id;
   });
  },[items]);
  const visible=useMemo(()=>(filter==='history'?items:activeEvents).filter(e=>{
@@ -75,7 +78,8 @@ export default function CrmActivityCenter(){
   finally{setWorking(false);}
  };
  const acknowledgeGroup=(item:CrmActivity)=>{
-  const related=items.filter(e=>e.id===item.id||(item.callback_task_id&&(e.category==='handoff'||e.category==='escalation')&&e.callback_task_id===item.callback_task_id));
+  const key=groupKey(item);
+  const related=items.filter(e=>e.id===item.id||(key&&(e.category==='handoff'||e.category==='escalation')&&groupKey(e)===key));
   return Promise.all(related.filter(e=>!e.read_at).map(e=>markRead(e.id))).then(()=>{});
  };
  const hideNotice=(item:CrmActivity)=>{
@@ -121,7 +125,7 @@ export default function CrmActivityCenter(){
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
-   {visible.map(item=><article key={item.id} data-category={item.category} data-work-state={requiresAction(item)?'action':isResolved(item)?'complete':isInProgress(item)?'progress':'info'} className={'crm-category-notification relative isolate overflow-hidden rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(isFeatured(item)?'crm-actionable-notification ':'')}>
+   {visible.map(item=><article key={filter!=='history'&&groupKey(item)&&(item.category==='handoff'||item.category==='escalation')?'active-chat:'+groupKey(item):item.id} data-category={item.category} data-urgent-transition={item.category==='escalation'&&Boolean(item.callback_escalated_at)?'true':'false'} data-work-state={requiresAction(item)?'action':isResolved(item)?'complete':isInProgress(item)?'progress':'info'} className={'crm-category-notification relative isolate overflow-hidden rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(isFeatured(item)?'crm-actionable-notification ':'')}>
     <div className="min-w-0">
      <div className="flex items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
