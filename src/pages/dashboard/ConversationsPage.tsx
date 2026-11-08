@@ -37,13 +37,13 @@ export default function ConversationsPage() {
  const requestedConversation=searchParams.get('conversation');
  const focused=Boolean(requestedConversation && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation));
  const [focusedRecordReady,setFocusedRecordReady]=useState(!focused);
- // Keep the intentional loading indicator visible for at least 2.5 seconds
+ // Keep the intentional loading indicator visible for at least 3 seconds
  // on notification deep links, even when the presence query resolves sooner.
  const [minimumCheckElapsed,setMinimumCheckElapsed]=useState(!focused);
  useEffect(()=>{
   if(!focused){setMinimumCheckElapsed(true);return;}
   setMinimumCheckElapsed(false);
-  const timer=window.setTimeout(()=>setMinimumCheckElapsed(true),2500);
+  const timer=window.setTimeout(()=>setMinimumCheckElapsed(true),3000);
   return()=>window.clearTimeout(timer);
  },[focused,requestedConversation]);
  const selectedDeepLinkRef=useRef<string|null>(null);
@@ -475,10 +475,16 @@ export default function ConversationsPage() {
      <button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>
     </div>
    </div>}
-   {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div ref={sessionStatusRef} className={'mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs '+(focused?'min-h-[132px] sm:min-h-[112px] ':'')+(focused&&statusLoading?'crm-connection-pending':'crm-connection-ready')} role="status" aria-label="Visitor session status" aria-busy={statusLoading}>
-    {statusLoading?<span className="crm-connection-spinner" aria-hidden="true"/>:active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='online'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)} 
-    <strong className={active&&!statusLoading&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]'}>{statusLoading?'Verifying chatbot connection…':presenceUnavailable?'Chatbot Status Temporarily Unavailable':active?(sessionState(active)==='inactive'?'Chatbot Connection Inactive':sessionState(active)==='expired'?'Chatbot Session Expired':sessionState(active)==='online'?'Visitor Online · Chat Open':sessionState(active)==='away'?'Visitor Away · Chat Hidden':sessionState(active)==='recent'?'Recent Chat Activity · Connection Unconfirmed':sessionState(active)==='available'?'Chatbot Session Available · Visitor Unconfirmed':'Chatbot Connection Unknown'):'Chatbot connection status unavailable'}</strong>
-    <span className="text-[#bdb1a1]">{statusLoading?'Checking live chat availability. The conversation and saved messages are ready.':presenceUnavailable?'Live connection information is temporarily unavailable. Messages are saved; verify the visitor’s status before assuming they are online.':active&&sessionState(active)==='expired'?'The visitor’s chatbot session has expired, so they cannot continue here. Their conversation is saved; use the callback contact details to follow up.':active&&sessionState(active)==='online'?'The visitor currently has the chatbot open. Missy’s team can join the live conversation.':active&&sessionState(active)==='away'?'The visitor recently connected but has hidden or closed the chatbot. Messages remain saved for follow-up.':active&&sessionState(active)==='inactive'?'The visitor is not currently connected to this chatbot conversation. All messages are saved; Missy’s team can follow up using their contact details.':'The chatbot conversation is saved, but the visitor’s online status is not confirmed. Do not assume they are available for an immediate reply.'}</span>
+   {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div ref={sessionStatusRef} className={'mb-4 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs '+(focused?'min-h-[132px] sm:min-h-[112px] ':'')+(focused&&statusLoading?'crm-connection-pending':'crm-connection-ready')} role="status" aria-label="Visitor session status" aria-busy={statusLoading}>
+    <div className="flex w-full flex-col gap-1.5">
+     <div className="flex min-h-[20px] items-center gap-2">
+      <span className="inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center" aria-hidden="true">
+       {statusLoading?<span className="crm-connection-spinner"/>:active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='online'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)}
+      </span>
+      <strong className={active&&!statusLoading&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]'}>{statusLoading?'Verifying chatbot connection…':presenceUnavailable?'Chatbot Status Temporarily Unavailable':active?(sessionState(active)==='inactive'?'Chatbot Connection Inactive':sessionState(active)==='expired'?'Chatbot Session Expired':sessionState(active)==='online'?'Visitor Online · Chat Open':sessionState(active)==='away'?'Visitor Away · Chat Hidden':sessionState(active)==='recent'?'Recent Chat Activity · Connection Unconfirmed':sessionState(active)==='available'?'Chatbot Session Available · Visitor Unconfirmed':'Chatbot Connection Unknown'):'Chatbot connection status unavailable'}</strong>
+     </div>
+     <span className="text-[#bdb1a1]">{statusLoading?'Checking live chat availability. The conversation and saved messages are ready.':presenceUnavailable?'Live connection information is temporarily unavailable. Messages are saved; verify the visitor’s status before assuming they are online.':active&&sessionState(active)==='expired'?'The visitor’s chatbot session has expired, so they cannot continue here. Their conversation is saved; use the callback contact details to follow up.':active&&sessionState(active)==='online'?'The visitor currently has the chatbot open. Missy’s team can join the live conversation.':active&&sessionState(active)==='away'?'The visitor recently connected but has hidden or closed the chatbot. Messages remain saved for follow-up.':active&&sessionState(active)==='inactive'?'The visitor is not currently connected to this chatbot conversation. All messages are saved; Missy’s team can follow up using their contact details.':'The chatbot conversation is saved, but the visitor’s online status is not confirmed. Do not assume they are available for an immediate reply.'}</span>
+    </div>
    </div><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div className="min-w-0 flex-1">
       <h2 className="font-semibold">Chat History</h2>
       <div role="status" aria-label="Conversation team assignment" className="crm-assignment-panel mt-3 flex items-start gap-3 rounded-xl px-3 py-3">
