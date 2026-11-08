@@ -4,7 +4,7 @@ import {useAuth} from '../../contexts/AuthContext';
 import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound,type CrmSound} from './crmSounds';
 
 export type ActivityCategory='lead'|'handoff'|'escalation'|'staff'|'opportunity';
-export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;opportunity_kind?:string|null;chat_lead_audit?:boolean;}
+export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;opportunity_kind?:string|null;opportunity_online?:boolean;chat_lead_audit?:boolean;}
 export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'sound_staff';
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
@@ -71,8 +71,18 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    if(res.error)throw res.error;
    (res.data??[]).forEach(c=>opportunities.set(c.id,{status:c.status,opportunity_kind:c.opportunity_kind}));
   }
+  const online=new Set<string>();
+  if(opportunityIds.length){
+   const presence=await supabase.from('ai_concierge_visitor_presence')
+    .select('conversation_id,last_seen_at,chat_visible').in('conversation_id',opportunityIds);
+   if(!presence.error)(presence.data??[]).forEach(p=>{
+    const t=Date.parse(p.last_seen_at);
+    if(p.chat_visible&&Number.isFinite(t)&&t<=Date.now()+30000&&Date.now()-t<75000)online.add(p.conversation_id);
+   });
+  }
   return rows.map(e=>{
-   const opportunity=e.category==='opportunity'?opportunities.get(e.event_key.replace(/^opportunity:/,'')):undefined;
+   const opportunityId=e.event_key.replace(/^opportunity:/,'');
+   const opportunity=e.category==='opportunity'?opportunities.get(opportunityId):undefined;
    const id=e.target_path.startsWith('/dashboard/leads?lead=')?
     e.target_path.slice('/dashboard/leads?lead='.length):'';
    const task=callbacks.get(e.event_key.split(':').pop()??'');
@@ -82,7 +92,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    return {...e,lead_status:id?(statuses.get(id)??null):null,
     callback_status:opportunity?(opportunity.status==='ai'?'ai':opportunity.status==='human'?'claimed':opportunity.status==='closed'?'closed':'waiting_human'):callback_status,
     callback_lead_id:convo?.lead_id??null,callback_conversation_id:task?.conversation_id??(e.category==='opportunity'?e.event_key.replace(/^opportunity:/,''):null),
-    opportunity_kind:opportunity?.opportunity_kind??null,
+    opportunity_kind:opportunity?.opportunity_kind??null,opportunity_online:Boolean(opportunity&&online.has(opportunityId)),
      callback_task_id:task?e.event_key.split(':').pop()??null:null,callback_requested_at:task?.created_at??null,
      callback_escalated_at:task?.escalated_at??null,callback_urgency:task?.urgency??null,
     chat_lead_audit:e.category==='lead'&&Boolean(id)&&sources.get(id)==='AI Concierge'&&chatLeadIds.has(id)};
