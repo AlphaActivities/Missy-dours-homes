@@ -1,10 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, X, Send, SmilePlus } from 'lucide-react';
+import { MessageCircle, X, ArrowUp, Plus, Mic, MicOff, SmilePlus, Paperclip } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { navigateToSection } from '../../utils/scrollToSection';
 import { conciergeTransport, conciergeQaTransport, PRIVATE_QA_SESSION_KEY, type VisitorSession } from '../../lib/conciergeTransport';
 
+type SpeechResultList = { length: number; [index: number]: { isFinal: boolean; [index: number]: { transcript: string } } };
+type BrowserSpeechRecognition = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: { results: SpeechResultList }) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+type SpeechWindow = Window & {
+  SpeechRecognition?: new () => BrowserSpeechRecognition;
+  webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
+};
 type Message = { id: number | string; role: 'concierge' | 'visitor'; text: string; sender?: 'ai' | 'human' | 'visitor'; delivered_to_staff_at?:string|null;read_by_staff_at?:string|null };
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy. What happy answer can we find for you?';
@@ -97,6 +113,12 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [invitation, setInvitation] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const speechRef = useRef<BrowserSpeechRecognition | null>(null);
+  const speechStartDraftRef = useRef('');
+  const [listening, setListening] = useState(false);
+  const [voiceFeedback, setVoiceFeedback] = useState<string | null>(null);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<VisitorSession | null>(null);
   const [busy, setBusy] = useState(false);
@@ -116,6 +138,68 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [transportError, setTransportError] = useState<string | null>(null);
   const [mode, setMode] = useState<'ai'|'human'|'waiting_human'|'closed'>('ai');
   const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '0x4AAAAAAFoyCod-DYcyxjUw');
+  const mayUpload = chatEnabled && !!session && !uploadBusy && (privateQA || mode === 'human');
+  const mayCompose = chatEnabled && welcomeReady && !!session && !busy && mode !== 'closed' && mode !== 'waiting_human';
+  // Browsers may supply recognition through Apple's webkit-prefixed API.
+  // Never claim it works until the microphone actually starts.
+  const stopDictation = () => {
+    if (speechRef.current) speechRef.current.stop();
+  };
+  const startDictation = () => {
+    setVoiceFeedback(null);
+    if (!mayCompose) return;
+    if (listening) { stopDictation(); return; }
+    const browser = window as SpeechWindow;
+    const Engine = browser.SpeechRecognition || browser.webkitSpeechRecognition;
+    if (!Engine) {
+      setVoiceFeedback('Speech recognition is unavailable in this browser. Use the microphone on your phone keyboard instead.');
+      inputRef.current?.focus();
+      return;
+    }
+    const recognition = new Engine();
+    speechStartDraftRef.current = draft;
+    recognition.lang = ({en:'en-US',es:'es-ES',fr:'fr-FR',pt:'pt-BR',zh:'zh-CN'} as Record<string,string>)[language] || 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = event => {
+      const parts: string[] = [];
+      for (let i = 0; i < event.results.length; i++) {
+        const transcript = event.results[i]?.[0]?.transcript;
+        if (transcript) parts.push(transcript.trim());
+      }
+      const spoken = parts.join(' ').trim();
+      const prefix = speechStartDraftRef.current.trim();
+      setDraft([prefix, spoken].filter(Boolean).join(' ').slice(0, 2000));
+    };
+    recognition.onerror = event => {
+      const reason = event.error;
+      if (reason === 'no-speech') setVoiceFeedback('No speech detected. Tap the microphone to try again.');
+      else if (reason === 'not-allowed' || reason === 'service-not-allowed') setVoiceFeedback('Microphone permission was denied. Enable it in browser settings or use keyboard dictation.');
+      else if (reason !== 'aborted') setVoiceFeedback('Voice transcription could not continue. Your text is saved; use keyboard dictation if needed.');
+      setListening(false);
+    };
+    recognition.onend = () => {
+      if (speechRef.current === recognition) speechRef.current = null;
+      setListening(false);
+    };
+    try {
+      speechRef.current = recognition;
+      recognition.start();
+      setListening(true);
+    } catch {
+      speechRef.current = null;
+      setListening(false);
+      setVoiceFeedback('Could not start microphone. Check permissions or use the keyboard microphone.');
+    }
+  };
+  useEffect(() => () => { speechRef.current?.abort(); speechRef.current = null; }, []);
+  useEffect(() => {
+    if (!open) {
+      speechRef.current?.abort();
+      setListening(false);
+      setAttachmentMenuOpen(false);
+    }
+  }, [open]);
   const sessionRef = useRef<VisitorSession | null>(null);
   const transport = privateQA ? conciergeQaTransport : conciergeTransport;
   const sessionKey = privateQA ? PRIVATE_QA_SESSION_KEY : SESSION_KEY;
