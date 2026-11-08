@@ -148,6 +148,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [dismissed, setDismissed] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachmentMenuRef = useRef<HTMLDivElement>(null);
   const speechRef = useRef<BrowserSpeechRecognition | null>(null);
   const speechStartDraftRef = useRef('');
   const [listening, setListening] = useState(false);
@@ -235,6 +236,23 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       setAttachmentMenuOpen(false);
     }
   }, [open]);
+  useEffect(() => {
+    if (!attachmentMenuOpen) return;
+    const closeOnOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !attachmentMenuRef.current?.contains(event.target)) {
+        setAttachmentMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAttachmentMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutside, true);
+    document.addEventListener('keydown', closeOnEscape, true);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutside, true);
+      document.removeEventListener('keydown', closeOnEscape, true);
+    };
+  }, [attachmentMenuOpen]);
   useEffect(() => {
     const textarea = inputRef.current;
     if (!textarea) return;
@@ -671,7 +689,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
           {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-4 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
           <div className="missy-concierge-composer relative z-10 shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <form onSubmit={e => {e.preventDefault();if(mayCompose&&!listening)sendMessage();}} className="flex items-end gap-2" aria-label="Message composer">
-              <div className="relative shrink-0">
+              <div ref={attachmentMenuRef} className="relative shrink-0">
                 <button type="button" onClick={()=>setAttachmentMenuOpen(opened=>!opened)} aria-label="Attachments" aria-expanded={attachmentMenuOpen} className="flex h-11 w-11 items-center justify-center rounded-full border border-[#99856b]/45 bg-[#302920] text-[#e4cba2] transition-colors hover:bg-[#453827] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e4c58b]"><Plus size={24}/></button>
                 {attachmentMenuOpen && <div className="absolute bottom-[calc(100%+12px)] left-0 z-30 w-[min(290px,calc(100vw-40px))] rounded-2xl border border-[#b9945d]/40 bg-[#211c19] p-3 text-[#f0e5d4] shadow-[0_18px_45px_rgba(0,0,0,.55)]" role="group" aria-label="Attachment options">
                   <button type="button" disabled={!mayUpload} onClick={()=>{setAttachmentMenuOpen(false);fileInputRef.current?.click();}} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"><Paperclip size={20}/> Photos or files</button>
