@@ -22,12 +22,19 @@ try {
   const send=(payload,code=200)=>route.fulfill({status:code,contentType:'application/json',
    headers:{'access-control-allow-origin':'*'},body:JSON.stringify(payload)});
   if(operation==='sync')return send({status:mode,messages:history});
+  if(operation==='ack'){
+   const body=request.postDataJSON();
+   assert.ok(Array.isArray(body.message_ids));
+   assert.ok(body.message_ids.every(id=>/^[-0-9a-f]{36}$/.test(id)));
+   assert.equal(typeof body.read,'boolean');
+   return send({ok:true});
+  }
   if(operation==='message'){
    const {language,message}=request.postDataJSON();
    assert.equal(language,'auto');
-   history.push({id:'m1',sender:'visitor',body:message,created_at:new Date().toISOString()});
+   history.push({id:'11111111-1111-4111-8111-111111111112',sender:'visitor',body:message,created_at:new Date().toISOString()});
    const reply='Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr https://www.consumerfinance.gov/owning-a-home/loan-estimate/ https://www.trec.texas.gov/public/consumer-information/ https://missydours.com.evil.test/phishing';
-   history.push({id:'m2',sender:'ai',body:reply,created_at:new Date().toISOString()});
+   history.push({id:'11111111-1111-4111-8111-111111111113',sender:'ai',body:reply,created_at:new Date().toISOString()});
    return send({reply,language:'es'});
   }
   if(operation==='handoff'){
