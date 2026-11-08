@@ -33,7 +33,6 @@ export default function ConversationsPage() {
  const joinActionRef=useRef<HTMLDivElement|null>(null);
  const pendingSourceRef=useRef<'manual'|'notification'>('manual');
  const pendingScrollRef=useRef<string|null>(null);
- const followupFrameRef=useRef<number>(0);
  const focusConversation=(id:string,source:'manual'|'notification'='manual')=>{
   pendingSourceRef.current=source;
   pendingScrollRef.current=id;
