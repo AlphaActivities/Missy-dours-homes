@@ -269,8 +269,8 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    <div className="flex items-start justify-between gap-3">
     <div className="min-w-0">
      <p className="crm-live-alert-source text-[10px] font-semibold uppercase tracking-[.15em]">{displayedAlert.category==='escalation'?'Urgent Chat Request':displayedAlert.category==='lead'?'Website Contact Form':displayedAlert.category==='opportunity'?'AI Chat Opportunity':displayedAlert.category==='handoff'?'Direct Chat Request':'Staff Activity'}</p>
-     <p className="mt-1 text-sm font-semibold">{displayedAlert.title}</p>
-     <p className="mt-1 line-clamp-3 text-xs text-[#d4c4ad]">{displayedAlert.summary}</p>
+     <p className="mt-1 text-sm font-semibold">{displayedAlert.category==='handoff'?'New Chat Request':displayedAlert.category==='escalation'?'Urgent Chat Request':displayedAlert.category==='lead'?'New Lead Received':displayedAlert.title.replace(/Concierge/gi,'Chatbot')}</p>
+     <p className="mt-1 line-clamp-3 text-xs text-[#d4c4ad]">{displayedAlert.summary.replace(/Concierge activity/gi,'Chatbot activity').replace(/Concierge handoff/gi,'Chat request')}</p>
     </div>
     <button type="button" aria-label="Dismiss in-app notification" onClick={dismissLiveAlert} className="shrink-0 rounded-lg border border-white/20 px-2.5 py-1.5 text-sm text-[#e8d4b3]">✕</button>
    </div>
