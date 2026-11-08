@@ -1052,3 +1052,26 @@
     animation: none !important;
   }
 }
+
+
+/* Focused CRM notification deep links: the transcript is placed directly in
+   the viewport before data arrives. Stagger its contents without delaying
+   navigation, shifting layout, or animating the outer card's scroll anchor. */
+@keyframes ds-focused-transcript-enter {
+  from { opacity: 0; transform: translate3d(0, 9px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.ds-shell .focused-transcript-enter { animation: none; }
+.ds-shell [data-focused-transcript="true"] > [role="status"],
+.ds-shell [data-focused-transcript="true"] > .flex.items-center.justify-between,
+.ds-shell [data-focused-transcript="true"] [role="log"] {
+  animation: ds-focused-transcript-enter 480ms cubic-bezier(.16,1,.3,1) both;
+}
+.ds-shell [data-focused-transcript="true"] > [role="status"] { animation-delay: 0ms; }
+.ds-shell [data-focused-transcript="true"] > .flex.items-center.justify-between { animation-delay: 90ms; }
+.ds-shell [data-focused-transcript="true"] [role="log"] { animation-delay: 180ms; }
+@media (prefers-reduced-motion: reduce) {
+  .ds-shell [data-focused-transcript="true"] > [role="status"],
+  .ds-shell [data-focused-transcript="true"] > .flex.items-center.justify-between,
+  .ds-shell [data-focused-transcript="true"] [role="log"] { animation: none !important; }
+}
