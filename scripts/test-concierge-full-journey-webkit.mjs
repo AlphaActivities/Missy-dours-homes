@@ -148,7 +148,7 @@ try {
  await dialog.waitFor({state:'visible'});
  await dialog.getByText(/Waiting for a team member/).waitFor();
  mode='human';
- history.push({id:'m3',sender:'human',body:'Hi! This is Missy’s team. How can we help?',created_at:new Date().toISOString()});
+ history.push({id:'11111111-1111-4111-8111-111111111114',sender:'human',body:'Hi! This is Missy’s team. How can we help?',created_at:new Date().toISOString()});
  await dialog.getByRole('button',{name:'Close',exact:true}).click();
  await launcher.click();
  await dialog.getByText('A member of Missy’s team has joined this conversation.').waitFor();
