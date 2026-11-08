@@ -34,12 +34,7 @@ function formatCallbackPhone(value: string) {
 function AssistantTypingBubble() {
   const reducedMotion = useReducedMotion();
   return <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
-    <div className="relative inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[9px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
-      {/* An actual curved tail, not the shared polygon pseudo-element whose flat
-          bottom looked clipped in Safari. Its shape is independent of overflow. */}
-      <svg className="pointer-events-none absolute -bottom-[7px] -left-[6px] h-[19px] w-[23px]" viewBox="0 0 23 19" aria-hidden="true" focusable="false">
-        <path d="M16 0H23V11C19 16 11 19 0 18C8 15 12 10 13 4C14 2 15 1 16 0Z" fill="#29292d" />
-      </svg>
+    <div className="missy-ios-incoming-bubble relative inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[9px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
       <span className="sr-only">Assistant is typing</span>
       {[0,1,2].map(index => <motion.span
         key={index}
