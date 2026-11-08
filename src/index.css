@@ -771,20 +771,20 @@
   .ds-shell .crm-category-notification[data-urgent-transition="true"] { animation: none; }
 }
 
-/* The featured outstanding item retains its living border, now tinted by
-   the notification's own category. Red urgency remains on Needs Attention. */
+/* Overview-style visible traveling highlights for EVERY notification card.
+   A narrow bright wave follows its category color; the dark interiors and
+   separate action-button animations are left untouched. */
 @property --crm-alert-border-angle {
   syntax: '<angle>';
   inherits: false;
   initial-value: 0deg;
 }
 .ds-shell .crm-actionable-notification {
-  --crm-alert-border-angle: 0deg;
   box-shadow: inset 0 0 0 1px rgba(var(--crm-category-rgb), .22), 0 0 20px rgba(var(--crm-category-rgb), .14);
 }
 /* The original dark-card traveling light returns in a restrained form.
    Its hue follows each category; the thick living border is unaffected. */
-.ds-shell .crm-actionable-notification > * {
+.ds-shell .crm-category-notification > * {
   position: relative;
   z-index: 1;
 }
@@ -843,38 +843,43 @@
   opacity: .55;
   animation-duration: 11s;
 }
-.ds-shell .crm-actionable-notification::before {
+.ds-shell .crm-category-notification::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 2.25px;
+  /* Most of the ring is transparent; one bright, category-tinted segment
+     crosses each edge, like the three living-border Overview stat cards. */
   background: conic-gradient(
     from var(--crm-alert-border-angle),
-    rgba(var(--crm-category-rgb), .24) 0deg,
-    rgba(var(--crm-category-rgb), .38) 60deg,
-    rgba(var(--crm-category-rgb), .65) 115deg,
-    rgba(var(--crm-category-rgb), .9) 160deg,
-    rgba(var(--crm-category-rgb), 1) 180deg,
-    rgba(var(--crm-category-rgb), .9) 200deg,
-    rgba(var(--crm-category-rgb), .65) 245deg,
-    rgba(var(--crm-category-rgb), .38) 300deg,
-    rgba(var(--crm-category-rgb), .24) 360deg
+    rgba(var(--crm-category-rgb), 0) 0deg,
+    rgba(var(--crm-category-rgb), .02) 70deg,
+    rgba(var(--crm-category-rgb), .14) 118deg,
+    rgba(var(--crm-category-rgb), .62) 153deg,
+    rgb(var(--crm-category-rgb)) 172deg,
+    color-mix(in srgb, rgb(var(--crm-category-rgb)) 60%, white) 180deg,
+    rgb(var(--crm-category-rgb)) 188deg,
+    rgba(var(--crm-category-rgb), .62) 207deg,
+    rgba(var(--crm-category-rgb), .14) 242deg,
+    rgba(var(--crm-category-rgb), .02) 290deg,
+    rgba(var(--crm-category-rgb), 0) 360deg
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
   z-index: 2;
-  animation: crm-alert-border-travel 6s linear infinite;
+  animation: crm-alert-border-travel 5.2s linear infinite;
 }
 @keyframes crm-alert-border-travel {
+  from { --crm-alert-border-angle: 0deg; }
   to { --crm-alert-border-angle: 360deg; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ds-shell .crm-actionable-notification::before {
+  .ds-shell .crm-category-notification::before {
     animation: none;
-    background: linear-gradient(135deg, rgba(var(--crm-category-rgb),.55), rgba(var(--crm-category-rgb),.9), rgba(var(--crm-category-rgb),.55));
+    background: linear-gradient(135deg, rgba(var(--crm-category-rgb),.40), rgba(var(--crm-category-rgb),.75), rgba(var(--crm-category-rgb),.40));
   }
   .ds-shell .crm-actionable-notification::after,
   .ds-shell .crm-actionable-notification[data-category="lead"]::after,
