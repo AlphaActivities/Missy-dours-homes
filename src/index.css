@@ -784,6 +784,47 @@
   from { transform: translate3d(-38%, 0, 0); }
   to { transform: translate3d(38%, 0, 0); }
 }
+/* Distinct, quiet motion for each notification type. The moving BORDER is
+   intentionally independent and retains its original speed and thickness. */
+/* Urgent: a stationary coral halo gently breathes rather than sweeping. */
+.ds-shell .crm-actionable-notification[data-category="escalation"]::after {
+  inset: 0;
+  background: radial-gradient(ellipse 70% 72% at 76% 44%,
+    rgba(var(--crm-category-rgb), .10) 0%,
+    rgba(var(--crm-category-rgb), .035) 50%, transparent 88%);
+  transform: none;
+  animation: crm-notice-urgent-breathe 9.5s ease-in-out infinite;
+}
+@keyframes crm-notice-urgent-breathe {
+  0%, 100% { opacity: .35; }
+  50% { opacity: .8; }
+}
+/* Lead: a faint amber reflection travels slowly in the opposite direction. */
+.ds-shell .crm-actionable-notification[data-category="lead"]::after {
+  inset: -10% -32%;
+  background: radial-gradient(ellipse 35% 57% at center,
+    rgba(var(--crm-category-rgb), .085) 0%,
+    rgba(var(--crm-category-rgb), .025) 50%, transparent 85%);
+  transform: translate3d(20%, 0, 0);
+  animation: crm-notice-lead-drift 13s ease-in-out infinite alternate;
+}
+@keyframes crm-notice-lead-drift {
+  from { transform: translate3d(22%, 0, 0); }
+  to { transform: translate3d(-22%, 0, 0); }
+}
+/* Staff: a quiet green glow, never the same traveling streak as chat. */
+.ds-shell .crm-actionable-notification[data-category="staff"]::after {
+  inset: 0;
+  background: radial-gradient(ellipse 62% 70% at 25% 65%,
+    rgba(var(--crm-category-rgb), .075), transparent 85%);
+  transform: none;
+  animation: crm-notice-urgent-breathe 12s ease-in-out infinite reverse;
+}
+/* Regular chat: retain only a very soft, slower teal movement. */
+.ds-shell .crm-actionable-notification[data-category="handoff"]::after {
+  opacity: .55;
+  animation-duration: 11s;
+}
 .ds-shell .crm-actionable-notification::before {
   content: '';
   position: absolute;
@@ -817,9 +858,14 @@
     animation: none;
     background: linear-gradient(135deg, rgba(var(--crm-category-rgb),.55), rgba(var(--crm-category-rgb),.9), rgba(var(--crm-category-rgb),.55));
   }
-  .ds-shell .crm-actionable-notification::after {
+  .ds-shell .crm-actionable-notification::after,
+  .ds-shell .crm-actionable-notification[data-category="lead"]::after,
+  .ds-shell .crm-actionable-notification[data-category="escalation"]::after,
+  .ds-shell .crm-actionable-notification[data-category="staff"]::after,
+  .ds-shell .crm-actionable-notification[data-category="handoff"]::after {
     animation: none;
     transform: none;
+    opacity: .45;
   }
 }
 .ds-shell .crm-open-attention {
