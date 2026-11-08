@@ -29,6 +29,3 @@ end $function$;
 revoke all on function public.ai_concierge_ack_staff_messages(uuid,boolean) from public,anon;
 grant execute on function public.ai_concierge_ack_staff_messages(uuid,boolean) to authenticated;
 
--- Never let browser clients mutate receipt columns directly.
-revoke update (delivered_to_staff_at,read_by_staff_at,delivered_to_visitor_at,read_by_visitor_at)
- on table public.ai_conversation_messages from anon,authenticated;
