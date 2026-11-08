@@ -552,7 +552,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                    &&!typingNotifiedRef.current.has(visitor.conversation_id)){
                   typingNotifiedRef.current.add(visitor.conversation_id);
                   void conciergeTransport.typing(visitor).catch(()=>{
-                   typingNotifiedRef.current.delete(visitor.conversation_id);
+                   // A failed alert must not turn every subsequent keystroke
+                   // into a retry storm. Chat remains fully usable.
                   });
                 }
                }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}} className="max-h-28 min-h-[52px] min-w-0 flex-1 resize-none rounded-xl border border-[#b9945d]/35 bg-[#191611] px-3 py-3 text-base text-white outline-none focus:border-[#d5b16d] disabled:cursor-not-allowed disabled:opacity-50" />
