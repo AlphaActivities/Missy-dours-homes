@@ -6,7 +6,7 @@ import {IosNativeTap} from './DashboardHaptics';
 
 type Filter='all'|'unread'|'urgent'|'lead'|'handoff'|'staff'|'history';
 const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent Chat Request':category==='lead'?'Website Contact Form':category==='handoff'?'Direct Chat Request':'Staff Activity';
-const displayTitle=(item:CrmActivity)=>item.category==='handoff'?'Chat Request Received':item.category==='escalation'?(item.callback_escalated_at?'Urgent Chat Request':'Chat Request Received'):item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot');
+const displayTitle=(item:CrmActivity)=>(item.category==='handoff'||item.category==='escalation')&&item.callback_status==='claimed'?'Team Member Responding':item.category==='handoff'?'Chat Request Received':item.category==='escalation'?(item.callback_escalated_at?'Urgent Chat Request':'Chat Request Received'):item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot');
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'||/^\/dashboard\/conversations\?conversation=[0-9a-f-]{36}$/i.test(value)?value:'/dashboard/conversations';
 const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|·)/gi,'$1Homepage');
 // Keep the CTA's destination, label and next-step guidance consistent.
@@ -59,7 +59,7 @@ export default function CrmActivityCenter(){
   const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
   if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly);
   if(e.archived_at||e.lead_archived||auditOnly)return false;
-  if(filter==='all')return true;
+  if(filter==='all')return e.category!=='staff';
   if(filter==='unread')return !e.read_at&&e.category!=='staff';
   if(filter==='urgent')return e.category==='escalation'&&Boolean(e.callback_escalated_at);
   if(filter==='handoff')return e.category==='handoff'||e.category==='escalation';
@@ -146,6 +146,7 @@ export default function CrmActivityCenter(){
       {item.callback_status==='claimed'&&<><span aria-hidden="true">→</span><span>Team responding</span></>}
       {['completed','closed'].includes(item.callback_status??'')&&<><span aria-hidden="true">→</span><span>Completed</span></>}
      </div>}
+     {isInProgress(item)&&!requiresAction(item)&&<p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#dcb979]"><CheckCircle2 size={15} aria-hidden="true"/> Team responding · Outcome not yet recorded</p>}
      {requiresAction(item)&&<div className="mt-3 space-y-1.5">
       <p className="flex items-center gap-2 text-xs font-semibold tracking-[0.025em] text-[#e8bc81]"><AlertTriangle size={16} className="shrink-0" aria-hidden="true"/> Action Needed</p>
       <p className="text-xs leading-relaxed text-[#cbbbaa]"><span className="block">This request hasn't been handled yet.</span><span className="block">{nextAction(item)}</span></p>
