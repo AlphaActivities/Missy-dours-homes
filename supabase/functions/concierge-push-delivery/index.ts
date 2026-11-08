@@ -64,6 +64,7 @@ Deno.serve(async request=>{
      const settings=preferenceByEmail.get(d.staff_email);
      if(event.event_type==='handoff_claimed')return settings?.staff_enabled!==false;
      if(event.event_type==='handoff_escalated')return settings?.escalation_enabled!==false;
+     if(event.event_type==='opportunity_detected')return settings?.handoff_enabled!==false;
      return settings?.handoff_enabled!==false;
    });
    if(!targetDevices.length) {
@@ -79,13 +80,14 @@ Deno.serve(async request=>{
    let successfulDevices=accepted.size;
    // Use the task's authoritative conversation ID, never a guessed URL.
    // On lookup failure the service worker safely opens the notification inbox.
-   const task=await client.from('ai_concierge_tasks')
-    .select('conversation_id').eq('id',event.task_id).maybeSingle();
+   const task=event.event_type==='opportunity_detected'
+    ?await client.from('ai_concierge_push_outbox').select('conversation_id').eq('id',event.id).maybeSingle()
+    :await client.from('ai_concierge_tasks').select('conversation_id').eq('id',event.task_id).maybeSingle();
    // OS icon badge counts unresolved work rather than number of banners.
    const {data:attention,error:attentionError}=await client.rpc('crm_attention_count_service');
    const payload=JSON.stringify({
-    kind:['handoff_escalated','handoff_claimed'].includes(event.event_type)?event.event_type:'handoff_created',
-    id:event.task_id,
+    kind:['handoff_escalated','handoff_claimed','opportunity_detected'].includes(event.event_type)?event.event_type:'handoff_created',
+    id:event.task_id??event.id,
     ...(task.error||!task.data?.conversation_id?{}:{conversation_id:task.data.conversation_id}),
     ...(attentionError?{}:{attention_count:Math.max(0,Number(attention)||0)})
    });
