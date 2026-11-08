@@ -22,12 +22,19 @@ try {
   const send=(payload,code=200)=>route.fulfill({status:code,contentType:'application/json',
    headers:{'access-control-allow-origin':'*'},body:JSON.stringify(payload)});
   if(operation==='sync')return send({status:mode,messages:history});
+  if(operation==='ack'){
+   const body=request.postDataJSON();
+   assert.ok(Array.isArray(body.message_ids));
+   assert.ok(body.message_ids.every(id=>/^[-0-9a-f]{36}$/.test(id)));
+   assert.equal(typeof body.read,'boolean');
+   return send({ok:true});
+  }
   if(operation==='message'){
    const {language,message}=request.postDataJSON();
    assert.equal(language,'auto');
-   history.push({id:'m1',sender:'visitor',body:message,created_at:new Date().toISOString()});
+   history.push({id:'11111111-1111-4111-8111-111111111112',sender:'visitor',body:message,created_at:new Date().toISOString()});
    const reply='Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr https://www.consumerfinance.gov/owning-a-home/loan-estimate/ https://www.trec.texas.gov/public/consumer-information/ https://missydours.com.evil.test/phishing';
-   history.push({id:'m2',sender:'ai',body:reply,created_at:new Date().toISOString()});
+   history.push({id:'11111111-1111-4111-8111-111111111113',sender:'ai',body:reply,created_at:new Date().toISOString()});
    return send({reply,language:'es'});
   }
   if(operation==='handoff'){
@@ -141,7 +148,7 @@ try {
  await dialog.waitFor({state:'visible'});
  await dialog.getByText(/Waiting for a team member/).waitFor();
  mode='human';
- history.push({id:'m3',sender:'human',body:'Hi! This is Missy’s team. How can we help?',created_at:new Date().toISOString()});
+ history.push({id:'11111111-1111-4111-8111-111111111114',sender:'human',body:'Hi! This is Missy’s team. How can we help?',created_at:new Date().toISOString()});
  await dialog.getByRole('button',{name:'Close',exact:true}).click();
  await launcher.click();
  await dialog.getByText('A member of Missy’s team has joined this conversation.').waitFor();
@@ -150,14 +157,14 @@ try {
  // The real human agent's message is reactable, never the welcome, AI, or visitor messages.
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),1);
  assert.equal(await dialog.getByRole('button',{name:'React to message 0'}).count(),0);
- assert.equal(await dialog.getByRole('button',{name:'React to message m2'}).count(),0);
- await dialog.getByRole('button',{name:'React to message m3'}).click();
+ assert.equal(await dialog.getByRole('button',{name:'React to message 11111111-1111-4111-8111-111111111113'}).count(),0);
+ await dialog.getByRole('button',{name:'React to message 11111111-1111-4111-8111-111111111114'}).click();
  const choices=dialog.getByRole('group',{name:'Choose a message reaction'});
  assert.equal(await choices.getByRole('button').count(),5);
  assert.equal(await choices.getByRole('button',{name:'React with 😊'}).count(),1);
  assert.equal(await choices.getByRole('button',{name:'React with 😂'}).count(),0);
  await choices.getByRole('button',{name:'React with ❤️'}).click();
- assert.equal(await dialog.getByRole('button',{name:'React to message m3'}).getByText('❤️').count(),1);
+ assert.equal(await dialog.getByRole('button',{name:'React to message 11111111-1111-4111-8111-111111111114'}).getByText('❤️').count(),1);
  assert.ok(await page.evaluate(()=>sessionStorage.getItem('missy_concierge_reactions_11111111-1111-4111-8111-111111111111')?.includes('❤️')));
  await dialog.locator('input[type=file]').setInputFiles({
   name:'sample.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4 fake file')

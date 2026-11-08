@@ -10,7 +10,7 @@ type Conversation = {
   language_code:string; last_message_at:string|null; started_at:string; lead_id:string|null; assigned_to:string|null; visitor_name:string|null; visitor_phone:string|null; visitor_expires_at:string|null;
 };
 type Attachment = {id:string;original_filename:string;mime_type:string;file_size_bytes:number;storage_path:string;created_at:string};
-type Message = {id:string; sender:'visitor'|'ai'|'human'|'system';body:string;translated_body:string|null; original_language:string|null;created_at:string;sender_actor:string|null;};
+type Message = {id:string; sender:'visitor'|'ai'|'human'|'system';body:string;translated_body:string|null; original_language:string|null;created_at:string;sender_actor:string|null;delivered_to_staff_at:string|null;read_by_staff_at:string|null;delivered_to_visitor_at:string|null;read_by_visitor_at:string|null;};
 const time = (s:string|null) => s ? new Date(s).toLocaleString() : 'Not yet';
 export default function ConversationsPage() {
  const {user}=useAuth();
@@ -107,11 +107,24 @@ export default function ConversationsPage() {
   let active=true;
   const fetchTranscript=async()=>{
    const {data,error}=await supabase.from('ai_conversation_messages')
-    .select('id,sender,body,translated_body,original_language,created_at,sender_actor')
+    .select('id,sender,body,translated_body,original_language,created_at,sender_actor,delivered_to_staff_at,read_by_staff_at,delivered_to_visitor_at,read_by_visitor_at')
     .eq('conversation_id',selected).order('created_at',{ascending:false}).limit(500);
    if(!active)return;
    if(error)setError(error.message);
-   else setMessages(((data??[]) as Message[]).reverse());
+   else {
+    const displayed=((data??[]) as Message[]).reverse();
+    setMessages(displayed);
+    // Only loaded visitor messages can be acknowledged. Read requires the
+    // dashboard foreground and transcript in view.
+    if(document.visibilityState==='visible'&&displayed.length){
+     const bounds=transcriptRef.current?.getBoundingClientRect();
+     const inView=Boolean(bounds&&bounds.top<window.innerHeight&&bounds.bottom>0);
+     const ids=displayed.filter(m=>m.sender==='visitor'&&(!m.delivered_to_staff_at||(inView&&!m.read_by_staff_at))).map(m=>m.id);
+     if(ids.length)void supabase.rpc('ai_concierge_ack_staff_messages',{
+      p_conversation:selected,p_message_ids:ids,p_read:inView
+     }).then(()=>{},()=>{});
+    }
+   }
    const files=await supabase.from('ai_conversation_attachments').select('id,original_filename,mime_type,file_size_bytes,storage_path,created_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(50);
    if(active && !files.error)setAttachments((files.data??[]) as Attachment[]);
    setLoadingMessages(false);
@@ -228,7 +241,7 @@ export default function ConversationsPage() {
    if(error)throw error;
    if(data!==true)throw new Error('You are not the assigned agent. Refresh the conversation.');
    setReply('');setTranslatedDraft(null);
-   const result=await supabase.from('ai_conversation_messages').select('id,sender,body,translated_body,original_language,created_at,sender_actor').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(500);
+   const result=await supabase.from('ai_conversation_messages').select('id,sender,body,translated_body,original_language,created_at,sender_actor,delivered_to_staff_at,read_by_staff_at,delivered_to_visitor_at,read_by_visitor_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(500);
    if(result.error)throw result.error;
    setMessages(((result.data??[]) as Message[]).reverse());
   }catch(e){setError(e instanceof Error?e.message:'Unable to send');}finally{setActionBusy(false);}
@@ -303,7 +316,7 @@ export default function ConversationsPage() {
      </label>
      <button type="submit" disabled={actionBusy||handoffNotes.trim().length<10||(handoffDisposition==='follow_up'&&!followupAt)} className="min-h-11 w-full rounded-lg bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-4 py-3 text-sm font-semibold text-[#1a1108] disabled:opacity-40">{actionBusy?'Saving outcome…':'Save Outcome & Return to AI'}</button>
     </form>}
-    {loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-3">{messages.map(m=><article key={m.id} className="p-3 rounded-lg border border-white/10"><div className="flex justify-between gap-2 text-xs opacity-65 mb-2"><strong className="uppercase">{m.sender_actor||m.sender}</strong><span>{time(m.created_at)}</span></div><p className="whitespace-pre-wrap text-sm break-words">{m.body}</p>{m.translated_body&&<div className="mt-2 pt-2 border-t border-white/10"><span className="text-xs" style={{color:'var(--ds-gold)'}}>{m.sender==='human' ? 'Staff English original' : 'English translation for staff'}</span><p className="text-sm whitespace-pre-wrap">{m.translated_body}</p></div>}</article>)}</div>}{attachments.length>0&&<div className="mt-4 rounded-lg border border-[#c8a96e]/30 p-3" aria-label="Private conversation attachments">
+    {loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-4" role="log" aria-label="Conversation messages">{messages.map(m=>{const fromVisitor=m.sender==='visitor';const fromAi=m.sender==='ai';return <div key={m.id} className={'flex '+(fromVisitor?'justify-end':'justify-start')}><article className={'max-w-[88%] min-w-0 rounded-[22px] px-4 py-3 shadow-[0_5px_18px_rgba(0,0,0,.18)] '+(fromVisitor?'rounded-br-[8px] bg-[#176bc6] text-white':fromAi?'rounded-bl-[8px] border border-[#385e87]/70 bg-[#18385a] text-[#f0f6ff]':'rounded-bl-[8px] border border-[#b6975f]/45 bg-[#342a1c] text-[#f7e4bc]')}><div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]"><strong className={'uppercase tracking-[.08em] '+(fromVisitor?'text-[#e3efff]':fromAi?'text-[#99cdfd]':'text-[#e8c782]')}>{fromVisitor?'Visitor':fromAi?'AI Concierge':'Missy’s Team'}</strong><time className="opacity-75" dateTime={m.created_at}>{time(m.created_at)}</time></div><p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{m.body}</p><div className={'mt-2 text-right text-[10px] '+(fromVisitor?'text-[#dcecff]':'text-[#c7d7e8]')}>{fromVisitor?(m.read_by_staff_at?'Read by team · '+new Date(m.read_by_staff_at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):m.delivered_to_staff_at?'Delivered to team':'Saved'):m.read_by_visitor_at?'Read by visitor · '+new Date(m.read_by_visitor_at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):m.delivered_to_visitor_at?'Delivered to visitor':'Sent'}</div>{m.translated_body&&<div className="mt-3 border-t border-white/20 pt-2"><span className="text-[11px] opacity-80">{m.sender==='human'?'Staff English original':'English translation for staff'}</span><p className="mt-1 whitespace-pre-wrap break-words text-sm">{m.translated_body}</p></div>}</article></div>;})}</div>}{attachments.length>0&&<div className="mt-4 rounded-lg border border-[#c8a96e]/30 p-3" aria-label="Private conversation attachments">
      <h3 className="text-sm font-semibold text-[#e4c58b]">Private attachments</h3>
      <p className="mt-1 text-xs opacity-65">Files provided during a human-assisted conversation. Download links expire automatically.</p>
      <div className="mt-3 space-y-2">{attachments.map(file=><div key={file.id} className="flex flex-wrap items-center gap-2 text-xs">
