@@ -3,8 +3,8 @@ import {supabase} from '../../lib/supabase';
 import {useAuth} from '../../contexts/AuthContext';
 import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound,type CrmSound} from './crmSounds';
 
-export type ActivityCategory='lead'|'handoff'|'escalation'|'staff';
-export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;chat_lead_audit?:boolean;}
+export type ActivityCategory='lead'|'handoff'|'escalation'|'staff'|'opportunity';
+export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;opportunity_kind?:string|null;chat_lead_audit?:boolean;}
 export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'sound_staff';
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
@@ -64,7 +64,15 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     (convo.data??[]).forEach(c=>conversations.set(c.id,{status:c.status,lead_id:c.lead_id}));
    }
   }
+  const opportunityIds=[...new Set(rows.filter(e=>e.category==='opportunity').map(e=>e.event_key.replace(/^opportunity:/,'')).filter(id=>/^[0-9a-f-]{36}$/i.test(id)))];
+  const opportunities=new Map<string,{status:string;opportunity_kind:string|null}>();
+  if(opportunityIds.length){
+   const res=await supabase.from('ai_conversations').select('id,status,opportunity_kind').in('id',opportunityIds);
+   if(res.error)throw res.error;
+   (res.data??[]).forEach(c=>opportunities.set(c.id,{status:c.status,opportunity_kind:c.opportunity_kind}));
+  }
   return rows.map(e=>{
+   const opportunity=e.category==='opportunity'?opportunities.get(e.event_key.replace(/^opportunity:/,'')):undefined;
    const id=e.target_path.startsWith('/dashboard/leads?lead=')?
     e.target_path.slice('/dashboard/leads?lead='.length):'';
    const task=callbacks.get(e.event_key.split(':').pop()??'');
@@ -72,7 +80,9 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const callback_status=task?.status==='completed'?'completed':task?.status==='claimed'?'claimed':convo?.status==='waiting_human'?'waiting_human':
     convo?.status==='closed'?'closed':task?.status??null;
    return {...e,lead_status:id?(statuses.get(id)??null):null,
-    callback_status,callback_lead_id:convo?.lead_id??null,callback_conversation_id:task?.conversation_id??null,
+    callback_status:opportunity?(opportunity.status==='ai'?'ai':opportunity.status==='human'?'claimed':opportunity.status==='closed'?'closed':'waiting_human'):callback_status,
+    callback_lead_id:convo?.lead_id??null,callback_conversation_id:task?.conversation_id??(e.category==='opportunity'?e.event_key.replace(/^opportunity:/,''):null),
+    opportunity_kind:opportunity?.opportunity_kind??null,
      callback_task_id:task?e.event_key.split(':').pop()??null:null,callback_requested_at:task?.created_at??null,
      callback_escalated_at:task?.escalated_at??null,callback_urgency:task?.urgency??null,
     chat_lead_audit:e.category==='lead'&&Boolean(id)&&sources.get(id)==='AI Concierge'&&chatLeadIds.has(id)};
@@ -126,11 +136,11 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const newArrivals=firstLoaded.current?newest.filter(e=>!seen.some(x=>x.id===e.id)):[]; 
    if(newArrivals.length && document.visibilityState==='visible' && (nextPrefs?.in_app_sound??prefsRef.current.in_app_sound)){
     // Play once per polling batch, prioritized by urgency.
-    const priority:ActivityCategory[]=['escalation','handoff','lead','staff'];
+    const priority:ActivityCategory[]=['escalation','handoff','opportunity','lead','staff'];
     const actionable=newArrivals.filter(e=>!e.read_at&&!e.archived_at&&!e.lead_archived);
     const first=priority.map(category=>actionable.find(e=>e.category===category)).find(Boolean);
     if(first){
-     const name=('sound_'+first.category) as SoundPreferenceKey;
+     const name=('sound_'+(first.category==='opportunity'?'handoff':first.category)) as SoundPreferenceKey;
      playCrmSound(defaults(email)[name]);
     }
    }
