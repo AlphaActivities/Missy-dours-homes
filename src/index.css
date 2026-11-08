@@ -616,7 +616,6 @@
   isolation: isolate;
 }
 .ds-shell .crm-activity-filter[data-filter="all"] { --crm-filter-rgb: 209, 177, 112; }
-.ds-shell .crm-activity-filter[data-filter="unread"] { --crm-filter-rgb: 222, 214, 197; }
 .ds-shell .crm-activity-filter[data-filter="urgent"] { --crm-filter-rgb: 207, 119, 100; }
 .ds-shell .crm-activity-filter[data-filter="lead"] { --crm-filter-rgb: 255, 156, 0; }
 .ds-shell .crm-activity-filter[data-filter="handoff"] { --crm-filter-rgb: 125, 187, 181; }
