@@ -1176,44 +1176,42 @@
 }
 
 
-/* iPhone-inspired messaging contours, scoped only to actual chatbot/CRM bubbles.
-   Keep message sender colors and existing delivery/read receipts unchanged. */
+/* Shared iMessage-inspired tapered Bézier tail across the public chat and CRM.
+   A curved silhouette replaces the flat polygon tab. Keep tail backgrounds
+   matched to sender bubble colors, independent of text, layout and receipts. */
 .missy-ios-incoming-bubble,
 .missy-ios-outgoing-bubble,
 .crm-ios-visitor-bubble,
 .crm-ios-ai-bubble,
 .crm-ios-team-bubble {
   position: relative;
-  isolation: isolate;
+  overflow: visible;
 }
 .missy-ios-incoming-bubble::after,
+.missy-ios-outgoing-bubble::after,
+.crm-ios-visitor-bubble::after,
 .crm-ios-ai-bubble::after,
 .crm-ios-team-bubble::after {
   content: '';
+  pointer-events: none;
   position: absolute;
-  z-index: -1;
-  width: 12px;
-  height: 13px;
-  left: -3px;
-  bottom: -2px;
+  width: 24px;
+  height: 23px;
+  left: -7px;
+  bottom: -6px;
   background: #29292d;
-  clip-path: polygon(23% 0, 100% 0, 100% 100%, 0 100%);
-  border-bottom-left-radius: 8px;
+  /* Curve flows from the bubble corner to a narrow point instead of a
+     squared-off extension; fixed-size geometry behaves consistently on iOS. */
+  clip-path: path('M 15 0 H 24 V 8 C 24 16 16 22 1 22 C 10 18 12 12 12 6 C 12 3 13 1 15 0 Z');
 }
 .crm-ios-ai-bubble::after { background: #18385a; }
 .crm-ios-team-bubble::after { background: #342a1c; }
 .missy-ios-outgoing-bubble::after,
 .crm-ios-visitor-bubble::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  width: 12px;
-  height: 13px;
-  right: -3px;
-  bottom: -2px;
+  left: auto;
+  right: -7px;
+  transform: scaleX(-1);
   background: #0a84ff;
-  clip-path: polygon(0 0, 77% 0, 100% 100%, 0 100%);
-  border-bottom-right-radius: 8px;
 }
 
 
