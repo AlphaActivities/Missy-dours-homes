@@ -87,14 +87,14 @@ export default function CrmActivityCenter(){
    </div>}
    {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(requiresAction(item)?(isFeatured(item)?'crm-actionable-notification relative isolate overflow-hidden border-red-500/65 bg-[#281316]/90 ':'border-red-500/55 bg-[#281316]/90 ')+(item.category==='handoff'?'border-2 border-red-400/75 bg-gradient-to-br from-[#3a161b] to-[#241115] ':''):isResolved(item)?'border-emerald-500/35 bg-emerald-950/20':isInProgress(item)?'border-[#c8a96e]/55 bg-[#c8a96e]/10':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
     <div className="min-w-0">
-     <div className="flex items-start justify-between gap-2">
+     <div className="flex items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
        {item.category==='handoff'?<MessagesSquare size={19} className="shrink-0 text-[#eacb96]" aria-label="Chatbot request"/>:item.category==='lead'?<UserRoundPlus size={19} className="shrink-0 text-[#eacb96]" aria-label="New lead received"/>:null}
        <strong className="min-w-0 text-sm text-[#f0dfc4]">{item.category==='handoff' && item.title==='Concierge handoff requested'?'Callback Requested':item.title}</strong>
       </div>
       {requiresAction(item)&&<span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-red-400/55 bg-red-700/20 px-2.5 py-1.5 text-[11px] font-semibold tracking-[0.025em] text-red-200"><AlertTriangle size={16} fill="#edb951" stroke="#4b250d" strokeWidth={2.5} aria-hidden="true"/> Needs Attention</span>}
      </div>
-     <div className="mt-2 flex flex-wrap items-center gap-2">
+     <div className="mt-1 flex flex-wrap items-center gap-2">
       <span className={item.category==='handoff'||item.category==='lead'?'inline-flex items-center gap-1.5 rounded border-2 border-[#c8a96e]/60 bg-[#c8a96e]/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#f0d09b]':'inline-flex items-center gap-1.5 rounded border border-[#c8a96e]/25 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#c8a96e]'}>{item.category==='handoff'?<MessagesSquare size={12} aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={12} aria-hidden="true"/>:null}{item.category==='lead'?'Website Contact Form':categoryLabel(item.category)}</span>
       {!item.read_at&&!item.archived_at&&!item.lead_archived&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
@@ -102,11 +102,11 @@ export default function CrmActivityCenter(){
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot callback request'):friendlySummary(item.summary)}</p>
      {requiresAction(item)&&<div className="mt-3 space-y-1.5">
       <p className="inline-flex items-center gap-1.5 rounded-md border border-red-400/35 bg-red-900/20 px-3 py-2 text-xs font-semibold text-red-200"><AlertTriangle size={13} aria-hidden="true"/> Follow-up required</p>
-      <p className="text-xs italic leading-relaxed text-[#cbbbaa]"><span className="block">This inquiry hasn't been handled yet.</span><span className="block">Open the lead or conversation to record the next action.</span></p>
+      <p className="text-xs italic leading-relaxed text-[#cbbbaa]"><span className="block">This inquiry hasn't been handled yet.</span><span className="block">Open the {item.category==='handoff'&&!item.callback_lead_id?'conversation':item.target_path.startsWith('/dashboard/leads?lead=')||Boolean(item.callback_lead_id)?'lead':'conversation'} to proceed with next action.</span></p>
      </div>}
      <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString(undefined,{year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</time>
     </div>
-    <div className="mt-3 flex flex-wrap items-center gap-2">
+    <div className="mt-2 flex flex-wrap items-center gap-2">
      <Link to={item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:safeTarget(item.target_path)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}}
       className={'crm-open-notification '+(item.category==='handoff'?'crm-action-chat ':'crm-action-lead ')+'relative isolate inline-flex items-center gap-2 overflow-hidden rounded-md border border-[#c8a96e]/50 px-3.5 py-2 text-xs font-medium tracking-[0.025em] text-[#f1d7a6] '+(requiresAction(item)?'crm-open-attention':'')}><span className="relative z-[1]">{item.callback_lead_id && item.category==='handoff'?'Open Lead · Record Outcome':actionLabel(item)}</span>{(item.target_path.startsWith('/dashboard/leads?lead=')||Boolean(item.callback_lead_id))?<ArrowUpRight size={15} strokeWidth={1.45} aria-hidden="true" className="crm-open-notification-arrow"/>:<ExternalLink size={13} strokeWidth={1.5} aria-hidden="true"/>}</Link>
      {!item.read_at&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
