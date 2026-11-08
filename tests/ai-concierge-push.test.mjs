@@ -34,6 +34,7 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
       calls.push({kind:'rpc',method,args});
       if(method==='ai_concierge_get_sender_secret')return {data:'mock-vault-secret-for-cron-1234567890123456',error:null};
       if(method==='ai_concierge_claim_push_batch')return {data:events,error:null};
+      if(method==='crm_attention_count_service')return {data:2,error:null};
       if(method==='ai_concierge_record_push_receipt')return {data:true,error:null};
       if(method==='ai_concierge_finish_push')return {data:true,error:null};
       throw Error('Unexpected RPC: '+method);
@@ -42,13 +43,15 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
       calls.push({kind:'from',table});
       if(table==='ai_concierge_push_subscriptions')return queryResult(registered);
       if(table==='ai_concierge_push_receipts')return queryResult(receipts);
+      if(table==='crm_notification_preferences')return queryResult(devices.map(device=>({staff_email:device.staff_email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true})));
+      if(table==='ai_concierge_tasks')return queryResult({conversation_id:'e14725bf-9f1d-4572-ac4e-554e5e173cc2'});
       throw Error('Unexpected table: '+table);
     }
   };
   const webpush={
     setVapidDetails(...args){calls.push({kind:'vapid',args});},
     generateRequestDetails(device,payload,options){
-      calls.push({kind:'prepared',endpoint:device.endpoint,options});
+      calls.push({kind:'prepared',endpoint:device.endpoint,options,payload:JSON.parse(payload)});
       return {endpoint:device.endpoint,headers:{'content-encoding':'aes128gcm','authorization':'vapid test'},
         body:Buffer.from('encrypted mock payload')};
     }
@@ -108,6 +111,8 @@ test('A new handoff targets all registered staff and persists separate receipts'
   assert.deepEqual(res,{status:200,body:{processed:1,delivered:1,failed:0}});
   assert.deepEqual(new Set(sent.map(x=>x.endpoint)),new Set(devices.map(x=>x.endpoint)));
   assert.ok(sent.every(x=>x.payload.kind==='handoff_created'));
+  assert.ok(calls.filter(x=>x.kind==='prepared').every(x=>x.payload.conversation_id==='e14725bf-9f1d-4572-ac4e-554e5e173cc2'));
+  assert.ok(calls.filter(x=>x.kind==='prepared').every(x=>x.payload.attention_count===2));
   assert.ok(sent.every(x=>x.options.TTL===900));
   assert.ok(sent.every(x=>x.encryptedBytes>0));
   const curve=createECDH('prime256v1');curve.setPrivateKey(Buffer.alloc(32,3));
