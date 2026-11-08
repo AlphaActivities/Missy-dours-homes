@@ -683,10 +683,39 @@
   .ds-shell .crm-open-notification-arrow { transition: none; }
 }
 
-/* Outstanding CRM work uses the same masked living-border approach as
-   Overview's priority stat card, but with a controlled ruby-red palette.
-   The moving highlight is confined to the border (no wedge over card copy).
-   Only New, non-archived lead notices receive this class. */
+/* A single category palette powers the filter chips AND their notice cards.
+   State (needs attention/complete) is separate; category never means urgency. */
+.ds-shell .crm-category-notification {
+  --crm-category-rgb: 209, 177, 112;
+  border-color: rgba(var(--crm-category-rgb), .58);
+  background: linear-gradient(135deg,
+    rgba(var(--crm-category-rgb), .12), rgba(17, 15, 15, .92) 66%);
+  box-shadow: inset 0 1px 0 rgba(var(--crm-category-rgb), .1),
+    0 7px 24px rgba(0, 0, 0, .16), 0 0 15px rgba(var(--crm-category-rgb), .055);
+}
+.ds-shell .crm-category-notification[data-category="lead"] { --crm-category-rgb: 122,169,216; }
+.ds-shell .crm-category-notification[data-category="handoff"] { --crm-category-rgb: 125,187,181; }
+.ds-shell .crm-category-notification[data-category="staff"] { --crm-category-rgb: 133,186,148; }
+.ds-shell .crm-category-notification[data-category="escalation"] { --crm-category-rgb: 207,119,100; }
+.ds-shell .crm-category-notification .crm-notification-source {
+  color: rgb(var(--crm-category-rgb));
+  border-color: rgba(var(--crm-category-rgb), .62);
+  background: rgba(var(--crm-category-rgb), .09);
+}
+.ds-shell .crm-category-notification[data-work-state="action"] {
+  box-shadow: 0 0 0 1px rgba(198, 70, 78, .24),
+    0 0 16px rgba(var(--crm-category-rgb), .08);
+}
+.ds-shell .crm-category-notification[data-work-state="complete"] {
+  background: linear-gradient(135deg,
+    rgba(var(--crm-category-rgb), .16), rgba(15, 19, 16, .9) 70%);
+}
+.ds-shell .crm-category-notification[data-category="escalation"][data-work-state="action"] {
+  border-color: rgba(225, 101, 105, .82);
+}
+
+/* The featured outstanding item retains its living border, now tinted by
+   the notification's own category. Red urgency remains on Needs Attention. */
 @property --crm-alert-border-angle {
   syntax: '<angle>';
   inherits: false;
@@ -694,7 +723,7 @@
 }
 .ds-shell .crm-actionable-notification {
   --crm-alert-border-angle: 0deg;
-  box-shadow: inset 0 0 0 1px rgba(172, 55, 58, .18), 0 0 20px rgba(147, 40, 48, .13);
+  box-shadow: inset 0 0 0 1px rgba(var(--crm-category-rgb), .22), 0 0 20px rgba(var(--crm-category-rgb), .14);
 }
 /* A clearly visible crimson sweep travels behind actionable lead content.
    The existing traveling border remains independent and unchanged. */
@@ -706,7 +735,7 @@
   content: '';
   position: absolute;
   inset: -12% -38%;
-  background: radial-gradient(ellipse 44% 67% at center, rgba(232, 47, 70, .4) 0%, rgba(190, 29, 51, .25) 46%, transparent 100%), linear-gradient(110deg, transparent 30%, rgba(196, 27, 49, .07) 38%, rgba(253, 66, 84, .25) 49%, rgba(252, 95, 110, .1) 55%, transparent 70%);
+  background: radial-gradient(ellipse 44% 67% at center, rgba(var(--crm-category-rgb), .3) 0%, rgba(var(--crm-category-rgb), .17) 46%, transparent 100%), linear-gradient(110deg, transparent 30%, rgba(var(--crm-category-rgb), .06) 38%, rgba(var(--crm-category-rgb), .22) 49%, rgba(var(--crm-category-rgb), .08) 55%, transparent 70%);
   pointer-events: none;
   z-index: 0;
   transform: translate3d(-38%, 0, 0);
@@ -724,15 +753,15 @@
   padding: 1.5px;
   background: conic-gradient(
     from var(--crm-alert-border-angle),
-    rgba(115, 36, 43, .24) 0deg,
-    rgba(149, 48, 57, .38) 60deg,
-    rgba(188, 65, 74, .65) 115deg,
-    rgba(225, 101, 105, .9) 160deg,
-    rgba(255, 171, 171, 1) 180deg,
-    rgba(225, 101, 105, .9) 200deg,
-    rgba(188, 65, 74, .65) 245deg,
-    rgba(149, 48, 57, .38) 300deg,
-    rgba(115, 36, 43, .24) 360deg
+    rgba(var(--crm-category-rgb), .24) 0deg,
+    rgba(var(--crm-category-rgb), .38) 60deg,
+    rgba(var(--crm-category-rgb), .65) 115deg,
+    rgba(var(--crm-category-rgb), .9) 160deg,
+    rgba(var(--crm-category-rgb), 1) 180deg,
+    rgba(var(--crm-category-rgb), .9) 200deg,
+    rgba(var(--crm-category-rgb), .65) 245deg,
+    rgba(var(--crm-category-rgb), .38) 300deg,
+    rgba(var(--crm-category-rgb), .24) 360deg
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -747,7 +776,7 @@
 @media (prefers-reduced-motion: reduce) {
   .ds-shell .crm-actionable-notification::before {
     animation: none;
-    background: linear-gradient(135deg, rgba(149,48,57,.6), rgba(255,171,171,.9), rgba(149,48,57,.6));
+    background: linear-gradient(135deg, rgba(var(--crm-category-rgb),.55), rgba(var(--crm-category-rgb),.9), rgba(var(--crm-category-rgb),.55));
   }
   .ds-shell .crm-actionable-notification::after {
     animation: none;

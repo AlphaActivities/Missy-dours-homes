@@ -49,7 +49,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    if(linked.error)throw linked.error;
    (linked.data??[]).forEach(c=>{if(c.lead_id)chatLeadIds.add(c.lead_id);});
   }
-  const taskIds=[...new Set(rows.filter(e=>e.event_key.startsWith('handoff:')||e.event_key.startsWith('staff:completed:'))
+  const taskIds=[...new Set(rows.filter(e=>['handoff:','escalation:','staff:completed:','staff:claimed:'].some(prefix=>e.event_key.startsWith(prefix)))
    .map(e=>e.event_key.split(':').pop()!).filter(Boolean))];
   const callbacks=new Map<string,{status:string;conversation_id:string}>();
   const conversations=new Map<string,{status:string;lead_id:string|null}>();
@@ -69,7 +69,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     e.target_path.slice('/dashboard/leads?lead='.length):'';
    const task=callbacks.get(e.event_key.split(':').pop()??'');
    const convo=task?conversations.get(task.conversation_id):undefined;
-   const callback_status=task?.status==='claimed'?'claimed':convo?.status==='waiting_human'?'waiting_human':
+   const callback_status=task?.status==='completed'?'completed':task?.status==='claimed'?'claimed':convo?.status==='waiting_human'?'waiting_human':
     convo?.status==='closed'?'closed':task?.status??null;
    return {...e,lead_status:id?(statuses.get(id)??null):null,
     callback_status,callback_lead_id:convo?.lead_id??null,callback_conversation_id:task?.conversation_id??null,
