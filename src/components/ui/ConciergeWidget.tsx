@@ -242,7 +242,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   // Closing the chat, hiding the tab or losing heartbeats clears the claim
   // of being online on the staff dashboard. Private QA is never counted.
   useEffect(() => {
-    if(privateQA || !session || !chatEnabled)return;
+    if(privateQA || !session || !chatEnabled || !open)return;
     let current=true;
     const signal=()=>{
       if(!current)return;
