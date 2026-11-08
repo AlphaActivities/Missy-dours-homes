@@ -12,7 +12,7 @@ const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|�
 // Keep the CTA's destination, label and next-step guidance consistent.
 const opensLead=(item:CrmActivity)=>Boolean(item.category==='handoff'&&item.callback_lead_id)||item.target_path.startsWith('/dashboard/leads?lead=');
 const actionLabel=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'Open Lead · Record Outcome':opensLead(item)?'Open Lead':'View Conversation';
-const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:item.category==='handoff'&&item.callback_conversation_id?'/dashboard/conversations?conversation='+item.callback_conversation_id:safeTarget(item.target_path);
+const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:(item.category==='handoff'||item.category==='escalation')&&item.callback_conversation_id?'/dashboard/conversations?conversation='+item.callback_conversation_id:safeTarget(item.target_path);
 const nextAction=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id
  ?'Open the lead to review the callback request and record the outcome.'
  :opensLead(item)?'Open the lead to review the inquiry and contact the prospect.'
@@ -28,23 +28,44 @@ export default function CrmActivityCenter(){
  const [notice,setNotice]=useState('');
  const [refreshing,setRefreshing]=useState(false);
  const refreshInbox=async()=>{if(refreshing)return;setRefreshing(true);try{await refresh();}finally{setRefreshing(false);}};
- const visible=useMemo(()=>items.filter(e=>{
-  // Completed handoff requests belong in History. Team updates appear once
-  // as informational notifications, then move to History when acknowledged.
-  const historicalHandoff=e.category==='handoff'&&['completed','closed'].includes(e.callback_status??'');
+ // Collapse only events that belong to the SAME real handoff task.
+ // Escalation updates the existing card; both original events remain in
+ // the database and are shown independently in History after resolution.
+ const activeEvents=useMemo(()=>{
+  const byTask=new Map<string,CrmActivity>();
+  for(const item of items){
+   if((item.category==='handoff'||item.category==='escalation')&&item.callback_task_id
+      &&!['completed','closed','cancelled'].includes(item.callback_status??'')){
+    const existing=byTask.get(item.callback_task_id);
+    const urgent=Boolean(item.callback_escalated_at);
+    if(!existing||(urgent&&item.category==='escalation'&&existing.category!=='escalation')
+       ||(!urgent&&item.category==='handoff'&&existing.category==='escalation')){
+      byTask.set(item.callback_task_id,item);
+    }
+   }
+  }
+  return items.filter(item=>{
+   if((item.category!=='handoff'&&item.category!=='escalation')||!item.callback_task_id)return true;
+   if(['completed','closed','cancelled'].includes(item.callback_status??''))return true;
+   return byTask.get(item.callback_task_id)?.id===item.id;
+  });
+ },[items]);
+ const visible=useMemo(()=>(filter==='history'?items:activeEvents).filter(e=>{
+  const historicalChat=(e.category==='handoff'||e.category==='escalation')&&['completed','closed','cancelled'].includes(e.callback_status??'');
   const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
-  const auditOnly=Boolean(e.chat_lead_audit)||historicalHandoff||(teamUpdate&&Boolean(e.read_at));
+  const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
   if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly);
   if(e.archived_at||e.lead_archived||auditOnly)return false;
   if(filter==='all')return true;
   if(filter==='unread')return !e.read_at&&e.category!=='staff';
-  if(filter==='urgent')return e.category==='escalation';
+  if(filter==='urgent')return e.category==='escalation'&&Boolean(e.callback_escalated_at);
+  if(filter==='handoff')return e.category==='handoff'||e.category==='escalation';
   return e.category===filter;
- }),[items,filter]);
+ }),[items,activeEvents,filter]);
  const requiresAction=(item:CrmActivity)=>Boolean(!item.lead_archived&&!item.archived_at &&
    (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'));
- // Only one animated border in the entire inbox, regardless of lead volume or filter.
- const newestActionableId=items.find(item=>requiresAction(item))?.id;
+ // The top live request carries the existing animated living-border effect.
+ const newestActionableId=activeEvents.find(item=>requiresAction(item))?.id;
  const isFeatured=(item:CrmActivity)=>requiresAction(item)&&item.id===newestActionableId;
  const isInProgress=(item:CrmActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
  const isResolved=(item:CrmActivity)=>item.callback_status==='completed'||item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
@@ -52,6 +73,10 @@ export default function CrmActivityCenter(){
   if(working)return;setWorking(true);setNotice('');
   try{await task();}catch(e){setNotice(e instanceof Error?e.message:'Unable to update notification');}
   finally{setWorking(false);}
+ };
+ const acknowledgeGroup=(item:CrmActivity)=>{
+  const related=items.filter(e=>e.id===item.id||(item.callback_task_id&&(e.category==='handoff'||e.category==='escalation')&&e.callback_task_id===item.callback_task_id));
+  return Promise.all(related.filter(e=>!e.read_at).map(e=>markRead(e.id))).then(()=>{});
  };
  const hideNotice=(item:CrmActivity)=>{
   if(requiresAction(item)){setNotice('Resolve this request from its lead record, or acknowledge it without hiding the work.');return;}
@@ -110,7 +135,13 @@ export default function CrmActivityCenter(){
       {!item.read_at&&!item.archived_at&&!item.lead_archived&&item.category!=='staff'&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
      {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked chat lead audit':item.category==='handoff'&&['completed','closed'].includes(item.callback_status??'')?'Completed chat request':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Team activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
-     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot request'):friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot activity')}</p>
+     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'||item.category==='escalation'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot request'):friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot activity')}</p>
+     {(item.category==='handoff'||item.category==='escalation')&&item.callback_requested_at&&<div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#bba995]" aria-label="Request activity timeline">
+      <span>Received {new Date(item.callback_requested_at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</span>
+      {item.callback_escalated_at&&<><span aria-hidden="true">→</span><span className="font-semibold text-[#e4a18e]">Escalated {new Date(item.callback_escalated_at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</span></>}
+      {item.callback_status==='claimed'&&<><span aria-hidden="true">→</span><span>Team responding</span></>}
+      {['completed','closed'].includes(item.callback_status??'')&&<><span aria-hidden="true">→</span><span>Completed</span></>}
+     </div>}
      {requiresAction(item)&&<div className="mt-3 space-y-1.5">
       <p className="flex items-center gap-2 text-xs font-semibold tracking-[0.025em] text-[#e8bc81]"><AlertTriangle size={16} className="shrink-0" aria-hidden="true"/> Action Needed</p>
       <p className="text-xs leading-relaxed text-[#cbbbaa]"><span className="block">This request hasn't been handled yet.</span><span className="block">{nextAction(item)}</span></p>
@@ -118,7 +149,7 @@ export default function CrmActivityCenter(){
      <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString(undefined,{year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</time>
     </div>
     <div className="mt-2 flex flex-wrap items-center gap-2">
-     <Link to={actionTarget(item)} onClick={()=>{if(!item.read_at)void execute(()=>markRead(item.id));}}
+     <Link to={actionTarget(item)} onClick={()=>{void execute(()=>acknowledgeGroup(item));}}
       className={'crm-open-notification '+(item.category==='lead'?'crm-action-lead ':'crm-action-chat ')+'relative isolate inline-flex min-h-[48px] w-full items-center gap-3 overflow-hidden rounded-md border border-[#c8a96e]/50 px-4 py-3 text-sm font-medium tracking-[0.025em] text-[#f1d7a6] '+(requiresAction(item)?'crm-open-attention':'')}>
       <span className="relative z-[1] inline-flex shrink-0 items-center justify-center" aria-hidden="true">{item.category==='lead'?<UserRoundPlus size={18} strokeWidth={1.8}/>:item.category==='staff'?<CheckCircle2 size={18} strokeWidth={1.8}/>:<MessagesSquare size={18} strokeWidth={1.8}/>}</span>
       <span className="relative z-[1] min-w-0 flex-1 text-center">{actionLabel(item)}</span>
