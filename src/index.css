@@ -1075,3 +1075,35 @@
   .ds-shell [data-focused-transcript="true"] > .flex.items-center.justify-between,
   .ds-shell [data-focused-transcript="true"] [role="log"] { animation: none !important; }
 }
+
+
+/* Premium conversation frame: stronger definition around the entire transcript
+   without altering its dimensions, scroll anchor, or stagger animations. */
+.ds-shell .crm-transcript-frame {
+  border: 1px solid rgba(204, 169, 106, .76);
+  background:
+    radial-gradient(ellipse 95% 30% at 50% 0%, rgba(201, 158, 82, .115), transparent 80%),
+    linear-gradient(165deg, rgba(30, 27, 23, .97), rgba(13, 15, 16, .96) 58%, rgba(19, 17, 15, .97));
+  box-shadow:
+    inset 0 0 0 1px rgba(246, 217, 160, .11),
+    inset 0 1px 0 rgba(255, 231, 180, .13),
+    0 0 0 3px rgba(166, 126, 64, .09),
+    0 12px 36px rgba(0, 0, 0, .32),
+    0 0 25px rgba(195, 150, 76, .10);
+}
+.ds-shell .crm-transcript-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12%;
+  width: 76%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(252, 216, 147, .8), transparent);
+  pointer-events: none;
+}
+@media (prefers-contrast: more) {
+  .ds-shell .crm-transcript-frame {
+    border-color: #e5c281;
+    background: #161513;
+  }
+}
