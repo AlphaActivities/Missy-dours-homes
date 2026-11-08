@@ -11,8 +11,8 @@ type Conversation = {
 };
 type Attachment = {id:string;original_filename:string;mime_type:string;file_size_bytes:number;storage_path:string;created_at:string};
 type Message = {id:string; sender:'visitor'|'ai'|'human'|'system';body:string;translated_body:string|null; original_language:string|null;created_at:string;sender_actor:string|null;delivered_to_staff_at:string|null;read_by_staff_at:string|null;delivered_to_visitor_at:string|null;read_by_visitor_at:string|null;};
-const time = (s:string|null) => s ? new Date(s).toLocaleString() : 'Not yet';
-const listTime = (s:string|null) => s ? new Date(s).toLocaleString(undefined,{
+// All conversation-related timestamps display date, hour and minute, never seconds.
+const time = (s:string|null) => s ? new Date(s).toLocaleString(undefined,{
  year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'
 }) : 'Not yet';
 const visitorPreview = (c:Conversation) => c.summary?.match(/^Visitor:\s*(.+)$/is)?.[1]?.trim()||null;
@@ -362,7 +362,7 @@ export default function ConversationsPage() {
       :<><div className="flex justify-between gap-2 mb-1"><strong className="text-sm break-words">{c.title}</strong>{c.priority!=='unrated'&&<span className="text-xs uppercase" title="AI conversation priority" style={{color:'var(--ds-gold)'}}>{c.priority}</span>}</div><p className="text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p></>}
      {preview&&c.priority!=='unrated'&&<div className="mt-1 text-right text-[10px] uppercase" style={{color:'var(--ds-gold)'}}>{c.priority}</div>}
      {c.opportunity_kind&&<span className="mt-2 inline-flex rounded-md border border-[#c7a66e]/45 bg-[#b69a65]/10 px-2 py-1 text-[10px] font-semibold tracking-wide text-[#efd5a2]">{c.opportunity_kind==='both'?'Buyer & Seller':c.opportunity_kind==='investor'?'Investor':c.opportunity_kind==='seller'?'Seller Interest':'Buyer Interest'} · {c.priority==='hot'?'High Intent':'Qualified Interest'}</span>}
-     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-70"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {listTime(c.last_message_at||c.started_at)}</span></div>
+     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-70"><span>{c.status.replace('_',' ')}</span><span>· {c.language_code}</span><span>· {time(c.last_message_at||c.started_at)}</span></div>
      <div className="mt-2 flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></div>
     </button>;
    })}</section>
