@@ -1,5 +1,6 @@
 import {BellRing} from 'lucide-react';
 import CrmActivityCenter from '../../components/dashboard/CrmActivityCenter';
+import NotificationPreviewStudio from '../../components/dashboard/NotificationPreviewStudio';
 
 export default function NotificationsPage(){
  return <main className="mx-auto max-w-5xl px-4 py-7 text-[#ecdbc2] md:px-8 md:py-9">
