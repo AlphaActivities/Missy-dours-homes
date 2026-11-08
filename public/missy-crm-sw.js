@@ -16,14 +16,14 @@ const crmTarget = payload => {
 self.addEventListener('push', event => {
   let payload = {};
   try { payload = event.data ? event.data.json() : {}; } catch { payload = {}; }
-  const title = 'Missy Dours Concierge';
+  const title = 'Missy Dours CRM';
   const body = payload.kind === 'device_test'
-    ? 'Test notification received. This device can receive Concierge push alerts.'
+    ? 'Test notification received. This device can receive team alerts.'
     : payload.kind === 'handoff_escalated'
-      ? 'An urgent concierge request needs attention.'
+      ? 'An urgent chat request needs attention.'
     : payload.kind === 'handoff_claimed'
-      ? 'Missy has taken over a concierge conversation.'
-      : 'A visitor is waiting for Missy’s team.';
+      ? 'Missy has joined a visitor conversation.'
+      : 'A visitor has requested assistance from Missy’s team.';
   event.waitUntil((async () => {
     // Test pushes do not increment the business-work badge.
     // The server supplies an authoritative count for real concierge events.
