@@ -1195,15 +1195,15 @@
   content: '';
   pointer-events: none;
   position: absolute;
-  width: 20px;
-  height: 28px;
-  left: -5px;
-  bottom: -7px;
+  width: 22px;
+  height: 29px;
+  left: 0;
+  bottom: -10px;
   z-index: 0;
   background: #29292d;
-  /* One tested SVG silhouette, instead of an independently tuned CSS path.
-     The tail drops vertically then curls inward; the compact width avoids
-     the extra-long horizontal spike seen on iPhone Safari. */
+  /* One shared iMessage-style hook: vertical stem follows the bubble edge,
+     then a soft inward curl. Unlike the old tail, it doesn't project beyond
+     the left edge or create an unnatural horizontal spike on iPhone Safari. */
   -webkit-mask: url('/images/chat-bubble-tail.svg') center / 100% 100% no-repeat;
   mask: url('/images/chat-bubble-tail.svg') center / 100% 100% no-repeat;
 }
@@ -1212,7 +1212,7 @@
 .missy-ios-outgoing-bubble::after,
 .crm-ios-visitor-bubble::after {
   left: auto;
-  right: -5px;
+  right: 0;
   transform: scaleX(-1);
   background: #0a84ff;
 }
