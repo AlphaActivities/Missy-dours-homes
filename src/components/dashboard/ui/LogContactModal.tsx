@@ -49,7 +49,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
         aria-hidden
       />
       <div
-        className="fixed left-1/2 top-1/2 z-[61] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl"
+        className="fixed left-1/2 top-1/2 z-[61] w-[calc(100%-2rem)] max-w-sm min-w-0 -translate-x-1/2 -translate-y-1/2 rounded-2xl"
         style={{ background: 'var(--ds-bg-raised)', boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)' }}
         role="dialog"
         aria-modal="true"
@@ -124,11 +124,11 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
             />
           </div>
 
-          {callbackPending && <div className="space-y-3 rounded-xl border border-[#c8a96e]/30 bg-[#211a12]/60 p-3 text-sm">
+          {callbackPending && <div className="min-w-0 max-w-full space-y-3 rounded-xl border border-[#c8a96e]/30 bg-[#211a12]/60 p-3 text-sm">
             <p className="text-[#f0d5a4]">Callback still requires action until a confirmed outcome is recorded.</p>
             {reached && <label className="flex items-center gap-2"><input type="checkbox" checked={resolve} onChange={e=>setResolve(e.target.checked)}/> Confirm customer was helped and resolve callback</label>}
-            {!resolve && <label className="block text-[#e5c89c]">Next follow-up (required)
-              <input type="datetime-local" aria-label="Next follow-up" className="mt-2 w-full rounded-lg bg-[#24201b] p-3 text-base text-white" value={followupAt} onChange={e=>setFollowupAt(e.target.value)}/>
+            {!resolve && <label className="block min-w-0 max-w-full text-[#e5c89c]">Next follow-up (required)
+              <input type="datetime-local" aria-label="Next follow-up" className="crm-native-date-control mt-2 block w-full min-w-0 max-w-full rounded-lg bg-[#24201b] p-3 text-base text-white" value={followupAt} onChange={e=>setFollowupAt(e.target.value)}/>
             </label>}
           </div>}
           {error && <p className="text-xs" style={{ color: '#f87171' }}>{error}</p>}
