@@ -1,11 +1,12 @@
 import {useMemo,useState} from 'react';
-import {Bell,Archive,Check,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,Clock3,MessagesSquare,UserRoundPlus} from 'lucide-react';
+import {Bell,Archive,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,Clock3,MessagesSquare,UserRoundPlus,CheckCircle2} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 import {IosNativeTap} from './DashboardHaptics';
 
 type Filter='all'|'unread'|'urgent'|'lead'|'handoff'|'staff'|'history';
-const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent':category==='lead'?'Lead':category==='handoff'?'Direct Chat Request':'Staff Activity';
+const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent Chat Request':category==='lead'?'Website Contact Form':category==='handoff'?'Direct Chat Request':'Staff Activity';
+const displayTitle=(item:CrmActivity)=>item.category==='handoff'?'Chat Request Received':item.category==='escalation'?'Urgent Chat Request':item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot');
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'?value:'/dashboard/conversations';
 const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|·)/gi,'$1Homepage');
 // Keep the CTA's destination, label and next-step guidance consistent.
@@ -28,12 +29,13 @@ export default function CrmActivityCenter(){
  const [refreshing,setRefreshing]=useState(false);
  const refreshInbox=async()=>{if(refreshing)return;setRefreshing(true);try{await refresh();}finally{setRefreshing(false);}};
  const visible=useMemo(()=>items.filter(e=>{
-  // Completed-task events are audit history, never a new item of work.
-  const auditOnly=Boolean(e.chat_lead_audit)||e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
-  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly);
+  // Completed requests belong in History; staff updates are informational.
+  const historicalHandoff=e.category==='handoff'&&['completed','closed'].includes(e.callback_status??'');
+  const auditOnly=Boolean(e.chat_lead_audit)||historicalHandoff;
+  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:'));
   if(e.archived_at||e.lead_archived||auditOnly)return false;
   if(filter==='all')return true;
-  if(filter==='unread')return !e.read_at;
+  if(filter==='unread')return !e.read_at&&e.category!=='staff';
   if(filter==='urgent')return e.category==='escalation';
   return e.category===filter;
  }),[items,filter]);
@@ -43,7 +45,7 @@ export default function CrmActivityCenter(){
  const newestActionableId=items.find(item=>requiresAction(item))?.id;
  const isFeatured=(item:CrmActivity)=>requiresAction(item)&&item.id===newestActionableId;
  const isInProgress=(item:CrmActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
- const isResolved=(item:CrmActivity)=>item.callback_status==='closed'||item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:');
+ const isResolved=(item:CrmActivity)=>item.callback_status==='completed'||item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
  const execute=async(task:()=>Promise<void>)=>{
   if(working)return;setWorking(true);setNotice('');
   try{await task();}catch(e){setNotice(e instanceof Error?e.message:'Unable to update notification');}
@@ -92,21 +94,21 @@ export default function CrmActivityCenter(){
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
-   {visible.map(item=><article key={item.id} className={'rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(requiresAction(item)?(isFeatured(item)?'crm-actionable-notification relative isolate overflow-hidden border-red-500/65 bg-[#281316]/90 ':'border-red-500/55 bg-[#281316]/90 ')+(item.category==='handoff'?'border-2 border-red-400/75 bg-gradient-to-br from-[#3a161b] to-[#241115] ':''):isResolved(item)?'border-emerald-500/35 bg-emerald-950/20':isInProgress(item)?'border-[#c8a96e]/55 bg-[#c8a96e]/10':!item.read_at&&!item.archived_at?'border-[#c8a96e]/40 bg-[#c8a96e]/10':'border-white/10 bg-[#14110d]/65')}>
+   {visible.map(item=><article key={item.id} data-category={item.category} data-work-state={requiresAction(item)?'action':isResolved(item)?'complete':isInProgress(item)?'progress':'info'} className={'crm-category-notification relative isolate overflow-hidden rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(isFeatured(item)?'crm-actionable-notification ':'')}>
     <div className="min-w-0">
      <div className="flex items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
-       {item.category==='handoff'?<MessagesSquare size={19} className="shrink-0 text-[#eacb96]" aria-label="Chatbot request"/>:item.category==='lead'?<UserRoundPlus size={19} className="shrink-0 text-[#eacb96]" aria-label="New lead received"/>:null}
-       <strong className="min-w-0 text-sm text-[#f0dfc4]">{item.category==='handoff' && item.title==='Concierge handoff requested'?'Callback Requested':item.title}</strong>
+       {item.category==='handoff'||item.category==='escalation'?<MessagesSquare size={19} className="shrink-0 text-[#eacb96]" aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={19} className="shrink-0 text-[#eacb96]" aria-hidden="true"/>:<CheckCircle2 size={19} className="shrink-0 text-[#85ba94]" aria-hidden="true"/>}
+       <strong className="min-w-0 text-sm text-[#f0dfc4]">{displayTitle(item)}</strong>
       </div>
       {requiresAction(item)&&<span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-red-400/55 bg-red-700/20 px-2.5 py-1.5 text-[11px] font-semibold tracking-[0.025em] text-red-200"><AlertTriangle size={16} fill="#edb951" stroke="#4b250d" strokeWidth={2.5} aria-hidden="true"/> Needs Attention</span>}
      </div>
      <div className="mt-1 flex flex-wrap items-center gap-2">
-      <span className={item.category==='handoff'||item.category==='lead'?'inline-flex items-center gap-1.5 rounded border-2 border-[#c8a96e]/60 bg-[#c8a96e]/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#f0d09b]':'inline-flex items-center gap-1.5 rounded border border-[#c8a96e]/25 px-2 py-0.5 text-[10px] uppercase tracking-wide text-[#c8a96e]'}>{item.category==='handoff'?<MessagesSquare size={12} aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={12} aria-hidden="true"/>:null}{item.category==='lead'?'Website Contact Form':categoryLabel(item.category)}</span>
-      {!item.read_at&&!item.archived_at&&!item.lead_archived&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
+      <span className="crm-notification-source inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] uppercase tracking-wide">{item.category==='handoff'?<MessagesSquare size={12} aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={12} aria-hidden="true"/>:null}{categoryLabel(item.category)}</span>
+      {!item.read_at&&!item.archived_at&&!item.lead_archived&&item.category!=='staff'&&<span className="rounded-full border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 text-[10px] font-medium text-sky-200">Unread</span>}
      </div>
-     {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked concierge lead audit':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Task activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
-     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot callback request'):friendlySummary(item.summary)}</p>
+     {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked chat lead audit':item.category==='handoff'&&['completed','closed'].includes(item.callback_status??'')?'Completed chat request':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Team activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
+     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot request'):friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot activity')}</p>
      {requiresAction(item)&&<div className="mt-3 space-y-1.5">
       <p className="flex items-center gap-2 text-xs font-semibold tracking-[0.025em] text-[#e8bc81]"><AlertTriangle size={16} className="shrink-0" aria-hidden="true"/> Action Needed</p>
       <p className="text-xs leading-relaxed text-[#cbbbaa]"><span className="block">This request hasn't been handled yet.</span><span className="block">{nextAction(item)}</span></p>
@@ -120,8 +122,8 @@ export default function CrmActivityCenter(){
       <span className="relative z-[1] min-w-0 flex-1 text-center">{actionLabel(item)}</span>
       <ArrowRight size={18} strokeWidth={1.7} aria-hidden="true" className="crm-open-notification-arrow shrink-0"/>
      </Link>
-     {!item.read_at&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
-      className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40"><Check size={13}/> Mark read</button>}
+     {!item.read_at&&item.category==='staff'&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
+      className="inline-flex items-center rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">Acknowledge update</button>}
      {!item.lead_archived&&!requiresAction(item)&&<button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)}
       className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">
       {item.archived_at?<RotateCcw size={13}/>:<Archive size={13}/>} {item.archived_at?'Restore notification':'Hide notification'}</button>}
