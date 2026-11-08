@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MessageCircle, MessagesSquare, RefreshCw, Search, Clock3, WifiOff, Activity } from 'lucide-react';
+import { MessageCircle, MessagesSquare, RefreshCw, Search, Clock3, WifiOff, Activity, AlertTriangle, ArrowUpRight, ClipboardCheck } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -364,8 +364,38 @@ export default function ConversationsPage() {
    <button onClick={()=>void refresh()} data-crm-refresh disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15} className={loading?'animate-spin':''}/><span aria-live="polite">{loading?'Refreshing…':'Refresh'}</span></button>
   </div>
    {error&&<p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
-  {escalatedCount>0&&<p role="status" className="mb-3 rounded-lg border border-amber-400/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">{escalatedCount} overdue visitor request{escalatedCount===1?'':'s'} need attention.</p>}
-  {pendingTasks.length>0&&<section className="mb-5 rounded-xl border border-[#c8a96e]/35 bg-[#c8a96e]/10 p-4" aria-label="Team follow-up tasks"><h2 className="text-sm font-semibold mb-2 text-[#e5c486]">Callback requests needing an outcome ({pendingTasks.length})</h2><div className="flex flex-wrap gap-2">{pendingTasks.map(t=><div key={t.id} className="flex items-center gap-2 rounded-lg border border-[#c8a96e]/30 px-2 py-1"><button onClick={()=>focusConversation(t.conversation_id)} type="button" className="px-2 py-1 text-xs text-[#f1dec1]">{t.escalated_at ? 'ESCALATED' : t.escalation_due_at && new Date(t.escalation_due_at).getTime() < Date.now() ? 'OVERDUE' : t.urgency.toUpperCase()} · {time(t.due_at)} · View</button>{items.find(c=>c.id===t.conversation_id)?.lead_id ? <Link to={'/dashboard/leads?lead='+items.find(c=>c.id===t.conversation_id)!.lead_id} className="rounded-md bg-[#c8a96e] px-2 py-1 text-xs font-semibold text-black">Open Lead · Record Outcome</Link> : <button type="button" onClick={()=>focusConversation(t.conversation_id)} className="rounded-md border border-amber-400/50 px-2 py-1 text-xs text-amber-200">Review Contact Link</button>}</div>)}</div></section>}
+  {pendingTasks.length>0&&<section className="ds-page-reveal ds-page-reveal-1 mb-6 rounded-2xl border border-[#b8945d]/55 bg-[linear-gradient(150deg,rgba(32,27,21,.97),rgba(15,15,15,.96))] p-4 shadow-[inset_0_1px_0_rgba(244,210,145,.10),0_12px_30px_rgba(0,0,0,.23)] sm:p-5" aria-label="Team follow-up tasks">
+   <div className="mb-4 flex items-start gap-3">
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d7aa65]/40 bg-[#c69a56]/10 text-[#efd09a]"><AlertTriangle size={20} aria-hidden="true"/></span>
+    <div className="min-w-0 flex-1">
+     <h2 className="font-semibold leading-snug text-[#f3e1c1]">Callbacks needing attention</h2>
+     <p className="mt-1 text-xs leading-relaxed text-[#bcad96]">Review the chat or open its lead to record the result.</p>
+    </div>
+    <span role="status" aria-label={`${pendingTasks.length} callback requests, ${escalatedCount} overdue`} className="shrink-0 rounded-full border border-[#c9a56b]/45 bg-[#ae834b]/20 px-2.5 py-1 text-xs font-bold tabular-nums text-[#f3d7a4]">{pendingTasks.length}</span>
+   </div>
+   <div className="grid grid-cols-1 gap-3">
+    {pendingTasks.map(t=>{
+     const conversation=items.find(c=>c.id===t.conversation_id);
+     const escalated=t.status==='pending'&&(Boolean(t.escalated_at)||Boolean(t.escalation_due_at&&new Date(t.escalation_due_at).getTime()<Date.now()));
+     const label=escalated?'Escalated callback':t.status==='claimed'?'Assigned callback':'Callback requested';
+     const preview=conversation?visitorPreview(conversation):null;
+     return <article key={t.id} className="relative overflow-hidden rounded-xl border border-[#9e7c4c]/45 bg-[linear-gradient(140deg,rgba(41,33,23,.88),rgba(19,18,17,.96))] p-3.5 shadow-[inset_0_1px_0_rgba(255,225,169,.08)] sm:p-4">
+      <span aria-hidden="true" className={'absolute inset-y-3 left-0 w-[3px] rounded-r-full '+(escalated?'bg-[#dc8c6b]':'bg-[#c6a16c]')}/>
+      <div className="pl-2">
+       <span className={'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[.10em] '+(escalated?'border-[#d58a70]/40 bg-[#a4523a]/15 text-[#f4ae96]':'border-[#c9a66d]/40 bg-[#b28c55]/15 text-[#e6c894]')}><AlertTriangle size={12} aria-hidden="true"/>{label}</span>
+       {preview&&<p className="mt-2.5 line-clamp-2 break-words text-sm font-medium text-[#f1e4ce]">{preview}</p>}
+       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[#c9b89d]"><Clock3 size={13} aria-hidden="true"/><span>Follow-up due {time(t.due_at)}</span></div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 pl-2">
+       <button onClick={()=>focusConversation(t.conversation_id)} type="button" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#bd995f]/55 bg-[#2d261c]/80 px-2 py-2 text-center text-xs font-semibold text-[#ecd5ac] transition-colors hover:border-[#edca8e] hover:bg-[#40311f] active:scale-[.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f3d194]"><MessagesSquare size={15} aria-hidden="true"/>View chat</button>
+       {conversation?.lead_id
+        ?<Link to={'/dashboard/leads?lead='+conversation.lead_id} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#edcf91] bg-gradient-to-r from-[#efd8a5] via-[#d6b273] to-[#b99156] px-2 py-2 text-center text-xs font-bold text-[#20170d] shadow-[inset_0_1px_0_rgba(255,245,211,.35)] transition-[filter,transform] hover:brightness-110 active:scale-[.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d9a3]"><ClipboardCheck size={15} aria-hidden="true"/>Log outcome <ArrowUpRight size={13} aria-hidden="true"/></Link>
+        :<button onClick={()=>focusConversation(t.conversation_id)} type="button" className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border border-[#bd995f]/50 px-2 py-2 text-center text-xs font-semibold text-[#edcc9a] hover:bg-[#40311f]"><ClipboardCheck size={15} aria-hidden="true"/>Review contact</button>}
+      </div>
+     </article>;
+    })}
+   </div>
+  </section>}
   <div className="ds-page-reveal ds-page-reveal-2 flex flex-wrap gap-3 mb-5"><label className="relative flex-1 min-w-48"><Search size={16} className="absolute left-3 top-3 opacity-60"/><input aria-label="Search conversations" className="w-full bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 py-2 outline-none" placeholder="Search conversations" value={search} onChange={e=>setSearch(e.target.value)}/></label>
   <select aria-label="Filter conversations" className="bg-neutral-900 border border-white/15 rounded-lg px-3 py-2 text-sm" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">All conversations</option><option value="ai">AI conversations</option><option value="waiting_human">Needs attention</option><option value="human">Human conversations</option><option value="closed">Closed</option></select></div>
    </div>
