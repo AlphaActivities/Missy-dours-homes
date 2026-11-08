@@ -29,10 +29,14 @@ export default function ConversationsPage() {
  const staffEmail=user?.email?.toLowerCase()??'';
  const [items,setItems]=useState<Conversation[]>([]);
  const [visitorPresence,setVisitorPresence]=useState<Record<string,{last_seen_at:string;chat_visible:boolean}>>({});
+ const [presenceReady,setPresenceReady]=useState(false);
+ const [presenceUnavailable,setPresenceUnavailable]=useState(false);
+ const verifiedPresenceSnapshotRef=useRef(false);
  const [presenceClock,setPresenceClock]=useState(Date.now());
  const [searchParams]=useSearchParams();
  const requestedConversation=searchParams.get('conversation');
  const focused=Boolean(requestedConversation && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation));
+ const [focusedRecordReady,setFocusedRecordReady]=useState(!focused);
  const selectedDeepLinkRef=useRef<string|null>(null);
  const [selected,setSelected]=useState<string|null>(()=>focused?requestedConversation:null);
  const [loadedConversation,setLoadedConversation]=useState<string|null>(null);
@@ -83,7 +87,17 @@ export default function ConversationsPage() {
   });
   // Presence is independent of the visitor token expiry or message recency.
   const presence=await supabase.from('ai_concierge_visitor_presence').select('conversation_id,last_seen_at,chat_visible').limit(200);
-  setVisitorPresence(presence.error?{}:Object.fromEntries((presence.data??[]).map(p=>[p.conversation_id,{last_seen_at:p.last_seen_at,chat_visible:p.chat_visible}])));
+  // A transient network failure must not erase the last verified status.
+  if(!presence.error){
+   verifiedPresenceSnapshotRef.current=true;
+   setVisitorPresence(Object.fromEntries((presence.data??[]).map(p=>[p.conversation_id,{last_seen_at:p.last_seen_at,chat_visible:p.chat_visible}])));
+   setPresenceUnavailable(false);
+  }else if(!verifiedPresenceSnapshotRef.current){
+   // Only display an unavailable state if no successful snapshot exists.
+   // Intermittent later failures should not flash a replacement status.
+   setPresenceUnavailable(true);
+  }
+  setPresenceReady(true);
   setPresenceClock(Date.now());
   const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,escalation_due_at,escalated_at,urgency,status').in('status',['pending','claimed']).order('due_at',{ascending:true}).limit(50);
   if(tasks.error)throw tasks.error;
@@ -114,6 +128,7 @@ export default function ConversationsPage() {
   pendingSourceRef.current='notification';
   pendingScrollRef.current=null;
   setSelected(requestedConversation);
+  setFocusedRecordReady(false);
   const fetchRequested=async()=>{
    const result=await supabase.from('ai_conversations')
     .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at')
@@ -121,11 +136,13 @@ export default function ConversationsPage() {
    if(cancelled)return;
    if(result.error||!result.data){
     setError('The requested conversation is unavailable or you do not have access.');
+    setFocusedRecordReady(true);
     return;
    }
    setItems(existing=>existing.some(c=>c.id===requestedConversation)
     ?existing.map(c=>c.id===requestedConversation?result.data as Conversation:c)
     :[result.data as Conversation,...existing]);
+   setFocusedRecordReady(true);
   };
   void fetchRequested();
   return()=>{cancelled=true;};
@@ -225,6 +242,7 @@ export default function ConversationsPage() {
   const last=c.last_message_at?Date.parse(c.last_message_at):NaN;
   return Number.isFinite(last)&&presenceClock-last<=120000&&last<=presenceClock+30000?'recent':'available';
  };
+ const statusLoading=!presenceReady||(focused&&!focusedRecordReady);
  const sessionDisplay=(c:Conversation)=>{
   const state=sessionState(c);
   return state==='expired'?'Session Expired':state==='online'?'Online · Chat Open':state==='away'?'Away · Chat Not Visible'
@@ -449,19 +467,19 @@ export default function ConversationsPage() {
     </div>
    </div>}
    {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div ref={sessionStatusRef} className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs" role="status" aria-label="Visitor session status">
-    {active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='online'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)}
-    <strong className={active&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]'}>{active?(sessionState(active)==='inactive'?'Chatbot Connection Inactive':sessionState(active)==='expired'?'Chatbot Session Expired':sessionState(active)==='online'?'Visitor Online · Chat Open':sessionState(active)==='away'?'Visitor Away · Chat Hidden':sessionState(active)==='recent'?'Recent Chat Activity · Connection Unconfirmed':sessionState(active)==='available'?'Chatbot Session Available · Visitor Unconfirmed':'Chatbot Connection Unknown'):'Chatbot connection status unavailable'}</strong>
-    <span className="text-[#bdb1a1]">{active&&sessionState(active)==='expired'?'The visitor’s chatbot session has expired, so they cannot continue here. Their conversation is saved; use the callback contact details to follow up.':active&&sessionState(active)==='online'?'The visitor currently has the chatbot open. Missy’s team can join the live conversation.':active&&sessionState(active)==='away'?'The visitor recently connected but has hidden or closed the chatbot. Messages remain saved for follow-up.':active&&sessionState(active)==='inactive'?'The visitor is not currently connected to this chatbot conversation. All messages are saved; Missy’s team can follow up using their contact details.':'The chatbot conversation is saved, but the visitor’s online status is not confirmed. Do not assume they are available for an immediate reply.'}</span>
+    {statusLoading?<Clock3 size={16} className="text-[#e6cb92]" aria-hidden="true"/>:active && (sessionState(active)==='expired'?<WifiOff size={16} className="text-[#e9a7a7]"/>:sessionState(active)==='online'?<Activity size={16} className="text-emerald-300"/>:<Clock3 size={16} className="text-[#e6cb92]"/>)} 
+    <strong className={active&&!statusLoading&&sessionState(active)==='expired'?'text-red-200':'text-[#e6cb92]'}>{statusLoading?'Checking chatbot connection…':presenceUnavailable?'Chatbot Status Temporarily Unavailable':active?(sessionState(active)==='inactive'?'Chatbot Connection Inactive':sessionState(active)==='expired'?'Chatbot Session Expired':sessionState(active)==='online'?'Visitor Online · Chat Open':sessionState(active)==='away'?'Visitor Away · Chat Hidden':sessionState(active)==='recent'?'Recent Chat Activity · Connection Unconfirmed':sessionState(active)==='available'?'Chatbot Session Available · Visitor Unconfirmed':'Chatbot Connection Unknown'):'Chatbot connection status unavailable'}</strong>
+    <span className="text-[#bdb1a1]">{statusLoading?'Checking whether the visitor still has this chat open. All saved messages remain available.':presenceUnavailable?'Live connection information is temporarily unavailable. Messages are saved; verify the visitor’s status before assuming they are online.':active&&sessionState(active)==='expired'?'The visitor’s chatbot session has expired, so they cannot continue here. Their conversation is saved; use the callback contact details to follow up.':active&&sessionState(active)==='online'?'The visitor currently has the chatbot open. Missy’s team can join the live conversation.':active&&sessionState(active)==='away'?'The visitor recently connected but has hidden or closed the chatbot. Messages remain saved for follow-up.':active&&sessionState(active)==='inactive'?'The visitor is not currently connected to this chatbot conversation. All messages are saved; Missy’s team can follow up using their contact details.':'The chatbot conversation is saved, but the visitor’s online status is not confirmed. Do not assume they are available for an immediate reply.'}</span>
    </div><div className="flex items-center justify-between flex-wrap gap-3 mb-4"><div className="min-w-0 flex-1">
       <h2 className="font-semibold">Conversation transcript</h2>
       <div role="status" aria-label="Conversation team assignment" className="crm-assignment-panel mt-3 flex items-start gap-3 rounded-xl px-3 py-3">
-       <span className="crm-assignment-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"><UserRoundPlus size={18} aria-hidden="true"/></span>
+       <span className="crm-assignment-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">{active?.assigned_to?<UserRoundPlus size={18} aria-hidden="true"/>:<AlertTriangle size={19} className="text-[#ffcc65]" aria-hidden="true"/>}</span>
        <div className="min-w-0">
         <p className="text-sm font-semibold leading-snug text-[#f4dbab]">{active?.assigned_to?`Assigned to ${active.assigned_to}`:'No human assigned yet'}</p>
         {!active?.assigned_to&&<p className="mt-1 text-xs leading-relaxed text-[#ddc8a4]">Available for Missy or a team member to take over and assist this visitor.</p>}
        </div>
       </div>
-      {active?.visitor_name&&<p className="mt-3 text-xs leading-relaxed text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline underline-offset-2" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a><span className="mt-1 block text-xs font-semibold text-[#d8b878]">{active.lead_id?'CRM contact linked':'Contact review needed'}</span></p>}</div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>setOutcomeOpen(open=>!open)} className="rounded-lg border border-[#c8a96e]/60 px-3 py-2 text-sm text-[#efcf97] disabled:opacity-40">{outcomeOpen?'Cancel outcome':'Return to AI · Record Outcome'}</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <div ref={joinActionRef} className="flex flex-col gap-1.5"><button type="button" disabled={actionBusy} onClick={()=>void claim()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#f3d394] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-5 py-3 text-sm font-bold text-[#191208] shadow-[0_6px_24px_rgba(212,171,102,.24),inset_0_1px_0_rgba(255,250,225,.5)] transition-[filter,transform,box-shadow] duration-200 hover:brightness-110 hover:shadow-[0_8px_28px_rgba(212,171,102,.38)] active:scale-[.97] disabled:opacity-50"><MessagesSquare size={19} aria-hidden="true"/>{actionBusy?'Joining…':sessionState(active)==='expired'?'Assign Conversation to Me':"Join Chat as Missy's Team"}</button><span className="text-[11px] text-[#c5b49b]">Assigns this conversation to you and pauses AI replies. An expired session may require a callback.</span></div>}</div>
+      {active?.visitor_name&&<p className="mt-3 text-xs leading-relaxed text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline underline-offset-2" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a><span className="mt-1 block text-xs font-semibold text-[#d8b878]">{active.lead_id?'CRM contact linked':'Contact review needed'}</span></p>}</div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>setOutcomeOpen(open=>!open)} className="rounded-lg border border-[#c8a96e]/60 px-3 py-2 text-sm text-[#efcf97] disabled:opacity-40">{outcomeOpen?'Cancel outcome':'Return to AI · Record Outcome'}</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <div ref={joinActionRef} className="flex flex-col gap-1.5"><button type="button" disabled={actionBusy} onClick={()=>void claim()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#f3d394] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-5 py-3 text-sm font-bold text-[#191208] shadow-[0_6px_24px_rgba(212,171,102,.24),inset_0_1px_0_rgba(255,250,225,.5)] transition-[filter,transform,box-shadow] duration-200 hover:brightness-110 hover:shadow-[0_8px_28px_rgba(212,171,102,.38)] active:scale-[.97] disabled:opacity-50"><MessagesSquare size={19} aria-hidden="true"/>{actionBusy?'Assigning…':!statusLoading&&!presenceUnavailable&&sessionState(active)==='online'?'Join Live Chat':'Assign Conversation to Me'}</button><span className="text-[11px] text-[#c5b49b]">Assigns this conversation to your team account and pauses AI replies. If the visitor is offline, follow up using their callback details.</span></div>}</div>
     {outcomeOpen&&active?.status==='human'&&active.assigned_to===staffEmail&&<form onSubmit={e=>{e.preventDefault();void returnToAi();}} className="mb-5 space-y-3 rounded-xl border border-[#c8a96e]/45 bg-[#211a12]/85 p-4" aria-label="Record chat outcome before returning to AI">
      <h3 className="text-sm font-semibold text-[#e9ca91]">Record the result before returning control to AI</h3>
      <p className="text-xs text-[#cbbba3]">Returning control is not proof a customer request was resolved. An unresolved request stays on the team follow-up list.</p>
