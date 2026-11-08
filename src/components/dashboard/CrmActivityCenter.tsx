@@ -1,23 +1,23 @@
 import {useMemo,useState} from 'react';
-import {Archive,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,MessagesSquare,UserRoundPlus,CheckCircle2} from 'lucide-react';
+import {Archive,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,MessagesSquare,UserRoundPlus,CheckCircle2,Sparkles} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 import {IosNativeTap} from './DashboardHaptics';
 import {useAuth} from '../../contexts/AuthContext';
 import {notificationPreviewFixtures} from './notificationPreviewFixtures';
 
-type Filter='all'|'urgent'|'lead'|'handoff'|'staff'|'history';
-const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent Chat Request':category==='lead'?'Website Contact Form':category==='handoff'?'Direct Chat Request':'Staff Activity';
+type Filter='all'|'urgent'|'opportunity'|'lead'|'handoff'|'staff'|'history';
+const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent Chat Request':category==='lead'?'Website Contact Form':category==='handoff'?'Direct Chat Request':category==='opportunity'?'AI Chat Opportunity':'Staff Activity';
 const displayTitle=(item:CrmActivity)=>(item.category==='handoff'||item.category==='escalation')&&item.callback_status==='claimed'?'Team Member Responding':item.category==='handoff'?'New Chat Request':item.category==='escalation'?(item.callback_escalated_at?'Urgent Chat Request':'New Chat Request'):item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot');
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'||/^\/dashboard\/conversations\?conversation=[0-9a-f-]{36}$/i.test(value)?value:'/dashboard/conversations';
 const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|·)/gi,'$1Homepage');
 // Keep the CTA's destination, label and next-step guidance consistent.
 const opensLead=(item:CrmActivity)=>item.category==='lead'||Boolean(item.category==='handoff'&&item.callback_lead_id)||item.target_path.startsWith('/dashboard/leads?lead=');
-const actionLabel=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'Open Lead · Record Outcome':opensLead(item)?'Open Lead':'View Conversation';
+const actionLabel=(item:CrmActivity)=>item.category==='opportunity'?'View Live Conversation':item.category==='handoff'&&item.callback_lead_id?'Open Lead · Record Outcome':opensLead(item)?'Open Lead':'View Conversation';
 const actionTarget=(item:CrmActivity)=>item.category==='handoff'&&item.callback_lead_id?'/dashboard/leads?lead='+item.callback_lead_id:(item.category==='handoff'||item.category==='escalation')&&item.callback_conversation_id?'/dashboard/conversations?conversation='+item.callback_conversation_id:safeTarget(item.target_path);
 const filters:Array<{key:Filter;label:string}>=[
  {key:'all',label:'All'},{key:'urgent',label:'Urgent'},
- {key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
+ {key:'opportunity',label:'Live Opportunities'},{key:'lead',label:'Website Submissions'},{key:'handoff',label:'Direct Chat Requests'},{key:'staff',label:'Staff Activity'},{key:'history',label:'History'}
 ];
 export default function CrmActivityCenter(){
  const {items,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
@@ -57,10 +57,11 @@ export default function CrmActivityCenter(){
  },[items]);
  const visible=useMemo(()=>(previewActive?notificationPreviewFixtures:filter==='history'?items:activeEvents).filter(e=>{
   const historicalChat=(e.category==='handoff'||e.category==='escalation')&&['completed','closed','cancelled'].includes(e.callback_status??'');
+  const inactiveOpportunity=e.category==='opportunity'&&e.callback_status!=='ai';
   const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
   const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
-  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly);
-  if(e.archived_at||e.lead_archived||auditOnly)return false;
+  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity);
+  if(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity)return false;
   if(filter==='all')return previewActive||e.category!=='staff';
   if(filter==='urgent')return e.category==='escalation'&&Boolean(e.callback_escalated_at);
   if(filter==='handoff')return e.category==='handoff'||e.category==='escalation';
@@ -70,9 +71,9 @@ export default function CrmActivityCenter(){
    (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'));
  // Every actionable card receives a matching category-colored border sweep;
  // informational or completed cards keep a quiet, premium static border.
- const isFeatured=(item:CrmActivity)=>requiresAction(item);
+ const isFeatured=(item:CrmActivity)=>requiresAction(item)||(item.category==='opportunity'&&item.callback_status==='ai');
  const isInProgress=(item:CrmActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
- const isResolved=(item:CrmActivity)=>item.callback_status==='completed'||item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
+ const isResolved=(item:CrmActivity)=>item.category==='opportunity'&&item.callback_status==='closed'||item.callback_status==='completed'||item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
  const sampleHistory=notificationPreviewFixtures.filter(e=>e.archived_at||e.lead_archived||e.chat_lead_audit||(['handoff','escalation'].includes(e.category)&&['completed','closed','cancelled'].includes(e.callback_status??''))||((e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:'))&&Boolean(e.read_at))).length;
  const execute=async(task:()=>Promise<void>)=>{
   if(working)return;setWorking(true);setNotice('');
@@ -129,18 +130,19 @@ export default function CrmActivityCenter(){
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
-   {visible.map(item=><article key={filter!=='history'&&groupKey(item)&&(item.category==='handoff'||item.category==='escalation')?'active-chat:'+groupKey(item):item.id} data-category={item.category} data-urgent-transition={item.category==='escalation'&&Boolean(item.callback_escalated_at)?'true':'false'} data-work-state={requiresAction(item)?'action':isResolved(item)?'complete':isInProgress(item)?'progress':'info'} className={'crm-category-notification relative isolate overflow-hidden rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(isFeatured(item)?'crm-actionable-notification ':'')}>
+   {visible.map(item=><article key={filter!=='history'&&groupKey(item)&&(item.category==='handoff'||item.category==='escalation')?'active-chat:'+groupKey(item):item.id} data-category={item.category} data-opportunity-kind={item.opportunity_kind??undefined} data-urgent-transition={item.category==='escalation'&&Boolean(item.callback_escalated_at)?'true':'false'} data-work-state={requiresAction(item)?'action':isResolved(item)?'complete':isInProgress(item)?'progress':'info'} className={'crm-category-notification relative isolate overflow-hidden rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(isFeatured(item)?'crm-actionable-notification ':'')}>
     <div className="min-w-0">
      <div className="flex min-h-[32px] items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
-       {item.category==='handoff'||item.category==='escalation'?<MessagesSquare size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>:<CheckCircle2 size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>}
+       {item.category==='opportunity'?<Sparkles size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>:item.category==='handoff'||item.category==='escalation'?<MessagesSquare size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>:<CheckCircle2 size={19} className="crm-notification-heading-icon shrink-0" aria-hidden="true"/>}
        <strong className="min-w-0 text-sm text-[#f0dfc4]">{displayTitle(item)}</strong>
       </div>
       {requiresAction(item)&&<span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-red-400/55 bg-red-700/20 px-2.5 py-1.5 text-[11px] font-semibold tracking-[0.025em] text-red-200"><AlertTriangle size={16} fill="#edb951" stroke="#4b250d" strokeWidth={2.5} aria-hidden="true"/> Needs Attention</span>}
      </div>
      <div className="mt-1 flex flex-wrap items-center gap-2">
-      <span className="crm-notification-source inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] uppercase tracking-wide">{item.category==='handoff'||item.category==='escalation'?<MessagesSquare size={12} aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={12} aria-hidden="true"/>:<CheckCircle2 size={12} aria-hidden="true"/>}{categoryLabel(item.category)}</span>
+      <span className="crm-notification-source inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] uppercase tracking-wide">{item.category==='opportunity'?<Sparkles size={12} aria-hidden="true"/>:item.category==='handoff'||item.category==='escalation'?<MessagesSquare size={12} aria-hidden="true"/>:item.category==='lead'?<UserRoundPlus size={12} aria-hidden="true"/>:<CheckCircle2 size={12} aria-hidden="true"/>}{categoryLabel(item.category)}</span>
      </div>
+     {item.category==='opportunity'&&<div className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-[#d3c5ad]"><span className={'h-2 w-2 rounded-full '+(item.opportunity_online?'bg-emerald-400 shadow-[0_0_9px_rgba(74,222,128,.7)]':'bg-amber-300/55')}/>{item.opportunity_online?'Visitor Online · Chat Open':'Online status unconfirmed'}</div>}
      {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked chat lead audit':item.category==='handoff'&&['completed','closed'].includes(item.callback_status??'')?'Completed chat request':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Team activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'||item.category==='escalation'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot request'):friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot activity')}</p>
      {(item.category==='handoff'||item.category==='escalation')&&item.callback_requested_at&&<div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#bba995]" aria-label="Request activity timeline">
@@ -155,7 +157,7 @@ export default function CrmActivityCenter(){
     <div className="mt-2 flex flex-wrap items-center gap-2">
      <Link to={previewActive?'/dashboard/notifications':actionTarget(item)} aria-disabled={previewActive} onClick={event=>{if(previewActive){event.preventDefault();return;}void execute(()=>acknowledgeGroup(item));}}
       className={'crm-open-notification '+(item.category==='lead'?'crm-action-lead ':'crm-action-chat ')+'relative isolate inline-flex min-h-[48px] w-full items-center gap-3 overflow-hidden rounded-md border border-[#c8a96e]/50 px-4 py-3 text-sm font-medium tracking-[0.025em] text-[#f1d7a6] '+(requiresAction(item)?'crm-open-attention':'')}>
-      <span className="relative z-[1] inline-flex shrink-0 items-center justify-center" aria-hidden="true">{item.category==='lead'?<UserRoundPlus size={18} strokeWidth={1.8}/>:item.category==='staff'?<CheckCircle2 size={18} strokeWidth={1.8}/>:<MessagesSquare size={18} strokeWidth={1.8}/>}</span>
+      <span className="relative z-[1] inline-flex shrink-0 items-center justify-center" aria-hidden="true">{item.category==='opportunity'?<Sparkles size={18} strokeWidth={1.8}/>:item.category==='lead'?<UserRoundPlus size={18} strokeWidth={1.8}/>:item.category==='staff'?<CheckCircle2 size={18} strokeWidth={1.8}/>:<MessagesSquare size={18} strokeWidth={1.8}/>}</span>
       <span className="relative z-[1] min-w-0 flex-1 text-center">{actionLabel(item)}</span>
       <ArrowRight size={18} strokeWidth={1.7} aria-hidden="true" className="crm-open-notification-arrow shrink-0"/>
      </Link>
