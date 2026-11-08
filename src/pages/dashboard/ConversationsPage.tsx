@@ -475,7 +475,7 @@ export default function ConversationsPage() {
      <button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>
     </div>
    </div>}
-   {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div ref={sessionStatusRef} className={'mb-4 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs '+(focused?'min-h-[132px] sm:min-h-[112px] ':'')+(focused&&statusLoading?'crm-connection-pending':'crm-connection-ready')} role="status" aria-label="Visitor session status" aria-busy={statusLoading}>
+   {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div ref={sessionStatusRef} className={'mb-4 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs '++(focused&&statusLoading?'crm-connection-pending':'crm-connection-ready')} role="status" aria-label="Visitor session status" aria-busy={statusLoading}>
     <div className="flex w-full flex-col gap-1.5">
      <div className="flex min-h-[20px] items-center gap-2">
       <span className="inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center" aria-hidden="true">
