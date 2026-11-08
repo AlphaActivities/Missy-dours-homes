@@ -16,6 +16,25 @@ const formatGaDate=(value:string)=>{
  if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day)return value;
  return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(date);
 };
+const friendlyEventNames:Record<string,string>={
+ page_view:'Page Viewed',session_start:'Visit Started',first_visit:'First-Time Visitor',
+ user_engagement:'Visitor Engagement',scroll:'Page Scrolled',click:'Link Clicked',
+ form_start:'Contact Form Started',form_submit:'Form Submitted',form_submit_success:'Contact Form Submitted',
+ form_submit_error:'Contact Form Submission Failed',phone_click:'Phone Number Clicked',
+ email_click:'Email Address Clicked',cta_click:'Call-to-Action Clicked',
+ listing_click:'Property Listing Opened',listing_filter:'Property Filter Used',
+ gallery_lightbox_open:'Property Gallery Opened',path_select:'Visitor Journey Selected',
+ floorplan_view:'Floor Plan Viewed',brokerage_link_click:'Brokerage Information Opened',
+ brokerage_website_click:'Brokerage Website Visited',iabs_click:'Agent Disclosure Opened',
+ consumer_protection_click:'Consumer Protection Notice Opened',
+ file_download:'File Downloaded',video_start:'Video Started',video_progress:'Video Watched',video_complete:'Video Completed',
+ search:'Website Search',generate_lead:'Lead Generated'
+};
+const readableEvent=(name:string)=>friendlyEventNames[name]??name.replace(/[_-]+/g,' ').replace(/\b\w/g,ch=>ch.toUpperCase());
+const isPublicPage=(label:string)=>{
+ const path=label.split('?')[0].toLowerCase().replace(/\/+$/,'')||'/';
+ return !/^\/(?:dashboard|admin)(?:\/|$)/.test(path);
+};
 function Bars({rows}:{rows:Row[]}){
  const max=Math.max(1,...rows.map(row=>row.value));
  return rows.length?<div className="mt-3 space-y-3">{rows.map(row=><div key={row.label}>
@@ -67,9 +86,9 @@ export default function AnalyticsPage(){
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{tile('Active users',data.metrics.activeUsers)}{tile('Sessions',data.metrics.sessions)}{tile('Page views',data.metrics.screenPageViews)}{tile('Key events',data.metrics.keyEvents)}</div>
     <section className="mt-4 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><Activity size={19}/>Daily traffic · Page views</h2><Bars rows={data.trend.map(row=>({...row,label:formatGaDate(row.label)}))}/></section>
     <div className="mt-4 grid gap-4 md:grid-cols-2">
-     <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="font-serif text-xl text-[#edcfa0]">Top pages</h2><Bars rows={data.pages.map(page=>({...page,label:page.label==='/'?'Homepage':page.label}))}/></section>
+     <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="font-serif text-xl text-[#edcfa0]">Top pages</h2><Bars rows={data.pages.filter(page=>isPublicPage(page.label)).map(page=>({...page,label:page.label==='/'?'Homepage':page.label}))}/></section>
      <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4"><h2 className="font-serif text-xl text-[#edcfa0]">Acquisition channels</h2><Bars rows={data.channels}/></section>
-     <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4 md:col-span-2"><h2 className="font-serif text-xl text-[#edcfa0]">Top tracked events</h2><Bars rows={data.events}/></section>
+     <section className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/75 p-4 md:col-span-2"><h2 className="font-serif text-xl text-[#edcfa0]">Top tracked events</h2><Bars rows={data.events.map(event=>({...event,label:readableEvent(event.label)}))}/></section>
     </div>
     <p className="mt-5 text-xs text-[#ac9d86]">GA4 reporting figures are aggregated estimates and may differ from CRM leads, which track individual inquiries. Data is fetched through an authenticated read-only service.</p>
    </>}

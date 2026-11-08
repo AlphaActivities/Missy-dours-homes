@@ -543,9 +543,11 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     setBusy(true);
     setTransportError(null);
     try {
-      const note = draft.trim()
-        ? 'Please connect me with Missy’s team. ' + draft.trim().slice(0, 440)
-        : 'I would like to speak with Missy’s team.';
+      // This is a callback form submission, not an ordinary chat message.
+      // Identify the visitor without exposing their phone number in the transcript.
+      const visitorName = callbackName.trim().replace(/\s+/g, ' ');
+      const note = 'My name is ' + visitorName + '. I’d like Missy’s team to call me back at the number I provided.'
+        + (draft.trim() ? ' Additional details: ' + draft.trim().slice(0, 300) : '');
       await transport.handoff(session, note, {name:callbackName.trim(),phone:callbackPhone.trim(),contact_consent:callbackConsent});
       setMode('waiting_human');
       setHandoffOpen(false);

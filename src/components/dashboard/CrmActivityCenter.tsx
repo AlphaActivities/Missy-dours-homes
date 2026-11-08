@@ -3,8 +3,6 @@ import {Archive,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,MessagesSquar
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 import {IosNativeTap} from './DashboardHaptics';
-import {useAuth} from '../../contexts/AuthContext';
-import {notificationPreviewFixtures} from './notificationPreviewFixtures';
 
 type Filter='all'|'urgent'|'opportunity'|'lead'|'handoff'|'staff'|'history';
 const categoryLabel=(category:CrmActivity['category'])=>category==='escalation'?'Urgent Chat Request':category==='lead'?'Website Contact Form':category==='handoff'?'Direct Chat Request':category==='opportunity'?'AI Chat Opportunity':'Staff Activity';
@@ -22,10 +20,6 @@ const filters:Array<{key:Filter;label:string}>=[
 export default function CrmActivityCenter(){
  const {items,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
  const [filter,setFilter]=useState<Filter>('all');
- const {user}=useAuth();
- const ownerPreviewEnabled=user?.email?.toLowerCase()==='yourcustomerflowguy@gmail.com';
- const [preview,setPreview]=useState(false);
- const previewActive=ownerPreviewEnabled&&preview;
  const [working,setWorking]=useState(false);
  const [notice,setNotice]=useState('');
  const [refreshing,setRefreshing]=useState(false);
@@ -55,18 +49,18 @@ export default function CrmActivityCenter(){
    return byConversation.get(key)?.id===item.id;
   });
  },[items]);
- const visible=useMemo(()=>(previewActive?notificationPreviewFixtures:filter==='history'?items:activeEvents).filter(e=>{
+ const visible=useMemo(()=>(filter==='history'?items:activeEvents).filter(e=>{
   const historicalChat=(e.category==='handoff'||e.category==='escalation')&&['completed','closed','cancelled'].includes(e.callback_status??'');
   const inactiveOpportunity=e.category==='opportunity'&&e.callback_status!=='ai';
   const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
   const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
   if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity);
   if(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity)return false;
-  if(filter==='all')return previewActive||e.category!=='staff';
+  if(filter==='all')return e.category!=='staff';
   if(filter==='urgent')return e.category==='escalation'&&Boolean(e.callback_escalated_at);
   if(filter==='handoff')return e.category==='handoff'||e.category==='escalation';
   return e.category===filter;
- }),[items,activeEvents,filter,previewActive]);
+ }),[items,activeEvents,filter]);
  const requiresAction=(item:CrmActivity)=>Boolean(item.category!=='opportunity'&&!item.lead_archived&&!item.archived_at &&
    (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'));
  // Every actionable card receives a matching category-colored border sweep;
@@ -74,7 +68,6 @@ export default function CrmActivityCenter(){
  const isFeatured=(item:CrmActivity)=>requiresAction(item)||(item.category==='opportunity'&&item.callback_status==='ai');
  const isInProgress=(item:CrmActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
  const isResolved=(item:CrmActivity)=>item.category==='opportunity'&&item.callback_status==='closed'||item.callback_status==='completed'||item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
- const sampleHistory=notificationPreviewFixtures.filter(e=>e.archived_at||e.lead_archived||e.chat_lead_audit||(['handoff','escalation'].includes(e.category)&&['completed','closed','cancelled'].includes(e.callback_status??''))||((e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:'))&&Boolean(e.read_at))).length;
  const execute=async(task:()=>Promise<void>)=>{
   if(working)return;setWorking(true);setNotice('');
   try{await task();}catch(e){setNotice(e instanceof Error?e.message:'Unable to update notification');}
@@ -106,27 +99,18 @@ export default function CrmActivityCenter(){
     <span className="block">Staff activity, follow-ups, and important updates</span>
    </p>
   </div>
-  {ownerPreviewEnabled&&<div className="mt-3 flex flex-wrap items-center gap-3">
-   <button type="button" aria-pressed={previewActive} onClick={()=>{setPreview(v=>!v);setFilter('all');}}
-    className="rounded-lg border border-[#d9b779]/50 bg-[#d9b779]/10 px-3 py-2 text-xs font-semibold text-[#e8cb93]">
-    {previewActive?'Exit Sample Preview':'Preview Notification Styles'}
-   </button>
-   {previewActive&&<span role="status" className="rounded-md border border-orange-400/60 bg-orange-950/35 px-3 py-1.5 text-xs font-bold tracking-wide text-orange-200">
-    SAMPLE CARDS ONLY · No messages, push alerts or database changes
-   </span>}
-  </div>}
   <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
    <div role="group" aria-label="Filter activity" className="flex flex-wrap gap-2">
     {filters.map(({key,label})=><IosNativeTap key={key}><button type="button" onClick={()=>setFilter(key)}
      aria-pressed={filter===key} data-filter={key} className="crm-activity-filter relative isolate overflow-hidden rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,box-shadow] duration-300">
-     <span className="relative z-10">{label}{key==='history'&&(previewActive?sampleHistory: hiddenCount)>0?' ('+(previewActive?sampleHistory:hiddenCount)+')':''}</span></button></IosNativeTap>)}
+     <span className="relative z-10">{label}{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</span></button></IosNativeTap>)}
    </div>
   </div>
   {notice&&<p role="alert" className="mt-3 text-sm text-amber-200">{notice}</p>}
   {error&&<p role="alert" className="mt-3 text-xs text-amber-200">{error} <button type="button" onClick={()=>void refresh()} className="underline">Try again</button></p>}
   <div className="mt-4 space-y-3" aria-live="polite">
-   {!previewActive&&loading&&items.length===0&&<p className="rounded-xl border border-white/10 p-6 text-center text-sm text-[#bdb0a0]">Loading notifications…</p>}
-   {(previewActive||!loading)&&visible.length===0&&<div className="rounded-xl border border-white/10 bg-black/20 p-8 text-center text-sm text-[#bdb0a0]">
+   {loading&&items.length===0&&<p className="rounded-xl border border-white/10 p-6 text-center text-sm text-[#bdb0a0]">Loading notifications…</p>}
+   {!loading&&visible.length===0&&<div className="rounded-xl border border-white/10 bg-black/20 p-8 text-center text-sm text-[#bdb0a0]">
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
@@ -155,21 +139,21 @@ export default function CrmActivityCenter(){
      <time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString(undefined,{year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</time>
     </div>
     <div className="mt-2 flex flex-wrap items-center gap-2">
-     <Link to={previewActive?'/dashboard/notifications':actionTarget(item)} aria-disabled={previewActive} onClick={event=>{if(previewActive){event.preventDefault();return;}void execute(()=>acknowledgeGroup(item));}}
+     <Link to={actionTarget(item)} onClick={()=>{void execute(()=>acknowledgeGroup(item));}}
       className={'crm-open-notification '+(item.category==='lead'?'crm-action-lead ':'crm-action-chat ')+'relative isolate inline-flex min-h-[48px] w-full items-center gap-3 overflow-hidden rounded-md border border-[#c8a96e]/50 px-4 py-3 text-sm font-medium tracking-[0.025em] text-[#f1d7a6] '+(requiresAction(item)?'crm-open-attention':'')}>
       <span className="relative z-[1] inline-flex shrink-0 items-center justify-center" aria-hidden="true">{item.category==='opportunity'?<Sparkles size={18} strokeWidth={1.8}/>:item.category==='lead'?<UserRoundPlus size={18} strokeWidth={1.8}/>:item.category==='staff'?<CheckCircle2 size={18} strokeWidth={1.8}/>:<MessagesSquare size={18} strokeWidth={1.8}/>}</span>
       <span className="relative z-[1] min-w-0 flex-1 text-center">{actionLabel(item)}</span>
       <ArrowRight size={18} strokeWidth={1.7} aria-hidden="true" className="crm-open-notification-arrow shrink-0"/>
      </Link>
-     {!previewActive&&!item.read_at&&item.category==='staff'&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
+     {!item.read_at&&item.category==='staff'&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
       className="inline-flex items-center rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">Acknowledge update</button>}
-     {!previewActive&&!item.lead_archived&&!requiresAction(item)&&<button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)}
+     {!item.lead_archived&&!requiresAction(item)&&<button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)}
       className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">
       {item.archived_at?<RotateCcw size={13}/>:<Archive size={13}/>} {item.archived_at?'Restore notification':'Hide notification'}</button>}
     </div>
    </article>)}
   </div>
-  {!previewActive&&hasMore&&<div className="mt-5 flex justify-center"><button type="button" onClick={()=>void loadMore()} disabled={loadingMore}
+  {hasMore&&<div className="mt-5 flex justify-center"><button type="button" onClick={()=>void loadMore()} disabled={loadingMore}
    className="rounded-lg border border-[#c8a96e]/40 px-5 py-2.5 text-sm text-[#edce93] disabled:opacity-50">{loadingMore?'Loading older activity…':'Load older notifications'}</button></div>}
   <p className="mt-5 text-xs text-[#a99c89]">Notifications from archived leads move to History automatically and return to the active inbox if the lead is reopened. Manually hiding a notification affects only your account; it never changes the lead or conversation.</p>
  </section>;
