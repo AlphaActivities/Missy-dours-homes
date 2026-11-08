@@ -1195,23 +1195,24 @@
   content: '';
   pointer-events: none;
   position: absolute;
-  width: 24px;
-  height: 29px;
-  left: -7px;
-  bottom: -10px;
+  width: 20px;
+  height: 28px;
+  left: -5px;
+  bottom: -7px;
   z-index: 0;
   background: #29292d;
-  /* Taller flowing hook: a vertical drop beside the bubble, then a smooth
-     taper back to the point, matching the iMessage incoming silhouette.
-     Keep the tail behind animated dots instead of painting over them. */
-  clip-path: path('M 19 0 H 24 V 13 C 24 21 14 28 1 28 C 9 24 13 18 14 11 C 15 5 16 2 19 0 Z');
+  /* One tested SVG silhouette, instead of an independently tuned CSS path.
+     The tail drops vertically then curls inward; the compact width avoids
+     the extra-long horizontal spike seen on iPhone Safari. */
+  -webkit-mask: url('/images/chat-bubble-tail.svg') center / 100% 100% no-repeat;
+  mask: url('/images/chat-bubble-tail.svg') center / 100% 100% no-repeat;
 }
 .crm-ios-ai-bubble::after { background: #18385a; }
 .crm-ios-team-bubble::after { background: #342a1c; }
 .missy-ios-outgoing-bubble::after,
 .crm-ios-visitor-bubble::after {
   left: auto;
-  right: -7px;
+  right: -5px;
   transform: scaleX(-1);
   background: #0a84ff;
 }
