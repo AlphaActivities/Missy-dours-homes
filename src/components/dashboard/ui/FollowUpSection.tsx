@@ -261,19 +261,19 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
         {/* New follow-up form */}
         {showForm && (
           <div className="rounded-xl p-3 space-y-2.5" style={{ background: 'var(--ds-bg-overlay)', boxShadow: '0 0 0 1px rgba(255,255,255,0.06)' }}>
-            <div className="flex gap-2">
+            <div className="flex min-w-0 gap-2">
               <input
                 type="date"
                 value={dueDate}
                 onChange={e => setDueDate(e.target.value)}
-                className="flex-1 rounded-lg px-2.5 py-2 text-xs outline-none"
+                className="crm-native-date-control min-w-0 flex-1 rounded-lg px-2.5 py-2 text-xs outline-none"
                 style={{ background: 'var(--ds-bg-raised)', color: 'var(--ds-text-primary)', boxShadow: '0 0 0 1px rgba(255,255,255,0.07)' }}
               />
               <input
                 type="time"
                 value={dueTime}
                 onChange={e => setDueTime(e.target.value)}
-                className="w-24 rounded-lg px-2.5 py-2 text-xs outline-none"
+                className="crm-native-date-control w-24 min-w-0 max-w-[40%] rounded-lg px-2.5 py-2 text-xs outline-none"
                 style={{ background: 'var(--ds-bg-raised)', color: 'var(--ds-text-primary)', boxShadow: '0 0 0 1px rgba(255,255,255,0.07)' }}
               />
             </div>
