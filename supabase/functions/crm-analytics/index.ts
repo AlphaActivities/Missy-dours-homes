@@ -104,10 +104,16 @@ Deno.serve(async(req)=>{
   const summary=await report([],['activeUsers','sessions','screenPageViews','keyEvents'],1);
   const totals=['activeUsers','sessions','screenPageViews','keyEvents'].map((_,index)=>Number(summary.rows?.[0]?.metricValues?.[index]?.value??0));
   const [daily,pages,channels,events]=await Promise.all([
-   report(['date'],['screenPageViews'],90),report(['pagePath'],['screenPageViews'],8),
-   report(['sessionDefaultChannelGroup'],['sessions'],8),report(['eventName'],['eventCount'],10)
+   report(['date'],['screenPageViews'],90),report(['pagePath'],['screenPageViews'],100),
+   report(['sessionDefaultChannelGroup'],['sessions'],8),report(['eventName'],['eventCount'],30)
   ]);
-  return json({rangeDays:days,metrics:{activeUsers:totals[0],sessions:totals[1],screenPageViews:totals[2],keyEvents:totals[3]},trend:toRows(daily),pages:toRows(pages),channels:toRows(channels),events:toRows(events)});
+  // Public website ranking should not include staff-only CRM pages.
+  // Keep the original GA4 property totals and historical data intact.
+  const publicPages=toRows(pages).filter(({label})=>{
+   const path=label.split('?')[0].toLowerCase().replace(/\/+$/,'')||'/';
+   return !/^\/(?:dashboard|admin)(?:\/|$)/.test(path);
+  }).slice(0,8);
+  return json({rangeDays:days,metrics:{activeUsers:totals[0],sessions:totals[1],screenPageViews:totals[2],keyEvents:totals[3]},trend:toRows(daily),pages:publicPages,channels:toRows(channels),events:toRows(events).slice(0,10)});
  }catch(e){
   if(e instanceof ReportingIssue)return json({code:e.code,error:e.message,setupRequired:e.setupRequired},e.status);
   // Do not expose unexpected Google response bodies, private keys, or tokens.
