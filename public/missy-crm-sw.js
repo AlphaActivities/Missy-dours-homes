@@ -1,4 +1,15 @@
 /* Private CRM notifications only. Never cache authenticated pages or message bodies. */
+/* Accept only concrete, internal CRM destinations; a push payload cannot
+   navigate staff to external or arbitrary site URLs. */
+const crmTarget = payload => {
+  const id=typeof payload?.conversation_id==='string'?payload.conversation_id:'';
+  const lead=typeof payload?.lead_id==='string'?payload.lead_id:'';
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if(payload?.kind==='lead_received'&&uuid.test(lead))return '/dashboard/leads?lead='+lead;
+  if(uuid.test(id))return '/dashboard/conversations?conversation='+id;
+  return '/dashboard/notifications';
+};
+
 self.addEventListener('push', event => {
   let payload = {};
   try { payload = event.data ? event.data.json() : {}; } catch { payload = {}; }
@@ -28,19 +39,21 @@ self.addEventListener('push', event => {
       renotify: false,
       icon: '/images/Favicons/web-app-manifest-192x192.png',
       badge: '/images/Favicons/favicon-96x96.png',
-      data: { url: '/dashboard/conversations' }
+      data: { url: crmTarget(payload) }
     });
   })());
 });
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const url=event.notification.data?.url;
+    const target=crmTarget(url?.startsWith('/dashboard/leads?lead=')?{kind:'lead_received',lead_id:url.split('lead=')[1]}:url?.startsWith('/dashboard/conversations?conversation=')?{conversation_id:url.split('conversation=')[1]}:{});
     const existing = list.find(client => new URL(client.url).pathname.startsWith('/dashboard/'));
     if (existing) {
-      return existing.navigate('/dashboard/conversations')
+      return existing.navigate(target)
         .then(tab => tab ? tab.focus() : existing.focus())
-        .catch(() => existing.focus());
+        .catch(() => clients.openWindow(target));
     }
-    return clients.openWindow('/dashboard/conversations');
+    return clients.openWindow(target);
   }));
 });
