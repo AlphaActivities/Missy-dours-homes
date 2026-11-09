@@ -164,6 +164,11 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     return saved && ['en','es','fr','pt','zh'].includes(saved) ? saved : 'en';
   });
   const [messages, setMessages] = useState<Message[]>(INITIAL);
+  // Only fresh messages animate. Cached history, reopens and canonical-id
+  // reconciliation should never replay the entrance motion.
+  const arrivingMessageIdsRef = useRef<Set<string>>(new Set());
+  const historyLoadedRef = useRef(false);
+  const reduceMessageMotion = useReducedMotion();
   const [reactions, setReactions] = useState<Record<string,string>>({});
   const [reactionPicker, setReactionPicker] = useState<string | null>(null);
   const syncVersionRef = useRef(0);
@@ -465,10 +470,19 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
         const result = await transport.sync(session);
         if (!current || busy || version !== syncVersionRef.current) return;
         setMode(result.status);
-        setMessages([
-          INITIAL[0],
-          ...result.messages.filter(m => m.sender !== 'system').map(mapSyncedMessage),
-        ]);
+        setMessages(previous => {
+          const next = [INITIAL[0], ...result.messages.filter(m => m.sender !== 'system').map(mapSyncedMessage)];
+          if (historyLoadedRef.current) {
+            const previousIds = new Set(previous.map(m => String(m.id)));
+            for (const incoming of next) {
+              if (incoming.role === 'concierge' && incoming.id !== 0 && !previousIds.has(String(incoming.id))) {
+                arrivingMessageIdsRef.current.add(String(incoming.id));
+              }
+            }
+          }
+          historyLoadedRef.current = true;
+          return next;
+        });
         // Browser acknowledgement is separate from the server's saved state.
         // Hidden tabs never claim that their visitors have read a message.
         if(!privateQA) {
@@ -551,6 +565,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     setTransportError(null);
     // Place the visitor's message immediately in the correct transcript order.
     // Sync is held until the typing phase finishes, so a fast bot reply cannot appear early.
+    arrivingMessageIdsRef.current.add(pendingMessageId);
     setMessages(previous => [...previous, {id:pendingMessageId,role:'visitor',sender:'visitor',text:message}]);
     setDraft('');
     try {
@@ -574,7 +589,16 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       // Reload canonical IDs/sequence after the successful send; local fallback only on sync failure.
       try {
         const updated=await transport.sync(visitor);
-        setMessages([INITIAL[0],...updated.messages.filter(m=>m.sender!=='system').map(mapSyncedMessage)]);
+        setMessages(previous => {
+          const next = [INITIAL[0],...updated.messages.filter(m=>m.sender!=='system').map(mapSyncedMessage)];
+          const previousIds = new Set(previous.map(m=>String(m.id)));
+          for (const incoming of next) {
+            if (incoming.role === 'concierge' && incoming.id !== 0 && !previousIds.has(String(incoming.id))) {
+              arrivingMessageIdsRef.current.add(String(incoming.id));
+            }
+          }
+          return next;
+        });
         setMode(updated.status);
       } catch {
         setMessages(previous=>[
@@ -683,7 +707,17 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               <p className="mt-1.5 text-center text-xs leading-relaxed text-[#c3af8d]">Security check: confirming this is a real visitor, not an automated bot. This helps protect your conversation. It may take a moment.</p>
               <div className="mt-3 flex justify-center"><TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} /></div>
             </section>}
-            {messages.filter(m=>m.id!==0 || welcomeReady).map((m,index,visibleMessages) => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
+            {messages.filter(m=>m.id!==0 || welcomeReady).map((m,index,visibleMessages) => <motion.div
+              key={m.id}
+              data-message-arrival={arrivingMessageIdsRef.current.has(String(m.id)) ? (m.role === 'visitor' ? 'outgoing' : 'incoming') : undefined}
+              initial={reduceMessageMotion || !arrivingMessageIdsRef.current.has(String(m.id)) ? false : {
+                opacity: 0,
+                y: m.role === 'visitor' ? 24 : 16,
+                scale: m.role === 'visitor' ? 0.985 : 1
+              }}
+              animate={{opacity:1,y:0,scale:1}}
+              transition={{type:'spring',stiffness:460,damping:37,mass:0.65}}
+              className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[87%] flex-col ${m.role==='visitor'?'items-end':'items-start'}`}>
                 <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'missy-ios-outgoing-bubble rounded-br-[9px] bg-[#0A84FF] text-white shadow-[0_4px_14px_rgba(10,132,255,.17)]' : 'missy-ios-incoming-bubble rounded-bl-[9px] bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text, m.sender !== 'human')}</p>
                 {!privateQA&&m.role==='visitor'&&typeof m.id==='string'&&<span className="mt-1 self-end pr-1 text-[10px] text-[#aeb8c5]">{visitorReceipt(m,index,visibleMessages,mode,acceptedPendingId,assistantReceivedPendingId)}</span>}
@@ -696,7 +730,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                   </div>}
                 </div>}
               </div>
-            </div>)}
+            </motion.div>)}
             {!chatEnabled && <div className="missy-concierge-fallback rounded-2xl border border-[#c7a568]/35 bg-gradient-to-br from-[#3a2c17]/55 to-[#18140f] px-5 py-4 text-xs leading-relaxed text-[#f0dbb4] shadow-[inset_0_1px_0_rgba(255,231,180,.07)]">
               Personalized AI messaging is being prepared. For now, please use the website's contact form to reach Missy's team.
               <button type="button" onClick={goToContact} className="mt-2 rounded-full border border-[#dfbf82] bg-[#c5a16a] px-4 py-2 font-semibold text-black transition-transform hover:brightness-110 active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Contact Missy</button>
