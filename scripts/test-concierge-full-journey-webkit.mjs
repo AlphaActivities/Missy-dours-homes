@@ -91,7 +91,7 @@ assert.ok(leadDrawerSource.includes("?'Received':'Started'") &&
  leadDrawerSource.includes("?'Request':'Live chat'") &&
  leadDrawerSource.includes("month:'short',day:'numeric'"),
  'Request picker labels must distinguish arrival timestamps from booked callback appointments');
-assert.ok(leadDrawerSource.includes('These are request receipt times, not booked callback appointments.'),
+assert.ok(leadDrawerSource.includes('The times shown are when each request was received, not scheduled appointments.'),
  'Selector should explicitly explain that request times are not actual appointments');
 assert.ok(leadDrawerSource.includes("value={callbackWork?.conversationId??''}") &&
  leadDrawerSource.includes('value={t.conversation_id}'),
