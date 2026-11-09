@@ -25,6 +25,9 @@ assert.ok(activityCenter.includes("if(filter==='urgent')return hasActiveEscalati
  activityCenter.includes("item.callback_outcome==='follow_up'") &&
  activityCenter.includes("!item.callback_escalated_at"),
  'Keep an unresolved escalation urgent until its recorded outcome resets the task escalation');
+assert.ok(activityCenter.includes("(hasActiveEscalation(item)&&item.callback_status==='claimed')") &&
+ activityCenter.includes("if(requiresAction(item)){setNotice("),
+ 'Claimed escalations must remain actionable and cannot be hidden until an outcome is recorded');
 assert.ok(activityCenter.includes("Overdue 24h+") &&
  activityCenter.includes("Chat Session Expired") &&
  activityCenter.includes("Visitor Offline"),
