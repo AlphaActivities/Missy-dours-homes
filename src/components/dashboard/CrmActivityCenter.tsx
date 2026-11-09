@@ -24,8 +24,20 @@ const filters:Array<{key:Filter;label:string;mobileLabel?:string;mobileSpan:stri
  {key:'staff',label:'Staff Activity',mobileSpan:'col-span-4'},
  {key:'history',label:'History',mobileSpan:'col-span-3'}
 ];
+const matchesFilter=(e:CrmActivity,filter:Filter)=>{
+ const historicalChat=(e.category==='handoff'||e.category==='escalation')&&['completed','closed','cancelled'].includes(e.callback_status??'');
+ const inactiveOpportunity=e.category==='opportunity'&&e.callback_status!=='ai';
+ const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
+ const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
+ if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity);
+ if(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity)return false;
+ if(filter==='all')return e.category!=='staff';
+ if(filter==='urgent')return e.category==='escalation'&&Boolean(e.callback_escalated_at);
+ if(filter==='handoff')return e.category==='handoff'||e.category==='escalation';
+ return e.category===filter;
+};
 export default function CrmActivityCenter(){
- const {items,hiddenCount,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
+ const {items,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
  const [filter,setFilter]=useState<Filter>('all');
  const [working,setWorking]=useState(false);
  const [notice,setNotice]=useState('');
@@ -56,18 +68,12 @@ export default function CrmActivityCenter(){
    return byConversation.get(key)?.id===item.id;
   });
  },[items]);
- const visible=useMemo(()=>(filter==='history'?items:activeEvents).filter(e=>{
-  const historicalChat=(e.category==='handoff'||e.category==='escalation')&&['completed','closed','cancelled'].includes(e.callback_status??'');
-  const inactiveOpportunity=e.category==='opportunity'&&e.callback_status!=='ai';
-  const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
-  const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
-  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity);
-  if(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity)return false;
-  if(filter==='all')return e.category!=='staff';
-  if(filter==='urgent')return e.category==='escalation'&&Boolean(e.callback_escalated_at);
-  if(filter==='handoff')return e.category==='handoff'||e.category==='escalation';
-  return e.category===filter;
- }),[items,activeEvents,filter]);
+ const visible=useMemo(()=>(filter==='history'?items:activeEvents).filter(e=>matchesFilter(e,filter)),[items,activeEvents,filter]);
+ // Filter badges use the identical grouping and visibility predicate as cards.
+ // Urgent is intentionally a subset of Direct Chat; do not sum filter badges.
+ const filterCounts=useMemo(()=>Object.fromEntries(filters.map(({key})=>[
+  key,(key==='history'?items:activeEvents).filter(e=>matchesFilter(e,key)).length
+ ])) as Record<Filter,number>,[items,activeEvents]);
  const requiresAction=(item:CrmActivity)=>Boolean(item.category!=='opportunity'&&!item.lead_archived&&!item.archived_at &&
    (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'));
  // Every actionable card receives a matching category-colored border sweep;
@@ -109,9 +115,10 @@ export default function CrmActivityCenter(){
   <div className="mt-4">
    <div role="group" aria-label="Filter activity" className="grid w-full min-w-0 grid-cols-12 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
     {filters.map(({key,label,mobileLabel,mobileSpan})=><IosNativeTap key={key} className={'relative flex min-w-0 '+mobileSpan+' sm:inline-flex'}><button type="button" onClick={()=>setFilter(key)}
-     aria-label={label+(key==='history'&&hiddenCount>0?' ('+hiddenCount+')':'')}
-     aria-pressed={filter===key} data-filter={key} className="crm-activity-filter relative isolate flex h-11 w-full min-w-0 items-center justify-center overflow-hidden rounded-lg border px-0.5 py-1 text-center text-[10px] leading-none font-medium whitespace-nowrap transition-[background-color,box-shadow] duration-300 min-[380px]:text-[11px] sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:text-xs">
-     <span className="relative z-10 min-w-0 whitespace-nowrap"><span className="sm:hidden">{mobileLabel??label}</span><span className="hidden sm:inline">{label}</span>{key==='history'&&hiddenCount>0?' ('+hiddenCount+')':''}</span></button></IosNativeTap>)}
+     aria-label={label+': '+filterCounts[key]+' notifications'}
+     aria-pressed={filter===key} data-filter={key} data-count={filterCounts[key]} className="crm-activity-filter relative isolate flex h-11 w-full min-w-0 items-center justify-center gap-1 overflow-hidden rounded-lg border px-1 py-1 text-center text-[10px] leading-none font-medium whitespace-nowrap transition-[background-color,box-shadow] duration-300 min-[380px]:text-[11px] sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:text-xs">
+     <span className="relative z-10 min-w-0 whitespace-nowrap"><span className="sm:hidden">{mobileLabel??label}</span><span className="hidden sm:inline">{label}</span></span>
+     <span aria-hidden="true" className="relative z-10 inline-flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded-full bg-[#b63138] px-[3px] text-[10px] font-bold tabular-nums leading-none text-white shadow-[0_0_0_1px_rgba(255,255,255,.13)]">{filterCounts[key]>99?'99+':filterCounts[key]}</span></button></IosNativeTap>)}
    </div>
   </div>
   {notice&&<p role="alert" className="mt-3 text-sm text-amber-200">{notice}</p>}
