@@ -167,11 +167,13 @@ function DrawerContent({
   const [showLogModal, setShowLogModal] = useState(false);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const [callbackPending, setCallbackPending] = useState(false);
+  const [callbackChoices,setCallbackChoices]=useState<Array<{conversation_id:string;due_at:string|null;status:string;assigned_to:string|null;created_at:string;request_kind:string}>>([]);
   const [callbackWork,setCallbackWork] = useState<{owner:string|null;due:string|null;status:string;conversationId:string;requestKind:'callback'|'live_chat';requestedAt:string|null;otherRequests:number}|null>(null);
   useEffect(() => {
     let alive=true;
     setCallbackPending(false);
     setCallbackWork(null);
+    setCallbackChoices([]);
     const getWork=async()=>{
       const {data:conversations,error}=await supabase.from('ai_conversations')
         .select('id,status,assigned_to').eq('lead_id',lead.id).in('status',['waiting_human','human']);
@@ -181,6 +183,7 @@ function DrawerContent({
         .in('conversation_id',conversations.map(c=>c.id)).in('status',['pending','claimed'])
         .order('due_at',{ascending:true}).limit(25);
       if(!alive)return;
+      setCallbackChoices(tasks??[]);
       const first=tasks?.[0];
       if(!first)return;
       setCallbackPending(true);
@@ -306,7 +309,19 @@ function DrawerContent({
 
         {callbackPending && <section aria-label="Callback next action" className="rounded-xl border border-red-500/50 bg-[#281316]/80 p-4 text-sm text-[#f5d9d2]">
           <p className="font-semibold text-red-200">{callbackWork?.requestKind==='callback'?'Callback needs attention':'Chat request needs attention'}</p>
-          {Boolean(callbackWork&&callbackWork.otherRequests>0)&&<p className="mt-2 font-semibold text-amber-200">This lead has {callbackWork!.otherRequests} other active request(s). Only the selected request will be updated.</p>}
+          {callbackChoices.length>1&&<div className="mt-3 space-y-2">
+            <label htmlFor="crm-callback-request" className="block text-xs font-semibold text-amber-200">Choose the request to handle ({callbackChoices.length} active)</label>
+            <select id="crm-callback-request" value={callbackWork?.conversationId??''}
+              onChange={e=>{const t=callbackChoices.find(x=>x.conversation_id===e.target.value);if(t)setCallbackWork({
+                owner:t.assigned_to??null,due:t.due_at,status:t.status,conversationId:t.conversation_id,
+                requestKind:t.request_kind==='callback'?'callback':'live_chat',
+                requestedAt:t.created_at,otherRequests:callbackChoices.length-1
+              });}}
+              className="w-full min-h-11 rounded-lg border border-amber-200/40 bg-[#201719] p-2 text-xs text-[#f5dfbd]">
+              {callbackChoices.map((t,i)=><option key={t.conversation_id} value={t.conversation_id}>{t.request_kind==='callback'?'Callback':'Live chat'} {i+1} · {new Date(t.created_at).toLocaleString()}</option>)}
+            </select>
+            <p className="text-xs leading-relaxed text-[#edd1a4]">Only the selected conversation will be updated. All others remain open.</p>
+          </div>}
           {callbackWork?.conversationId&&<Link className="mt-2 inline-flex min-h-10 items-center rounded-lg border border-amber-200/40 px-3 py-2 text-xs font-semibold text-[#f2d4a3]" to={'/dashboard/conversations?conversation='+encodeURIComponent(callbackWork.conversationId)}>Open requested conversation</Link>}
           <p className="mt-2">Assigned to: {callbackWork?.owner??'Unassigned'}</p>
           <p className="mt-1">Next action: Review the conversation, contact the visitor when appropriate, then record a confirmed outcome or schedule follow-up for this request.</p>
