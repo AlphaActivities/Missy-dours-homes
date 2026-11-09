@@ -525,6 +525,7 @@ export default function ConversationsPage() {
     <span>Page {page+1} of {Math.max(1,Math.ceil(totalConversations/PAGE_SIZE))}</span>
    </div>
    <p className="mb-3 text-[11px] text-[#ac9b83]">Searches saved conversation metadata, not full transcript text. Private owner QA sessions are excluded from normal conversation browsing. Older public-site tests remain unclassified until reviewed. Human sessions without an active handoff are flagged for outcome review without being altered.</p>
+   {staffEmail==='yourcustomerflowguy@gmail.com'&&<Link to="/dashboard/concierge-qa" className="mb-4 inline-flex min-h-10 items-center rounded-lg border border-[#c8a96e]/40 px-3 py-2 text-xs font-semibold text-[#efcf97]">Open dedicated private QA testing</Link>}
    </div>
   <div className={focused?'grid grid-cols-1 gap-4':'grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4'}>
    <section aria-label="Conversation list" className={(focused?'hidden ':'')+'crm-conversation-inbox ds-page-reveal ds-page-reveal-3 relative max-h-[315px] min-h-64 overflow-y-auto overscroll-contain touch-pan-y rounded-xl [scrollbar-width:thin]'}>
