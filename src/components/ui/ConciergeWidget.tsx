@@ -768,9 +768,9 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                 <input type="checkbox" required checked={callbackConsent} onChange={e=>setCallbackConsent(e.target.checked)} className="mt-0.5"/>
                 <span>{privateQA?'I consent to creating this synthetic QA callback request; no actual call will be made.':'I agree to be contacted at this number about my request.'}</span>
               </label>
-              <div className="flex items-center gap-3">
-                <button type="submit" disabled={busy||!callbackConsent||callbackName.trim().length<2||!validCallbackPhone(callbackPhone)} className="rounded-lg bg-[#c5a16a] px-4 py-2 text-xs font-semibold text-black disabled:opacity-40">Request a callback</button>
-                <button type="button" onClick={()=>setHandoffOpen(false)} className="text-xs text-[#e5d4ba] underline">Keep chatting</button>
+              <div className="grid grid-cols-2 gap-2.5" role="group" aria-label="Callback or keep chatting">
+                <button type="submit" disabled={busy||!callbackConsent||callbackName.trim().length<2||!validCallbackPhone(callbackPhone)} className="flex min-h-[52px] min-w-0 w-full items-center justify-center rounded-xl border border-[#d5b47b]/60 bg-[#c5a16a] px-2 py-3 text-center text-[13px] font-semibold leading-snug text-[#17110b] shadow-[0_4px_14px_rgba(197,161,106,.14)] transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Request a callback</button>
+                <button type="button" onClick={()=>setHandoffOpen(false)} className="flex min-h-[52px] min-w-0 w-full items-center justify-center rounded-xl border border-[#c6a16c]/65 bg-[#342819] px-2 py-3 text-center text-[13px] font-semibold leading-snug text-[#f1d39a] shadow-[inset_0_1px_0_rgba(255,230,174,.06)] transition-[background-color,border-color,transform] duration-150 hover:border-[#efd49f] hover:bg-[#44341f] active:scale-[.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Keep chatting</button>
               </div>
             </form>}
            </div>}
