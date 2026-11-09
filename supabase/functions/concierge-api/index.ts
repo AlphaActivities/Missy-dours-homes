@@ -295,7 +295,8 @@ Deno.serve(async req=>{
  if(url.pathname.endsWith('/sync')) {
   const limit=await db.rpc('ai_concierge_consume_limit',{p_bucket:'sync:'+hash,p_max:360,p_window_seconds:3600});
   if(limit.error||limit.data!==true)return answer({error:'Refresh limit reached'},429,origin);
-  const {data:recent,error:syncError}=await db.from('ai_conversation_messages').select('id,sender,body,created_at,sender_actor,delivered_to_staff_at,read_by_staff_at').eq('conversation_id',chat.id).order('created_at',{ascending:false}).order('sender',{ascending:true}).limit(150);
+  // The visitor needs the message content and receipts, not internal staff email identities.
+  const {data:recent,error:syncError}=await db.from('ai_conversation_messages').select('id,sender,body,created_at,delivered_to_staff_at,read_by_staff_at').eq('conversation_id',chat.id).order('created_at',{ascending:false}).order('sender',{ascending:true}).limit(150);
   if(syncError)return answer({error:'Could not refresh conversation'},503,origin);
   return answer({status:chat.status,messages:(recent??[]).reverse()},200,origin);
  }
@@ -347,7 +348,12 @@ Deno.serve(async req=>{
   const payload=await response.json() as {reply?:unknown;language?:unknown};
    if(typeof payload.language==='string' && ['en','es','fr','pt','zh'].includes(payload.language)) language=payload.language;
   if(typeof payload.reply!=='string'||!payload.reply.trim())return answer({error:'AI service is temporarily unavailable'},503,origin);
-  reply=payload.reply.trim().slice(0,5000);
+  // Persist conversation-friendly punctuation consistently in both visitor and CRM transcripts.
+  // This applies only to AI-generated text, never visitor or human staff messages.
+  reply=payload.reply.trim().slice(0,5000)
+   .replace(/\s*—\s*/g,'... ')
+   .replace(/\s*–\s*/g,', ')
+   .replace(/ {2,}/g,' ').trim();
  } catch {return answer({error:'AI service is temporarily unavailable'},503,origin);}
  // Transactional row lock prevents AI from saving after staff takeover.
  const {data:saved,error:saveError}=await db.rpc('ai_concierge_commit_exchange',{
