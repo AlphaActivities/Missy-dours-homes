@@ -100,6 +100,12 @@ export default function ConversationsPage() {
  const [attachmentBusy,setAttachmentBusy]=useState<string|null>(null);
  const [search,setSearch]=useState('');
  const [filter,setFilter]=useState('all');
+ const [debouncedSearch,setDebouncedSearch]=useState('');
+ const [page,setPage]=useState(0);
+ const [totalConversations,setTotalConversations]=useState(0);
+ const [lifecycleReviewIds,setLifecycleReviewIds]=useState<string[]>([]);
+ const PAGE_SIZE=40;
+ useEffect(()=>{const id=window.setTimeout(()=>{setDebouncedSearch(search.trim());setPage(0);},300);return()=>window.clearTimeout(id);},[search]);
  const [loading,setLoading]=useState(true);
  const [loadingMessages,setLoadingMessages]=useState(false);
  const [error,setError]=useState<string|null>(null);
@@ -121,12 +127,40 @@ export default function ConversationsPage() {
  const previewGeneration=useRef(0);
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string;request_kind:'live_chat'|'callback'}>>([]);
  const refresh=async(showLoading=true)=>{if(showLoading){setLoading(true);setError(null);}try{
-  const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
-  if(error)throw error;setItems(previous=>{
+  let listQuery=supabase.from('ai_conversations')
+   .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at',{count:'exact'});
+  if(filter==='qa')listQuery=listQuery.like('title','[PRIVATE VISITOR QA] %');
+  else {
+   listQuery=listQuery.not('title','like','[PRIVATE VISITOR QA] %');
+   if(filter!=='all')listQuery=listQuery.eq('status',filter);
+  }
+  if(debouncedSearch){
+   // Safely restrict PostgREST operator-string characters; user search never
+   // interpolates arbitrary delimiters into .or() expressions.
+   const safe=debouncedSearch.replace(/[,.()"'\\%*_]/g,' ').replace(/\s+/g,' ').trim().slice(0,80);
+   if(safe)listQuery=listQuery.or('title.ilike.%'+safe+'%,summary.ilike.%'+safe+'%,visitor_name.ilike.%'+safe+'%,visitor_phone.ilike.%'+safe+'%');
+  }
+  const {data,error,count}=await listQuery.order('last_message_at',{ascending:false,nullsFirst:false})
+   .order('id',{ascending:false}).range(page*PAGE_SIZE,page*PAGE_SIZE+PAGE_SIZE-1);
+  if(error)throw error;
+  setTotalConversations(count??0);
+  setItems(previous=>{
    const latest=(data??[]) as Conversation[];
    const pinned=previous.find(c=>c.id===selectedDeepLinkRef.current);
    return pinned&&!latest.some(c=>c.id===pinned.id)?[pinned,...latest]:latest;
   });
+  // Review potentially inconsistent human-controlled sessions without changing
+  // historical records. A human chat with no active handoff is not automatically
+  // a completed callback; staff must inspect and record the correct outcome.
+  const humanIds=(data??[]).filter(c=>c.status==='human').map(c=>c.id);
+  if(humanIds.length){
+   const work=await supabase.from('ai_concierge_tasks')
+    .select('conversation_id,status').in('conversation_id',humanIds);
+   if(!work.error){
+    const pending=new Set((work.data??[]).filter(t=>['pending','claimed'].includes(t.status)).map(t=>t.conversation_id));
+    setLifecycleReviewIds(humanIds.filter(id=>!pending.has(id)));
+   }
+  }else setLifecycleReviewIds([]);
   // A visitor quote can precede an AI reply, so last_message_at may not
   // represent the visitor's sent time. Fetch saved visitor timestamps in bulk.
   const ids=(data??[]).map(c=>c.id);
@@ -165,7 +199,7 @@ export default function ConversationsPage() {
    .subscribe();
   const timer=window.setInterval(()=>void refresh(false),10000);
   return()=>{window.clearInterval(timer);void supabase.removeChannel(channel);};
- },[]);
+ },[page,debouncedSearch,filter]);
  // Notification deep links open a focused transcript immediately at main
  // scrollTop=0. Fetch the selected record independently of the inbox so there
  // is no list -> detail -> attachment -> scroll dependency chain.
@@ -441,7 +475,10 @@ export default function ConversationsPage() {
  };
 
  const escalatedCount=pendingTasks.filter(t=>t.status==='pending' && (Boolean(t.escalated_at)||Boolean(t.escalation_due_at && new Date(t.escalation_due_at).getTime()<Date.now()))).length;
- const filtered=items.filter(c=>(filter==='all'||c.status===filter)&&[c.title,c.summary??'',c.priority,c.language_code].join(' ').toLowerCase().includes(search.toLowerCase()));
+ const filtered=items.filter(c=>focused||(
+   (filter==='qa'?c.title.startsWith('[PRIVATE VISITOR QA] '):!c.title.startsWith('[PRIVATE VISITOR QA] ')) &&
+   (filter==='all'||filter==='qa'||c.status===filter)
+ ));
  return <div className={(focused?'px-4 pt-1 pb-7 md:px-8 md:pt-2 md:pb-9 ':'px-4 py-7 md:px-8 md:py-9 ')+'max-w-7xl mx-auto'} style={{color:'var(--ds-text-primary)'}}>
    <div className={focused?'hidden':''}>
   <div className="ds-page-reveal ds-page-reveal-0 flex flex-wrap gap-3 items-center justify-between mb-6">
@@ -481,8 +518,14 @@ export default function ConversationsPage() {
     })}
    </div>
   </section>}
-  <div className="ds-page-reveal ds-page-reveal-2 flex flex-wrap gap-3 mb-5"><label className="relative flex-1 min-w-48"><Search size={16} className="absolute left-3 top-3 opacity-60"/><input aria-label="Search conversations" className="w-full bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 py-2 outline-none" placeholder="Search conversations" value={search} onChange={e=>setSearch(e.target.value)}/></label>
-  <select aria-label="Filter conversations" className="bg-neutral-900 border border-white/15 rounded-lg px-3 py-2 text-sm" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">All conversations</option><option value="ai">AI conversations</option><option value="waiting_human">Needs attention</option><option value="human">Human conversations</option><option value="closed">Closed</option></select></div>
+  <div className="ds-page-reveal ds-page-reveal-2 flex flex-wrap gap-3 mb-5"><label className="relative flex-1 min-w-48"><Search size={16} className="absolute left-3 top-3 opacity-60"/><input aria-label="Search conversations" className="w-full bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 py-2 outline-none" placeholder="Search names, summaries, titles or phone" value={search} onChange={e=>setSearch(e.target.value)}/></label>
+  <select aria-label="Filter conversations" className="bg-neutral-900 border border-white/15 rounded-lg px-3 py-2 text-sm" value={filter} onChange={e=>{setFilter(e.target.value);setPage(0);}}><option value="all">Customer conversations</option><option value="ai">AI conversations</option><option value="waiting_human">Needs attention</option><option value="human">Human conversations</option><option value="closed">Closed</option>{staffEmail==='yourcustomerflowguy@gmail.com'&&<option value="qa">Private QA sessions</option>}</select></div>
+   <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-xs text-[#cbb89b]" role="status">
+    <span>{filter==='qa'?'Owner-only private test records':'Business conversation history'} · {totalConversations} matching conversation{totalConversations===1?'':'s'}</span>
+    <span>Page {page+1} of {Math.max(1,Math.ceil(totalConversations/PAGE_SIZE))}</span>
+   </div>
+   <p className="mb-3 text-[11px] text-[#ac9b83]">Searches saved conversation metadata, not full transcript text. Private owner QA sessions are excluded from normal conversation browsing. Older public-site tests remain unclassified until reviewed. Human sessions without an active handoff are flagged for outcome review without being altered.</p>
+   {staffEmail==='yourcustomerflowguy@gmail.com'&&<Link to="/dashboard/concierge-qa" className="mb-4 inline-flex min-h-10 items-center rounded-lg border border-[#c8a96e]/40 px-3 py-2 text-xs font-semibold text-[#efcf97]">Open dedicated private QA testing</Link>}
    </div>
   <div className={focused?'grid grid-cols-1 gap-4':'grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4'}>
    <section aria-label="Conversation list" className={(focused?'hidden ':'')+'crm-conversation-inbox ds-page-reveal ds-page-reveal-3 relative max-h-[315px] min-h-64 overflow-y-auto overscroll-contain touch-pan-y rounded-xl [scrollbar-width:thin]'}>
@@ -493,6 +536,8 @@ export default function ConversationsPage() {
    {filtered.length===0?<p className="p-6 text-sm" style={{color:'var(--ds-text-secondary)'}}>{loading?'Loading conversations…':'No conversations match. Visitor chat is not live yet.'}</p>:filtered.map(c=>{
     const preview=visitorPreview(c);
     return <button key={c.id} onClick={()=>focusConversation(c.id)} className="crm-inbox-item block w-full text-left px-4 py-4 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#efcb89]" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
+     {lifecycleReviewIds.includes(c.id)&&<span className="mb-2 inline-block rounded-full border border-red-400/40 bg-red-900/20 px-2 py-1 text-[10px] font-semibold text-red-200">Staff session · outcome review needed</span>}
+     {c.title.startsWith('[PRIVATE VISITOR QA] ')&&<span className="mb-2 inline-block rounded-full border border-amber-400/40 bg-amber-900/20 px-2 py-1 text-[10px] font-semibold text-amber-200">PRIVATE QA TEST · NOT A CUSTOMER</span>}
      {preview?<div className="flex justify-end"><span className="crm-ios-visitor-bubble max-w-[90%] rounded-[24px] rounded-br-[8px] bg-[#0A84FF] px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-[0_4px_14px_rgba(12,80,170,.18)] line-clamp-3 break-words">{preview}</span></div>
       :<><strong className="block text-sm break-words">{c.title}</strong><p className="mt-1 text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p></>}
      <div className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-2 ${preview?'mt-5':'mt-3'}`}>
@@ -504,7 +549,12 @@ export default function ConversationsPage() {
       <span className="inline-flex items-center gap-1.5 text-[11px]">{sessionState(c)==='expired'?<WifiOff size={13} className="text-red-300"/>:sessionState(c)==='online'?<Activity size={13} className="text-emerald-300"/>:<Clock3 size={13} className="text-[#d9ba81]"/>}<span className={sessionState(c)==='expired'?'text-red-200':'text-[#d9ba81]'}>{sessionDisplay(c)}</span></span>
      </div>
     </button>;
-   })}</section>
+   })}
+   {!focused&&totalConversations>PAGE_SIZE&&<div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t border-[#bca06c]/25 bg-[#1c1814] p-3">
+     <button type="button" disabled={page===0||loading} onClick={()=>setPage(n=>Math.max(0,n-1))} className="min-h-10 rounded-lg border border-[#c5a777]/45 px-3 text-xs text-[#edcf96] disabled:opacity-40">Newer</button>
+     <span className="text-xs text-[#bba585]">{page*PAGE_SIZE+1}–{Math.min((page+1)*PAGE_SIZE,totalConversations)} of {totalConversations}</span>
+     <button type="button" disabled={(page+1)*PAGE_SIZE>=totalConversations||loading} onClick={()=>setPage(n=>n+1)} className="min-h-10 rounded-lg border border-[#c5a777]/45 px-3 text-xs text-[#edcf96] disabled:opacity-40">Older</button>
+    </div>}</section>
    <section ref={transcriptRef} data-focused-transcript={focused?'true':undefined} aria-label="Chat History" className={(focused?'focused-transcript-enter ':'ds-page-reveal ds-page-reveal-4 ')+'crm-transcript-frame relative isolate rounded-xl min-h-80 p-5'}>
    {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && !loadingCandidates && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
     <strong className="text-amber-200">Contact identity check needed</strong>

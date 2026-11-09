@@ -11,6 +11,7 @@ import ContactTimer from './ContactTimer';
 import LogContactModal from './LogContactModal';
 import FollowUpSection from './FollowUpSection';
 import ActivityHistory from './ActivityHistory';
+import RelatedLeadReview from './RelatedLeadReview';
 import { supabase } from '../../../lib/supabase';
 import { useToast } from '../../../contexts/ToastContext';
 import { formatDate, formatDashboardDateTime, formatDallasDateTime } from '../../../utils/formatDate';
@@ -310,7 +311,7 @@ function DrawerContent({
         {callbackPending && <section aria-label="Callback next action" className="rounded-xl border border-red-500/50 bg-[#281316]/80 p-4 text-sm text-[#f5d9d2]">
           <p className="font-semibold text-red-200">{callbackWork?.requestKind==='callback'?'Callback needs attention':'Chat request needs attention'}</p>
           {callbackChoices.length>1&&<div className="mt-3 space-y-2">
-            <label htmlFor="crm-callback-request" className="block text-xs font-semibold text-amber-200">Choose the request to handle ({callbackChoices.length} active)</label>
+            <label htmlFor="crm-callback-request" className="block text-xs font-semibold text-amber-200">Active callback requests ({callbackChoices.length})</label>
             <select id="crm-callback-request" value={callbackWork?.conversationId??''}
               onChange={e=>{const t=callbackChoices.find(x=>x.conversation_id===e.target.value);if(t)setCallbackWork({
                 owner:t.assigned_to??null,due:t.due_at,status:t.status,conversationId:t.conversation_id,
@@ -320,7 +321,7 @@ function DrawerContent({
               className="w-full min-h-11 rounded-lg border border-amber-200/40 bg-[#201719] p-2 text-xs text-[#f5dfbd]">
               {callbackChoices.map((t,i)=><option key={t.conversation_id} value={t.conversation_id}>{t.request_kind==='callback'?'Request':'Live chat'} {i+1} · {t.request_kind==='callback'?'Received':'Started'} {new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(t.created_at))}</option>)}
             </select>
-            <p className="text-xs leading-relaxed text-[#edd1a4]">These are request receipt times, not booked callback appointments. Only the selected conversation will be updated; all others remain open.</p>
+            <p className="text-xs leading-relaxed text-[#edd1a4]">Only outstanding requests appear in this action selector. Historical and completed requests remain in the customer timeline below. The times shown are when each request was received, not scheduled appointments.</p>
           </div>}
           {callbackWork?.conversationId&&<Link className="mt-2 inline-flex min-h-10 items-center rounded-lg border border-amber-200/40 px-3 py-2 text-xs font-semibold text-[#f2d4a3]" to={'/dashboard/conversations?conversation='+encodeURIComponent(callbackWork.conversationId)}>Open requested conversation</Link>}
           <p className="mt-2">Assigned to: {callbackWork?.owner?({'yourcustomerflowguy@gmail.com':'Josh','heberherrera92@gmail.com':'Heber','missydourshomes@gmail.com':'Missy'} as Record<string,string>)[callbackWork.owner.toLowerCase()]??'Team member':'Unassigned'}</p>
@@ -374,9 +375,12 @@ function DrawerContent({
           </div>
         )}
 
-        {/* Activity History */}
+        <RelatedLeadReview lead={{id:lead.id,name:lead.name,phone:lead.phone,email:lead.email}} />
+
+        {/* Combined customer timeline, including archived or completed linked chats. */}
         <ActivityHistory
           leadId={lead.id}
+          sourcePage={lead.source_page}
           createdAt={lead.created_at}
           notesJson={lead.notes ?? ''}
           refreshKey={activityRefreshKey}
