@@ -1,6 +1,6 @@
 import TexasCallbackPicker from './TexasCallbackPicker';
 import {validateTexasOfficeSlot} from '../../../lib/texasScheduling';
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { Phone, MessageSquare, Mail, X } from 'lucide-react';
 import { ContactChannel } from '../types';
 import LoadingSpinner from './LoadingSpinner';
@@ -29,6 +29,13 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
   const invalid = notes.trim().length < 3 || (callbackPending && !resolve && !followupAt);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEffect(()=>{
+    const previous=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    const escape=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose();};
+    window.addEventListener('keydown',escape);
+    return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',escape);};
+  },[onClose]);
 
   const handleSave = async () => {
     if (saving || invalid) return;
@@ -52,14 +59,14 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
         aria-hidden
       />
       <div
-        className="fixed left-1/2 top-1/2 z-[61] w-[calc(100%-2rem)] max-w-sm min-w-0 -translate-x-1/2 -translate-y-1/2 rounded-2xl"
-        style={{ background: 'var(--ds-bg-raised)', boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)' }}
+        className="fixed left-1/2 top-1/2 z-[61] flex max-h-[calc(100dvh-2rem)] w-[calc(100%-1.5rem)] max-w-lg min-w-0 -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-[#9c7a52]/50"
+        style={{ background: 'linear-gradient(155deg,#241c17,#151211 80%)', boxShadow: '0 28px 65px rgba(0,0,0,0.72), 0 0 0 1px rgba(198,160,97,0.16)' }}
         role="dialog"
         aria-modal="true"
         aria-label="Record customer interaction"
       >
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <h3 className="text-sm font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
+        <div className="flex shrink-0 items-center justify-between bg-[#292018]/70 px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <h3 className="text-base font-semibold" style={{ color: 'var(--ds-text-primary)' }}>
             Record Customer Interaction
           </h3>
           <button
@@ -74,7 +81,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-4">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4">
           <p className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
             Recording interaction for <span style={{ color: 'var(--ds-text-secondary)' }}>{leadName || 'this lead'}</span>
           </p>
@@ -93,7 +100,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
                     className="flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-medium transition-all duration-150"
                     style={{
                       color: active ? ch.color : 'var(--ds-text-tertiary)',
-                      background: active ? `${ch.color}15` : 'var(--ds-bg-overlay)',
+                      background: active ? '#312a21' : '#221c18',
                       boxShadow: active ? `0 0 0 1px ${ch.color}55` : '0 0 0 1px rgba(255,255,255,0.06)',
                     }}
                   >
@@ -107,7 +114,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
 
           <div>
             <p className="text-[10px] font-medium tracking-[0.14em] uppercase mb-2" style={{ color: 'var(--ds-text-secondary)' }}>Outcome</p>
-            <select aria-label="Contact outcome" className="w-full rounded-lg bg-[#24201b] p-3 text-sm text-white" value={outcome} onChange={e => {setOutcome(e.target.value);setResolve(false);}}>
+            <select aria-label="Contact outcome" className="min-h-12 w-full rounded-xl border border-[#94754f]/40 bg-[#1c1714] p-3 text-sm text-[#f1dfc7]" value={outcome} onChange={e => {setOutcome(e.target.value);setResolve(false);}}>
               {outcomeOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
             <p className="mt-3 text-[10px] font-medium tracking-[0.14em] uppercase mb-2" style={{ color: 'var(--ds-text-secondary)' }}>What happened? (required)</p>
@@ -118,26 +125,27 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
               rows={3}
               className="w-full resize-none rounded-xl px-3 py-2.5 text-sm outline-none transition-all duration-200"
               style={{
-                background: 'var(--ds-bg-overlay)',
+                background: '#211a16',
                 color: 'var(--ds-text-primary)',
-                boxShadow: '0 0 0 1px rgba(255,255,255,0.07)',
+                boxShadow: '0 0 0 1px rgba(188,155,104,.38)',
               }}
               onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1.5px var(--ds-gold)')}
-              onBlur={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.07)')}
+              onBlur={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(188,155,104,.38)')}
             />
           </div>
 
           {callbackPending && <div className="min-w-0 max-w-full space-y-3 rounded-xl border border-[#c8a96e]/30 bg-[#211a12]/60 p-3 text-sm">
-            <p className="text-[#f0d5a4]">Callback still requires action until a confirmed outcome is recorded.</p>
+            <p className="text-[#f0d5a4]">Choose what happens next. A callback stays open until the customer is reached or a follow-up is recorded.</p>
             {reached && <label className="flex items-center gap-2"><input type="checkbox" checked={resolve} onChange={e=>setResolve(e.target.checked)}/> Confirm customer was helped and resolve callback</label>}
             {!resolve && <TexasCallbackPicker value={followupAt} onChange={setFollowupAt} label="Next follow-up (required)"/>}
           </div>}
           {error && <p className="text-xs" style={{ color: '#f87171' }}>{error}</p>}
 
-          <div className="flex items-center justify-end gap-2 pt-1">
+        </div>
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[#8b714d]/30 bg-[#201913] px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <button
               onClick={onClose}
-              className="text-xs font-medium px-3.5 py-2 rounded-xl transition-colors duration-150"
+              className="min-h-11 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-150"
               style={{ color: 'var(--ds-text-secondary)' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-text-primary)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-text-secondary)')}
@@ -147,11 +155,11 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
             <button
               onClick={handleSave}
               disabled={saving || invalid}
-              className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-xl transition-all duration-150 disabled:opacity-50"
+              className="flex min-h-11 items-center gap-1.5 rounded-xl px-5 py-2 text-sm font-semibold transition-all duration-150 disabled:opacity-50"
               style={{
-                background: 'var(--ds-gold-muted)',
-                color: 'var(--ds-gold-light)',
-                boxShadow: '0 0 0 1px rgba(196,164,106,0.3)',
+                background: 'linear-gradient(100deg,#f0d8a5,#be904b)',
+                color: '#1b150f',
+                boxShadow: '0 0 0 1px rgba(235,203,147,0.65)',
               }}
             >
               {saving ? <LoadingSpinner size="sm" /> : null}
