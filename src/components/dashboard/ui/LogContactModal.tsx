@@ -35,7 +35,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
     setSaving(true);
     setError(null);
     try {
-      const appointment=followupAt?validateTexasOfficeSlot(followupAt.slice(0,10),followupAt.slice(11,16)):null;
+      const appointment=followupAt&&!(callbackPending&&resolve)?validateTexasOfficeSlot(followupAt.slice(0,10),followupAt.slice(11,16)):null;
       await onLog(channel, notes.trim(), outcome, callbackPending && resolve, appointment?.toISOString()??null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to record interaction. Please try again.');
