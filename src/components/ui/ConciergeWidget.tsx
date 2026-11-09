@@ -28,10 +28,13 @@ const mapSyncedMessage=(m:SyncedMessage):Message=>({
  sender:m.sender==='system'?undefined:m.sender,text:m.body,
  delivered_to_staff_at:m.delivered_to_staff_at,read_by_staff_at:m.read_by_staff_at
 });
-function visitorReceipt(m:Message,index:number,all:Message[],mode:'ai'|'human'|'waiting_human'|'closed',acceptedPendingId:string|null){
+function visitorReceipt(m:Message,index:number,all:Message[],mode:'ai'|'human'|'waiting_human'|'closed',acceptedPendingId:string|null,assistantReceivedPendingId:string|null){
  if(m.read_by_staff_at)return 'Read by team';
  if(m.delivered_to_staff_at)return 'Delivered to team';
- if(String(m.id).startsWith('pending-'))return acceptedPendingId===String(m.id)?'Sent':'Sending…';
+ if(String(m.id).startsWith('pending-')) {
+    if(assistantReceivedPendingId===String(m.id))return 'Received by assistant';
+    return acceptedPendingId===String(m.id)?'Sent':'Sending…';
+  }
  if(mode==='human'||mode==='waiting_human')return 'Sent';
  if(all.slice(index+1).some(next=>next.sender==='ai'))return 'Received by assistant';
  return 'Sent';
@@ -132,6 +135,11 @@ function renderConciergeText(text: string, aiGenerated = true) {
 
 /** Keep a human handoff accessible when genuinely requested, without mistaking a
  * routine real-estate question or the word "Missy" for a request to leave AI. */
+function hasRealEstateHandoffIntent(messages: Message[]): boolean {
+  return messages.some(message => message.role === 'visitor' &&
+    /\b(?:schedule|book|arrange|set up|tour|view|visit|see|showing)\b.{0,55}\b(?:home|house|property|listing|appointment|showing|tour)\b|\b(?:showing|tour|appointment)\b.{0,55}\b(?:schedule|book|arrange|set up|visit|see|available|time)\b/i.test(message.text));
+}
+
 function asksForHuman(messages: Message[]): boolean {
   return messages.some(message => message.role === 'visitor' &&
     /\b(?:speak|talk|chat|connect)\s+(?:directly\s+)?(?:with|to)\s+(?:a\s+)?(?:person|human|representative|agent|missy|your team|someone)|\b(?:real\s+person|human\s+agent|live\s+agent|call\s+me|call\s+back|callback|phone\s+call)\b/i.test(message.text));
@@ -177,6 +185,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [busy, setBusy] = useState(false);
   const [aiTyping, setAiTyping] = useState(false);
   const [acceptedPendingId,setAcceptedPendingId] = useState<string|null>(null);
+  const [assistantReceivedPendingId,setAssistantReceivedPendingId] = useState<string|null>(null);
   const [introAnimating,setIntroAnimating] = useState(false);
   const [introDone,setIntroDone] = useState(false);
   const [welcomeReady,setWelcomeReady] = useState(false);
@@ -199,7 +208,12 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   // A secondary offer only after genuine conversational value has been delivered.
   // Never count the initial greeting or an optimistic unsent visitor message.
   const answeredTurns = messages.filter(message => message.sender === 'ai' && message.id !== 0).length;
-  const handoffEligible = answeredTurns >= 2 || (answeredTurns >= 1 && asksForHuman(messages));
+  const visitorTurns = messages.filter(message => message.role === 'visitor' && !String(message.id).startsWith('pending-')).length;
+  // Normal conversations get breathing room; significant actionable real-estate
+  // needs or an explicit person request can surface help sooner after an answer.
+  const handoffEligible = (visitorTurns >= 3 && answeredTurns >= 3)
+    || (answeredTurns >= 2 && hasRealEstateHandoffIntent(messages))
+    || (answeredTurns >= 1 && asksForHuman(messages));
   const showHandoffOption = chatEnabled && !!session && mode === 'ai' && welcomeReady &&
     handoffEligible && (handoffOpen || (!busy && !aiTyping && !welcomeTyping &&
     !composerFocused && !draft.trim() && !listening));
@@ -533,6 +547,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     setBusy(true);
     setHandoffOpen(false);
     setAcceptedPendingId(null);
+    setAssistantReceivedPendingId(null);
     setTransportError(null);
     // Place the visitor's message immediately in the correct transcript order.
     // Sync is held until the typing phase finishes, so a fast bot reply cannot appear early.
@@ -546,8 +561,11 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       setAcceptedPendingId(pendingMessageId);
       if(result.language && ['en','es','fr','pt','zh'].includes(result.language))setLanguage(result.language);
       if(shouldShowTyping) {
-        // Let 'Sent' render before the assistant's typing indicator enters.
-        await new Promise<void>(resolve => window.setTimeout(resolve, 120));
+        // Preserve the existing Sent receipt, then explicitly acknowledge the
+        // assistant received it before the three-dot processing indication.
+        await new Promise<void>(resolve => window.setTimeout(resolve, 250));
+        setAssistantReceivedPendingId(pendingMessageId);
+        await new Promise<void>(resolve => window.setTimeout(resolve, 250));
         setAiTyping(true);
         // Keep the deliberate minimum typing presentation without exposing
         // an early model response or mislabeling an in-flight visitor message.
@@ -584,7 +602,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       } catch {
         setTransportError('Delivery could not be confirmed. Reopen the chat and check for your message before resending.');
       }
-    } finally { setAiTyping(false); setAcceptedPendingId(null); setBusy(false); }
+    } finally { setAiTyping(false); setAcceptedPendingId(null); setAssistantReceivedPendingId(null); setBusy(false); }
   };
 
   const uploadAttachment = async (file: File) => {
@@ -668,7 +686,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {messages.filter(m=>m.id!==0 || welcomeReady).map((m,index,visibleMessages) => <div key={m.id} className={`flex ${m.role === 'visitor' ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[87%] flex-col ${m.role==='visitor'?'items-end':'items-start'}`}>
                 <p className={`whitespace-pre-wrap break-words rounded-[26px] px-4 py-3 text-[15px] leading-relaxed ${!privateQA ? (m.role === 'visitor' ? 'missy-ios-outgoing-bubble rounded-br-[9px] bg-[#0A84FF] text-white shadow-[0_4px_14px_rgba(10,132,255,.17)]' : 'missy-ios-incoming-bubble rounded-bl-[9px] bg-[#29292d] text-[#f5f5f7]') : (m.role === 'visitor' ? 'bg-[#ad8951] text-black' : 'border border-[#b99b68]/35 bg-gradient-to-br from-[#292218]/85 to-[#15120f] text-[#f3ebdf]')}`}>{m.role === 'visitor' ? m.text : renderConciergeText(m.text, m.sender !== 'human')}</p>
-                {!privateQA&&m.role==='visitor'&&typeof m.id==='string'&&<span className="mt-1 self-end pr-1 text-[10px] text-[#aeb8c5]">{visitorReceipt(m,index,visibleMessages,mode,acceptedPendingId)}</span>}
+                {!privateQA&&m.role==='visitor'&&typeof m.id==='string'&&<span className="mt-1 self-end pr-1 text-[10px] text-[#aeb8c5]">{visitorReceipt(m,index,visibleMessages,mode,acceptedPendingId,assistantReceivedPendingId)}</span>}
                 {!privateQA && session && mode === 'human' && m.sender === 'human' && <div className="relative mt-1 flex items-center gap-1">
                   <button type="button" aria-label={`React to message ${m.id}`} aria-expanded={reactionPicker===String(m.id)} onClick={()=>setReactionPicker(current=>current===String(m.id)?null:String(m.id))} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-white/15 bg-[#1b1b1e] px-2 text-[13px] text-[#d5d5d8] hover:border-[#007AFF]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AFF]">
                     <SmilePlus size={15} aria-hidden="true"/>{reactions[String(m.id)] && <span aria-label="Your reaction">{reactions[String(m.id)]}</span>}
@@ -743,7 +761,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                     void conciergeTransport.typing(visitor).catch(()=>{});
                   }
                 }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(mayCompose&&!listening)sendMessage();}}} className={`block max-h-28 min-h-[48px] w-full resize-none overflow-y-auto rounded-[25px] border bg-[#242427] px-4 py-[11px] text-base leading-6 text-white outline-none placeholder:text-[#898991] focus:border-[#d3bb93] disabled:cursor-not-allowed disabled:opacity-50 ${listening?'border-[#c5a16a]/75 pr-[80px]':'border-[#6d6662]/60 pr-12'}`} />
-                {(!draft.trim() || listening) && <button type="button" onClick={startDictation} disabled={!mayCompose} aria-label={listening?'Stop dictation and keep transcribed text':'Start voice dictation'} aria-pressed={listening} title={listening?'Tap to stop listening':'Dictate your message'} className={`absolute bottom-[5px] right-[5px] flex h-[38px] items-center justify-center gap-[5px] rounded-full transition-[width,background-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5d89a] disabled:opacity-40 ${listening?'w-[66px] bg-[#c5a16a] text-[#18130c] shadow-[0_0_0_3px_rgba(197,161,106,.16)]':'w-[38px] text-[#bdbec4] hover:bg-white/10'}`}>{listening?<><ListeningWaveform/><Square size={10} strokeWidth={2.4} fill="currentColor"/></>:<Mic size={20}/>}</button>}
+                {<button type="button" onClick={startDictation} disabled={!mayCompose} aria-label={listening?'Stop dictation and keep transcribed text':draft.trim()?'Resume voice dictation':'Start voice dictation'} aria-pressed={listening} title={listening?'Tap to stop listening':draft.trim()?'Continue dictating this message':'Dictate your message'} className={`absolute bottom-[5px] right-[5px] flex h-[38px] items-center justify-center gap-[5px] rounded-full transition-[width,background-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5d89a] disabled:opacity-40 ${listening?'w-[66px] bg-[#c5a16a] text-[#18130c] shadow-[0_0_0_3px_rgba(197,161,106,.16)]':'w-[38px] text-[#bdbec4] hover:bg-white/10'}`}>{listening?<><ListeningWaveform/><Square size={10} strokeWidth={2.4} fill="currentColor"/></>:<Mic size={20}/>}</button>}
               </div>
               {draft.trim() && !listening && <button type="submit" disabled={!mayCompose||listening} aria-label="Send message" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#c5a16a] text-[#16110b] transition-[transform,opacity] active:scale-95 disabled:opacity-40"><ArrowUp size={23} strokeWidth={2.7}/></button>}
             </form>
