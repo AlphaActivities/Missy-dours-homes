@@ -5,6 +5,7 @@ export function formatDate(iso: string): string {
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
+    timeZoneName: 'short',
   });
 }
 
@@ -36,4 +37,20 @@ export function formatSourcePage(raw: string): string {
         .replace(/\b\w/g, c => c.toUpperCase())
     )
     .join(' › ');
+}
+
+/** Timestamp display: viewer-local time with explicit zone, never inferred from a server offset. */
+export function formatDashboardDateTime(iso: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month:'numeric',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',
+    timeZoneName:'short'
+  }).format(new Date(iso));
+}
+
+/** Dallas brokerage reference clock for cross-timezone callbacks. */
+export function formatDallasDateTime(iso: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month:'numeric',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',
+    timeZone:'America/Chicago',timeZoneName:'short'
+  }).format(new Date(iso));
 }
