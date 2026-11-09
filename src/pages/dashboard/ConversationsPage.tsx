@@ -1,3 +1,5 @@
+import TexasCallbackPicker from '../../components/dashboard/ui/TexasCallbackPicker';
+import {validateTexasOfficeSlot} from '../../lib/texasScheduling';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { MessageCircle, MessagesSquare, RefreshCw, Search, Clock3, WifiOff, Activity, AlertTriangle, ArrowUpRight, ClipboardCheck, UserRoundPlus, ChevronDown } from 'lucide-react';
@@ -421,12 +423,15 @@ export default function ConversationsPage() {
    return;
   }
   if(handoffNotes.trim().length<10){setError('Record at least 10 characters describing the outcome.');return;}
-  if(handoffDisposition==='follow_up'&&(!followupAt||new Date(followupAt).getTime()<=Date.now())){setError('Choose a future follow-up date before returning to AI.');return;}
+  let scheduledFollowup:Date|null=null;
+  if(handoffDisposition==='follow_up'){
+   try{scheduledFollowup=validateTexasOfficeSlot(followupAt.slice(0,10),followupAt.slice(11,16));}catch(e){setError(e instanceof Error?e.message:'Choose a valid Dallas office time.');return;}
+  }
   setActionBusy(true);setError(null);
   try{
    const {data,error}=await supabase.rpc('crm_return_chat_to_ai_with_outcome',{
     p_conversation:selected,p_disposition:handoffDisposition,p_notes:handoffNotes.trim(),
-    p_followup_at:handoffDisposition==='follow_up'?new Date(followupAt).toISOString():null
+    p_followup_at:scheduledFollowup?.toISOString()??null
    });
    if(error)throw error;
    if(data!==true)throw new Error('Only the assigned team member can return this chat to AI.');
@@ -566,11 +571,7 @@ export default function ConversationsPage() {
        {activeRequestKind!=='callback'&&<option value="resolved">Resolved, follow-up complete</option>}<option value="follow_up">Not resolved, schedule follow-up</option>
       </select>
      </label>
-     {handoffDisposition==='follow_up'&&<label className="block min-w-0 max-w-full text-xs text-[#e6cca0]">Follow-up date and time
-      <span className="mt-1 block min-w-0 max-w-full overflow-hidden rounded-lg border border-[#c8a96e]/40 bg-[#18130e]">
-       <input type="datetime-local" required value={followupAt} onChange={e=>setFollowupAt(e.target.value)} className="block h-12 w-full min-w-0 max-w-full box-border border-0 bg-transparent px-3 py-2 text-sm text-white [color-scheme:dark]" style={{minWidth:0,maxWidth:'100%',boxSizing:'border-box'}}/>
-      </span>
-     </label>}
+     {handoffDisposition==='follow_up'&&<TexasCallbackPicker value={followupAt} onChange={setFollowupAt} label="Next callback or follow-up"/>}
      <label className="block text-xs text-[#e6cca0]">What happened?
       <textarea required minLength={10} maxLength={1000} value={handoffNotes} onChange={e=>setHandoffNotes(e.target.value)} placeholder="Describe the conversation, result, and next step" className="mt-1 min-h-20 w-full rounded-lg border border-[#c8a96e]/40 bg-[#18130e] p-3 text-sm text-white"/>
      </label>
