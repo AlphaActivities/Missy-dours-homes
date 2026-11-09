@@ -75,21 +75,37 @@ function ListeningWaveform() {
   </span>;
 }
 
-/** Compact iMessage-inspired incoming typing indicator, without exaggerated dot bouncing. */
+/** Dedicated iMessage-inspired typing indicator. Do not reuse the ordinary
+ * message-tail mask: its squared join cannot reproduce the soft typing tail. */
 function AssistantTypingBubble() {
   const reducedMotion = useReducedMotion();
-  return <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
-    <div className="missy-ios-incoming-bubble relative inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[18px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
-      <span className="sr-only">Assistant is typing</span>
-      {[0,1,2].map(index => <motion.span
-        key={index}
-        aria-hidden="true"
-        className="relative z-10 block h-[7px] w-[7px] shrink-0 rounded-full bg-[#b8b8be]"
-        animate={reducedMotion ? {opacity:0.8,scale:1} : {opacity:[0.4,1,0.4],scale:[0.94,1.08,0.94]}}
-        transition={reducedMotion ? {duration:0} : {duration:1.25,repeat:Infinity,delay:index*0.18,ease:'easeInOut'}}
-      />)}
+  return (
+    <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
+      <div className="relative h-[49px] w-[74px] shrink-0" aria-hidden="true">
+        <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet">
+          {/* One continuous silhouette keeps the tail's rounded join seamless. */}
+          <path
+            d="M31 5 H86 C104 5 114 17 114 33 C114 49 104 58 86 58 H33 C26 58 23 66 15 67 C7 68 3 63 4 56 C4.7 51 7 48 12 44 C9 40 7 35 7 31 C7 16 17 5 31 5 Z"
+            fill="rgba(60,58,60,0.79)"
+            stroke="rgba(225,221,223,0.43)"
+            strokeWidth="2.1"
+            strokeLinejoin="round"
+          />
+          {/* iMessage's separate faint ring tucked below the tail. */}
+          <circle cx="8" cy="72" r="5.2" fill="rgba(62,59,60,0.22)" stroke="rgba(225,221,223,0.43)" strokeWidth="2"/>
+        </svg>
+        <div className="absolute left-[22px] top-[17px] flex items-center gap-[5px]">
+          {[0,1,2].map(index => <motion.span
+            key={index}
+            aria-hidden="true"
+            className="block h-[8px] w-[8px] shrink-0 rounded-full bg-[#d1d1d6]"
+            animate={reducedMotion ? {opacity:0.8,scale:1} : {opacity:[0.52,0.96,0.52],scale:[0.96,1.05,0.96]}}
+            transition={reducedMotion ? {duration:0} : {duration:1.35,repeat:Infinity,delay:index*0.18,ease:'easeInOut'}}
+          />)}
+        </div>
+      </div>
     </div>
-  </div>;
+  );
 }
 /** Linkify only preapproved, HTTPS real-estate resources, never arbitrary AI URLs. */
 const CONCIERGE_LINK_HOSTS = new Set([
