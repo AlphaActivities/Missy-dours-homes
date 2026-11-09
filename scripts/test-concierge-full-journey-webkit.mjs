@@ -82,6 +82,7 @@ try {
  await dialog.getByRole('button',{name:'Send message'}).click();
  // User bubble renders immediately; AI stays hidden for the entire typing phase.
  await dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true}).waitFor();
+
  const typing=dialog.getByRole('status',{name:'Assistant is typing'});
  const pendingReceipt=dialog.getByText('Sending…',{exact:true});
  await pendingReceipt.waitFor({state:'visible'});
@@ -92,6 +93,8 @@ try {
  await dialog.getByText('Received by assistant',{exact:true}).waitFor({state:'visible'});
  assert.equal(await typing.count(),0,'Assistant receipt must precede three-dot processing');
  await typing.waitFor({state:'visible'});
+ assert.equal(await dialog.locator('[data-message-arrival="outgoing"]').count(),1,
+   'Fresh visitor messages slide into view from below');
  assert.equal(await dialog.getByText('Received by assistant',{exact:true}).count(),1,'Receipt stays visible during processing');
  assert.equal(await dialog.getByText('Sending…',{exact:true}).count(),0,'Once AI dots appear, receipt must not say Sending');
  assert.equal(await humanButton.count(),0,'No handoff during first AI thinking');
@@ -101,6 +104,8 @@ try {
  await page.waitForTimeout(350);
  assert.equal(await typing.isVisible(),true,'Typing indicator remains visible before the reply');
  await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).waitFor();
+ assert.ok(await dialog.locator('[data-message-arrival="incoming"]').count()>=1,
+   'New assistant replies rise into the conversation');
  assert.ok(Date.now()-sentAt>=5000,'AI reply remains behind a full five-second typing presentation after acknowledgement');
  await typing.waitFor({state:'hidden'});
  const listingLink=dialog.getByRole('link',{name:'https://missydours.com/listings/14636-southern-pines-dr'});
