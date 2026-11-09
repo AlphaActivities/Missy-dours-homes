@@ -1,3 +1,5 @@
+import TexasCallbackPicker from './TexasCallbackPicker';
+import {validateTexasOfficeSlot,texasDateTime} from '../../../lib/texasScheduling';
 import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Check, X, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
@@ -10,11 +12,7 @@ interface FollowUpSectionProps {
   onActivity: (eventType: string, description: string) => void;
 }
 
-function formatDueDate(iso: string): string {
-  const d = new Date(iso);
-  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-  return d.toLocaleDateString('en-US', opts);
-}
+function formatDueDate(iso: string): string {return texasDateTime(iso);}
 
 function getFollowupStatus(fu: LeadFollowup): 'upcoming' | 'today' | 'overdue' | 'completed' | 'cancelled' {
   if (fu.status === 'completed') return 'completed';
@@ -71,10 +69,11 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   const history = followups.filter(f => f.status !== 'active');
 
   const handleSave = async () => {
-    if (!dueDate || saving) return;
+    if (!dueDate || !dueTime || saving) return;
+    let dueAt:string;
+    try{dueAt=validateTexasOfficeSlot(dueDate,dueTime).toISOString();}
+    catch(e){showToast(e instanceof Error?e.message:'Choose a valid Dallas office time.','error');return;}
     setSaving(true);
-    const timePart = dueTime || '09:00';
-    const dueAt = new Date(`${dueDate}T${timePart}`).toISOString();
 
     const { data: userData } = await supabase.auth.getUser();
     const actor = userData.user?.email ?? null;
@@ -140,10 +139,14 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   };
 
   const handleReschedule = async (fu: LeadFollowup) => {
-    const newDate = prompt('New date (YYYY-MM-DD):', fu.due_at.slice(0, 10));
-    if (!newDate) return;
-    const newTime = prompt('New time (HH:MM), or cancel for 9am:', '') || '09:00';
-    const dueAt = new Date(`${newDate}T${newTime}`).toISOString();
+    const defaultDate=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(fu.due_at));
+    const newDate=prompt('New date in Dallas (YYYY-MM-DD):',defaultDate);
+    if(!newDate)return;
+    const newTime=prompt('Dallas time (HH:MM, 09:00 to 17:00):','14:00');
+    if(!newTime)return;
+    let dueAt:string;
+    try{dueAt=validateTexasOfficeSlot(newDate,newTime).toISOString();}
+    catch(e){showToast(e instanceof Error?e.message:'Choose a valid Dallas office time.','error');return;}
 
     setActionId(fu.id);
     const { error } = await supabase
@@ -261,22 +264,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
         {/* New follow-up form */}
         {showForm && (
           <div className="rounded-xl p-3 space-y-2.5" style={{ background: 'var(--ds-bg-overlay)', boxShadow: '0 0 0 1px rgba(255,255,255,0.06)' }}>
-            <div className="flex min-w-0 gap-2">
-              <input
-                type="date"
-                value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                className="crm-native-date-control min-w-0 flex-1 rounded-lg px-2.5 py-2 text-xs outline-none"
-                style={{ background: 'var(--ds-bg-raised)', color: 'var(--ds-text-primary)', boxShadow: '0 0 0 1px rgba(255,255,255,0.07)' }}
-              />
-              <input
-                type="time"
-                value={dueTime}
-                onChange={e => setDueTime(e.target.value)}
-                className="crm-native-date-control w-24 min-w-0 max-w-[40%] rounded-lg px-2.5 py-2 text-xs outline-none"
-                style={{ background: 'var(--ds-bg-raised)', color: 'var(--ds-text-primary)', boxShadow: '0 0 0 1px rgba(255,255,255,0.07)' }}
-              />
-            </div>
+            <TexasCallbackPicker value={dueDate&&dueTime?dueDate+'T'+dueTime:''} onChange={v=>{setDueDate(v.slice(0,10));setDueTime(v.slice(11,16));}} label="Follow-up time"/>
             <input
               type="text"
               value={task}
@@ -299,7 +287,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
               </button>
               <button
                 onClick={handleSave}
-                disabled={!dueDate || saving}
+                disabled={!dueDate || !dueTime || saving}
                 className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-md transition-all duration-150 disabled:opacity-40"
                 style={{ background: 'var(--ds-gold-muted)', color: 'var(--ds-gold-light)', boxShadow: '0 0 0 1px rgba(196,164,106,0.3)' }}
               >
