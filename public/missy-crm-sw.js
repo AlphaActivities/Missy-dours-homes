@@ -8,7 +8,7 @@ const crmTarget = payload => {
   const id=typeof payload?.conversation_id==='string'?payload.conversation_id:'';
   const lead=typeof payload?.lead_id==='string'?payload.lead_id:'';
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if(payload?.kind==='lead_received'&&uuid.test(lead))return '/dashboard/leads?lead='+lead;
+  if((payload?.kind==='lead_received'||payload?.kind==='callback_reminder')&&uuid.test(lead))return '/dashboard/leads?lead='+lead;
   if(uuid.test(id))return '/dashboard/conversations?conversation='+id;
   return '/dashboard/notifications';
 };
@@ -51,6 +51,15 @@ self.addEventListener('push', event => {
     lead_received: {
       title: 'New Lead Received',
       body: 'A new website inquiry is ready for review.'
+    },
+    callback_reminder: {
+      title: payload.stage==='scheduled'?'Callback Scheduled'
+       :payload.stage==='before_15'?'Callback in 15 Minutes'
+       :payload.stage==='overdue_15'?'Callback Overdue':'Callback Due Now',
+      body: payload.stage==='scheduled'?'A follow-up has been scheduled in Dallas office time. Open the lead to review.'
+       :payload.stage==='before_15'?'A customer callback is coming up in 15 minutes. Check the lead before calling.'
+       :payload.stage==='overdue_15'?'The scheduled callback remains open. Record its outcome or reschedule.'
+       :'Your scheduled customer callback is due. Open the lead and record the outcome.'
     }
   };
   const notification = messages[payload.kind] || messages.handoff_created;
@@ -69,7 +78,7 @@ self.addEventListener('push', event => {
       body,
       // Re-use the task tag for new-handoff, claim and escalation updates.
       // This avoids stacking several native banners for one visitor request.
-      tag: 'missy-crm-' + (typeof payload.id === 'string' ? payload.id.slice(0, 50) : 'attention'),
+      tag: (payload.kind==='callback_reminder'?'missy-callback-':'missy-crm-') + (typeof payload.id === 'string' ? payload.id.slice(0, 50) : 'attention'),
       renotify: false,
       icon: '/images/Favicons/web-app-manifest-192x192.png',
       badge: '/images/Favicons/favicon-96x96.png',

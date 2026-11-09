@@ -26,7 +26,7 @@ function queryResult(data){
   };
   return query;
 }
-async function makeServer({pushEnabled=false,events=[],registered=devices,receipts=[]}={}){
+async function makeServer({pushEnabled=false,events=[],registered=devices,receipts=[],reminders=[]}={}){
   const calls=[],sent=[];
   const currentEventKind=events[0]?.event_type||'handoff_created';
   const db={
@@ -34,6 +34,8 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
       calls.push({kind:'rpc',method,args});
       if(method==='ai_concierge_get_sender_secret')return {data:'mock-vault-secret-for-cron-1234567890123456',error:null};
       if(method==='ai_concierge_claim_push_batch')return {data:events,error:null};
+      if(method==='crm_claim_callback_reminders')return {data:reminders,error:null};
+      if(method==='crm_finish_callback_reminder')return {data:true,error:null};
       if(method==='crm_visible_notification_count_service'){
         const byStaff={'missydourshomes@gmail.com':5,'yourcustomerflowguy@gmail.com':4,'heberherrera92@gmail.com':3};
         return {data:byStaff[args?.p_staff_email]??0,error:null};
@@ -176,4 +178,23 @@ test('An incorrect long cron credential never claims queue events',async()=>{
  assert.equal(response.status,401);
  assert.equal(sent.length,0);
  assert.ok(!calls.some(c=>c.method==='ai_concierge_claim_push_batch'));
+});
+
+test('Scheduled callback reminders use deduplicated per-device queue and privacy-safe lead links',async()=>{
+ const reminders=[{
+  id:'reminder-001',device_id:'missy-device',staff_email:'missydourshomes@gmail.com',
+  endpoint:devices[0].endpoint,p256dh:'a',auth_key:'b',stage:'before_15',
+  due_at:'2026-11-12T16:00:00Z',lead_id:'e14725bf-9f1d-4572-ac4e-554e5e173cc2',conversation_id:null
+ }];
+ const {handler,calls}=await makeServer({pushEnabled:true,reminders});
+ const res=await call(handler);
+ assert.equal(res.status,200);
+ const notifications=calls.filter(x=>x.kind==='prepared');
+ assert.equal(notifications.length,1);
+ assert.equal(notifications[0].payload.kind,'callback_reminder');
+ assert.equal(notifications[0].payload.stage,'before_15');
+ assert.equal(notifications[0].payload.attention_count,5);
+ assert.equal(notifications[0].payload.lead_id,reminders[0].lead_id);
+ assert.ok(!JSON.stringify(notifications[0].payload).includes('customer_name'));
+ assert.ok(calls.some(x=>x.method==='crm_finish_callback_reminder'&&x.args.p_success===true));
 });

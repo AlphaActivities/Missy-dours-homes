@@ -1,3 +1,5 @@
+import TexasCallbackPicker from './TexasCallbackPicker';
+import {validateTexasOfficeSlot} from '../../../lib/texasScheduling';
 import { useState } from 'react';
 import { Phone, MessageSquare, Mail, X } from 'lucide-react';
 import { ContactChannel } from '../types';
@@ -24,7 +26,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
   const [followupAt, setFollowupAt] = useState('');
   const outcomeOptions = channel === 'call' ? [{value:'spoke',label:'Spoke with customer'},{value:'no_answer',label:'No answer'},{value:'voicemail',label:'Voicemail left'}] : channel === 'text' ? [{value:'text_sent',label:'Text sent'},{value:'replied',label:'Customer replied'}] : [{value:'email_sent',label:'Email sent'},{value:'replied',label:'Customer replied'}];
   const reached = outcome === 'spoke' || outcome === 'replied';
-  const invalid = notes.trim().length < 3 || (callbackPending && !resolve && (!followupAt || new Date(followupAt).getTime() <= Date.now()));
+  const invalid = notes.trim().length < 3 || (callbackPending && !resolve && !followupAt);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +35,8 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
     setSaving(true);
     setError(null);
     try {
-      await onLog(channel, notes.trim(), outcome, callbackPending && resolve, followupAt ? new Date(followupAt).toISOString() : null);
+      const appointment=followupAt&&!(callbackPending&&resolve)?validateTexasOfficeSlot(followupAt.slice(0,10),followupAt.slice(11,16)):null;
+      await onLog(channel, notes.trim(), outcome, callbackPending && resolve, appointment?.toISOString()??null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to record interaction. Please try again.');
       setSaving(false);
@@ -127,9 +130,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
           {callbackPending && <div className="min-w-0 max-w-full space-y-3 rounded-xl border border-[#c8a96e]/30 bg-[#211a12]/60 p-3 text-sm">
             <p className="text-[#f0d5a4]">Callback still requires action until a confirmed outcome is recorded.</p>
             {reached && <label className="flex items-center gap-2"><input type="checkbox" checked={resolve} onChange={e=>setResolve(e.target.checked)}/> Confirm customer was helped and resolve callback</label>}
-            {!resolve && <label className="block min-w-0 max-w-full text-[#e5c89c]">Next follow-up (required)
-              <input type="datetime-local" aria-label="Next follow-up" className="crm-native-date-control mt-2 block w-full min-w-0 max-w-full rounded-lg bg-[#24201b] p-3 text-base text-white" value={followupAt} onChange={e=>setFollowupAt(e.target.value)}/>
-            </label>}
+            {!resolve && <TexasCallbackPicker value={followupAt} onChange={setFollowupAt} label="Next follow-up (required)"/>}
           </div>}
           {error && <p className="text-xs" style={{ color: '#f87171' }}>{error}</p>}
 

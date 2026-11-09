@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "test:concierge": "node --test tests/ai-concierge-worker.test.mjs"
+    "test:concierge": "node --test tests/ai-concierge-worker.test.mjs tests/texas-scheduling.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

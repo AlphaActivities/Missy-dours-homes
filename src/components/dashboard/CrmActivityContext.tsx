@@ -9,13 +9,13 @@ export type VisitorConnection='online'|'away'|'offline'|'expired'|'unconfirmed';
 export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;callback_request_kind?:'live_chat'|'callback'|null;callback_assignee?:string|null;callback_connection?:VisitorConnection|null;callback_followup_at?:string|null;callback_outcome?:'follow_up'|'resolved'|null;opportunity_kind?:string|null;opportunity_online?:boolean;chat_lead_audit?:boolean;}
 export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'sound_staff';
 export type BadgeSyncDiagnostic={supported:boolean;status:'checking'|'synced'|'unsupported'|'error';lastSyncedAt:string|null;lastSyncedCount:number|null;error:string|null};
-export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
-const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
+export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;callback_reminders_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
+const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,callback_reminders_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
 type ActivityState={
  items:CrmActivity[];liveAlert:CrmActivity|null;dismissLiveAlert:()=>void;unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
  prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;syncBadgeNow:()=>Promise<void>;badgeSync:BadgeSyncDiagnostic;
  markRead:(eventId:string)=>Promise<void>;archive:(eventId:string)=>Promise<void>;restore:(eventId:string)=>Promise<void>;
- markAllRead:()=>Promise<void>;setPreference:(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>Promise<void>;
+ markAllRead:()=>Promise<void>;setPreference:(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'callback_reminders_enabled'|'in_app_sound'>,value:boolean)=>Promise<void>;
  setSoundPreference:(name:SoundPreferenceKey,value:CrmSound)=>Promise<void>;
 };
 const Context=createContext<ActivityState|null>(null);
@@ -163,7 +163,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const [events,summary,preferences,totals]=await Promise.all([
     supabase.rpc('crm_activity_page',{p_offset:0,p_limit:PAGE_SIZE}),
     supabase.rpc('crm_attention_summary'),
-    supabase.from('crm_notification_preferences').select('staff_email,handoff_enabled,escalation_enabled,staff_enabled,in_app_sound,sound_lead,sound_handoff,sound_escalation,sound_staff,updated_at').eq('staff_email',email).maybeSingle(),
+    supabase.from('crm_notification_preferences').select('staff_email,handoff_enabled,escalation_enabled,staff_enabled,callback_reminders_enabled,in_app_sound,sound_lead,sound_handoff,sound_escalation,sound_staff,updated_at').eq('staff_email',email).maybeSingle(),
     supabase.rpc('crm_activity_totals')
    ]);
    if(events.error||summary.error||preferences.error||totals.error)throw events.error||summary.error||preferences.error||totals.error;
@@ -291,7 +291,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const archive=async(id:string)=>upsertReceipt(id,{read_at:new Date().toISOString(),archived_at:new Date().toISOString()});
  const restore=async(id:string)=>upsertReceipt(id,{archived_at:null});
  const markAllRead=async()=>{const r=await supabase.rpc('crm_mark_all_activity_read');if(r.error)throw r.error;const now=new Date().toISOString();setItems(old=>{const next=old.map(x=>({...x,read_at:x.read_at??now}));loadedRef.current=next;return next;});setCounts(old=>({...old,unread:0}));};
- const setPreference=async(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>{
+ const setPreference=async(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'callback_reminders_enabled'|'in_app_sound'>,value:boolean)=>{
   if(name==='in_app_sound'&&value)await unlockCrmAudio();
   // Update just the chosen setting; upsert could reset unrelated options to defaults.
   const r=await supabase.from('crm_notification_preferences').update({[name]:value,updated_at:new Date().toISOString()}).eq('staff_email',email);
