@@ -18,6 +18,15 @@ assert.ok(!pushDelivery.includes("client.rpc('crm_attention_count_service')"),
  'Native push must not use raw leads + tasks + waiting conversation totals');
 assert.ok(activityCenter.includes('filterCounts[key]')&&activityCenter.includes('data-count={filterCounts[key]}'),
  'Every notification filter must show its own exact card count');
+assert.ok(activityCenter.includes("key!=='history'&&filterCounts[key]>0"),
+ 'Only positive-count non-History filters should render a red badge');
+assert.ok(activityCenter.includes('data-filter-corner-badge={key}')
+ &&activityCenter.includes('pointer-events-none absolute -right-1.5 -top-2 z-20'),
+ 'Number circles must float outside the top-right filter button corner, without changing touch targets');
+assert.ok(activityCenter.includes("key==='history'?' ('+filterCounts[key]+')':''"),
+ 'History should display its count in parentheses inside the button instead of a circle');
+assert.ok(activityCenter.includes('flex h-11 w-full min-w-0 items-center justify-center overflow-hidden'),
+ 'Existing mobile filter button dimensions must be preserved');
 assert.ok(activityCenter.includes("key==='history'?items:activeEvents")&&activityCenter.includes('matchesFilter(e,key)'),
  'Filter badges must share the same classification as rendered notifications');
 assert.ok(badgeMigration.includes('crm_visible_notification_count_service(p_staff_email text)')
