@@ -60,6 +60,33 @@ const badgeMigration=readFileSync(new URL('../supabase/migrations/20261109_unify
 const entranceSource=readFileSync(new URL('../src/components/dashboard/ui/ConciergeSignatureEntrance.tsx',import.meta.url),'utf8');
 const outcomeSource=readFileSync(new URL('../src/pages/dashboard/ConversationsPage.tsx',import.meta.url),'utf8');
 const leadDrawerSource=readFileSync(new URL('../src/components/dashboard/ui/LeadDrawer.tsx',import.meta.url),'utf8');
+const customerTimelineSource=readFileSync(new URL('../src/components/dashboard/ui/ActivityHistory.tsx',import.meta.url),'utf8');
+const relatedLeadSource=readFileSync(new URL('../src/components/dashboard/ui/RelatedLeadReview.tsx',import.meta.url),'utf8');
+const conversationsHistorySource=readFileSync(new URL('../src/pages/dashboard/ConversationsPage.tsx',import.meta.url),'utf8');
+assert.ok(leadDrawerSource.includes('Active callback requests (') &&
+ leadDrawerSource.includes('<RelatedLeadReview') &&
+ leadDrawerSource.includes('<ActivityHistory'),
+ 'Lead must distinguish active callback actions from full linked customer history');
+assert.ok(customerTimelineSource.includes("from('ai_conversations')") &&
+ customerTimelineSource.includes("from('ai_concierge_tasks')") &&
+ customerTimelineSource.includes("from('lead_followups')") &&
+ customerTimelineSource.includes('Open saved transcript'),
+ 'Lead timeline must include linked chats, callback states and follow-up history');
+assert.ok(relatedLeadSource.includes("crm_review_phone_lead_candidates") &&
+ relatedLeadSource.includes('No records are combined automatically.') &&
+ !relatedLeadSource.includes(".update("),
+ 'Possible identity matches must be read-only and rely on verified staff lookup');
+assert.ok(conversationsHistorySource.includes('range(page*PAGE_SIZE,page*PAGE_SIZE+PAGE_SIZE-1)') &&
+ conversationsHistorySource.includes('setTotalConversations(count??0)') &&
+ conversationsHistorySource.includes('Search names, summaries, titles or phone'),
+ 'Conversation history must paginate server-side and search saved metadata');
+assert.ok(conversationsHistorySource.includes("filter==='qa'") &&
+ conversationsHistorySource.includes("'[PRIVATE VISITOR QA] %'") &&
+ conversationsHistorySource.includes('PRIVATE QA TEST · NOT A CUSTOMER'),
+ 'Owner private QA sessions must have a distinct clearly labeled history filter');
+assert.ok(conversationsHistorySource.includes('setLifecycleReviewIds(humanIds.filter(id=>!pending.has(id)))'),
+ 'Historical human sessions without an open task must be identified without automatically closing them');
+
 assert.ok(leadDrawerSource.includes("?'Received':'Started'") &&
  leadDrawerSource.includes("?'Request':'Live chat'") &&
  leadDrawerSource.includes("month:'short',day:'numeric'"),
