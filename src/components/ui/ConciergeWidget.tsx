@@ -277,6 +277,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   useEffect(() => () => { speechRef.current?.abort(); speechRef.current = null; }, []);
   useEffect(() => {
     if (!open) {
+      arrivingMessageIdsRef.current.clear();
       speechRef.current?.abort();
       setListening(false);
       setAttachmentMenuOpen(false);
