@@ -31,9 +31,9 @@ export default function ConciergeSignatureEntrance() {
  const [target,setTarget]=useState<Target>({x:0,y:0,scale:1,radius:16,innerScale:1});
  const [reduced,setReduced]=useState(false);
  const [deviceDate,setDeviceDate]=useState(formatDeviceDate);
- // The authenticated attention count is small and independent of the full
- // CRM activity feed. Resolve and validate it before the existing greeting
- // animation starts, then stagger the notification from its completion.
+ // Use the exact canonical active inbox total powering the CRM bell and All
+ // filter. Loading-screen counts must never use the older workflow attention
+ // summary, which can include a different number of leads and callback tasks.
  const [entranceAttention,setEntranceAttention]=useState<{count:number|null}|null>(null);
  const [greetingFinished,setGreetingFinished]=useState(false);
  useEffect(()=>{
@@ -46,10 +46,10 @@ export default function ConciergeSignatureEntrance() {
    settled=true;
    setEntranceAttention({count:null});
   },2500);
-  void Promise.resolve(supabase.rpc('crm_attention_summary')).then(({data,error})=>{
+  void Promise.resolve(supabase.rpc('crm_activity_totals')).then(({data,error})=>{
    if(cancelled||settled)return;
    settled=true;window.clearTimeout(timer);
-   const raw=(data as {attention_count?:unknown}|null)?.attention_count;
+   const raw=(data as {total?:unknown}|null)?.total;
    const count=Number(raw);
    setEntranceAttention({count:!error&&raw!==undefined&&raw!==null&&Number.isSafeInteger(count)&&count>=0?count:null});
   }).catch(()=>{
@@ -128,13 +128,13 @@ export default function ConciergeSignatureEntrance() {
      className="crm-entrance-notice pointer-events-none absolute inset-x-0 top-[calc(38%-244px)] max-lg:top-[calc(38%-236px)] mx-auto flex w-full flex-col items-center justify-center gap-2 px-3 text-center text-[#edd2a3]"
      initial={{opacity:0,y:10}} animate={{opacity:phase==='welcome'?1:0,y:0}}
      transition={phase==='welcome'?{duration:.48,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}
-     aria-label={entranceAttention.count===null?'Notifications unavailable':entranceAttention.count+' '+(entranceAttention.count===1?'notification':'notifications')+' requiring attention'}>
+     aria-label={entranceAttention.count===null?'Notifications unavailable':entranceAttention.count+' active '+(entranceAttention.count===1?'notification':'notifications')}>
      <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#ddbb7c]">
       <span className={entranceAttention.count!==null&&entranceAttention.count>0?'crm-bell-top-hinge crm-bell-wobble':'crm-bell-top-hinge'} aria-hidden="true"><BellRing size={26} strokeWidth={1.8}/></span>
       {entranceAttention.count!==null&&entranceAttention.count>0&&<span className="absolute -right-1 -top-1 inline-flex min-h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#a92f30] px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_0_2px_#0c0a08,0_0_9px_rgba(169,47,48,.32)]" aria-hidden="true">{entranceAttention.count>99?'99+':entranceAttention.count}</span>}
      </span>
      <span className="inline-flex min-h-[34px] max-w-[90vw] items-center justify-center rounded-full border border-[#c4a369]/45 bg-[#17120e]/75 px-5 py-2 text-center text-[13px] font-semibold leading-snug tracking-[.025em] text-[#edd2a3] shadow-[0_0_16px_rgba(196,164,106,.11),inset_0_1px_0_rgba(255,232,185,.06)] backdrop-blur-sm">
-      {entranceAttention.count===null?'Notifications unavailable':entranceAttention.count===0?'All caught up':entranceAttention.count+' new '+(entranceAttention.count===1?'notification':'notifications')}
+      {entranceAttention.count===null?'Notifications unavailable':entranceAttention.count===0?'All caught up':entranceAttention.count+' active '+(entranceAttention.count===1?'notification':'notifications')}
      </span>
    </motion.div>}
    {greeting && entranceAttention!==null && <motion.p className="pointer-events-none absolute inset-x-0 top-[calc(38%-112px)] max-lg:top-[calc(38%-142px)] px-4 text-center text-[18px] sm:text-[21px] font-medium tracking-[.09em] text-[#f0d8a0] drop-shadow-[0_0_14px_rgba(196,164,106,.2)]"
