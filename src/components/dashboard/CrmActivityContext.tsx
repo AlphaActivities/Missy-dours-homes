@@ -166,10 +166,12 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    loadedRef.current=next;
    setItems(next);
    setHasMore(previous=>next.length>PAGE_SIZE?previous:recent.length===PAGE_SIZE);
-   const t=totals.data as {unread?:number;urgent?:number;today?:number;hidden?:number}|null;
+   const t=totals.data as {total?:number;unread?:number;urgent?:number;today?:number;hidden?:number}|null;
    setCounts({unread:Number(t?.unread??0),urgent:Number(t?.urgent??0),today:Number(t?.today??0),hidden:Number(t?.hidden??0)});
    const c=summary.data as {attention_count?:number;new_leads?:number;open_tasks?:number;waiting_conversations?:number}|null;
-   setAttentionCount(Math.max(0,Number(c?.attention_count??0)));
+   // Match the native iOS badge and CRM bell to the All filter's actual active cards,
+   // not overlapping lead, callback task and waiting-conversation work records.
+   setAttentionCount(Math.max(0,Number(t?.total??0)));
    setBreakdown({new_leads:Number(c?.new_leads??0),open_tasks:Number(c?.open_tasks??0),waiting_conversations:Number(c?.waiting_conversations??0)});
    setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Unable to load activity');}
@@ -203,7 +205,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);void supabase.removeChannel(channel);};
  },[email,refresh]);
  useEffect(()=>{
-  // Use work requiring attention, never the number of notification banners.
+  // Keep the installed app badge synchronized with the visible active inbox total.
   // Some browsers/platforms do not implement the Badging API.
   const badgeNavigator=navigator as Navigator&{setAppBadge?:(count?:number)=>Promise<void>;clearAppBadge?:()=>Promise<void>};
   if(!permitted.includes(email)||loading)return;
