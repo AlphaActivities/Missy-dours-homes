@@ -8,18 +8,33 @@ export default function TexasCallbackPicker({value,onChange,label='Scheduled fol
    preview='Texas: '+texasDateTime(instant)+' · Your local time: '+viewerDateTime(instant);
   }
  }catch{preview='Check the selected date and time.';}
- return <div className="min-w-0 max-w-full space-y-2">
-  <label className="block text-xs font-semibold text-[#e6cca0]">{label} (Dallas / Central Time)
-   <span className="mt-1 block w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-[#c8a96e]/40 bg-[#18130e]">
-    <input type="datetime-local" required={required} aria-label={label+' in Dallas time'} value={value} onChange={event=>onChange(event.target.value)}
-     step={900} className="block h-12 w-full min-w-0 max-w-full box-border border-0 bg-transparent px-3 py-2 text-sm text-white [color-scheme:dark]" style={{minWidth:0,maxWidth:'100%',boxSizing:'border-box'}}/>
-   </span>
-  </label>
-  <div className="grid grid-cols-2 gap-2">
-   <button type="button" onClick={()=>{const s=nextTexasSlot(10);onChange(s.date+'T'+s.time)}} className="min-h-10 rounded-lg border border-[#c8a96e]/40 bg-[#30271b] px-2 text-xs text-[#f0d5a4]">Next 10 AM CT</button>
-   <button type="button" onClick={()=>{const s=nextTexasSlot(14);onChange(s.date+'T'+s.time)}} className="min-h-10 rounded-lg border border-[#c8a96e]/40 bg-[#30271b] px-2 text-xs text-[#f0d5a4]">Next 2 PM CT</button>
+ const date=value?.slice(0,10)??'',time=value?.slice(11,16)??'';
+ const options=Array.from({length:33},(_,i)=>{
+  const total=9*60+i*15;const hours=Math.floor(total/60),mins=total%60;
+  const hh=String(hours).padStart(2,'0'),mm=String(mins).padStart(2,'0');
+  return {value:hh+':'+mm,label:new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(Date.UTC(2026,0,1,hours,mins)))+' CT'};
+ });
+ return <div className="min-w-0 max-w-full space-y-3">
+  <label className="block text-xs font-semibold text-[#e7c998]">{label} · Dallas time</label>
+  <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-2">
+   <label className="min-w-0 text-[11px] font-medium text-[#cfb99a]">Date
+    <input type="date" required={required} aria-label={label+' date in Dallas'}
+      value={date} onChange={e=>onChange(e.target.value?(e.target.value+'T'+(time||'10:00')):'')}
+      className="mt-1.5 block h-12 w-full min-w-0 max-w-full rounded-xl border border-[#a9875c]/55 bg-[#171310] px-2 text-sm text-[#f1d8b2] [color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]"/>
+   </label>
+   <label className="min-w-0 text-[11px] font-medium text-[#cfb99a]">Time
+    <select aria-label={label+' time in Dallas'} required={required} value={time}
+      onChange={e=>onChange((date||nextTexasSlot(10).date)+'T'+e.target.value)}
+      className="mt-1.5 block h-12 w-full min-w-0 max-w-full rounded-xl border border-[#a9875c]/55 bg-[#171310] px-2 text-sm text-[#f1d8b2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]">
+      <option value="" disabled>Time</option>{options.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+    </select>
+   </label>
   </div>
-  <p className="text-[11px] leading-relaxed text-[#bba98e]">Choose Monday to Friday, 9 AM to 5 PM Dallas time. Visitors may be anywhere; this appointment is converted automatically to your local time.</p>
-  {preview&&<p className="text-xs text-[#e5cda4]" aria-live="polite">{preview}</p>}
+  <div className="grid grid-cols-2 gap-2">
+   <button type="button" onClick={()=>{const s=nextTexasSlot(10);onChange(s.date+'T'+s.time)}} className="min-h-11 rounded-xl border border-[#b99b6f]/60 bg-[#30251b] px-2 text-xs font-semibold text-[#f0d5a4]">Next 10 AM CT</button>
+   <button type="button" onClick={()=>{const s=nextTexasSlot(14);onChange(s.date+'T'+s.time)}} className="min-h-11 rounded-xl border border-[#b99b6f]/60 bg-[#30251b] px-2 text-xs font-semibold text-[#f0d5a4]">Next 2 PM CT</button>
+  </div>
+  {preview&&<p className="rounded-lg border border-[#aa885d]/35 bg-[#231b15] p-2 text-[11px] leading-relaxed text-[#e5cda4]" aria-live="polite">{preview}</p>}
+  <p className="text-[11px] leading-relaxed text-[#bba98e]">Staff follow-up, Monday to Friday, 9 AM to 5 PM Dallas time. Confirm the time with the customer before treating it as an appointment.</p>
  </div>;
 }
