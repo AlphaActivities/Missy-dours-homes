@@ -102,13 +102,19 @@ try {
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),0);
 
  assert.equal(await dialog.getByText(/Automatic language assistance/).count(),0);
- // A discreet one-turn human option must remain accessible without
- // forcing a lead form or interrupting the assistant's answer.
- const humanButton=dialog.getByRole('button',{name:'Prefer to speak with Missy’s team?'});
+ // A small, right-aligned opt-in must stay available without inserting a
+ // large contextual promo card into the transcript.
+ const humanButton=dialog.getByRole('button',{name:'Prefer to speak with Missy directly?'});
  await humanButton.waitFor({state:'visible'});
- assert.ok((await humanButton.getAttribute('class')).includes('underline'),'Human handoff should stay discoverable as a subtle action');
+ assert.ok((await humanButton.getAttribute('class')).includes('rounded-full'),'Handoff remains a slim secondary pill');
+ assert.equal(await humanButton.isEnabled(),true);
  await humanButton.click();
  const form=dialog.getByRole('form',{name:'Request a callback'});
+ await form.waitFor({state:'visible'});
+ await dialog.getByRole('button',{name:'Keep chatting'}).first().click();
+ await form.waitFor({state:'hidden'});
+ await dialog.getByRole('button',{name:'Prefer to speak with Missy directly?'}).click();
+ await form.waitFor({state:'visible'});
  await form.getByPlaceholder('Full name').fill('Example Visitor');
  const phone=form.getByRole('textbox',{name:'Callback phone number'});
  const submit=form.getByRole('button',{name:'Request a callback'});
