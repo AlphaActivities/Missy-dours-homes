@@ -118,7 +118,7 @@ const CONCIERGE_LINK_HOSTS = new Set([
   'hud.gov', 'www.hud.gov',
 ]);
 function renderConciergeText(text: string, aiGenerated = true) {
-  return (aiGenerated ? text.replace(/\s*[—–]\s*/g, '... ') : text).split(/(https:\/\/[^\s<>"']+)/gi).map((part,index) => {
+  return (aiGenerated ? text.replace(/\s*—\s*/g, '... ').replace(/\s*–\s*/g, ', ').replace(/ {2,}/g, ' ') : text).split(/(https:\/\/[^\s<>"']+)/gi).map((part,index) => {
     if (!/^https:\/\//i.test(part)) return part;
     const urlText = part.replace(/[.,!?;:)\]]*$/, '');
     const suffix = part.slice(urlText.length);
