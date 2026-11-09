@@ -104,18 +104,24 @@ Deno.serve(async request=>{
     }
     opportunityKind=['buyer','seller','investor','both'].includes(status.data.opportunity_kind??'')?status.data.opportunity_kind:null;
    }
-   // OS icon badge counts unresolved work rather than number of banners.
-   const {data:attention,error:attentionError}=await client.rpc('crm_attention_count_service');
-   const payload=JSON.stringify({
-    kind:['handoff_escalated','handoff_claimed','opportunity_detected','visitor_engaged'].includes(event.event_type)?event.event_type:'handoff_created',
-    id:event.task_id??event.id,
-    ...(opportunityKind?{opportunity_kind:opportunityKind}:{}),
-    ...(task.error||!task.data?.conversation_id?{}:{conversation_id:task.data.conversation_id}),
-    ...(attentionError?{}:{attention_count:Math.max(0,Number(attention)||0)})
-   });
+   // Native icon counts the same visible active notifications as CRM All,
+   // respecting each staff member's hidden records (not raw workflow rows).
+   const badgeByStaff=new Map<string,number|null>();
    for(const device of targetDevices) {
     if(accepted.has(device.id))continue;
     try {
+     if(!badgeByStaff.has(device.staff_email)){
+      const {data:count,error:countError}=await client.rpc('crm_visible_notification_count_service',{p_staff_email:device.staff_email});
+      badgeByStaff.set(device.staff_email,countError?null:Math.max(0,Number(count)||0));
+     }
+     const badge=badgeByStaff.get(device.staff_email);
+     const payload=JSON.stringify({
+      kind:['handoff_escalated','handoff_claimed','opportunity_detected','visitor_engaged'].includes(event.event_type)?event.event_type:'handoff_created',
+      id:event.task_id??event.id,
+      ...(opportunityKind?{opportunity_kind:opportunityKind}:{}),
+      ...(task.error||!task.data?.conversation_id?{}:{conversation_id:task.data.conversation_id}),
+      ...(badge===null||badge===undefined?{}:{attention_count:badge})
+     });
      // Use the same signed and encrypted request + native Deno transport
      // that was confirmed by the real iPhone device test.
      const target=new URL(device.endpoint);

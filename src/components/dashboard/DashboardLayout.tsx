@@ -314,7 +314,7 @@ function DashboardLayoutInner() {
                     size={15}
                     style={{ color: isActive ? 'var(--ds-gold)' : 'var(--ds-text-tertiary)' }}
                   />
-                  <span>{label}</span>{to==='/dashboard/notifications'&&attentionCount>0&&<span className="ml-auto inline-flex h-6 w-6 min-h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-[#a92f30] p-0 text-[10px] font-semibold leading-none text-white" aria-label={attentionCount+' items needing attention'}>{attentionCount>99?'99+':attentionCount}</span>}
+                  <span>{label}</span>{to==='/dashboard/notifications'&&attentionCount>0&&<span className="ml-auto inline-flex h-6 w-6 min-h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-[#a92f30] p-0 text-[10px] font-semibold leading-none text-white" aria-label={attentionCount+' active notifications'}>{attentionCount>99?'99+':attentionCount}</span>}
                 </>
               )}
             </NavLink>
@@ -380,7 +380,7 @@ function DashboardLayoutInner() {
           </div>
           <IosNativeTap className="relative inline-flex">
           <button type="button" onClick={()=>navigate('/dashboard/notifications')}
-            aria-label={'Notifications: '+attentionCount+' items need attention'}
+            aria-label={'Notifications: '+attentionCount+' active notifications'}
             aria-current={pathname==='/dashboard/notifications'?'page':undefined}
             className={'relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-[#e1c18a] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#d9b878]/80 hover:bg-[#c8a96e]/20 hover:shadow-[0_0_14px_rgba(200,169,110,.18)] active:scale-[.94] active:border-[#f1d49e] active:bg-[#c8a96e]/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e9c98d] '+(pathname==='/dashboard/notifications'?'border-[#d9b878]/85 bg-[#c8a96e]/20 shadow-[inset_0_0_0_1px_rgba(242,214,154,.12),0_0_13px_rgba(200,169,110,.18)]':'border-[#c8a96e]/45 bg-[#c8a96e]/[.07] shadow-[inset_0_1px_0_rgba(255,231,184,.06)]')}>
             <span className={attentionCount>0?'crm-bell-top-hinge crm-bell-wobble':'crm-bell-top-hinge'} aria-hidden="true"><BellRing size={21}/></span>

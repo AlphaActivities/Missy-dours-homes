@@ -34,7 +34,10 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
       calls.push({kind:'rpc',method,args});
       if(method==='ai_concierge_get_sender_secret')return {data:'mock-vault-secret-for-cron-1234567890123456',error:null};
       if(method==='ai_concierge_claim_push_batch')return {data:events,error:null};
-      if(method==='crm_attention_count_service')return {data:2,error:null};
+      if(method==='crm_visible_notification_count_service'){
+        const byStaff={'missydourshomes@gmail.com':5,'yourcustomerflowguy@gmail.com':4,'heberherrera92@gmail.com':3};
+        return {data:byStaff[args?.p_staff_email]??0,error:null};
+      }
       if(method==='ai_concierge_record_push_receipt')return {data:true,error:null};
       if(method==='ai_concierge_finish_push')return {data:true,error:null};
       throw Error('Unexpected RPC: '+method);
@@ -112,7 +115,11 @@ test('A new handoff targets all registered staff and persists separate receipts'
   assert.deepEqual(new Set(sent.map(x=>x.endpoint)),new Set(devices.map(x=>x.endpoint)));
   assert.ok(sent.every(x=>x.payload.kind==='handoff_created'));
   assert.ok(calls.filter(x=>x.kind==='prepared').every(x=>x.payload.conversation_id==='e14725bf-9f1d-4572-ac4e-554e5e173cc2'));
-  assert.ok(calls.filter(x=>x.kind==='prepared').every(x=>x.payload.attention_count===2));
+  assert.deepEqual(new Map(calls.filter(x=>x.kind==='prepared').map(x=>[x.endpoint,x.payload.attention_count])),new Map([
+    [devices[0].endpoint,5],[devices[1].endpoint,4],[devices[2].endpoint,3]
+  ]),'Each recipient receives their own actual visible notification count');
+  assert.equal(calls.filter(x=>x.method==='crm_visible_notification_count_service').length,3,
+    'Query each staff inbox count separately, not overlapping global work totals');
   assert.ok(sent.every(x=>x.options.TTL===900));
   assert.ok(sent.every(x=>x.encryptedBytes>0));
   const curve=createECDH('prime256v1');curve.setPrivateKey(Buffer.alloc(32,3));

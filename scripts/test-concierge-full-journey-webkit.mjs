@@ -5,6 +5,26 @@ import { webkit,devices } from 'playwright';
 // Guard the actual deployed API route allowlist, not only the browser's mocked
 // endpoints. A missing /typing route silently disables early iPhone pushes.
 const apiSource=readFileSync(new URL('../supabase/functions/concierge-api/index.ts',import.meta.url),'utf8');
+
+const activityCenter=readFileSync(new URL('../src/components/dashboard/CrmActivityCenter.tsx',import.meta.url),'utf8');
+const activityContext=readFileSync(new URL('../src/components/dashboard/CrmActivityContext.tsx',import.meta.url),'utf8');
+const pushDelivery=readFileSync(new URL('../supabase/functions/concierge-push-delivery/index.ts',import.meta.url),'utf8');
+const badgeMigration=readFileSync(new URL('../supabase/migrations/20261109_unify_crm_visible_notification_badge.sql',import.meta.url),'utf8');
+assert.ok(activityContext.includes('setAttentionCount(Math.max(0,Number(t?.total??0)))'),
+ 'Bell and foreground app badges must count actual active inbox cards, not duplicate work records');
+assert.ok(pushDelivery.includes("crm_visible_notification_count_service',{p_staff_email:device.staff_email}"),
+ 'Native push badge must count visible cards separately for each subscribed staff account');
+assert.ok(!pushDelivery.includes("client.rpc('crm_attention_count_service')"),
+ 'Native push must not use raw leads + tasks + waiting conversation totals');
+assert.ok(activityCenter.includes('filterCounts[key]')&&activityCenter.includes('data-count={filterCounts[key]}'),
+ 'Every notification filter must show its own exact card count');
+assert.ok(activityCenter.includes("key==='history'?items:activeEvents")&&activityCenter.includes('matchesFilter(e,key)'),
+ 'Filter badges must share the same classification as rendered notifications');
+assert.ok(badgeMigration.includes('crm_visible_notification_count_service(p_staff_email text)')
+ &&badgeMigration.includes('r.staff_email=lower(p_staff_email)')
+ &&badgeMigration.includes("grant execute on function public.crm_visible_notification_count_service(text) to service_role"),
+ 'Push badge counting must respect per-user hidden receipts and restrict service access');
+
 const routes=apiSource.match(/if\(!\[(.*?)\]\.includes\(url\.pathname\)\)/s)?.[1];
 assert.ok(routes,'Concierge endpoint allowlist must exist');
 for(const route of ['typing','ack']){
