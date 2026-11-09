@@ -331,8 +331,9 @@ function DrawerContent({
           </div>}
           <div className="mt-2 space-y-1 text-xs leading-relaxed text-[#f4cfac]">
             <p className="font-semibold">Staff response status · {callbackWork?.status==='claimed'?'Assigned, outcome required':'Awaiting staff attention'}</p>
-            <p>Callback appointment · Not yet scheduled in this request</p>
-            <p className="text-[#cdb79a]">The request timestamp is not a promised call time. Choose a future Dallas office-hours appointment when recording an outcome.</p>
+            {callbackWork?.due&&callbackWork.requestedAt&&new Date(callbackWork.due).getTime()>new Date(callbackWork.requestedAt).getTime()+5000
+             ?<><p>Next scheduled staff follow-up · {formatDallasDateTime(callbackWork.due)}</p><p className="text-[#cdb79a]">This is a staff-planned follow-up, not a customer-confirmed appointment unless separately agreed.</p></>
+             :<><p>Callback appointment · Not yet scheduled</p><p className="text-[#cdb79a]">The request timestamp is not a promised call time. Choose a future Dallas office-hours appointment when recording an outcome.</p></>}
           </div>
           <p className="mt-3 text-xs text-[#e6c89c]">Use the Record Contact Outcome action in Quick Actions above to log the call, text, or email and resolve or schedule follow-up.</p>
         </section>}
