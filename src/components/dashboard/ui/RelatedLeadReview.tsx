@@ -2,7 +2,7 @@ import {useEffect,useState} from 'react';
 import {Link} from 'react-router-dom';
 import {supabase} from '../../../lib/supabase';
 type Candidate={id:string;name:string;phone:string|null;status:string|null;created_at:string|null;reason:string};
-export default function RelatedLeadReview({lead}:{lead:{id:string;name:string;phone:string|null}}){
+export default function RelatedLeadReview({lead}:{lead:{id:string;name:string;phone:string|null;email?:string|null}}){
  const [candidates,setCandidates]=useState<Candidate[]>([]);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState<string|null>(null);
@@ -18,13 +18,19 @@ export default function RelatedLeadReview({lead}:{lead:{id:string;name:string;ph
    const exactName=lead.name.trim().length>=3
     ?await supabase.from('leads').select('id,name,phone,created_at,status')
        .ilike('name',lead.name.trim()).neq('id',lead.id).limit(20):null;
+   const sameEmail=lead.email?.trim()&&lead.email.includes('@')
+    ?await supabase.from('leads').select('id,name,phone,created_at,status')
+      .ilike('email',lead.email.trim()).neq('id',lead.id).limit(20):null;
    if(!live)return;
-   if(samePhone?.error||exactName?.error){
+   if(samePhone?.error||exactName?.error||sameEmail?.error){
     setError('Possible related records could not be checked. Existing customer records are unchanged.');
    }
    const found=new Map<string,Candidate>();
    for(const row of samePhone?.data??[]){
     if(row.id!==lead.id)found.set(row.id,{...row,reason:'Same phone number'});
+   }
+   for(const row of sameEmail?.data??[]){
+    if(row.id!==lead.id&&!found.has(row.id))found.set(row.id,{...row,reason:'Same email address'});
    }
    for(const row of exactName?.data??[]){
     if(row.id!==lead.id&&!found.has(row.id))found.set(row.id,{...row,reason:'Same name, identity unverified'});
@@ -34,7 +40,7 @@ export default function RelatedLeadReview({lead}:{lead:{id:string;name:string;ph
   };
   void load();
   return()=>{live=false;};
- },[lead.id,lead.name,lead.phone]);
+ },[lead.id,lead.name,lead.phone,lead.email]);
  return <section aria-label="Potentially related CRM records" className="rounded-xl border border-[#b69a68]/30 bg-[#1c1813]/55 p-3">
   <div className="flex items-center justify-between gap-3">
    <div><h3 className="text-sm font-semibold text-[#e8cd9c]">Related customer records</h3>
