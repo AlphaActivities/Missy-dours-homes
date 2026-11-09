@@ -323,15 +323,16 @@ function DrawerContent({
             <p className="text-xs leading-relaxed text-[#edd1a4]">Only the selected conversation will be updated. All others remain open.</p>
           </div>}
           {callbackWork?.conversationId&&<Link className="mt-2 inline-flex min-h-10 items-center rounded-lg border border-amber-200/40 px-3 py-2 text-xs font-semibold text-[#f2d4a3]" to={'/dashboard/conversations?conversation='+encodeURIComponent(callbackWork.conversationId)}>Open requested conversation</Link>}
-          <p className="mt-2">Assigned to: {callbackWork?.owner??'Unassigned'}</p>
+          <p className="mt-2">Assigned to: {callbackWork?.owner?({'yourcustomerflowguy@gmail.com':'Josh','heberherrera92@gmail.com':'Heber','missydourshomes@gmail.com':'Missy'} as Record<string,string>)[callbackWork.owner.toLowerCase()]??'Team member':'Unassigned'}</p>
           <p className="mt-1">Next action: Review the conversation, contact the visitor when appropriate, then record a confirmed outcome or schedule follow-up for this request.</p>
           {callbackWork?.requestedAt&&<div className="mt-3 text-xs leading-relaxed text-[#e9d7b8]">
             <p>Request received · Your local time: {formatDashboardDateTime(callbackWork.requestedAt)}</p>
             <p>Texas office time: {formatDallasDateTime(callbackWork.requestedAt)}</p>
           </div>}
           <div className="mt-2 space-y-1 text-xs leading-relaxed text-[#f4cfac]">
-            <p className="font-semibold">Follow-up due · {callbackWork?.due?formatDashboardDateTime(callbackWork.due):'Awaiting staff review'}</p>
-            {callbackWork?.due&&<p>Texas office time: {formatDallasDateTime(callbackWork.due)}</p>}
+            <p className="font-semibold">Staff response status · {callbackWork?.status==='claimed'?'Assigned, outcome required':'Awaiting staff attention'}</p>
+            <p>Callback appointment · Not yet scheduled in this request</p>
+            <p className="text-[#cdb79a]">The request timestamp is not a promised call time. Choose a future Dallas office-hours appointment when recording an outcome.</p>
           </div>
           <p className="mt-3 text-xs text-[#e6c89c]">Use the Record Contact Outcome action in Quick Actions above to log the call, text, or email and resolve or schedule follow-up.</p>
         </section>}
