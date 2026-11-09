@@ -380,6 +380,7 @@ function DrawerContent({
         {/* Combined customer timeline, including archived or completed linked chats. */}
         <ActivityHistory
           leadId={lead.id}
+          sourcePage={lead.source_page}
           createdAt={lead.created_at}
           notesJson={lead.notes ?? ''}
           refreshKey={activityRefreshKey}
