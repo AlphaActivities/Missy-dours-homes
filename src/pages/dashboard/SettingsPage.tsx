@@ -19,7 +19,7 @@ const isStandalone=()=>window.matchMedia('(display-mode: standalone)').matches |
 const stamped=(v:string|null)=>v?new Date(v).toLocaleString():'Not yet';
 export default function SettingsPage(){
  const {user}=useAuth();
- const {attentionCount,badgeSync,refresh:refreshNotifications}=useCrmActivity();
+ const {attentionCount,badgeSync,syncBadgeNow}=useCrmActivity();
  const email=user?.email?.toLowerCase()??'';
  const [permission,setPermission]=useState<Permission>('unsupported');
  const [devices,setDevices]=useState<Device[]>([]);
@@ -164,7 +164,7 @@ export default function SettingsPage(){
    </div>
    {badgeSync.lastSyncedCount!==null&&<p className="mt-2 text-xs text-[#c7b9a6]">Last badge value sent to this device: {badgeSync.lastSyncedCount}</p>}
    {badgeSync.error&&<p role="status" className="mt-2 text-xs text-amber-200">{badgeSync.error}</p>}
-   <button type="button" disabled={loading||Boolean(busy)} onClick={()=>void refreshNotifications()} className="mt-3 flex min-h-11 items-center gap-2 rounded-lg border border-[#c8a96e]/50 px-4 py-2 text-sm text-[#efcf97] disabled:opacity-50"><RefreshCw size={16}/> Sync notification count now</button>
+   <button type="button" disabled={loading||Boolean(busy)} onClick={()=>void syncBadgeNow()} className="mt-3 flex min-h-11 items-center gap-2 rounded-lg border border-[#c8a96e]/50 px-4 py-2 text-sm text-[#efcf97] disabled:opacity-50"><RefreshCw size={16}/> Sync notification count now</button>
    <p className="mt-3 text-xs text-[#a99c89]">The app refreshes after relevant activity, when refocused and every 15 seconds while open. Background badges refresh on actual notification pushes. iOS and some desktop systems do not support reliable silent badge-only updates.</p>
   </section>
   <div id="notification-preferences" className="scroll-mt-5"><CrmNotificationPreferences/></div>
