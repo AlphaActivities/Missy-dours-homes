@@ -114,11 +114,12 @@ export default function CrmActivityCenter(){
   </div>
   <div className="mt-4">
    <div role="group" aria-label="Filter activity" className="grid w-full min-w-0 grid-cols-12 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
-    {filters.map(({key,label,mobileLabel,mobileSpan})=><IosNativeTap key={key} className={'relative flex min-w-0 '+mobileSpan+' sm:inline-flex'}><button type="button" onClick={()=>setFilter(key)}
+    {filters.map(({key,label,mobileLabel,mobileSpan})=><IosNativeTap key={key} className={'relative flex min-w-0 overflow-visible '+mobileSpan+' sm:inline-flex'}><button type="button" onClick={()=>setFilter(key)}
      aria-label={label+': '+filterCounts[key]+' notifications'}
-     aria-pressed={filter===key} data-filter={key} data-count={filterCounts[key]} className="crm-activity-filter relative isolate flex h-11 w-full min-w-0 items-center justify-center gap-1 overflow-hidden rounded-lg border px-1 py-1 text-center text-[10px] leading-none font-medium whitespace-nowrap transition-[background-color,box-shadow] duration-300 min-[380px]:text-[11px] sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:text-xs">
-     <span className="relative z-10 min-w-0 whitespace-nowrap"><span className="sm:hidden">{mobileLabel??label}</span><span className="hidden sm:inline">{label}</span></span>
-     <span aria-hidden="true" className="relative z-10 inline-flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded-full bg-[#b63138] px-[3px] text-[10px] font-bold tabular-nums leading-none text-white shadow-[0_0_0_1px_rgba(255,255,255,.13)]">{filterCounts[key]>99?'99+':filterCounts[key]}</span></button></IosNativeTap>)}
+     aria-pressed={filter===key} data-filter={key} data-count={filterCounts[key]} className="crm-activity-filter relative isolate flex h-11 w-full min-w-0 items-center justify-center overflow-hidden rounded-lg border px-1 py-1 text-center text-[10px] leading-none font-medium whitespace-nowrap transition-[background-color,box-shadow] duration-300 min-[380px]:text-[11px] sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:text-xs">
+     <span className="relative z-10 min-w-0 whitespace-nowrap"><span className="sm:hidden">{mobileLabel??label}{key==='history'?' ('+filterCounts[key]+')':''}</span><span className="hidden sm:inline">{label}{key==='history'?' ('+filterCounts[key]+')':''}</span></span></button>
+     {key!=='history'&&filterCounts[key]>0&&<span aria-hidden="true" data-filter-corner-badge={key} className="pointer-events-none absolute -right-1.5 -top-2 z-20 inline-flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-[#b63138] px-1 text-[10px] font-bold tabular-nums leading-none text-white shadow-[0_0_0_2px_#14110e,0_0_10px_rgba(182,49,56,.25)]">{filterCounts[key]>99?'99+':filterCounts[key]}</span>}
+    </IosNativeTap>)}
    </div>
   </div>
   {notice&&<p role="alert" className="mt-3 text-sm text-amber-200">{notice}</p>}
