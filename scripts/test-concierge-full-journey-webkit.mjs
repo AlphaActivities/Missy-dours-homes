@@ -1,5 +1,19 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { webkit,devices } from 'playwright';
+
+// Guard the actual deployed API route allowlist, not only the browser's mocked
+// endpoints. A missing /typing route silently disables early iPhone pushes.
+const apiSource=readFileSync(new URL('../supabase/functions/concierge-api/index.ts',import.meta.url),'utf8');
+const routes=apiSource.match(/if\(!\[(.*?)\]\.includes\(url\.pathname\)\)/s)?.[1];
+assert.ok(routes,'Concierge endpoint allowlist must exist');
+for(const route of ['typing','ack']){
+ for(const prefix of ['/functions/v1/concierge-api/','/concierge-api/']){
+  assert.ok(routes.includes("'"+prefix+route+"'"),'Missing authenticated visitor API route: '+prefix+route);
+ }
+}
+assert.match(apiSource,/\/\/ Fallback for speech dictation/,'Message send must have a notification fallback');
+assert.match(apiSource,/event_type:'visitor_engaged'/,'Visitor engagement push must be queued');
 
 // A fully isolated browser test. All visitor API calls are mocked locally.
 const browser=await webkit.launch({headless:true});
@@ -114,6 +128,8 @@ try {
    'New assistant replies rise into the conversation');
  assert.ok(Date.now()-typingVisibleAt>=3800,'AI reply remains behind the four-second minimum typing presentation');
  await typing.waitFor({state:'hidden'});
+ assert.equal(calls.filter(operation=>operation==='typing').length,1,
+   'Verified visitor composing a message must signal a single early push event');
  const listingLink=dialog.getByRole('link',{name:'https://missydours.com/listings/14636-southern-pines-dr'});
  await listingLink.waitFor();
  assert.equal(await listingLink.getAttribute('href'),'https://missydours.com/listings/14636-southern-pines-dr');

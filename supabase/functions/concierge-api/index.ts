@@ -28,7 +28,7 @@ Deno.serve(async req=>{
  const staffOnlyRoute=staffTranslationRoute||staffReadinessRoute||staffAiSmokeRoute;
  // Visitor messaging fails closed; authenticated staff-only translation is separate.
  if(!enabled && !staffOnlyRoute) return answer({error:'Concierge messaging is not available yet.'},503,origin);
- if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate','/functions/v1/concierge-api/attachment-upload','/concierge-api/attachment-upload','/functions/v1/concierge-api/staff-readiness','/concierge-api/staff-readiness','/functions/v1/concierge-api/staff-ai-smoke','/concierge-api/staff-ai-smoke'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
+ if(!['/functions/v1/concierge-api/session','/functions/v1/concierge-api/message','/concierge-api/session','/concierge-api/message','/functions/v1/concierge-api/sync','/concierge-api/sync','/functions/v1/concierge-api/typing','/concierge-api/typing','/functions/v1/concierge-api/ack','/concierge-api/ack','/functions/v1/concierge-api/handoff','/concierge-api/handoff','/functions/v1/concierge-api/staff-translate','/concierge-api/staff-translate','/functions/v1/concierge-api/attachment-upload','/concierge-api/attachment-upload','/functions/v1/concierge-api/staff-readiness','/concierge-api/staff-readiness','/functions/v1/concierge-api/staff-ai-smoke','/concierge-api/staff-ai-smoke'].includes(url.pathname)) return answer({error:'Not found'},404,origin);
 
  if(url.pathname.endsWith('/attachment-upload')) {
   if(Deno.env.get('MISSY_TURNSTILE_READY')!=='true')return answer({error:'Service not ready'},503,origin);
@@ -355,6 +355,15 @@ Deno.serve(async req=>{
  });
  if(saveError)return answer({error:'Could not save chat. Please try again.'},503,origin);
  if(saved!==true)return answer({error:'Session expired or the conversation was transferred to Missy’s team.'},409,origin);
+ // Fallback for speech dictation, programmatic input, or a missed early typing
+ // signal: a successfully saved visitor message still produces one private
+ // engagement push. The database unique index deduplicates this against /typing.
+ // Never collect draft text or fail the customer chat if push enqueue fails.
+ const {error:engagementError}=await db.from('ai_concierge_push_outbox')
+  .insert({conversation_id:chat.id,event_type:'visitor_engaged'});
+ if(engagementError&&engagementError.code!=='23505'){
+  console.error('Visitor engagement push queue failed',engagementError.code);
+ }
  if(language!=='en') {
   try {
     const translationResponse=await fetch(aiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiSecret},
