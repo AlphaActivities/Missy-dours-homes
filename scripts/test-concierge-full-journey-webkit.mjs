@@ -82,24 +82,19 @@ try {
  await dialog.getByRole('button',{name:'Send message'}).click();
  // User bubble renders immediately; AI stays hidden for the entire typing phase.
  await dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true}).waitFor();
- assert.equal(await dialog.locator('[data-message-arrival="outgoing"]').count(),1,
-   'Fresh visitor messages slide into view from below');
+
  const typing=dialog.getByRole('status',{name:'Assistant is typing'});
  const pendingReceipt=dialog.getByText('Sending…',{exact:true});
  await pendingReceipt.waitFor({state:'visible'});
  assert.equal(await typing.count(),0,'AI typing must not precede server acknowledgement');
  await page.waitForTimeout(180);
  assert.equal(await pendingReceipt.isVisible(),true,'A pending request cannot claim Sent');
- await page.waitForTimeout(900);
- console.log('MOTION_DIAG',JSON.stringify({
-  calls,received:completedAiTurns,
-  texts:await dialog.locator('.missy-concierge-body').innerText(),
-  status:await dialog.locator('span').allTextContents()
- }));
  await dialog.getByText('Sent',{exact:true}).waitFor({state:'visible'});
  await dialog.getByText('Received by assistant',{exact:true}).waitFor({state:'visible'});
  assert.equal(await typing.count(),0,'Assistant receipt must precede three-dot processing');
  await typing.waitFor({state:'visible'});
+ assert.equal(await dialog.locator('[data-message-arrival="outgoing"]').count(),1,
+   'Fresh visitor messages slide into view from below');
  assert.equal(await dialog.getByText('Received by assistant',{exact:true}).count(),1,'Receipt stays visible during processing');
  assert.equal(await dialog.getByText('Sending…',{exact:true}).count(),0,'Once AI dots appear, receipt must not say Sending');
  assert.equal(await humanButton.count(),0,'No handoff during first AI thinking');
