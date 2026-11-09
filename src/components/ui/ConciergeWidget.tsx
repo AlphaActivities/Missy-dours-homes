@@ -81,24 +81,24 @@ function AssistantTypingBubble() {
   const reducedMotion = useReducedMotion();
   return (
     <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
-      <div className="relative h-[49px] w-[74px] shrink-0" aria-hidden="true">
+      <div className="relative h-[46px] w-[66px] shrink-0" aria-hidden="true">
         <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet">
           {/* One continuous silhouette keeps the tail's rounded join seamless. */}
           <path
-            d="M31 5 H86 C104 5 114 17 114 33 C114 49 104 58 86 58 H33 C26 58 23 66 15 67 C7 68 3 63 4 56 C4.7 51 7 48 12 44 C9 40 7 35 7 31 C7 16 17 5 31 5 Z"
-            fill="rgba(60,58,60,0.79)"
-            stroke="rgba(225,221,223,0.43)"
-            strokeWidth="2.1"
+            d="M30 6 H85 C103 6 113 17 113 32 C113 48 103 58 86 58 H31 C25 58 23 63 17 66 C11 69 7 68 7 63 C7 59 10 56 14 52 C10 47 8 40 8 32 C8 17 18 6 30 6 Z"
+            fill="rgba(62,59,61,0.65)"
+            stroke="rgba(222,216,219,0.29)"
+            strokeWidth="1.7"
             strokeLinejoin="round"
           />
           {/* iMessage's separate faint ring tucked below the tail. */}
-          <circle cx="8" cy="72" r="5.2" fill="rgba(62,59,60,0.22)" stroke="rgba(225,221,223,0.43)" strokeWidth="2"/>
+          <circle cx="7.5" cy="72.5" r="4.7" fill="rgba(62,59,60,0.11)" stroke="rgba(222,216,219,0.31)" strokeWidth="1.7"/>
         </svg>
-        <div className="absolute left-[22px] top-[17px] flex items-center gap-[5px]">
+        <div className="absolute left-[19px] top-[16px] flex items-center gap-[4px]">
           {[0,1,2].map(index => <motion.span
             key={index}
             aria-hidden="true"
-            className="block h-[8px] w-[8px] shrink-0 rounded-full bg-[#d1d1d6]"
+            className="block h-[8px] w-[8px] shrink-0 rounded-full bg-[#c9c8cd]"
             animate={reducedMotion ? {opacity:0.8,scale:1} : {opacity:[0.52,0.96,0.52],scale:[0.96,1.05,0.96]}}
             transition={reducedMotion ? {duration:0} : {duration:1.35,repeat:Infinity,delay:index*0.18,ease:'easeInOut'}}
           />)}
