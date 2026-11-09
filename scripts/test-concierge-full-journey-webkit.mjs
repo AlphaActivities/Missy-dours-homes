@@ -21,6 +21,8 @@ assert.ok(activityContext.includes("lastSyncedAt:new Date().toISOString()") &&
  'App badge diagnostics must distinguish successful request from unsupported browser');
 assert.ok(settingsSource.includes('App Badge Diagnostics') &&
  settingsSource.includes('Sync notification count now') &&
+ settingsSource.includes('onClick={()=>void syncBadgeNow()}') &&
+ activityContext.includes('setBadgeSyncRevision(n=>n+1)') &&
  settingsSource.includes('Accepted by browser'),
  'Settings must show transparent current-device badge diagnostics and manual sync');
 
