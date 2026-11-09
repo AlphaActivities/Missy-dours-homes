@@ -318,9 +318,9 @@ function DrawerContent({
                 requestedAt:t.created_at,otherRequests:callbackChoices.length-1
               });}}
               className="w-full min-h-11 rounded-lg border border-amber-200/40 bg-[#201719] p-2 text-xs text-[#f5dfbd]">
-              {callbackChoices.map((t,i)=><option key={t.conversation_id} value={t.conversation_id}>{t.request_kind==='callback'?'Callback':'Live chat'} {i+1} · {formatDashboardDateTime(t.created_at)}</option>)}
+              {callbackChoices.map((t,i)=><option key={t.conversation_id} value={t.conversation_id}>{t.request_kind==='callback'?'Request':'Live chat'} {i+1} · {t.request_kind==='callback'?'Received':'Started'} {new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(t.created_at))}</option>)}
             </select>
-            <p className="text-xs leading-relaxed text-[#edd1a4]">Only the selected conversation will be updated. All others remain open.</p>
+            <p className="text-xs leading-relaxed text-[#edd1a4]">These are request receipt times, not booked callback appointments. Only the selected conversation will be updated; all others remain open.</p>
           </div>}
           {callbackWork?.conversationId&&<Link className="mt-2 inline-flex min-h-10 items-center rounded-lg border border-amber-200/40 px-3 py-2 text-xs font-semibold text-[#f2d4a3]" to={'/dashboard/conversations?conversation='+encodeURIComponent(callbackWork.conversationId)}>Open requested conversation</Link>}
           <p className="mt-2">Assigned to: {callbackWork?.owner?({'yourcustomerflowguy@gmail.com':'Josh','heberherrera92@gmail.com':'Heber','missydourshomes@gmail.com':'Missy'} as Record<string,string>)[callbackWork.owner.toLowerCase()]??'Team member':'Unassigned'}</p>
