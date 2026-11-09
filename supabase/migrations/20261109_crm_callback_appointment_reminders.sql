@@ -45,7 +45,12 @@ begin
     join public.ai_concierge_handoff_outcomes o on o.task_id=t.id
     where t.id=q.source_id and t.status in ('pending','claimed') and t.due_at=q.due_at
       and o.disposition='follow_up' and o.followup_at=q.due_at
-   )));
+      and o.id=(select latest.id from public.ai_concierge_handoff_outcomes latest
+       where latest.task_id=t.id order by latest.created_at desc limit 1)
+   ))
+   or exists(select 1 from public.crm_notification_preferences pref
+     where pref.staff_email=q.staff_email and pref.callback_reminders_enabled=false)
+ );
 
  with source as (
   select 'lead_followup'::text kind,f.id source_id,f.due_at,f.created_at scheduled_at,
