@@ -22,7 +22,7 @@ assert.ok(activityCenter.includes("item.callback_status==='claimed'?'Assigned to
  activityCenter.includes("staffName(item.callback_assignee)"),
  'Staff claim means assigned, not proof of a response to the visitor');
 assert.ok(activityCenter.includes("if(filter==='urgent')return hasActiveEscalation(e)") &&
- activityCenter.includes("e.callback_outcome==='follow_up'") &&
+ activityCenter.includes("item.callback_outcome==='follow_up'") &&
  activityCenter.includes("!item.callback_escalated_at"),
  'Keep an unresolved escalation urgent until its recorded outcome resets the task escalation');
 assert.ok(activityCenter.includes("Overdue 24h+") &&
