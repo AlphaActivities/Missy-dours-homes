@@ -231,7 +231,16 @@ try {
  await humanButton.click();
  const form=dialog.getByRole('form',{name:'Request a callback'});
  await form.waitFor({state:'visible'});
- await dialog.getByRole('button',{name:'Keep chatting'}).first().click();
+ const callbackAction=form.getByRole('button',{name:'Request a callback'});
+ const continueAction=form.getByRole('button',{name:'Keep chatting'});
+ const [callbackBox,continueBox]=await Promise.all([callbackAction.boundingBox(),continueAction.boundingBox()]);
+ assert.ok(callbackBox&&continueBox,'Both callback actions must render');
+ assert.ok(callbackBox.width>=110&&continueBox.width>=110,'Both actions need comfortable mobile tap targets');
+ assert.ok(Math.abs(callbackBox.width-continueBox.width)<=2,'Callback and keep-chatting actions must split the form evenly');
+ assert.ok(Math.abs(callbackBox.height-continueBox.height)<=2&&callbackBox.height>=48,'Both action buttons need matching, accessible heights');
+ assert.ok(continueBox.x>=callbackBox.x+callbackBox.width,'Keep chatting must occupy the right half');
+ assert.equal(await continueAction.isEnabled(),true,'Keep chatting must work before entering contact details');
+ await continueAction.click();
  await form.waitFor({state:'hidden'});
  await humanButton.waitFor({state:'visible'});
  await humanButton.click();
