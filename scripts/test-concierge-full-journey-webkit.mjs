@@ -8,6 +8,31 @@ const apiSource=readFileSync(new URL('../supabase/functions/concierge-api/index.
 
 const activityCenter=readFileSync(new URL('../src/components/dashboard/CrmActivityCenter.tsx',import.meta.url),'utf8');
 const activityContext=readFileSync(new URL('../src/components/dashboard/CrmActivityContext.tsx',import.meta.url),'utf8');
+assert.ok(activityContext.includes("callback_assignee?:string|null") &&
+ activityContext.includes("callback_connection?:VisitorConnection|null") &&
+ activityContext.includes("callback_outcome?:'follow_up'|'resolved'|null"),
+ 'Notification cards need authoritative assignment, presence and recorded outcome fields');
+assert.ok(activityContext.includes("from('ai_concierge_handoff_outcomes')") &&
+ activityContext.includes("from('ai_concierge_visitor_presence')"),
+ 'Use actual recorded outcomes and recent presence, not guessed follow-up states');
+assert.ok(activityContext.includes("expiry<=Date.now()?'expired'") &&
+ activityContext.includes("Date.now()-lastSeen<75000"),
+ 'Expired session and live visitor presence must be distinguished');
+assert.ok(activityCenter.includes("item.callback_status==='claimed'?'Assigned to '") &&
+ activityCenter.includes("staffName(item.callback_assignee)"),
+ 'Staff claim means assigned, not proof of a response to the visitor');
+assert.ok(activityCenter.includes("if(filter==='urgent')return hasActiveEscalation(e)") &&
+ activityCenter.includes("e.callback_outcome==='follow_up'") &&
+ activityCenter.includes("!item.callback_escalated_at"),
+ 'Keep an unresolved escalation urgent until its recorded outcome resets the task escalation');
+assert.ok(activityCenter.includes("Overdue 24h+") &&
+ activityCenter.includes("Chat Session Expired") &&
+ activityCenter.includes("Visitor Offline"),
+ 'Urgent cards must identify overdue and unavailable visitor sessions');
+assert.ok(activityCenter.includes("item.callback_lead_id") &&
+ activityCenter.includes("Open Lead · Follow Up"),
+ 'Offline callback with linked lead should offer follow-up instead of pretending live response is possible');
+
 const settingsSource=readFileSync(new URL('../src/pages/dashboard/SettingsPage.tsx',import.meta.url),'utf8');
 assert.ok(activityContext.includes("new BroadcastChannel('missy-crm-badge-'+email)") &&
  activityContext.includes("badgeChannelRef.current?.postMessage({kind:'receipt-updated'})"),
