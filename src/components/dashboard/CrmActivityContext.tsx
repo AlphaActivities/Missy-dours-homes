@@ -7,11 +7,12 @@ import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound
 export type ActivityCategory='lead'|'handoff'|'escalation'|'staff'|'opportunity';
 export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;callback_request_kind?:'live_chat'|'callback'|null;opportunity_kind?:string|null;opportunity_online?:boolean;chat_lead_audit?:boolean;}
 export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'sound_staff';
+export type BadgeSyncDiagnostic={supported:boolean;status:'checking'|'synced'|'unsupported'|'error';lastSyncedAt:string|null;lastSyncedCount:number|null;error:string|null};
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
 type ActivityState={
  items:CrmActivity[];liveAlert:CrmActivity|null;dismissLiveAlert:()=>void;unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
- prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;
+ prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;badgeSync:BadgeSyncDiagnostic;
  markRead:(eventId:string)=>Promise<void>;archive:(eventId:string)=>Promise<void>;restore:(eventId:string)=>Promise<void>;
  markAllRead:()=>Promise<void>;setPreference:(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>Promise<void>;
  setSoundPreference:(name:SoundPreferenceKey,value:CrmSound)=>Promise<void>;
@@ -30,6 +31,8 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const [loadingMore,setLoadingMore]=useState(false);
  const [prefs,setPrefs]=useState<NotificationPrefs>(defaults(email));
  const [attentionCount,setAttentionCount]=useState(0);
+ const [badgeSync,setBadgeSync]=useState<BadgeSyncDiagnostic>({supported:false,status:'checking',lastSyncedAt:null,lastSyncedCount:null,error:null});
+ const badgeChannelRef=useRef<BroadcastChannel|null>(null);
  const [attentionBreakdown,setBreakdown]=useState({new_leads:0,open_tasks:0,waiting_conversations:0});
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState<string|null>(null);
@@ -198,19 +201,49 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   void refresh();
   const channel=supabase.channel('crm-activity-'+email)
    .on('postgres_changes',{event:'*',schema:'public',table:'crm_activity_events'},()=>{void refresh();})
+   // Status updates can change active-card visibility without a new event.
+   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'ai_conversations'},()=>{void refresh();})
    .subscribe();
-  const timer=window.setInterval(()=>void refresh(),15000); // Reconnection fallback.
+  const badgeChannel=typeof BroadcastChannel==='function'?new BroadcastChannel('missy-crm-badge-'+email):null;
+  badgeChannelRef.current=badgeChannel;
+  if(badgeChannel)badgeChannel.onmessage=()=>{void refresh();};
+  const timer=window.setInterval(()=>void refresh(),15000); // Cross-device fallback for receipt/lead updates.
   const visible=()=>{if(document.visibilityState==='visible')void refresh();};
   document.addEventListener('visibilitychange',visible);
-  return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);void supabase.removeChannel(channel);};
+  window.addEventListener('focus',visible);
+  window.addEventListener('pageshow',visible);
+  return()=>{
+   window.clearInterval(timer);
+   document.removeEventListener('visibilitychange',visible);
+   window.removeEventListener('focus',visible);
+   window.removeEventListener('pageshow',visible);
+   badgeChannel?.close();badgeChannelRef.current=null;
+   void supabase.removeChannel(channel);
+  };
  },[email,refresh]);
  useEffect(()=>{
   // Keep the installed app badge synchronized with the visible active inbox total.
   // Some browsers/platforms do not implement the Badging API.
   const badgeNavigator=navigator as Navigator&{setAppBadge?:(count?:number)=>Promise<void>;clearAppBadge?:()=>Promise<void>};
-  if(!permitted.includes(email)||loading)return;
-  const task=attentionCount>0?badgeNavigator.setAppBadge?.(attentionCount):badgeNavigator.clearAppBadge?.();
-  if(task)void task.catch(()=>{/* OS app-badge availability varies. */});
+  if(!permitted.includes(email)){
+   if(typeof badgeNavigator.clearAppBadge==='function')void badgeNavigator.clearAppBadge().catch(()=>{});
+   setBadgeSync({supported:typeof badgeNavigator.setAppBadge==='function',status:'checking',lastSyncedAt:null,lastSyncedCount:null,error:null});
+   return;
+  }
+  if(loading)return;
+  const supported=typeof badgeNavigator.setAppBadge==='function'&&typeof badgeNavigator.clearAppBadge==='function';
+  if(!supported){
+   setBadgeSync({supported:false,status:'unsupported',lastSyncedAt:null,lastSyncedCount:null,error:null});
+   return;
+  }
+  let cancelled=false;
+  const task=attentionCount>0?badgeNavigator.setAppBadge!(attentionCount):badgeNavigator.clearAppBadge!();
+  void task.then(()=>{
+   if(!cancelled)setBadgeSync({supported:true,status:'synced',lastSyncedAt:new Date().toISOString(),lastSyncedCount:attentionCount,error:null});
+  }).catch(()=>{
+   if(!cancelled)setBadgeSync(previous=>({...previous,supported:true,status:'error',error:'The operating system did not accept this badge update.'}));
+  });
+  return()=>{cancelled=true;};
  },[attentionCount,email,loading]);
  const upsertReceipt=async(id:string,changes:{read_at?:string|null;archived_at?:string|null})=>{
   const before=items.find(x=>x.id===id);if(!before)return;
@@ -218,6 +251,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   const r=await supabase.from('crm_activity_receipts').upsert(payload,{onConflict:'event_id,staff_email'});
   if(r.error)throw r.error;
   setItems(old=>{const next=old.map(x=>x.id===id?{...x,...changes}:x);loadedRef.current=next;return next;});
+  badgeChannelRef.current?.postMessage({kind:'receipt-updated'});
   await refresh();
  };
  const markRead=async(id:string)=>upsertReceipt(id,{read_at:new Date().toISOString()});
@@ -242,7 +276,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const alertTarget=liveAlert?.callback_conversation_id
   ?'/dashboard/conversations?conversation='+liveAlert.callback_conversation_id
   :liveAlert?.target_path?.startsWith('/dashboard/')?liveAlert.target_path:'/dashboard/notifications';
- return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
+ return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,badgeSync,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
  {children}
  {liveAlert&&permitted.includes(email)&&
   <div role="alert" aria-live="assertive" data-category={liveAlert.category} data-opportunity-kind={liveAlert.opportunity_kind??undefined} className="crm-live-alert fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[120] mx-auto max-w-md rounded-2xl border p-4 text-[#f0dfbd] backdrop-blur-xl">
