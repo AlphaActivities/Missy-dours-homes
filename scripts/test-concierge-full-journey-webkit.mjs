@@ -59,6 +59,7 @@ const badgeMigration=readFileSync(new URL('../supabase/migrations/20261109_unify
 
 const entranceSource=readFileSync(new URL('../src/components/dashboard/ui/ConciergeSignatureEntrance.tsx',import.meta.url),'utf8');
 const outcomeSource=readFileSync(new URL('../src/pages/dashboard/ConversationsPage.tsx',import.meta.url),'utf8');
+const callbackPickerSource=readFileSync(new URL('../src/components/dashboard/ui/TexasCallbackPicker.tsx',import.meta.url),'utf8');
 assert.ok(entranceSource.includes("supabase.rpc('crm_activity_totals')") &&
  entranceSource.includes("(data as {total?:unknown}|null)?.total"),
  'Entrance must use the exact same active inbox total as the CRM bell');
@@ -69,10 +70,11 @@ assert.ok(entranceSource.includes("+' active '+"),
 assert.ok(outcomeSource.includes('aria-label="Record chat outcome before returning to AI"') &&
  outcomeSource.includes('min-w-0 max-w-full space-y-3 overflow-x-clip'),
  'Outcome form must constrain intrinsic iOS date/time field width');
-assert.ok(outcomeSource.includes('type="datetime-local"') &&
- outcomeSource.includes("minWidth:0,maxWidth:'100%',boxSizing:'border-box'") &&
- outcomeSource.includes('overflow-hidden rounded-lg border'),
- 'Native iOS follow-up picker must remain clickable but clipped to its bordered container');
+assert.ok(outcomeSource.includes('<TexasCallbackPicker') &&
+ callbackPickerSource.includes('type="datetime-local"') &&
+ callbackPickerSource.includes("minWidth:0,maxWidth:'100%',boxSizing:'border-box'") &&
+ callbackPickerSource.includes('overflow-hidden rounded-lg border'),
+ 'Shared native iOS follow-up picker must remain clickable but clipped to its bordered container');
 assert.ok(activityContext.includes('setAttentionCount(Math.max(0,Number(t?.total??0)))'),
  'Bell and foreground app badges must count actual active inbox cards, not duplicate work records');
 assert.ok(pushDelivery.includes("crm_visible_notification_count_service',{p_staff_email:device.staff_email}"),
