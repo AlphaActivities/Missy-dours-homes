@@ -94,7 +94,7 @@ function AssistantTypingBubble() {
           {/* iMessage's separate faint ring tucked below the tail. */}
           <circle cx="5" cy="74" r="4.5" fill="rgba(62,59,60,0.11)" stroke="rgba(222,216,219,0.31)" strokeWidth="1.7"/>
         </svg>
-        <div className="absolute left-[19px] top-[16px] flex items-center gap-[4px]">
+        <div className="absolute left-[19px] top-[14px] flex items-center gap-[4px]">
           {[0,1,2].map(index => <motion.span
             key={index}
             aria-hidden="true"
