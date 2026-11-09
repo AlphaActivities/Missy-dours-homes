@@ -86,7 +86,7 @@ begin
   select q.id from public.crm_callback_reminder_queue q
   where q.delivered_at is null and q.next_attempt_at<=now()
    and (q.claimed_until is null or q.claimed_until<now()) and q.attempts<6
-  order by q.created_at for update skip locked limit least(greatest(p_limit,1),50)
+  order by q.created_at limit least(greatest(p_limit,1),50) for update skip locked
  ), claimed as (
   update public.crm_callback_reminder_queue q set
    attempts=q.attempts+1,claimed_until=now()+interval '2 minutes'
