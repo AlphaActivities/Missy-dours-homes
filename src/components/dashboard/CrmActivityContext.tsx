@@ -5,7 +5,7 @@ import {useAuth} from '../../contexts/AuthContext';
 import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound,type CrmSound} from './crmSounds';
 
 export type ActivityCategory='lead'|'handoff'|'escalation'|'staff'|'opportunity';
-export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;opportunity_kind?:string|null;opportunity_online?:boolean;chat_lead_audit?:boolean;}
+export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;callback_request_kind?:'live_chat'|'callback'|null;opportunity_kind?:string|null;opportunity_online?:boolean;chat_lead_audit?:boolean;}
 export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'sound_staff';
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
@@ -54,12 +54,12 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   }
   const taskIds=[...new Set(rows.filter(e=>['handoff:','escalation:','staff:completed:','staff:claimed:'].some(prefix=>e.event_key.startsWith(prefix)))
    .map(e=>e.event_key.split(':').pop()!).filter(Boolean))];
-  const callbacks=new Map<string,{status:string;conversation_id:string;created_at:string;escalated_at:string|null;urgency:string}>();
+  const callbacks=new Map<string,{status:string;conversation_id:string;created_at:string;escalated_at:string|null;urgency:string;request_kind:'live_chat'|'callback'}>();
   const conversations=new Map<string,{status:string;lead_id:string|null}>();
   if(taskIds.length){
-   const res=await supabase.from('ai_concierge_tasks').select('id,status,conversation_id,created_at,escalated_at,urgency').in('id',taskIds);
+   const res=await supabase.from('ai_concierge_tasks').select('id,status,conversation_id,created_at,escalated_at,urgency,request_kind').in('id',taskIds);
    if(res.error)throw res.error;
-   (res.data??[]).forEach(t=>callbacks.set(t.id,{status:t.status,conversation_id:t.conversation_id,created_at:t.created_at,escalated_at:t.escalated_at,urgency:t.urgency}));
+   (res.data??[]).forEach(t=>callbacks.set(t.id,{status:t.status,conversation_id:t.conversation_id,created_at:t.created_at,escalated_at:t.escalated_at,urgency:t.urgency,request_kind:t.request_kind}));
    const convoIds=[...new Set((res.data??[]).map(t=>t.conversation_id))];
    if(convoIds.length){
     const convo=await supabase.from('ai_conversations').select('id,status,lead_id').in('id',convoIds);
@@ -97,7 +97,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     callback_lead_id:convo?.lead_id??null,callback_conversation_id:task?.conversation_id??(e.category==='opportunity'?e.event_key.replace(/^opportunity:/,''):null),
     opportunity_kind:opportunity?.opportunity_kind??null,opportunity_online:Boolean(opportunity&&online.has(opportunityId)),
      callback_task_id:task?e.event_key.split(':').pop()??null:null,callback_requested_at:task?.created_at??null,
-     callback_escalated_at:task?.escalated_at??null,callback_urgency:task?.urgency??null,
+     callback_escalated_at:task?.escalated_at??null,callback_urgency:task?.urgency??null,callback_request_kind:task?.request_kind??null,
     chat_lead_audit:e.category==='lead'&&Boolean(id)&&sources.get(id)==='AI Concierge'&&chatLeadIds.has(id)};
   });
  };
@@ -237,19 +237,17 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  };
  const unreadCount=counts.unread;
  const dismissLiveAlert=()=>setLiveAlert(null);
- const alertTarget=liveAlert?.category==='handoff'&&liveAlert.callback_lead_id
-  ?'/dashboard/leads?lead='+liveAlert.callback_lead_id
-  :liveAlert?.callback_conversation_id
-   ?'/dashboard/conversations?conversation='+liveAlert.callback_conversation_id
-   :liveAlert?.target_path?.startsWith('/dashboard/')?liveAlert.target_path:'/dashboard/notifications';
+ const alertTarget=liveAlert?.callback_conversation_id
+  ?'/dashboard/conversations?conversation='+liveAlert.callback_conversation_id
+  :liveAlert?.target_path?.startsWith('/dashboard/')?liveAlert.target_path:'/dashboard/notifications';
  return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
  {children}
  {liveAlert&&permitted.includes(email)&&
   <div role="alert" aria-live="assertive" data-category={liveAlert.category} data-opportunity-kind={liveAlert.opportunity_kind??undefined} className="crm-live-alert fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[120] mx-auto max-w-md rounded-2xl border p-4 text-[#f0dfbd] backdrop-blur-xl">
    <div className="flex items-start justify-between gap-3">
     <div className="min-w-0">
-     <p className="crm-live-alert-source text-[10px] font-semibold uppercase tracking-[.15em]">{liveAlert.category==='escalation'?'Urgent Chat Request':liveAlert.category==='lead'?'Website Contact Form':liveAlert.category==='opportunity'?'AI Chat Opportunity':liveAlert.category==='handoff'?'Direct Chat Request':'Staff Activity'}</p>
-     <p className="mt-1 text-sm font-semibold">{liveAlert.category==='handoff'?'New Chat Request':liveAlert.category==='escalation'?'Urgent Chat Request':liveAlert.category==='lead'?'New Lead Received':liveAlert.title.replace(/Concierge/gi,'Chatbot')}</p>
+     <p className="crm-live-alert-source text-[10px] font-semibold uppercase tracking-[.15em]">{liveAlert.category==='escalation'?(liveAlert.callback_request_kind==='callback'?'Urgent Callback Request':'Urgent Chat Request'):liveAlert.category==='lead'?'Website Contact Form':liveAlert.category==='opportunity'?'AI Chat Opportunity':liveAlert.category==='handoff'?(liveAlert.callback_request_kind==='callback'?'Callback Request':'Direct Chat Request'):'Staff Activity'}</p>
+     <p className="mt-1 text-sm font-semibold">{liveAlert.category==='handoff'?(liveAlert.callback_request_kind==='callback'?'Callback Requested':'New Chat Request'):liveAlert.category==='escalation'?(liveAlert.callback_request_kind==='callback'?'Urgent Callback Request':'Urgent Chat Request'):liveAlert.category==='lead'?'New Lead Received':liveAlert.title.replace(/Concierge/gi,'Chatbot').replace(/^Live (Buyer|Seller|Investor) Interest/i,'$1 Interest Detected')}</p>
      <p className="mt-1 line-clamp-3 text-xs text-[#d4c4ad]">{liveAlert.summary.replace(/Concierge activity/gi,'Chatbot activity').replace(/Concierge handoff/gi,'Chat request')}</p>
     </div>
     <button type="button" aria-label="Dismiss in-app notification" onClick={dismissLiveAlert} className="shrink-0 rounded-lg border border-white/20 px-2.5 py-1.5 text-sm text-[#e8d4b3]">✕</button>
