@@ -4,6 +4,7 @@ import {useAuth} from '../../contexts/AuthContext';
 import {supabase} from '../../lib/supabase';
 import DesktopAppInstallCard from '../../components/dashboard/DesktopAppInstallCard';
 import CrmNotificationPreferences from '../../components/dashboard/CrmNotificationPreferences';
+import {useCrmActivity} from '../../components/dashboard/CrmActivityContext';
 
 type Device={id:string;user_agent:string|null;device_label:string|null;created_at:string;updated_at:string;last_test_accepted_at:string|null;last_test_confirmed_at:string|null;endpoint:string};
 type Permission='granted'|'denied'|'default'|'unsupported';
@@ -18,6 +19,7 @@ const isStandalone=()=>window.matchMedia('(display-mode: standalone)').matches |
 const stamped=(v:string|null)=>v?new Date(v).toLocaleString():'Not yet';
 export default function SettingsPage(){
  const {user}=useAuth();
+ const {attentionCount,badgeSync,syncBadgeNow}=useCrmActivity();
  const email=user?.email?.toLowerCase()??'';
  const [permission,setPermission]=useState<Permission>('unsupported');
  const [devices,setDevices]=useState<Device[]>([]);
@@ -132,7 +134,7 @@ export default function SettingsPage(){
  return <main className="mx-auto max-w-5xl px-4 py-7 text-[#ecdbc2] md:px-8 md:py-9">
   <div className="mb-6 flex items-center gap-3"><ShieldCheck className="text-[#d7b878]" size={23}/><div><h1 className="font-serif text-2xl">My Settings</h1><p className="mt-1 text-sm text-[#bdb0a0]">Personal preferences, notification devices and app setup</p></div></div>
   <nav aria-label="Settings sections" className="mb-5 flex flex-wrap gap-2 text-xs">
-   {([{id:'push-device-settings',label:'Enable alerts'},{id:'account',label:'My account'},{id:'notification-preferences',label:'Preferences'},{id:'registered-devices',label:'My devices'},{id:'app-install-settings',label:'App setup'}] as const).map(link=><a key={link.id} href={'#'+link.id} className="rounded-lg border border-[#c8a96e]/30 bg-black/20 px-3 py-2 text-[#e3c99b]">{link.label}</a>)}
+   {([{id:'push-device-settings',label:'Enable alerts'},{id:'account',label:'My account'},{id:'badge-diagnostics',label:'Badge status'},{id:'notification-preferences',label:'Preferences'},{id:'registered-devices',label:'My devices'},{id:'app-install-settings',label:'App setup'}] as const).map(link=><a key={link.id} href={'#'+link.id} className="rounded-lg border border-[#c8a96e]/30 bg-black/20 px-3 py-2 text-[#e3c99b]">{link.label}</a>)}
   </nav>
   <section id="push-device-settings" className={label+' mt-5'}>
    <h2 className="font-serif text-xl text-[#edcfa0]">Enable Device Notifications</h2>
@@ -150,6 +152,20 @@ export default function SettingsPage(){
    <h2 className="font-serif text-xl text-[#edcfa0]">My account</h2>
    <p className="mt-2 text-sm text-[#c7b9a6]">Signed in as <strong className="break-all text-[#e9d6b6]">{email}</strong></p>
    <p className="mt-2 text-xs text-[#bdb0a0]">Personal notification preferences and registered devices belong to your account. Business-wide controls are kept separately in the owner-only Admin area.</p>
+  </section>
+  <section id="badge-diagnostics" className={label+' mt-5'} aria-label="App badge synchronization diagnostics">
+   <h2 className="font-serif text-xl text-[#edcfa0]">App Badge Diagnostics</h2>
+   <p className="mt-2 text-xs leading-relaxed text-[#c7b9a6]">The CRM bell, installed app icon and notification filters use the same active inbox count. This panel reports whether your current device accepted the latest app icon badge request. It cannot verify the number visually shown by your operating system.</p>
+   <div className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+    <p className="rounded-lg border border-white/10 bg-black/20 p-3">Active notifications: <strong className="text-[#efcf97]">{attentionCount}</strong></p>
+    <p className="rounded-lg border border-white/10 bg-black/20 p-3">App badge support: <strong className="text-[#efcf97]">{badgeSync.supported?'Supported':badgeSync.status==='checking'?'Checking':'Unavailable'}</strong></p>
+    <p className="rounded-lg border border-white/10 bg-black/20 p-3">Last badge request: <strong className="text-[#efcf97]">{badgeSync.status==='synced'?'Accepted by browser':badgeSync.status==='error'?'Failed':badgeSync.status==='unsupported'?'Not supported':'Checking'}</strong></p>
+    <p className="rounded-lg border border-white/10 bg-black/20 p-3">Last accepted update: <strong className="text-[#efcf97]">{stamped(badgeSync.lastSyncedAt)}</strong></p>
+   </div>
+   {badgeSync.lastSyncedCount!==null&&<p className="mt-2 text-xs text-[#c7b9a6]">Last badge value sent to this device: {badgeSync.lastSyncedCount}</p>}
+   {badgeSync.error&&<p role="status" className="mt-2 text-xs text-amber-200">{badgeSync.error}</p>}
+   <button type="button" disabled={loading||Boolean(busy)} onClick={()=>void syncBadgeNow()} className="mt-3 flex min-h-11 items-center gap-2 rounded-lg border border-[#c8a96e]/50 px-4 py-2 text-sm text-[#efcf97] disabled:opacity-50"><RefreshCw size={16}/> Sync notification count now</button>
+   <p className="mt-3 text-xs text-[#a99c89]">The app refreshes after relevant activity, when refocused and every 15 seconds while open. Background badges refresh on actual notification pushes. iOS and some desktop systems do not support reliable silent badge-only updates.</p>
   </section>
   <div id="notification-preferences" className="scroll-mt-5"><CrmNotificationPreferences/></div>
   <section id="registered-devices" className={label+' mt-5'}>
