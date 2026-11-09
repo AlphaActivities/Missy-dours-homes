@@ -91,7 +91,8 @@ export default function CrmActivityCenter(){
   key,(key==='history'?items:activeEvents).filter(e=>matchesFilter(e,key)).length
  ])) as Record<Filter,number>,[items,activeEvents]);
  const requiresAction=(item:CrmActivity)=>Boolean(item.category!=='opportunity'&&!item.lead_archived&&!item.archived_at &&
-   (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'));
+   (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'||
+    (hasActiveEscalation(item)&&item.callback_status==='claimed')));
  // Every actionable card receives a matching category-colored border sweep;
  // informational or completed cards keep a quiet, premium static border.
  const isFeatured=(item:CrmActivity)=>requiresAction(item)||(item.category==='opportunity'&&item.callback_status==='ai');
@@ -177,7 +178,8 @@ export default function CrmActivityCenter(){
       {item.callback_status==='claimed'&&<><span aria-hidden="true">→</span><span>Assigned to {staffName(item.callback_assignee)}</span></>}
       {['completed','closed'].includes(item.callback_status??'')&&<><span aria-hidden="true">→</span><span>Completed</span></>}
      </div>}
-     {isInProgress(item)&&!requiresAction(item)&&<p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#dcb979]"><CheckCircle2 size={15} aria-hidden="true"/> Assigned · Outcome not yet recorded</p>}
+     {item.callback_status==='claimed'&&isChatRequest(item)&&<p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#dcb979]"><CheckCircle2 size={15} aria-hidden="true"/> Assigned · Outcome not yet recorded</p>}
+     {isInProgress(item)&&!isChatRequest(item)&&!requiresAction(item)&&<p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#dcb979]"><CheckCircle2 size={15} aria-hidden="true"/> Staff handling this item</p>}
      {isFollowupScheduled(item)&&<p className="mt-3 text-xs text-[#dcb979]">A next step is recorded. This callback remains open until verified contact or completion.</p>}
      {!(item.category==='handoff'||item.category==='escalation')&&<time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString(undefined,{year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</time>}
     </div>
