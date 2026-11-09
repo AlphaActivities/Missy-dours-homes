@@ -36,11 +36,6 @@ function visitorReceipt(m:Message,index:number,all:Message[],mode:'ai'|'human'|'
  if(all.slice(index+1).some(next=>next.sender==='ai'))return 'Received by assistant';
  return 'Sent';
 }
-function prefersHuman(messages:Message[]){
- const visitors=messages.filter(m=>m.role==='visitor');
- return visitors.length>=2||visitors.some(m=>/\b(speak|talk|connect|call|phone|meet|appointment|showing|tour|schedule|representative|person|human|agent|missy|realtor)\b/i.test(m.text));
-}
-
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy. What happy answer can we find for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
@@ -84,7 +79,7 @@ function ListeningWaveform() {
 function AssistantTypingBubble() {
   const reducedMotion = useReducedMotion();
   return <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
-    <div className="missy-ios-incoming-bubble relative inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[9px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
+    <div className="missy-ios-incoming-bubble relative inline-flex h-9 items-center gap-[5px] rounded-[20px] rounded-bl-[18px] bg-[#29292d] px-[13px] shadow-[0_3px_10px_rgba(0,0,0,.10)]">
       <span className="sr-only">Assistant is typing</span>
       {[0,1,2].map(index => <motion.span
         key={index}
@@ -650,14 +645,24 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
               <button type="button" onClick={goToContact} className="mt-2 rounded-full border border-[#dfbf82] bg-[#c5a16a] px-4 py-2 font-semibold text-black transition-transform hover:brightness-110 active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Contact Missy</button>
             </div>}
             
-            {chatEnabled && session && mode === 'ai' && messages.some(m=>m.role==='visitor') && !handoffOpen && (prefersHuman(messages) ?
-              <section aria-label="Personal assistance" className="rounded-2xl border border-[#c6a16c]/35 bg-gradient-to-br from-[#242016]/90 to-[#17130f]/95 px-4 py-4 shadow-[0_9px_30px_rgba(0,0,0,.14)]">
-                <p className="font-serif text-[17px] text-[#f2d6a4]">Prefer a personal touch?</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-[#cebea5]">Missy’s team can help explore the details, arrange a conversation, and guide your next step.</p>
-                <button type="button" disabled={busy} onClick={()=>setHandoffOpen(true)} className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full border border-[#ddb977]/65 bg-[#c5a16a]/15 px-5 text-sm font-semibold text-[#f0d6a3] transition-colors hover:bg-[#c5a16a]/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcb8d] disabled:opacity-40">Connect with Missy’s team <span aria-hidden="true" className="ml-2">→</span></button>
-              </section>
-              : <button type="button" disabled={busy} onClick={()=>setHandoffOpen(true)} className="text-xs font-medium text-[#d5b781] underline decoration-[#b99761]/60 underline-offset-4 hover:text-[#f0d39e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcb8d] disabled:opacity-40">Prefer to speak with Missy’s team?</button>)}
-            {chatEnabled && session && mode === 'ai' && handoffOpen && <form onSubmit={e=>{e.preventDefault();void requestHuman();}} className="space-y-3 rounded-2xl border border-[#c6a16c]/45 bg-[#231a11]/80 p-4" aria-label="Request a callback">
+            {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation. You can now share photos or PDFs using the + button.</p>}
+            {mode === 'waiting_human' && <div className="space-y-3 rounded-2xl border border-[#c6a16c]/30 bg-[#21190f]/60 p-4">
+              <p className="text-sm leading-relaxed text-[#f0d6a5]">Waiting for a team member. Need a faster response? You can also reach Missy through the website.</p>
+              <button type="button" onClick={goToContact} className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center rounded-xl border border-[#f0d49d] bg-gradient-to-r from-[#efd49f] via-[#d9b878] to-[#c6a065] px-6 py-3 text-sm font-semibold text-[#1c150c] shadow-[0_8px_24px_rgba(197,161,106,.22)] transition-[transform,filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_10px_28px_rgba(197,161,106,.34)] active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">
+                Contact Missy directly
+              </button>
+            </div>}
+            {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
+            {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
+          </div>
+          {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-4 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
+           {chatEnabled && session && mode === 'ai' && welcomeReady && messages.some(m=>m.role==='visitor') && <div className="shrink-0 flex justify-end px-5 pb-2 pt-1 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]">
+            <button type="button" aria-expanded={handoffOpen} aria-controls="missy-callback-request" onClick={()=>setHandoffOpen(open=>!open)} className="inline-flex min-h-9 max-w-full items-center justify-center gap-1.5 rounded-full border border-[#b99b68]/45 bg-[#211a12]/90 px-3 py-1.5 text-[11px] font-medium leading-snug text-[#e6c792] shadow-[0_3px_12px_rgba(0,0,0,.2)] transition-colors hover:border-[#d6b67a] hover:bg-[#332718] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#efcb8d]">
+              {handoffOpen?'Keep chatting':'Prefer to speak with Missy directly?'} <span aria-hidden="true">{handoffOpen?'×':'→'}</span>
+            </button>
+           </div>}
+           {chatEnabled && session && mode === 'ai' && handoffOpen && <div className="min-h-0 max-h-[min(52dvh,430px)] shrink overflow-y-auto overscroll-contain border-t border-[#c6a16c]/25 px-5 py-3 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Optional callback details">
+            {chatEnabled && session && mode === 'ai' && handoffOpen && <form id="missy-callback-request" onSubmit={e=>{e.preventDefault();void requestHuman();}} className="space-y-3 rounded-2xl border border-[#c6a16c]/45 bg-[#231a11]/95 p-4" aria-label="Request a callback">
               <p className="font-serif text-base text-[#f1d39a]">Connect with Missy’s team</p>
               <p className="text-xs text-[#e5d4ba]">{privateQA?'QA mode: use the prefilled reserved test name and phone number. They do not belong to a real customer.':'In case we get disconnected, please leave a name and phone number where Missy can reach you. We’ll use it for this request.'}</p>
               <label className="block text-xs text-[#e5d4ba]">Your name
@@ -676,17 +681,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                 <button type="button" onClick={()=>setHandoffOpen(false)} className="text-xs text-[#e5d4ba] underline">Keep chatting</button>
               </div>
             </form>}
-            {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation. You can now share photos or PDFs using the + button.</p>}
-            {mode === 'waiting_human' && <div className="space-y-3 rounded-2xl border border-[#c6a16c]/30 bg-[#21190f]/60 p-4">
-              <p className="text-sm leading-relaxed text-[#f0d6a5]">Waiting for a team member. Need a faster response? You can also reach Missy through the website.</p>
-              <button type="button" onClick={goToContact} className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center rounded-xl border border-[#f0d49d] bg-gradient-to-r from-[#efd49f] via-[#d9b878] to-[#c6a065] px-6 py-3 text-sm font-semibold text-[#1c150c] shadow-[0_8px_24px_rgba(197,161,106,.22)] transition-[transform,filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_10px_28px_rgba(197,161,106,.34)] active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">
-                Contact Missy directly
-              </button>
-            </div>}
-            {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
-            {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
-          </div>
-          {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-4 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
+           </div>}
           <div className="missy-concierge-composer relative z-10 shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <form onSubmit={e => {e.preventDefault();if(mayCompose&&!listening)sendMessage();}} className="flex items-end gap-2" aria-label="Message composer">
               <div ref={attachmentMenuRef} className="relative shrink-0">
