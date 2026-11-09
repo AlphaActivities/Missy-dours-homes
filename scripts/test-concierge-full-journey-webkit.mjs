@@ -59,6 +59,17 @@ const badgeMigration=readFileSync(new URL('../supabase/migrations/20261109_unify
 
 const entranceSource=readFileSync(new URL('../src/components/dashboard/ui/ConciergeSignatureEntrance.tsx',import.meta.url),'utf8');
 const outcomeSource=readFileSync(new URL('../src/pages/dashboard/ConversationsPage.tsx',import.meta.url),'utf8');
+const leadDrawerSource=readFileSync(new URL('../src/components/dashboard/ui/LeadDrawer.tsx',import.meta.url),'utf8');
+assert.ok(leadDrawerSource.includes("?'Received':'Started'") &&
+ leadDrawerSource.includes("?'Request':'Live chat'") &&
+ leadDrawerSource.includes("month:'short',day:'numeric'"),
+ 'Request picker labels must distinguish arrival timestamps from booked callback appointments');
+assert.ok(leadDrawerSource.includes('These are request receipt times, not booked callback appointments.'),
+ 'Selector should explicitly explain that request times are not actual appointments');
+assert.ok(leadDrawerSource.includes("value={callbackWork?.conversationId??''}") &&
+ leadDrawerSource.includes('value={t.conversation_id}'),
+ 'Selector must retain exact conversation IDs and existing selection behavior');
+
 const callbackPickerSource=readFileSync(new URL('../src/components/dashboard/ui/TexasCallbackPicker.tsx',import.meta.url),'utf8');
 assert.ok(entranceSource.includes("supabase.rpc('crm_activity_totals')") &&
  entranceSource.includes("(data as {total?:unknown}|null)?.total"),
