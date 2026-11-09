@@ -83,16 +83,16 @@ function AssistantTypingBubble() {
     <div className="flex justify-start" role="status" aria-live="polite" aria-label="Assistant is typing">
       <div className="relative h-[46px] w-[66px] shrink-0" aria-hidden="true">
         <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet">
-          {/* One continuous silhouette keeps the tail's rounded join seamless. */}
+          {/* The reference has a compact rounded bulb at the left, not a long hooked stem. */}
           <path
-            d="M30 6 H85 C103 6 113 17 113 32 C113 48 103 58 86 58 H31 C25 58 23 63 17 66 C11 69 7 68 7 63 C7 59 10 56 14 52 C10 47 8 40 8 32 C8 17 18 6 30 6 Z"
+            d="M32 6 H86 C103 6 114 18 114 33 C114 49 103 59 87 59 H38 C33 59 30 63 25 67 C18 71 11 68 10 62 C9 56 13 51 18 47 C14 42 12 37 12 31 C12 17 21 6 32 6 Z"
             fill="rgba(62,59,61,0.65)"
             stroke="rgba(222,216,219,0.29)"
             strokeWidth="1.7"
             strokeLinejoin="round"
           />
           {/* iMessage's separate faint ring tucked below the tail. */}
-          <circle cx="7.5" cy="72.5" r="4.7" fill="rgba(62,59,60,0.11)" stroke="rgba(222,216,219,0.31)" strokeWidth="1.7"/>
+          <circle cx="5" cy="74" r="4.5" fill="rgba(62,59,60,0.11)" stroke="rgba(222,216,219,0.31)" strokeWidth="1.7"/>
         </svg>
         <div className="absolute left-[19px] top-[16px] flex items-center gap-[4px]">
           {[0,1,2].map(index => <motion.span
