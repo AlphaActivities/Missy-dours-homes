@@ -8,6 +8,22 @@ const apiSource=readFileSync(new URL('../supabase/functions/concierge-api/index.
 
 const activityCenter=readFileSync(new URL('../src/components/dashboard/CrmActivityCenter.tsx',import.meta.url),'utf8');
 const activityContext=readFileSync(new URL('../src/components/dashboard/CrmActivityContext.tsx',import.meta.url),'utf8');
+const settingsSource=readFileSync(new URL('../src/pages/dashboard/SettingsPage.tsx',import.meta.url),'utf8');
+assert.ok(activityContext.includes("new BroadcastChannel('missy-crm-badge-'+email)") &&
+ activityContext.includes("badgeChannelRef.current?.postMessage({kind:'receipt-updated'})"),
+ 'Receipt updates must refresh matching app tabs without extra native alerts');
+assert.ok(activityContext.includes("table:'ai_conversations'") &&
+ activityContext.includes("window.addEventListener('focus',visible)") &&
+ activityContext.includes("window.addEventListener('pageshow',visible)"),
+ 'Open CRM should reconcile badges on conversation transitions and device refocus');
+assert.ok(activityContext.includes("lastSyncedAt:new Date().toISOString()") &&
+ activityContext.includes("status:'unsupported'"),
+ 'App badge diagnostics must distinguish successful request from unsupported browser');
+assert.ok(settingsSource.includes('App Badge Diagnostics') &&
+ settingsSource.includes('Sync notification count now') &&
+ settingsSource.includes('Accepted by browser'),
+ 'Settings must show transparent current-device badge diagnostics and manual sync');
+
 const pushDelivery=readFileSync(new URL('../supabase/functions/concierge-push-delivery/index.ts',import.meta.url),'utf8');
 const badgeMigration=readFileSync(new URL('../supabase/migrations/20261109_unify_crm_visible_notification_badge.sql',import.meta.url),'utf8');
 
