@@ -160,5 +160,46 @@ Deno.serve(async request=>{
    failed++;
   }
  }
+ // The existing minute-level push worker also services confirmed callback
+ // appointments. This queue is per-device and per-due-time: retries cannot
+ // duplicate delivery, and rescheduling invalidates undelivered old reminders.
+ const reminderBatch=await client.rpc('crm_claim_callback_reminders',{p_limit:20});
+ if(reminderBatch.error) {
+  console.error('Callback reminder queue unavailable',reminderBatch.error.code);
+  return json({error:'Callback reminders unavailable'},503);
+ }
+ for(const reminder of reminderBatch.data??[]){
+  try{
+   const target=new URL(reminder.endpoint);
+   const trusted=(target.hostname==='web.push.apple.com'||target.hostname==='fcm.googleapis.com'||target.hostname==='updates.push.services.mozilla.com');
+   if(target.protocol!=='https:'||!trusted||target.username||target.password||target.port)throw new Error('Untrusted push endpoint');
+   const {data:badge,error:badgeError}=await client.rpc('crm_visible_notification_count_service',{p_staff_email:reminder.staff_email});
+   const payload=JSON.stringify({
+    kind:'callback_reminder',id:reminder.id,stage:reminder.stage,due_at:reminder.due_at,
+    ...(reminder.lead_id?{lead_id:reminder.lead_id}:{}),
+    ...(reminder.conversation_id?{conversation_id:reminder.conversation_id}:{}),
+    ...(badgeError?{}:{attention_count:Math.max(0,Number(badge)||0)})
+   });
+   const prepared=webpush.generateRequestDetails(
+    {endpoint:reminder.endpoint,keys:{p256dh:reminder.p256dh,auth:reminder.auth_key}},
+    payload,{TTL:900}
+   );
+   if(prepared.endpoint!==reminder.endpoint)throw new Error('Unexpected push endpoint');
+   const provider=await fetch(prepared.endpoint,{
+    method:'POST',headers:prepared.headers,
+    body:prepared.body?new Uint8Array(prepared.body):undefined,
+    signal:AbortSignal.timeout(12000)
+   });
+   if(!provider.ok)throw Object.assign(new Error('Push provider rejected callback reminder'),{statusCode:provider.status});
+   const result=await client.rpc('crm_finish_callback_reminder',{p_id:reminder.id,p_success:true});
+   if(result.error||result.data!==true)throw new Error('Unable to acknowledge reminder');
+  }catch(e){
+   const status=(e as {statusCode?:number})?.statusCode;
+   if(status===404||status===410){
+    await client.from('ai_concierge_push_subscriptions').delete().eq('id',reminder.device_id);
+   }
+   await client.rpc('crm_finish_callback_reminder',{p_id:reminder.id,p_success:false,p_error_code:'push_delivery_failed'});
+  }
+ }
  return json({processed:(events??[]).length,delivered,failed});
 });
