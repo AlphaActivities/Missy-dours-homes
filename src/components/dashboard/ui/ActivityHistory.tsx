@@ -9,6 +9,7 @@ interface ActivityHistoryProps {
   createdAt: string;
   notesJson: string;
   refreshKey: number;
+  sourcePage?: string|null;
 }
 
 interface ActivityDisplay {
@@ -39,7 +40,7 @@ function formatDateTime(iso: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-export default function ActivityHistory({ leadId, createdAt, notesJson, refreshKey }: ActivityHistoryProps) {
+export default function ActivityHistory({ leadId, createdAt, notesJson, refreshKey, sourcePage }: ActivityHistoryProps) {
   const [activities, setActivities] = useState<ActivityDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [visibleLimit,setVisibleLimit]=useState(25);
@@ -117,7 +118,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
     items.push({
       icon: ICON_MAP.inquiry.icon,
       color: ICON_MAP.inquiry.color,
-      description: 'Inquiry received',
+      description: 'Inquiry received · '+(sourcePage==='AI Concierge'?'Chatbot callback':sourcePage==='/'?'Website contact form':sourcePage||'Unknown source'),
       actor: null,
       timestamp: createdAt,
     });
@@ -180,7 +181,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
     setActivities(items);
     setAvailable(true);
     setLoading(false);
-  }, [leadId, createdAt, notesJson]);
+  }, [leadId, createdAt, notesJson, sourcePage]);
 
   useEffect(() => {
     setVisibleLimit(25);
