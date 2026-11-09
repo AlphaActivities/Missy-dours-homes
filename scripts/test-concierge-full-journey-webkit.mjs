@@ -22,7 +22,7 @@ const visitorSource=readFileSync(new URL('../src/components/ui/ConciergeWidget.t
 const syncSelect=apiSource.match(/if\(url\.pathname\.endsWith\('\/sync'\)\)[\s\S]*?\.select\('([^']+)'\)/)?.[1]??'';
 assert.ok(syncSelect,'Visitor sync response must exist');
 assert.ok(!syncSelect.includes('sender_actor'),'Do not expose staff email identifiers to visitor sync');
-assert.ok(apiSource.includes(".replace(/\\s*—\\s*/g,'... ')")===false ? apiSource.includes(".replace(/\\s*—\\s*/g, '... ')") : true,
+assert.ok(apiSource.includes(".replace(/\\s*—\\s*/g,'... ')"),
   'AI replies must normalize em dashes before saving');
 assert.ok(apiSource.includes("reply=payload.reply.trim().slice(0,5000)"),'Reply normalization must happen before commit');
 for(const [email,name] of [
