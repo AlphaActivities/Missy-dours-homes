@@ -12,7 +12,7 @@ export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escala
 const defaults=(email:string):NotificationPrefs=>({staff_email:email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true,in_app_sound:false,sound_lead:'crystal',sound_handoff:'signature',sound_escalation:'executive',sound_staff:'soft'});
 type ActivityState={
  items:CrmActivity[];liveAlert:CrmActivity|null;dismissLiveAlert:()=>void;unreadCount:number;urgentCount:number;todayCount:number;hiddenCount:number;hasMore:boolean;loadingMore:boolean;loadMore:()=>Promise<void>;attentionCount:number;attentionBreakdown:{new_leads:number;open_tasks:number;waiting_conversations:number};
- prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;badgeSync:BadgeSyncDiagnostic;
+ prefs:NotificationPrefs;loading:boolean;error:string|null;refresh:()=>Promise<void>;syncBadgeNow:()=>Promise<void>;badgeSync:BadgeSyncDiagnostic;
  markRead:(eventId:string)=>Promise<void>;archive:(eventId:string)=>Promise<void>;restore:(eventId:string)=>Promise<void>;
  markAllRead:()=>Promise<void>;setPreference:(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'in_app_sound'>,value:boolean)=>Promise<void>;
  setSoundPreference:(name:SoundPreferenceKey,value:CrmSound)=>Promise<void>;
@@ -33,6 +33,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const [attentionCount,setAttentionCount]=useState(0);
  const [badgeSync,setBadgeSync]=useState<BadgeSyncDiagnostic>({supported:false,status:'checking',lastSyncedAt:null,lastSyncedCount:null,error:null});
  const badgeChannelRef=useRef<BroadcastChannel|null>(null);
+ const [badgeSyncRevision,setBadgeSyncRevision]=useState(0);
  const [attentionBreakdown,setBreakdown]=useState({new_leads:0,open_tasks:0,waiting_conversations:0});
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState<string|null>(null);
@@ -244,7 +245,8 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    if(!cancelled)setBadgeSync(previous=>({...previous,supported:true,status:'error',error:'The operating system did not accept this badge update.'}));
   });
   return()=>{cancelled=true;};
- },[attentionCount,email,loading]);
+ },[attentionCount,email,loading,badgeSyncRevision]);
+ const syncBadgeNow=async()=>{await refresh();setBadgeSyncRevision(n=>n+1);};
  const upsertReceipt=async(id:string,changes:{read_at?:string|null;archived_at?:string|null})=>{
   const before=items.find(x=>x.id===id);if(!before)return;
   const payload={event_id:id,staff_email:email,read_at:changes.read_at===undefined?before.read_at:changes.read_at,archived_at:changes.archived_at===undefined?before.archived_at:changes.archived_at};
@@ -276,7 +278,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const alertTarget=liveAlert?.callback_conversation_id
   ?'/dashboard/conversations?conversation='+liveAlert.callback_conversation_id
   :liveAlert?.target_path?.startsWith('/dashboard/')?liveAlert.target_path:'/dashboard/notifications';
- return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,badgeSync,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
+ return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,syncBadgeNow,badgeSync,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
  {children}
  {liveAlert&&permitted.includes(email)&&
   <div role="alert" aria-live="assertive" data-category={liveAlert.category} data-opportunity-kind={liveAlert.opportunity_kind??undefined} className="crm-live-alert fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[120] mx-auto max-w-md rounded-2xl border p-4 text-[#f0dfbd] backdrop-blur-xl">
