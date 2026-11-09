@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import {Link} from 'react-router-dom';
 import { X, Calendar, MessageSquare, ClipboardList } from 'lucide-react';
 import { Lead } from '../LeadList';
 import { LeadStatus } from './StatusBadge';
@@ -166,34 +167,45 @@ function DrawerContent({
   const [showLogModal, setShowLogModal] = useState(false);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const [callbackPending, setCallbackPending] = useState(false);
-  const [callbackWork,setCallbackWork] = useState<{owner:string|null;due:string|null;status:string}|null>(null);
+  const [callbackChoices,setCallbackChoices]=useState<Array<{conversation_id:string;due_at:string|null;status:string;assigned_to:string|null;created_at:string;request_kind:string}>>([]);
+  const [callbackWork,setCallbackWork] = useState<{owner:string|null;due:string|null;status:string;conversationId:string;requestKind:'callback'|'live_chat';requestedAt:string|null;otherRequests:number}|null>(null);
   useEffect(() => {
     let alive=true;
     setCallbackPending(false);
     setCallbackWork(null);
+    setCallbackChoices([]);
     const getWork=async()=>{
       const {data:conversations,error}=await supabase.from('ai_conversations')
         .select('id,status,assigned_to').eq('lead_id',lead.id).in('status',['waiting_human','human']);
       if(!alive||error||!conversations?.length)return;
       const {data:tasks}=await supabase.from('ai_concierge_tasks')
-        .select('conversation_id,due_at,status,assigned_to')
+        .select('conversation_id,due_at,status,assigned_to,created_at,request_kind')
         .in('conversation_id',conversations.map(c=>c.id)).in('status',['pending','claimed'])
-        .order('due_at',{ascending:true}).limit(1);
+        .order('due_at',{ascending:true}).limit(25);
       if(!alive)return;
+      setCallbackChoices(tasks??[]);
       const first=tasks?.[0];
+      if(!first)return;
       setCallbackPending(true);
-      setCallbackWork({owner:first?.assigned_to??conversations[0].assigned_to??null,
-        due:first?.due_at??null,status:first?.status??conversations[0].status});
+      setCallbackWork({owner:first.assigned_to??conversations.find(c=>c.id===first.conversation_id)?.assigned_to??null,
+        due:first.due_at??null,status:first.status,conversationId:first.conversation_id,
+        requestedAt:first.created_at??null,requestKind:first.request_kind==='callback'?'callback':'live_chat',
+        otherRequests:Math.max(0,(tasks?.length??0)-1)});
     };
     void getWork();
     return ()=>{alive=false;};
   },[lead.id,activityRefreshKey]);
 
   const handleLogContact = async (channel: ContactChannel, notes: string, outcome: string, resolve: boolean, followupAt: string | null) => {
-    const {error} = await supabase.rpc('crm_record_contact_outcome',{
-      p_lead:lead.id,p_channel:channel,p_outcome:outcome,p_notes:notes,
-      p_resolve:resolve,p_followup_at:followupAt
-    });
+    const {error} = callbackPending && callbackWork?.conversationId
+      ? await supabase.rpc('crm_record_chat_contact_outcome',{
+          p_conversation:callbackWork.conversationId,p_channel:channel,p_outcome:outcome,
+          p_notes:notes,p_resolve:resolve,p_followup_at:followupAt
+        })
+      : await supabase.rpc('crm_record_contact_outcome',{
+          p_lead:lead.id,p_channel:channel,p_outcome:outcome,p_notes:notes,
+          p_resolve:resolve,p_followup_at:followupAt
+        });
     if(error) throw new Error(error.message);
     const now = new Date().toISOString();
     const nextStatus = lead.status==='new' && (outcome==='spoke'||outcome==='replied') ? 'contacted' : lead.status;
@@ -262,9 +274,12 @@ function DrawerContent({
           <div className="flex items-center gap-2">
             <Calendar size={12} style={{ color: 'var(--ds-text-tertiary)' }} />
             <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
-              Submitted {formatDate(lead.created_at)}
+              Lead created {formatDate(lead.created_at)}
             </span>
           </div>
+          {callbackPending&&callbackWork?.requestedAt&&<div className="flex items-center gap-2 pl-5">
+            <span className="text-xs font-semibold text-[#dfc391]">{callbackWork.requestKind==='callback'?'Callback requested':'Live chat requested'} {formatDate(callbackWork.requestedAt)}</span>
+          </div>}
           {lead.created_at !== lead.updated_at && (
             <div className="flex items-center gap-2 pl-5">
               <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
@@ -293,9 +308,23 @@ function DrawerContent({
         )}
 
         {callbackPending && <section aria-label="Callback next action" className="rounded-xl border border-red-500/50 bg-[#281316]/80 p-4 text-sm text-[#f5d9d2]">
-          <p className="font-semibold text-red-200">Callback needs attention</p>
+          <p className="font-semibold text-red-200">{callbackWork?.requestKind==='callback'?'Callback needs attention':'Chat request needs attention'}</p>
+          {callbackChoices.length>1&&<div className="mt-3 space-y-2">
+            <label htmlFor="crm-callback-request" className="block text-xs font-semibold text-amber-200">Choose the request to handle ({callbackChoices.length} active)</label>
+            <select id="crm-callback-request" value={callbackWork?.conversationId??''}
+              onChange={e=>{const t=callbackChoices.find(x=>x.conversation_id===e.target.value);if(t)setCallbackWork({
+                owner:t.assigned_to??null,due:t.due_at,status:t.status,conversationId:t.conversation_id,
+                requestKind:t.request_kind==='callback'?'callback':'live_chat',
+                requestedAt:t.created_at,otherRequests:callbackChoices.length-1
+              });}}
+              className="w-full min-h-11 rounded-lg border border-amber-200/40 bg-[#201719] p-2 text-xs text-[#f5dfbd]">
+              {callbackChoices.map((t,i)=><option key={t.conversation_id} value={t.conversation_id}>{t.request_kind==='callback'?'Callback':'Live chat'} {i+1} · {new Date(t.created_at).toLocaleString()}</option>)}
+            </select>
+            <p className="text-xs leading-relaxed text-[#edd1a4]">Only the selected conversation will be updated. All others remain open.</p>
+          </div>}
+          {callbackWork?.conversationId&&<Link className="mt-2 inline-flex min-h-10 items-center rounded-lg border border-amber-200/40 px-3 py-2 text-xs font-semibold text-[#f2d4a3]" to={'/dashboard/conversations?conversation='+encodeURIComponent(callbackWork.conversationId)}>Open requested conversation</Link>}
           <p className="mt-2">Assigned to: {callbackWork?.owner??'Unassigned'}</p>
-          <p className="mt-1">Next action: Contact customer, record a Call, Text, or Email outcome, then resolve or schedule follow-up.</p>
+          <p className="mt-1">Next action: Review the conversation, contact the visitor when appropriate, then record a confirmed outcome or schedule follow-up for this request.</p>
           <p className="mt-1">Due: {callbackWork?.due?new Date(callbackWork.due).toLocaleString():'Awaiting staff review'}</p>
           <p className="mt-3 text-xs text-[#e6c89c]">Use the Record Contact Outcome action in Quick Actions above to log the call, text, or email and resolve or schedule follow-up.</p>
         </section>}
