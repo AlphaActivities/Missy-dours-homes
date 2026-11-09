@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { MessageCircle, MessagesSquare, RefreshCw, Search, Clock3, WifiOff, Activity, AlertTriangle, ArrowUpRight, ClipboardCheck, UserRoundPlus, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -58,6 +58,7 @@ export default function ConversationsPage() {
  const verifiedPresenceSnapshotRef=useRef(false);
  const [presenceClock,setPresenceClock]=useState(Date.now());
  const [searchParams]=useSearchParams();
+ const navigate=useNavigate();
  const requestedConversation=searchParams.get('conversation');
  const focused=Boolean(requestedConversation && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedConversation));
  const [focusedRecordReady,setFocusedRecordReady]=useState(!focused);
@@ -110,7 +111,7 @@ export default function ConversationsPage() {
  const [translatedDraft,setTranslatedDraft]=useState<{text:string;conversation:string;original:string;language:string}|null>(null);
  const [previewBusy,setPreviewBusy]=useState(false);
  const previewGeneration=useRef(0);
- const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string}>>([]);
+ const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string;request_kind:'live_chat'|'callback'}>>([]);
  const refresh=async(showLoading=true)=>{if(showLoading){setLoading(true);setError(null);}try{
   const {data,error}=await supabase.from('ai_conversations').select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at').order('last_message_at',{ascending:false,nullsFirst:false}).limit(100);
   if(error)throw error;setItems(previous=>{
@@ -145,7 +146,7 @@ export default function ConversationsPage() {
   }
   setPresenceReady(true);
   setPresenceClock(Date.now());
-  const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,escalation_due_at,escalated_at,urgency,status').in('status',['pending','claimed']).order('due_at',{ascending:true}).limit(50);
+  const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,escalation_due_at,escalated_at,urgency,status,request_kind').in('status',['pending','claimed']).order('due_at',{ascending:true}).limit(50);
   if(tasks.error)throw tasks.error;
   setPendingTasks(tasks.data??[]);
  }catch(e){if(showLoading)setError(e instanceof Error?e.message:'Could not load conversations');}finally{if(showLoading)setLoading(false);}};
@@ -359,7 +360,7 @@ export default function ConversationsPage() {
    if(!result.data)throw new Error('Linking was not permitted. Refresh and review the contact details.');
    const leadId=createSeparate?String(result.data):candidate!.id;
    await refresh(false);
-   window.location.assign('/dashboard/leads?lead='+leadId);
+   navigate('/dashboard/leads?lead='+encodeURIComponent(leadId));
   }catch(e){setError(e instanceof Error?e.message:'Contact link failed');}
   finally{setLinkBusy(false);}
  };
@@ -445,7 +446,7 @@ export default function ConversationsPage() {
     {pendingTasks.map(t=>{
      const conversation=items.find(c=>c.id===t.conversation_id);
      const escalated=t.status==='pending'&&(Boolean(t.escalated_at)||Boolean(t.escalation_due_at&&new Date(t.escalation_due_at).getTime()<Date.now()));
-     const label=escalated?'Escalated callback':t.status==='claimed'?'Assigned callback':'Callback requested';
+     const label=escalated?(t.request_kind==='callback'?'Overdue callback':'Escalated chat request'):t.status==='claimed'?(t.request_kind==='callback'?'Assigned callback':'Team handling chat'):(t.request_kind==='callback'?'Callback requested':'Live chat requested');
      const preview=conversation?visitorPreview(conversation):null;
      return <article key={t.id} className="relative overflow-hidden rounded-xl border border-[#9e7c4c]/45 bg-[linear-gradient(140deg,rgba(41,33,23,.88),rgba(19,18,17,.96))] p-3.5 shadow-[inset_0_1px_0_rgba(255,225,169,.08)] sm:p-4">
       <span aria-hidden="true" className={'absolute inset-y-3 left-0 w-[3px] rounded-r-full '+(escalated?'bg-[#dc8c6b]':'bg-[#c6a16c]')}/>
@@ -545,10 +546,10 @@ export default function ConversationsPage() {
         {!active?.assigned_to&&<p className="mt-1 text-xs leading-relaxed text-[#ddc8a4]">This conversation is ready for Missy or her team to jump in and help.</p>}
        </div>
       </div>
-      {active?.visitor_name&&<p className="mt-3 text-xs leading-relaxed text-[#e8cb98]">Callback: {active.visitor_name} · <a className="underline underline-offset-2" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a><span className="mt-1 block text-xs font-semibold text-[#d8b878]">{active.lead_id?'CRM contact linked':'Contact review needed'}</span></p>}</div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>setOutcomeOpen(open=>!open)} className="rounded-lg border border-[#c8a96e]/60 px-3 py-2 text-sm text-[#efcf97] disabled:opacity-40">{outcomeOpen?'Cancel outcome':'Return to AI · Record Outcome'}</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <div ref={joinActionRef} className="flex flex-col gap-1.5"><button type="button" disabled={actionBusy} onClick={()=>void claim()} className="crm-jump-in-button inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#f3d394] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-5 py-3 text-sm font-bold text-[#191208] shadow-[0_6px_24px_rgba(212,171,102,.24),inset_0_1px_0_rgba(255,250,225,.5)] transition-[filter,transform,box-shadow] duration-200 hover:brightness-110 hover:shadow-[0_8px_28px_rgba(212,171,102,.38)] active:scale-[.97] disabled:opacity-50"><MessagesSquare size={19} aria-hidden="true"/>{actionBusy?'Joining…':'Jump In & Help'}</button><span className="text-[11px] text-[#c5b49b]">Take over from the AI chatbot and respond directly to the visitor. If they're offline, use the callback details to follow up.</span></div>}</div>
+      {active?.visitor_name&&<p className="mt-3 text-xs leading-relaxed text-[#e8cb98]">Callback contact: {active.visitor_name} · <a className="underline underline-offset-2" href={`tel:${active.visitor_phone?.replace(/[^+0-9]/g,'')||''}`}>{active.visitor_phone}</a><span className="mt-1 block text-xs font-semibold text-[#d8b878]">{active.lead_id?'CRM contact linked':'Contact review needed'}</span></p>}{active?.lead_id&&<Link to={'/dashboard/leads?lead='+encodeURIComponent(active.lead_id)} className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#c8a96e]/50 px-3 py-2 text-xs font-semibold text-[#ebca92] hover:bg-[#c8a96e]/10"><ArrowUpRight size={14}/> Open Linked Lead · Record Contact</Link>}</div>{active?.status==='human'&&active.assigned_to===staffEmail&&<button type="button" disabled={actionBusy} onClick={()=>setOutcomeOpen(open=>!open)} className="rounded-lg border border-[#c8a96e]/60 px-3 py-2 text-sm text-[#efcf97] disabled:opacity-40">{outcomeOpen?'Cancel outcome':'Return to AI · Record Outcome'}</button>}{active && !active.assigned_to && (active.status === 'ai'||active.status==='waiting_human') && <div ref={joinActionRef} className="flex flex-col gap-1.5"><button type="button" disabled={actionBusy} onClick={()=>void claim()} className="crm-jump-in-button inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#f3d394] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-5 py-3 text-sm font-bold text-[#191208] shadow-[0_6px_24px_rgba(212,171,102,.24),inset_0_1px_0_rgba(255,250,225,.5)] transition-[filter,transform,box-shadow] duration-200 hover:brightness-110 hover:shadow-[0_8px_28px_rgba(212,171,102,.38)] active:scale-[.97] disabled:opacity-50"><MessagesSquare size={19} aria-hidden="true"/>{actionBusy?'Joining…':'Jump In & Help'}</button><span className="text-[11px] text-[#c5b49b]">Take over from the AI chatbot and respond directly to the visitor. If they're offline, use the callback details to follow up.</span></div>}</div>
     {outcomeOpen&&active?.status==='human'&&active.assigned_to===staffEmail&&<form onSubmit={e=>{e.preventDefault();void returnToAi();}} className="mb-5 space-y-3 rounded-xl border border-[#c8a96e]/45 bg-[#211a12]/85 p-4" aria-label="Record chat outcome before returning to AI">
      <h3 className="text-sm font-semibold text-[#e9ca91]">Record the result before returning control to AI</h3>
-     <p className="text-xs text-[#cbbba3]">Returning control is not proof a customer request was resolved. An unresolved request stays on the team follow-up list.</p>
+     <p className="text-xs text-[#cbbba3]">A resolved callback requires a verified two-way call, text, or email outcome in the linked lead first. Returning a conversation to AI is a separate action. If contact is still pending, choose Follow-up and schedule the next action.</p>
      <label className="block text-xs text-[#e6cca0]">Outcome
       <select className="mt-1 block w-full rounded-lg border border-[#c8a96e]/40 bg-[#18130e] p-3 text-sm text-white" value={handoffDisposition} onChange={e=>setHandoffDisposition(e.target.value as 'resolved'|'follow_up')}>
        <option value="resolved">Resolved, follow-up complete</option><option value="follow_up">Not resolved, schedule follow-up</option>
