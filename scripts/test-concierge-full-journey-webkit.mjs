@@ -10,6 +10,12 @@ const calls=[];
 let completedAiTurns=0;
 try {
  await context.addInitScript(()=>{
+  window.webkitSpeechRecognition=class FakeSpeechRecognition {
+   constructor(){this.onresult=null;this.onend=null;this.onerror=null;this.lang='en-US';this.continuous=true;this.interimResults=true;}
+   start(){window.__testRecognition=this;}
+   stop(){this.onend?.();}
+   abort(){this.onend?.();}
+  };
   sessionStorage.setItem('missy_concierge_visitor_session_v1',JSON.stringify({
    conversation_id:'11111111-1111-4111-8111-111111111111',
    token:'a'.repeat(64),
@@ -37,11 +43,12 @@ try {
    // Keep request pending long enough to verify honest visitor receipt states.
    await new Promise(resolve=>setTimeout(resolve,550));
    const turn=completedAiTurns++;
- history.push({id:turn===0?'11111111-1111-4111-8111-111111111112':'11111111-1111-4111-8111-111111111115',sender:'visitor',body:message,created_at:new Date().toISOString()});
+ const uuid=(n)=>'11111111-1111-4111-8111-'+String(n).padStart(12,'0');
+ history.push({id:uuid(112+turn*3),sender:'visitor',body:message,created_at:new Date().toISOString()});
  const reply=turn===0
   ? 'Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr https://www.consumerfinance.gov/owning-a-home/loan-estimate/ https://www.trec.texas.gov/public/consumer-information/ https://missydours.com.evil.test/phishing'
   : 'Claro, puedo ayudarle a comparar áreas y sus próximos pasos.';
- history.push({id:turn===0?'11111111-1111-4111-8111-111111111113':'11111111-1111-4111-8111-111111111116',sender:'ai',body:reply,created_at:new Date().toISOString()});
+ history.push({id:uuid(113+turn*3),sender:'ai',body:reply,created_at:new Date().toISOString()});
  return send({reply,language:'es'});
   }
   if(operation==='handoff'){
@@ -82,7 +89,10 @@ try {
  await page.waitForTimeout(180);
  assert.equal(await pendingReceipt.isVisible(),true,'A pending request cannot claim Sent');
  await dialog.getByText('Sent',{exact:true}).waitFor({state:'visible'});
+ await dialog.getByText('Received by assistant',{exact:true}).waitFor({state:'visible'});
+ assert.equal(await typing.count(),0,'Assistant receipt must precede three-dot processing');
  await typing.waitFor({state:'visible'});
+ assert.equal(await dialog.getByText('Received by assistant',{exact:true}).count(),1,'Receipt stays visible during processing');
  assert.equal(await dialog.getByText('Sending…',{exact:true}).count(),0,'Once AI dots appear, receipt must not say Sending');
  assert.equal(await humanButton.count(),0,'No handoff during first AI thinking');
  assert.equal(await typing.locator('span[aria-hidden="true"]').count(),3,'Typing indicator has exactly three waving dots');
@@ -115,11 +125,27 @@ try {
  assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-br-[9px]'),'Visitor tail corner should be softened');
  const replyBubble=dialog.locator('.missy-concierge-body p.whitespace-pre-wrap').filter({hasText:'Gracias. Missy confirmará los detalles.'});
  assert.ok((await replyBubble.getAttribute('class')).includes('rounded-bl-[9px]'),'Incoming message tail corner should be softened');
+ // Stopping dictation keeps its text and offers a resume microphone.
+ const mic=dialog.getByRole('button',{name:'Start voice dictation'});
+ await mic.click();
+ const stop=dialog.getByRole('button',{name:'Stop dictation and keep transcribed text'});
+ await stop.waitFor({state:'visible'});
+ await page.evaluate(()=>window.__testRecognition.onresult?.({results:[{0:{transcript:'I am looking in Dallas'},isFinal:true}]}));
+ assert.equal(await composer.inputValue(),'I am looking in Dallas');
+ await stop.click();
+ const resume=dialog.getByRole('button',{name:'Resume voice dictation'});
+ await resume.waitFor({state:'visible'});
+ await resume.click();
+ await page.evaluate(()=>window.__testRecognition.onresult?.({results:[{0:{transcript:'with a garden'},isFinal:true}]}));
+ assert.equal(await composer.inputValue(),'I am looking in Dallas with a garden');
+ await dialog.getByRole('button',{name:'Stop dictation and keep transcribed text'}).click();
+ await resume.waitFor({state:'visible'});
+ await composer.fill('');
  // Reactions must be hidden for the welcome bubble, AI replies, and visitor messages.
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),0);
 
  assert.equal(await dialog.getByText(/Automatic language assistance/).count(),0);
- // Defer the handoff until two complete AI replies, rather than the first send.
+ // Casual conversations offer human help only after three completed exchanges.
  assert.equal(await humanButton.count(),0,'A single completed AI answer must not trigger handoff');
  await composer.fill('Could you also share the next steps for buying?');
  assert.equal(await humanButton.count(),0,'Do not show while drafting second message');
@@ -127,6 +153,14 @@ try {
  await typing.waitFor({state:'visible'});
  assert.equal(await humanButton.count(),0,'Do not show while second AI answer is pending');
  await dialog.getByText('Claro, puedo ayudarle a comparar áreas y sus próximos pasos.').waitFor();
+ await typing.waitFor({state:'hidden'});
+ await composer.evaluate(el=>el.blur());
+ assert.equal(await humanButton.count(),0,'No casual handoff after two AI responses');
+ await composer.fill('Thank you, just gathering some general information.');
+ assert.equal(await humanButton.count(),0,'No handoff while typing third message');
+ await dialog.getByRole('button',{name:'Send message'}).click();
+ await typing.waitFor({state:'visible'});
+ assert.equal(await humanButton.count(),0,'No handoff while third AI response is pending');
  await typing.waitFor({state:'hidden'});
  await composer.evaluate(el=>el.blur());
  await humanButton.waitFor({state:'visible'});
