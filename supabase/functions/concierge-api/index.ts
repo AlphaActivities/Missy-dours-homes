@@ -351,8 +351,8 @@ Deno.serve(async req=>{
   // Persist conversation-friendly punctuation consistently in both visitor and CRM transcripts.
   // This applies only to AI-generated text, never visitor or human staff messages.
   reply=payload.reply.trim().slice(0,5000)
-   .replace(/\\s*—\\s*/g,'... ')
-   .replace(/\\s*–\\s*/g,', ')
+   .replace(/\s*—\s*/g,'... ')
+   .replace(/\s*–\s*/g,', ')
    .replace(/ {2,}/g,' ').trim();
  } catch {return answer({error:'AI service is temporarily unavailable'},503,origin);}
  // Transactional row lock prevents AI from saving after staff takeover.
