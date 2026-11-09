@@ -90,6 +90,12 @@ try {
  assert.equal(await typing.count(),0,'AI typing must not precede server acknowledgement');
  await page.waitForTimeout(180);
  assert.equal(await pendingReceipt.isVisible(),true,'A pending request cannot claim Sent');
+ await page.waitForTimeout(900);
+ console.log('MOTION_DIAG',JSON.stringify({
+  calls,received:completedAiTurns,
+  texts:await dialog.locator('.missy-concierge-body').innerText(),
+  status:await dialog.locator('span').allTextContents()
+ }));
  await dialog.getByText('Sent',{exact:true}).waitFor({state:'visible'});
  await dialog.getByText('Received by assistant',{exact:true}).waitFor({state:'visible'});
  assert.equal(await typing.count(),0,'Assistant receipt must precede three-dot processing');
