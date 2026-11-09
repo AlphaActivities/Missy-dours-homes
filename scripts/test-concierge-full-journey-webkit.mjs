@@ -15,6 +15,37 @@ for(const route of ['typing','ack']){
 assert.match(apiSource,/\/\/ Fallback for speech dictation/,'Message send must have a notification fallback');
 assert.match(apiSource,/event_type:'visitor_engaged'/,'Visitor engagement push must be queued');
 
+// Test the real deployed intent expressions instead of copying regexes into a mock.
+// Previously "sell my 1 million dollar home" was saved as warm with no seller
+// opportunity, so no prioritized seller push could ever be created.
+const detectIntent=(name,utterance)=>{
+ const declaration=apiSource.split('\n').find(line=>line.includes('const '+name+'=/'));
+ assert.ok(declaration,'Missing intent matcher: '+name);
+ const match=declaration.match(/=(\/.*\/i)\.test\(lower\);$/);
+ assert.ok(match,'Intent matcher must remain a directly testable regex: '+name);
+ const literal=match[1];
+ return new RegExp(literal.slice(1,-2),'i').test(utterance.toLowerCase());
+};
+for(const utterance of [
+ 'I want to sell my 1 million dollar home',
+ 'I want to sell my one million dollar home',
+ 'I would like to sell my $1,000,000 home',
+ 'I want to sell my home',
+ 'I need a home valuation'
+]) assert.equal(detectIntent('sellerIntent',utterance),true,'Missed seller lead: '+utterance);
+for(const utterance of [
+ 'I am looking to buy a 1 million dollar house',
+ 'I want to buy a luxury home',
+ 'I want to buy a home',
+ 'I want to schedule a showing'
+]) assert.equal(detectIntent('buyerIntent',utterance),true,'Missed buyer lead: '+utterance);
+for(const utterance of ['I want to sell my car and move into a home','I just want to browse houses']) {
+ assert.equal(detectIntent('sellerIntent',utterance),false,'False seller alert: '+utterance);
+}
+assert.equal(detectIntent('buyerIntent','I want to sell my 1 million dollar home'),false,
+ 'Do not mislabel a seller-only conversation as a buyer');
+
+
 // A fully isolated browser test. All visitor API calls are mocked locally.
 const browser=await webkit.launch({headless:true});
 const context=await browser.newContext({...devices['iPhone 13']});
