@@ -15,6 +15,29 @@ for(const route of ['typing','ack']){
 assert.match(apiSource,/\/\/ Fallback for speech dictation/,'Message send must have a notification fallback');
 assert.match(apiSource,/event_type:'visitor_engaged'/,'Visitor engagement push must be queued');
 
+const conversationSource=readFileSync(new URL('../src/pages/dashboard/ConversationsPage.tsx',import.meta.url),'utf8');
+const visitorSource=readFileSync(new URL('../src/components/ui/ConciergeWidget.tsx',import.meta.url),'utf8');
+// Source-level regression checks cover the production AI API and staff CRM,
+// not just mocked browser replies.
+const syncSelect=apiSource.match(/if\(url\.pathname\.endsWith\('\/sync'\)\)[\s\S]*?\.select\('([^']+)'\)/)?.[1]??'';
+assert.ok(syncSelect,'Visitor sync response must exist');
+assert.ok(!syncSelect.includes('sender_actor'),'Do not expose staff email identifiers to visitor sync');
+assert.ok(apiSource.includes(".replace(/\\s*—\\s*/g,'... ')")===false ? apiSource.includes(".replace(/\\s*—\\s*/g, '... ')") : true,
+  'AI replies must normalize em dashes before saving');
+assert.ok(apiSource.includes("reply=payload.reply.trim().slice(0,5000)"),'Reply normalization must happen before commit');
+for(const [email,name] of [
+ ['yourcustomerflowguy@gmail.com','Josh'],
+ ['missydourshomes@gmail.com','Missy'],
+ ['heberherrera92@gmail.com','Heber']
+]){
+ assert.ok(conversationSource.includes("'"+email+"':'"+name+"'"),'Missing safe assignment display name for '+name);
+}
+assert.ok(conversationSource.includes('assignedStaffName(active.assigned_to)'),'Assigned staff email must not be rendered verbatim');
+assert.ok(conversationSource.includes('mb-4 flex flex-col items-stretch'),'Mobile assignment and outcome actions should stack without collision');
+assert.ok(visitorSource.includes("renderConciergeText(m.text, m.sender !== 'human')"),
+ 'Only AI-written bubbles should receive automatic punctuation normalization');
+
+
 // Test the real deployed intent expressions instead of copying regexes into a mock.
 // Previously "sell my 1 million dollar home" was saved as warm with no seller
 // opportunity, so no prioritized seller push could ever be created.
