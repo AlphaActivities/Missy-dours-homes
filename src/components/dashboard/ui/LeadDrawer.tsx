@@ -375,7 +375,7 @@ function DrawerContent({
           </div>
         )}
 
-        <RelatedLeadReview lead={{id:lead.id,name:lead.name,phone:lead.phone}} />
+        <RelatedLeadReview lead={{id:lead.id,name:lead.name,phone:lead.phone,email:lead.email}} />
 
         {/* Combined customer timeline, including archived or completed linked chats. */}
         <ActivityHistory
