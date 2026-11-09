@@ -34,6 +34,8 @@ try {
   if(operation==='message'){
    const {language,message}=request.postDataJSON();
    assert.equal(language,'auto');
+   // Keep request pending long enough to verify honest visitor receipt states.
+   await new Promise(resolve=>setTimeout(resolve,550));
    const turn=completedAiTurns++;
  history.push({id:turn===0?'11111111-1111-4111-8111-111111111112':'11111111-1111-4111-8111-111111111115',sender:'visitor',body:message,created_at:new Date().toISOString()});
  const reply=turn===0
@@ -74,7 +76,14 @@ try {
  // User bubble renders immediately; AI stays hidden for the entire typing phase.
  await dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true}).waitFor();
  const typing=dialog.getByRole('status',{name:'Assistant is typing'});
+ const pendingReceipt=dialog.getByText('Sending…',{exact:true});
+ await pendingReceipt.waitFor({state:'visible'});
+ assert.equal(await typing.count(),0,'AI typing must not precede server acknowledgement');
+ await page.waitForTimeout(180);
+ assert.equal(await pendingReceipt.isVisible(),true,'A pending request cannot claim Sent');
+ await dialog.getByText('Sent',{exact:true}).waitFor({state:'visible'});
  await typing.waitFor({state:'visible'});
+ assert.equal(await dialog.getByText('Sending…',{exact:true}).count(),0,'Once AI dots appear, receipt must not say Sending');
  assert.equal(await humanButton.count(),0,'No handoff during first AI thinking');
  assert.equal(await typing.locator('span[aria-hidden="true"]').count(),3,'Typing indicator has exactly three waving dots');
  assert.equal(await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).count(),0,
@@ -82,7 +91,7 @@ try {
  await page.waitForTimeout(350);
  assert.equal(await typing.isVisible(),true,'Typing indicator remains visible before the reply');
  await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).waitFor();
- assert.ok(Date.now()-sentAt>=1150,'Fast AI replies must remain behind the brief typing phase');
+ assert.ok(Date.now()-sentAt>=5000,'AI reply remains behind a full five-second typing presentation after acknowledgement');
  await typing.waitFor({state:'hidden'});
  const listingLink=dialog.getByRole('link',{name:'https://missydours.com/listings/14636-southern-pines-dr'});
  await listingLink.waitFor();
