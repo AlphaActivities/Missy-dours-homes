@@ -103,6 +103,7 @@ export default function ConversationsPage() {
  const [debouncedSearch,setDebouncedSearch]=useState('');
  const [page,setPage]=useState(0);
  const [totalConversations,setTotalConversations]=useState(0);
+ const [lifecycleReviewIds,setLifecycleReviewIds]=useState<string[]>([]);
  const PAGE_SIZE=40;
  useEffect(()=>{const id=window.setTimeout(()=>{setDebouncedSearch(search.trim());setPage(0);},300);return()=>window.clearTimeout(id);},[search]);
  const [loading,setLoading]=useState(true);
@@ -148,6 +149,18 @@ export default function ConversationsPage() {
    const pinned=previous.find(c=>c.id===selectedDeepLinkRef.current);
    return pinned&&!latest.some(c=>c.id===pinned.id)?[pinned,...latest]:latest;
   });
+  // Review potentially inconsistent human-controlled sessions without changing
+  // historical records. A human chat with no active handoff is not automatically
+  // a completed callback; staff must inspect and record the correct outcome.
+  const humanIds=(data??[]).filter(c=>c.status==='human').map(c=>c.id);
+  if(humanIds.length){
+   const work=await supabase.from('ai_concierge_tasks')
+    .select('conversation_id,status').in('conversation_id',humanIds);
+   if(!work.error){
+    const pending=new Set((work.data??[]).filter(t=>['pending','claimed'].includes(t.status)).map(t=>t.conversation_id));
+    setLifecycleReviewIds(humanIds.filter(id=>!pending.has(id)));
+   }
+  }else setLifecycleReviewIds([]);
   // A visitor quote can precede an AI reply, so last_message_at may not
   // represent the visitor's sent time. Fetch saved visitor timestamps in bulk.
   const ids=(data??[]).map(c=>c.id);
@@ -511,7 +524,7 @@ export default function ConversationsPage() {
     <span>{filter==='qa'?'Owner-only private test records':'Business conversation history'} · {totalConversations} matching conversation{totalConversations===1?'':'s'}</span>
     <span>Page {page+1} of {Math.max(1,Math.ceil(totalConversations/PAGE_SIZE))}</span>
    </div>
-   <p className="mb-3 text-[11px] text-[#ac9b83]">Searches saved conversation metadata, not full transcript text. Private owner QA sessions are excluded from normal conversation browsing. Older public-site tests remain unclassified until reviewed.</p>
+   <p className="mb-3 text-[11px] text-[#ac9b83]">Searches saved conversation metadata, not full transcript text. Private owner QA sessions are excluded from normal conversation browsing. Older public-site tests remain unclassified until reviewed. Human sessions without an active handoff are flagged for outcome review without being altered.</p>
    </div>
   <div className={focused?'grid grid-cols-1 gap-4':'grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4'}>
    <section aria-label="Conversation list" className={(focused?'hidden ':'')+'crm-conversation-inbox ds-page-reveal ds-page-reveal-3 relative max-h-[315px] min-h-64 overflow-y-auto overscroll-contain touch-pan-y rounded-xl [scrollbar-width:thin]'}>
@@ -522,6 +535,7 @@ export default function ConversationsPage() {
    {filtered.length===0?<p className="p-6 text-sm" style={{color:'var(--ds-text-secondary)'}}>{loading?'Loading conversations…':'No conversations match. Visitor chat is not live yet.'}</p>:filtered.map(c=>{
     const preview=visitorPreview(c);
     return <button key={c.id} onClick={()=>focusConversation(c.id)} className="crm-inbox-item block w-full text-left px-4 py-4 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#efcb89]" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
+     {lifecycleReviewIds.includes(c.id)&&<span className="mb-2 inline-block rounded-full border border-red-400/40 bg-red-900/20 px-2 py-1 text-[10px] font-semibold text-red-200">Staff session · outcome review needed</span>}
      {c.title.startsWith('[PRIVATE VISITOR QA] ')&&<span className="mb-2 inline-block rounded-full border border-amber-400/40 bg-amber-900/20 px-2 py-1 text-[10px] font-semibold text-amber-200">PRIVATE QA TEST · NOT A CUSTOMER</span>}
      {preview?<div className="flex justify-end"><span className="crm-ios-visitor-bubble max-w-[90%] rounded-[24px] rounded-br-[8px] bg-[#0A84FF] px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-[0_4px_14px_rgba(12,80,170,.18)] line-clamp-3 break-words">{preview}</span></div>
       :<><strong className="block text-sm break-words">{c.title}</strong><p className="mt-1 text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p></>}
