@@ -130,6 +130,13 @@ function renderConciergeText(text: string, aiGenerated = true) {
   });
 }
 
+/** Keep a human handoff accessible when genuinely requested, without mistaking a
+ * routine real-estate question or the word "Missy" for a request to leave AI. */
+function asksForHuman(messages: Message[]): boolean {
+  return messages.some(message => message.role === 'visitor' &&
+    /\b(?:speak|talk|chat|connect)\s+(?:directly\s+)?(?:with|to)\s+(?:a\s+)?(?:person|human|representative|agent|missy|your team|someone)|\b(?:real\s+person|human\s+agent|live\s+agent|call\s+me|call\s+back|callback|phone\s+call)\b/i.test(message.text));
+}
+
 const SESSION_KEY = 'missy_concierge_visitor_session_v1';
 const LANGUAGE_KEY = 'missy_concierge_language_v1';
 const SESSION_LIFETIME = 24 * 60 * 60 * 1000;
@@ -177,6 +184,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadFeedback, setUploadFeedback] = useState<string|null>(null);
   const [handoffOpen, setHandoffOpen] = useState(false);
+  const [composerFocused, setComposerFocused] = useState(false);
   const [callbackName, setCallbackName] = useState(privateQA ? 'QA VISITOR TEST' : '');
   const [callbackPhone, setCallbackPhone] = useState(privateQA ? '(202) 555-0147' : '');
   const [callbackPhoneTouched, setCallbackPhoneTouched] = useState(false);
@@ -187,6 +195,13 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   const chatEnabled = privateQA || Boolean(turnstileSiteKey);
   const mayUpload = chatEnabled && !!session && !uploadBusy && (privateQA || mode === 'human');
   const mayCompose = chatEnabled && welcomeReady && !!session && !busy && mode !== 'closed' && mode !== 'waiting_human';
+  // A secondary offer only after genuine conversational value has been delivered.
+  // Never count the initial greeting or an optimistic unsent visitor message.
+  const answeredTurns = messages.filter(message => message.sender === 'ai' && message.id !== 0).length;
+  const handoffEligible = answeredTurns >= 2 || (answeredTurns >= 1 && asksForHuman(messages));
+  const showHandoffOption = chatEnabled && !!session && mode === 'ai' && welcomeReady &&
+    handoffEligible && (handoffOpen || (!busy && !aiTyping && !welcomeTyping &&
+    !composerFocused && !draft.trim() && !listening));
   // Browsers may supply recognition through Apple's webkit-prefixed API.
   // Never claim it works until the microphone actually starts.
   const stopDictation = () => {
@@ -516,6 +531,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
     const sendStartedAt = Date.now();
     const pendingMessageId = 'pending-visitor-'+sendStartedAt;
     setBusy(true);
+    setHandoffOpen(false);
     setTransportError(null);
     // Place the visitor's message immediately in the correct transcript order.
     // Sync is held until the typing phase finishes, so a fast bot reply cannot appear early.
@@ -672,13 +688,13 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
             {transportError && <p role="alert" className="text-sm text-red-200">{transportError}</p>}
           </div>
           {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-4 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
-           {chatEnabled && session && mode === 'ai' && welcomeReady && messages.some(m=>m.role==='visitor') && <div className="shrink-0 flex justify-end px-5 pb-2 pt-1 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]">
+           {showHandoffOption && <div className="shrink-0 flex justify-end px-5 pb-2 pt-1 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <button type="button" aria-expanded={handoffOpen} aria-controls="missy-callback-request" onClick={()=>setHandoffOpen(open=>!open)} className="inline-flex min-h-9 max-w-full items-center justify-center gap-1.5 rounded-full border border-[#b99b68]/45 bg-[#211a12]/90 px-3 py-1.5 text-[11px] font-medium leading-snug text-[#e6c792] shadow-[0_3px_12px_rgba(0,0,0,.2)] transition-colors hover:border-[#d6b67a] hover:bg-[#332718] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#efcb8d]">
               {handoffOpen?'Keep chatting':'Prefer to speak with Missy directly?'} <span aria-hidden="true">{handoffOpen?'×':'→'}</span>
             </button>
            </div>}
-           {chatEnabled && session && mode === 'ai' && handoffOpen && <div className="min-h-0 max-h-[min(52dvh,430px)] shrink overflow-y-auto overscroll-contain border-t border-[#c6a16c]/25 px-5 py-3 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Optional callback details">
-            {chatEnabled && session && mode === 'ai' && handoffOpen && <form id="missy-callback-request" onSubmit={e=>{e.preventDefault();void requestHuman();}} className="space-y-3 rounded-2xl border border-[#c6a16c]/45 bg-[#231a11]/95 p-4" aria-label="Request a callback">
+           {showHandoffOption && handoffOpen && <div className="min-h-0 max-h-[min(52dvh,430px)] shrink overflow-y-auto overscroll-contain border-t border-[#c6a16c]/25 px-5 py-3 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Optional callback details">
+            {showHandoffOption && handoffOpen && <form id="missy-callback-request" onSubmit={e=>{e.preventDefault();void requestHuman();}} className="space-y-3 rounded-2xl border border-[#c6a16c]/45 bg-[#231a11]/95 p-4" aria-label="Request a callback">
               <p className="font-serif text-base text-[#f1d39a]">Connect with Missy’s team</p>
               <p className="text-xs text-[#e5d4ba]">{privateQA?'QA mode: use the prefilled reserved test name and phone number. They do not belong to a real customer.':'In case we get disconnected, please leave a name and phone number where Missy can reach you. We’ll use it for this request.'}</p>
               <label className="block text-xs text-[#e5d4ba]">Your name
@@ -710,7 +726,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
                 <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" aria-label="Choose a photo or document" className="sr-only" disabled={!mayUpload} onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAttachment(file);e.target.value='';}}/>
               </div>
               <div className="relative min-w-0 flex-1">
-                <textarea ref={inputRef} rows={1} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!mayCompose} readOnly={listening} value={draft} onChange={e=>{
+                <textarea ref={inputRef} rows={1} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!mayCompose} readOnly={listening} value={draft} onFocus={()=>{setComposerFocused(true);setHandoffOpen(false);}} onBlur={()=>setComposerFocused(false)} onChange={e=>{
                   const nextDraft=e.target.value;
                   setDraft(nextDraft);
                   const visitor=sessionRef.current??session;

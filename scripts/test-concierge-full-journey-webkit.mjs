@@ -7,6 +7,7 @@ const context=await browser.newContext({...devices['iPhone 13']});
 let mode='ai';
 const history=[];
 const calls=[];
+let completedAiTurns=0;
 try {
  await context.addInitScript(()=>{
   sessionStorage.setItem('missy_concierge_visitor_session_v1',JSON.stringify({
@@ -33,10 +34,13 @@ try {
   if(operation==='message'){
    const {language,message}=request.postDataJSON();
    assert.equal(language,'auto');
-   history.push({id:'11111111-1111-4111-8111-111111111112',sender:'visitor',body:message,created_at:new Date().toISOString()});
-   const reply='Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr https://www.consumerfinance.gov/owning-a-home/loan-estimate/ https://www.trec.texas.gov/public/consumer-information/ https://missydours.com.evil.test/phishing';
-   history.push({id:'11111111-1111-4111-8111-111111111113',sender:'ai',body:reply,created_at:new Date().toISOString()});
-   return send({reply,language:'es'});
+   const turn=completedAiTurns++;
+ history.push({id:turn===0?'11111111-1111-4111-8111-111111111112':'11111111-1111-4111-8111-111111111115',sender:'visitor',body:message,created_at:new Date().toISOString()});
+ const reply=turn===0
+  ? 'Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr https://www.consumerfinance.gov/owning-a-home/loan-estimate/ https://www.trec.texas.gov/public/consumer-information/ https://missydours.com.evil.test/phishing'
+  : 'Claro, puedo ayudarle a comparar áreas y sus próximos pasos.';
+ history.push({id:turn===0?'11111111-1111-4111-8111-111111111113':'11111111-1111-4111-8111-111111111116',sender:'ai',body:reply,created_at:new Date().toISOString()});
+ return send({reply,language:'es'});
   }
   if(operation==='handoff'){
    const body=request.postDataJSON();
@@ -61,13 +65,17 @@ try {
  const composer=dialog.getByRole('textbox',{name:"Message Missy's concierge"});
  assert.equal(await dialog.getByRole('button',{name:'Close concierge'}).count(),0);
  assert.equal(await dialog.getByRole('button',{name:'Request a team member'}).count(),0,'Human option should appear after first visitor message');
+ const humanButton=dialog.getByRole('button',{name:'Prefer to speak with Missy directly?'});
+ assert.equal(await humanButton.count(),0,'Do not offer a handoff before the visitor starts');
  await composer.fill('¿Puede ayudarme a comprar una casa?');
+ assert.equal(await humanButton.count(),0,'Do not interrupt draft composition');
  const sentAt=Date.now();
  await dialog.getByRole('button',{name:'Send message'}).click();
  // User bubble renders immediately; AI stays hidden for the entire typing phase.
  await dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true}).waitFor();
  const typing=dialog.getByRole('status',{name:'Assistant is typing'});
  await typing.waitFor({state:'visible'});
+ assert.equal(await humanButton.count(),0,'No handoff during first AI thinking');
  assert.equal(await typing.locator('span[aria-hidden="true"]').count(),3,'Typing indicator has exactly three waving dots');
  assert.equal(await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).count(),0,
    'Fast model output must not bypass the typing phase');
@@ -102,18 +110,30 @@ try {
  assert.equal(await dialog.getByRole('button',{name:/^React to message/}).count(),0);
 
  assert.equal(await dialog.getByText(/Automatic language assistance/).count(),0);
- // A small, right-aligned opt-in must stay available without inserting a
- // large contextual promo card into the transcript.
- const humanButton=dialog.getByRole('button',{name:'Prefer to speak with Missy directly?'});
+ // Defer the handoff until two complete AI replies, rather than the first send.
+ assert.equal(await humanButton.count(),0,'A single completed AI answer must not trigger handoff');
+ await composer.fill('Could you also share the next steps for buying?');
+ assert.equal(await humanButton.count(),0,'Do not show while drafting second message');
+ await dialog.getByRole('button',{name:'Send message'}).click();
+ await typing.waitFor({state:'visible'});
+ assert.equal(await humanButton.count(),0,'Do not show while second AI answer is pending');
+ await dialog.getByText('Claro, puedo ayudarle a comparar áreas y sus próximos pasos.').waitFor();
+ await typing.waitFor({state:'hidden'});
+ await composer.evaluate(el=>el.blur());
  await humanButton.waitFor({state:'visible'});
  assert.ok((await humanButton.getAttribute('class')).includes('rounded-full'),'Handoff remains a slim secondary pill');
  assert.equal(await humanButton.isEnabled(),true);
+ await composer.focus();
+ await humanButton.waitFor({state:'hidden'});
+ await composer.evaluate(el=>el.blur());
+ await humanButton.waitFor({state:'visible'});
  await humanButton.click();
  const form=dialog.getByRole('form',{name:'Request a callback'});
  await form.waitFor({state:'visible'});
  await dialog.getByRole('button',{name:'Keep chatting'}).first().click();
  await form.waitFor({state:'hidden'});
- await dialog.getByRole('button',{name:'Prefer to speak with Missy directly?'}).click();
+ await humanButton.waitFor({state:'visible'});
+ await humanButton.click();
  await form.waitFor({state:'visible'});
  await form.getByPlaceholder('Full name').fill('Example Visitor');
  const phone=form.getByRole('textbox',{name:'Callback phone number'});
