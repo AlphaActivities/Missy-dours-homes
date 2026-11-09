@@ -42,7 +42,7 @@ function visitorReceipt(m:Message,index:number,all:Message[],mode:'ai'|'human'|'
 const REACTION_OPTIONS = ['👍','❤️','😊','😮','🙏'] as const;
 const GREETING = 'We help people find their happy. What happy answer can we find for you?';
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
-const AI_TYPING_MIN_MS = 5000;
+const AI_TYPING_MIN_MS = 4000;
 const INTRO_TITLE = 'Imagine the Life That Awaits.';
 
 // NANP structural validation, not proof a number is assigned or reachable.
@@ -579,9 +579,9 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
       if(shouldShowTyping) {
         // Preserve the existing Sent receipt, then explicitly acknowledge the
         // assistant received it before the three-dot processing indication.
-        await new Promise<void>(resolve => window.setTimeout(resolve, 250));
+        await new Promise<void>(resolve => window.setTimeout(resolve, 1000));
         setAssistantReceivedPendingId(pendingMessageId);
-        await new Promise<void>(resolve => window.setTimeout(resolve, 250));
+        await new Promise<void>(resolve => window.setTimeout(resolve, 1000));
         setAiTyping(true);
         // Keep the deliberate minimum typing presentation without exposing
         // an early model response or mislabeling an in-flight visitor message.

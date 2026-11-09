@@ -90,9 +90,15 @@ try {
  await page.waitForTimeout(180);
  assert.equal(await pendingReceipt.isVisible(),true,'A pending request cannot claim Sent');
  await dialog.getByText('Sent',{exact:true}).waitFor({state:'visible'});
+ const sentVisibleAt=Date.now();
+ assert.equal(await typing.count(),0,'AI typing cannot begin while Sent is visible');
  await dialog.getByText('Received by assistant',{exact:true}).waitFor({state:'visible'});
+ const assistantReceivedAt=Date.now();
+ assert.ok(assistantReceivedAt-sentVisibleAt>=850,'Sent should remain visible for approximately one full second');
  assert.equal(await typing.count(),0,'Assistant receipt must precede three-dot processing');
  await typing.waitFor({state:'visible'});
+ const typingVisibleAt=Date.now();
+ assert.ok(typingVisibleAt-assistantReceivedAt>=850,'Received by assistant should precede typing by approximately one second');
  assert.equal(await dialog.locator('[data-message-arrival="outgoing"]').count(),1,
    'Fresh visitor messages slide into view from below');
  assert.equal(await dialog.getByText('Received by assistant',{exact:true}).count(),1,'Receipt stays visible during processing');
@@ -106,7 +112,7 @@ try {
  await dialog.getByText('Gracias. Missy confirmará los detalles.',{exact:false}).waitFor();
  assert.ok(await dialog.locator('[data-message-arrival="incoming"]').count()>=1,
    'New assistant replies rise into the conversation');
- assert.ok(Date.now()-sentAt>=5000,'AI reply remains behind a full five-second typing presentation after acknowledgement');
+ assert.ok(Date.now()-typingVisibleAt>=3800,'AI reply remains behind the four-second minimum typing presentation');
  await typing.waitFor({state:'hidden'});
  const listingLink=dialog.getByRole('link',{name:'https://missydours.com/listings/14636-southern-pines-dr'});
  await listingLink.waitFor();
