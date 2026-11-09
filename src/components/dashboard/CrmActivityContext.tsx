@@ -5,7 +5,8 @@ import {useAuth} from '../../contexts/AuthContext';
 import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound,type CrmSound} from './crmSounds';
 
 export type ActivityCategory='lead'|'handoff'|'escalation'|'staff'|'opportunity';
-export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;callback_request_kind?:'live_chat'|'callback'|null;opportunity_kind?:string|null;opportunity_online?:boolean;chat_lead_audit?:boolean;}
+export type VisitorConnection='online'|'away'|'offline'|'expired'|'unconfirmed';
+export type CrmActivity={id:string;event_key:string;category:ActivityCategory;title:string;summary:string;target_path:string;created_at:string;read_at:string|null;archived_at:string|null;lead_archived:boolean;lead_status?:string|null;callback_status?:string|null;callback_lead_id?:string|null;callback_conversation_id?:string|null;callback_task_id?:string|null;callback_requested_at?:string|null;callback_escalated_at?:string|null;callback_urgency?:string|null;callback_request_kind?:'live_chat'|'callback'|null;callback_assignee?:string|null;callback_connection?:VisitorConnection|null;callback_followup_at?:string|null;callback_outcome?:'follow_up'|'resolved'|null;opportunity_kind?:string|null;opportunity_online?:boolean;chat_lead_audit?:boolean;}
 export type SoundPreferenceKey='sound_lead'|'sound_handoff'|'sound_escalation'|'sound_staff';
 export type BadgeSyncDiagnostic={supported:boolean;status:'checking'|'synced'|'unsupported'|'error';lastSyncedAt:string|null;lastSyncedCount:number|null;error:string|null};
 export type NotificationPrefs={staff_email:string;handoff_enabled:boolean;escalation_enabled:boolean;staff_enabled:boolean;in_app_sound:boolean;sound_lead:CrmSound;sound_handoff:CrmSound;sound_escalation:CrmSound;sound_staff:CrmSound;updated_at?:string};
@@ -58,17 +59,44 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   }
   const taskIds=[...new Set(rows.filter(e=>['handoff:','escalation:','staff:completed:','staff:claimed:'].some(prefix=>e.event_key.startsWith(prefix)))
    .map(e=>e.event_key.split(':').pop()!).filter(Boolean))];
-  const callbacks=new Map<string,{status:string;conversation_id:string;created_at:string;escalated_at:string|null;urgency:string;request_kind:'live_chat'|'callback'}>();
-  const conversations=new Map<string,{status:string;lead_id:string|null}>();
+  const callbacks=new Map<string,{status:string;conversation_id:string;created_at:string;escalated_at:string|null;urgency:string;request_kind:'live_chat'|'callback';assigned_to:string|null}>();
+  const conversations=new Map<string,{status:string;lead_id:string|null;visitor_expires_at:string|null}>();
+  const outcomeByTask=new Map<string,{disposition:'follow_up'|'resolved';followup_at:string|null}>();
+  const connectionByConversation=new Map<string,VisitorConnection>();
   if(taskIds.length){
-   const res=await supabase.from('ai_concierge_tasks').select('id,status,conversation_id,created_at,escalated_at,urgency,request_kind').in('id',taskIds);
+   const res=await supabase.from('ai_concierge_tasks').select('id,status,conversation_id,created_at,escalated_at,urgency,request_kind,assigned_to').in('id',taskIds);
    if(res.error)throw res.error;
-   (res.data??[]).forEach(t=>callbacks.set(t.id,{status:t.status,conversation_id:t.conversation_id,created_at:t.created_at,escalated_at:t.escalated_at,urgency:t.urgency,request_kind:t.request_kind}));
+   (res.data??[]).forEach(t=>callbacks.set(t.id,{status:t.status,conversation_id:t.conversation_id,created_at:t.created_at,escalated_at:t.escalated_at,urgency:t.urgency,request_kind:t.request_kind,assigned_to:t.assigned_to}));
    const convoIds=[...new Set((res.data??[]).map(t=>t.conversation_id))];
    if(convoIds.length){
-    const convo=await supabase.from('ai_conversations').select('id,status,lead_id').in('id',convoIds);
+    const convo=await supabase.from('ai_conversations').select('id,status,lead_id,visitor_expires_at').in('id',convoIds);
     if(convo.error)throw convo.error;
-    (convo.data??[]).forEach(c=>conversations.set(c.id,{status:c.status,lead_id:c.lead_id}));
+    (convo.data??[]).forEach(c=>conversations.set(c.id,{status:c.status,lead_id:c.lead_id,visitor_expires_at:c.visitor_expires_at}));
+   }
+   // A recorded follow-up is authoritative evidence that the urgent task has
+   // a next step. It does not mean that the callback was completed.
+   const outcomeResponse=await supabase.from('ai_concierge_handoff_outcomes')
+    .select('task_id,disposition,followup_at,created_at').in('task_id',taskIds).order('created_at',{ascending:false});
+   if(!outcomeResponse.error)for(const entry of outcomeResponse.data??[]){
+    if(entry.task_id&&!outcomeByTask.has(entry.task_id)&&['follow_up','resolved'].includes(entry.disposition)){
+     outcomeByTask.set(entry.task_id,{disposition:entry.disposition as 'follow_up'|'resolved',followup_at:entry.followup_at});
+    }
+   }
+   // Presence is evidence of an open live session, not proof of contact.
+   // Use the authoritative server-issued token expiration independently.
+   if(convoIds.length){
+    const presence=await supabase.from('ai_concierge_visitor_presence')
+     .select('conversation_id,last_seen_at,chat_visible').in('conversation_id',convoIds);
+    const byId=new Map((presence.error?[]:presence.data??[]).map(p=>[p.conversation_id,p]));
+    for(const [conversationId,conversation] of conversations){
+     const expiry=conversation.visitor_expires_at?Date.parse(conversation.visitor_expires_at):NaN;
+     const p=byId.get(conversationId);
+     const lastSeen=p?.last_seen_at?Date.parse(p.last_seen_at):NaN;
+     const fresh=Number.isFinite(lastSeen)&&lastSeen<=Date.now()+30000&&Date.now()-lastSeen<75000;
+     const state:VisitorConnection=Number.isFinite(expiry)&&expiry<=Date.now()?'expired':
+      fresh?(p?.chat_visible?'online':'away'):Number.isFinite(lastSeen)?'offline':'unconfirmed';
+     connectionByConversation.set(conversationId,state);
+    }
    }
   }
   const opportunityIds=[...new Set(rows.filter(e=>e.category==='opportunity').map(e=>e.event_key.replace(/^opportunity:/,'')).filter(id=>/^[0-9a-f-]{36}$/i.test(id)))];
@@ -102,6 +130,9 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     opportunity_kind:opportunity?.opportunity_kind??null,opportunity_online:Boolean(opportunity&&online.has(opportunityId)),
      callback_task_id:task?e.event_key.split(':').pop()??null:null,callback_requested_at:task?.created_at??null,
      callback_escalated_at:task?.escalated_at??null,callback_urgency:task?.urgency??null,callback_request_kind:task?.request_kind??null,
+    callback_assignee:task?.assigned_to??null,callback_connection:task?connectionByConversation.get(task.conversation_id)??'unconfirmed':null,
+    callback_followup_at:task?outcomeByTask.get(e.event_key.split(':').pop()??'')?.followup_at??null:null,
+    callback_outcome:task?outcomeByTask.get(e.event_key.split(':').pop()??'')?.disposition??null:null,
     chat_lead_audit:e.category==='lead'&&Boolean(id)&&sources.get(id)==='AI Concierge'&&chatLeadIds.has(id)};
   });
  };
