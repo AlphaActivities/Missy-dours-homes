@@ -48,14 +48,16 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
   const [available, setAvailable] = useState(true);
 
   const fetchActivities = useCallback(async () => {
-    const [activityResult, conversationsResult, followupsResult, consolidationsResult] = await Promise.all([
+    const [activityResult, conversationsResult, followupsResult, consolidationsResult, contactsResult] = await Promise.all([
       supabase.from('lead_activities').select('*').eq('lead_id', leadId).order('created_at', { ascending: false }).limit(500),
       supabase.from('ai_conversations').select('id,title,started_at,last_message_at,status,opportunity_kind')
         .eq('lead_id',leadId).order('started_at',{ascending:false}).limit(500),
       supabase.from('lead_followups').select('id,created_at,due_at,task,status,completed_at')
         .eq('lead_id',leadId).order('created_at',{ascending:false}).limit(500),
       supabase.from('crm_lead_consolidations').select('secondary_lead_id,confirmed_at,original_secondary')
-        .eq('primary_lead_id',leadId).order('confirmed_at',{ascending:false}).limit(100)
+        .eq('primary_lead_id',leadId).order('confirmed_at',{ascending:false}).limit(100),
+      supabase.from('lead_contact_events').select('id,channel,notes,contacted_by,outcome,created_at,resolved_callback')
+        .eq('lead_id',leadId).order('created_at',{ascending:false}).limit(500)
     ]);
     const {data,error}=activityResult;
 
@@ -76,16 +78,47 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
     if(conversationsResult.error)warnings.push('Linked chat history could not be loaded.');
     if(followupsResult.error)warnings.push('Scheduled follow-up history could not be loaded.');
     if(consolidationsResult.error)warnings.push('Consolidated original submissions could not be loaded.');
+    if(contactsResult.error)warnings.push('Recorded contact interactions could not be loaded.');
+    for(const contact of contactsResult.data??[]){
+      items.push({icon:<Phone size={12}/>,color:'#8ec6a8',category:'crm',
+       description:(contact.channel||'Contact')+' · '+(contact.outcome||'Recorded outcome')+
+        (contact.notes?' · '+contact.notes:'')+
+        (contact.resolved_callback?' · Callback resolved':''),
+       actor:contact.contacted_by||null,timestamp:contact.created_at});
+    }
     for(const source of consolidationsResult.data??[]){
       const record=source.original_secondary as {name?:string;source_page?:string;message?:string;created_at?:string};
       items.push({icon:<FileText size={12}/>,color:'#e6b67c',category:'crm',
        description:'Original customer submission preserved · '+(record?.name||'Previous record')+
         ' · '+(record?.source_page||'Original source')+
         (record?.message?' · '+record.message.slice(0,180):''),
-       actor:null,timestamp:source.confirmed_at,
+       actor:null,timestamp:record.created_at||source.confirmed_at,
        href:'/dashboard/leads?lead='+encodeURIComponent(source.secondary_lead_id)});
+      const rawNotes=(record as {notes?:string}).notes;
+      if(rawNotes){
+       try{
+        const saved=JSON.parse(rawNotes);
+        if(Array.isArray(saved))for(const note of saved){
+         const fileCount=Array.isArray(note.attachments)?note.attachments.length:0;
+         items.push({icon:<StickyNote size={12}/>,color:'#e3c28c',category:'crm',
+          description:'Preserved note from consolidated record · '+(note.text||'Attachment note')+
+           (fileCount?' · '+fileCount+' original attachment(s), open source record':''),
+          actor:note.author||null,timestamp:note.created_at||record.created_at||source.confirmed_at,
+          href:'/dashboard/leads?lead='+encodeURIComponent(source.secondary_lead_id)});
+        }
+        else items.push({icon:<StickyNote size={12}/>,color:'#e3c28c',category:'crm',
+         description:'Original archived notes · Open source record',actor:null,
+         timestamp:record.created_at||source.confirmed_at,
+         href:'/dashboard/leads?lead='+encodeURIComponent(source.secondary_lead_id)});
+       }catch{
+        items.push({icon:<StickyNote size={12}/>,color:'#e3c28c',category:'crm',
+         description:'Original archived note · '+rawNotes,actor:null,
+         timestamp:record.created_at||source.confirmed_at,
+         href:'/dashboard/leads?lead='+encodeURIComponent(source.secondary_lead_id)});
+       }
+      }
     }
-    if((conversationsResult.data?.length??0)===500 || (data?.length??0)===500 || (followupsResult.data?.length??0)===500)
+    if((conversationsResult.data?.length??0)===500 || (data?.length??0)===500 || (followupsResult.data?.length??0)===500 || (contactsResult.data?.length??0)===500)
       warnings.push('Some older history may require a separate export.');
     setHistoryWarning(warnings.length?warnings.join(' '):null);
     const linkedChats=conversationsResult.data??[];

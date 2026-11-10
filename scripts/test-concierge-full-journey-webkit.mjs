@@ -64,6 +64,33 @@ const attentionSource=readFileSync(new URL('../src/components/dashboard/ui/Callb
 const contactModalSource=readFileSync(new URL('../src/components/dashboard/ui/LogContactModal.tsx',import.meta.url),'utf8');
 const customerTimelineSource=readFileSync(new URL('../src/components/dashboard/ui/ActivityHistory.tsx',import.meta.url),'utf8');
 const relatedLeadSource=readFileSync(new URL('../src/components/dashboard/ui/RelatedLeadReview.tsx',import.meta.url),'utf8');
+const followupSectionSource=readFileSync(new URL('../src/components/dashboard/ui/FollowUpSection.tsx',import.meta.url),'utf8');
+const matchingMigration=readFileSync(new URL('../supabase/migrations/20261109_preserve_identity_name_word_boundaries.sql',import.meta.url),'utf8');
+assert.ok(relatedLeadSource.includes('createPortal(') &&
+ relatedLeadSource.includes('max-h-[calc(100dvh-1.5rem)]') &&
+ relatedLeadSource.includes('overflow-y-auto overscroll-contain') &&
+ relatedLeadSource.includes('pb-[max(1rem,env(safe-area-inset-bottom))]') &&
+ relatedLeadSource.includes('aria-modal="true"') &&
+ relatedLeadSource.includes("document.addEventListener('keydown',onKeys,true)") &&
+ relatedLeadSource.includes('triggerRef.current?.focus()'),
+ 'Consolidation confirmation must be a viewport-safe keyboard-accessible portal, not a card below the scroll list');
+assert.ok((leadDrawerSource.match(/<DrawerContent/g)||[]).length===1 &&
+ leadDrawerSource.includes('onConsolidated={onConsolidated}') &&
+ leadDrawerSource.includes('min-h-0 flex-1 overflow-y-auto'),
+ 'Lead UI must have only one mounted responsive drawer and refresh after merging');
+assert.ok(followupSectionSource.includes('<TexasCallbackPicker label="New follow-up"') &&
+ !followupSectionSource.includes("prompt('New date") &&
+ followupSectionSource.includes("timeZone:'America/Chicago'"),
+ 'Rescheduling and due dates must share Dallas controls with no native browser prompts');
+assert.ok(customerTimelineSource.includes("from('lead_contact_events')") &&
+ customerTimelineSource.includes('Original archived note') &&
+ customerTimelineSource.includes('original attachment(s), open source record'),
+ 'Lead history must include actual contact outcomes and reachable archived original notes');
+assert.ok(matchingMigration.includes("'[^[:alnum:][:space:]]+'") &&
+ matchingMigration.includes("'[[:space:]]+'") &&
+ !matchingMigration.includes("'[^a-z0-9]+'"),
+ 'Identity normalizer must preserve name word boundaries for conservative auto-matching');
+
 const conversationsHistorySource=readFileSync(new URL('../src/pages/dashboard/ConversationsPage.tsx',import.meta.url),'utf8');
 assert.ok(attentionSource.includes('Active Requests') &&
  leadDrawerSource.includes('<RelatedLeadReview') &&

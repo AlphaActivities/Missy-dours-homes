@@ -494,6 +494,7 @@ export default function LeadsPage() {
         onStatusChange={handleStatusChange}
         onSaveNotes={handleDrawerSaveNotes}
         onLeadUpdate={handleLeadUpdate}
+        onConsolidated={()=>{void fetchLeads(page,filter,searchQuery);}}
       />
     </>
   );

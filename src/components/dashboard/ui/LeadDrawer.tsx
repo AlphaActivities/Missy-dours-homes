@@ -22,11 +22,12 @@ interface LeadDrawerProps {
   onStatusChange: (id: string, status: LeadStatus) => Promise<void>;
   onSaveNotes: (id: string, notes: string, expectedNotes: string) => Promise<void>;
   onLeadUpdate?: (lead: Lead) => void;
+  onConsolidated?: () => void;
 }
 
 const ANIMATION_DURATION = 300;
 
-export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes, onLeadUpdate }: LeadDrawerProps) {
+export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes, onLeadUpdate, onConsolidated }: LeadDrawerProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -46,12 +47,14 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes,
 
   const displayLead = lead ?? prevLeadRef.current;
 
-  useEffect(() => {
-    if (!isRendered) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [isRendered, onClose]);
+  useEffect(()=>{
+    if(!isRendered)return;
+    const handler=(e:KeyboardEvent)=>{
+      if(e.key==='Escape'&&!document.querySelector('[aria-labelledby="crm-consolidation-title"],[aria-label="Record customer interaction"]'))onClose();
+    };
+    document.addEventListener('keydown',handler);
+    return()=>document.removeEventListener('keydown',handler);
+  },[isRendered,onClose]);
 
   useEffect(() => {
     if (isRendered) {
@@ -71,9 +74,6 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes,
 
   if (!isRendered || !displayLead) return null;
 
-  const ease = `cubic-bezier(0.32, 0.72, 0, 1)`;
-  const easeOut = `cubic-bezier(0.72, 0, 0.84, 0)`;
-
   return (
     <>
       <div
@@ -91,47 +91,10 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes,
       />
 
       <div
-        className="fixed top-0 right-0 h-full z-50 hidden sm:flex flex-col"
-        style={{
-          width: '420px',
-          background: 'var(--ds-bg-raised)',
-          boxShadow: '-8px 0 40px rgba(0,0,0,0.5), -1px 0 0 rgba(255,255,255,0.06)',
-          transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
-          transition: `transform ${ANIMATION_DURATION}ms ${isVisible ? ease : easeOut}`,
-          willChange: 'transform',
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Lead: ${displayLead.name}`}
-      >
-        <DrawerContent
-          lead={displayLead}
-          onClose={onClose}
-          onStatusChange={handleStatusChange}
-          onSaveNotes={onSaveNotes}
-          onLeadUpdate={onLeadUpdate}
-          updatingStatus={updatingStatus}
-        />
-      </div>
-
-      <div
-        className="fixed bottom-0 left-0 right-0 z-50 flex flex-col sm:hidden"
-        style={{
-          maxHeight: '92dvh',
-          background: 'var(--ds-bg-raised)',
-          boxShadow: '0 -8px 40px rgba(0,0,0,0.5), 0 -1px 0 rgba(255,255,255,0.06)',
-          borderTopLeftRadius: '20px',
-          borderTopRightRadius: '20px',
-          transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
-          transition: `transform ${ANIMATION_DURATION}ms ${isVisible ? ease : easeOut}`,
-          willChange: 'transform',
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Lead: ${displayLead.name}`}
-      >
-        <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-9 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+        className={'fixed bottom-0 left-0 right-0 z-50 flex max-h-[92dvh] min-h-0 flex-col overflow-hidden rounded-t-[20px] bg-[#191613] shadow-[0_-8px_40px_rgba(0,0,0,.55)] transition-transform duration-300 sm:inset-y-0 sm:right-0 sm:left-auto sm:h-full sm:max-h-full sm:w-[420px] sm:rounded-none sm:shadow-[-8px_0_40px_rgba(0,0,0,.5)] '+(isVisible?'translate-y-0 sm:translate-x-0':'translate-y-full sm:translate-y-0 sm:translate-x-full')}
+        role="dialog" aria-modal="true" aria-label={`Lead: ${displayLead.name}`}>
+        <div className="flex shrink-0 justify-center pb-1 pt-3 sm:hidden">
+          <div className="h-1 w-9 rounded-full bg-white/20"/>
         </div>
         <DrawerContent
           lead={displayLead}
@@ -139,8 +102,8 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes,
           onStatusChange={handleStatusChange}
           onSaveNotes={onSaveNotes}
           onLeadUpdate={onLeadUpdate}
+          onConsolidated={onConsolidated}
           updatingStatus={updatingStatus}
-          isMobile
         />
       </div>
     </>
@@ -153,16 +116,16 @@ function DrawerContent({
   onStatusChange,
   onSaveNotes,
   onLeadUpdate,
+  onConsolidated,
   updatingStatus,
-  isMobile = false,
 }: {
   lead: Lead;
   onClose: () => void;
   onStatusChange: (status: LeadStatus) => Promise<void>;
   onSaveNotes: (id: string, notes: string, expectedNotes: string) => Promise<void>;
   onLeadUpdate?: (lead: Lead) => void;
+  onConsolidated?: () => void;
   updatingStatus: boolean;
-  isMobile?: boolean;
 }) {
   const { showToast } = useToast();
   const [showLogModal, setShowLogModal] = useState(false);
@@ -268,7 +231,7 @@ function DrawerContent({
       </div>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-6">
 
         {/* Timestamps */}
         <div className="space-y-1.5">
@@ -351,7 +314,7 @@ function DrawerContent({
         )}
 
         <RelatedLeadReview lead={{id:lead.id,name:lead.name,phone:lead.phone,email:lead.email}}
-         onConsolidated={()=>{setActivityRefreshKey(n=>n+1);showToast('Verified customer histories consolidated. Original submissions remain archived.');}} />
+         onConsolidated={()=>{setActivityRefreshKey(n=>n+1);onConsolidated?.();showToast('Verified customer histories consolidated. Original submissions remain archived.');}} />
 
         {/* Combined customer timeline, including archived or completed linked chats. */}
         <ActivityHistory
@@ -375,7 +338,7 @@ function DrawerContent({
           </div>
         </div>
 
-        {isMobile && <div className="h-4" />}
+        <div className="h-4 sm:hidden" />
       </div>
 
       {showLogModal && (
