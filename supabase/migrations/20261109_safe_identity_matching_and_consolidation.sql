@@ -92,6 +92,7 @@ create table if not exists public.crm_lead_consolidations (
  primary_lead_id uuid not null references public.leads(id),
  secondary_lead_id uuid not null unique references public.leads(id),
  reviewed_by text not null,
+ verification_note text,
  confirmed_at timestamptz not null default now(),
  original_secondary jsonb not null,
  check(primary_lead_id<>secondary_lead_id)
@@ -103,7 +104,7 @@ create policy "approved staff review consolidations" on public.crm_lead_consolid
 for select to authenticated using (lower(coalesce(auth.jwt()->>'email','')) in
  ('missydourshomes@gmail.com','yourcustomerflowguy@gmail.com','heberherrera92@gmail.com'));
 
-create or replace function public.crm_consolidate_verified_leads(p_primary uuid,p_secondary uuid,p_confirmation text)
+create or replace function public.crm_consolidate_verified_leads(p_primary uuid,p_secondary uuid,p_confirmation text,p_verification_note text default null)
 returns uuid language plpgsql security definer set search_path to ''
 as $fn$
 declare v_staff text:=lower(coalesce(auth.jwt()->>'email',''));
@@ -121,12 +122,13 @@ begin
  if length(bp)=11 and left(bp,1)='1' then bp:=right(bp,10);end if;
  if length(ap)<>10 or ap<>bp then raise exception 'Phone mismatch';end if;
  if public.crm_normalize_identity_name(a.name)<>public.crm_normalize_identity_name(b.name)
- then raise exception 'Different names require additional identity verification';end if;
+    and (p_verification_note is null or length(btrim(p_verification_note))<20)
+ then raise exception 'Different names require staff-recorded identity verification';end if;
  if a.email<>'' and b.email<>'' and lower(a.email)<>lower(b.email)
  then raise exception 'Conflicting emails require additional identity verification';end if;
  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(ap,0));
- insert into public.crm_lead_consolidations(primary_lead_id,secondary_lead_id,reviewed_by,original_secondary)
- values(p_primary,p_secondary,v_staff,to_jsonb(b));
+ insert into public.crm_lead_consolidations(primary_lead_id,secondary_lead_id,reviewed_by,verification_note,original_secondary)
+ values(p_primary,p_secondary,v_staff,nullif(btrim(p_verification_note),''),to_jsonb(b));
  update public.ai_conversations set lead_id=p_primary where lead_id=p_secondary;
  update public.lead_contact_events set lead_id=p_primary where lead_id=p_secondary;
  update public.lead_followups set lead_id=p_primary where lead_id=p_secondary;
@@ -137,5 +139,5 @@ begin
  update public.leads set status='archived' where id=p_secondary;
  return p_primary;
 end $fn$;
-revoke all on function public.crm_consolidate_verified_leads(uuid,uuid,text) from public,anon;
-grant execute on function public.crm_consolidate_verified_leads(uuid,uuid,text) to authenticated;
+revoke all on function public.crm_consolidate_verified_leads(uuid,uuid,text,text) from public,anon;
+grant execute on function public.crm_consolidate_verified_leads(uuid,uuid,text,text) to authenticated;
