@@ -48,12 +48,14 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
   const [available, setAvailable] = useState(true);
 
   const fetchActivities = useCallback(async () => {
-    const [activityResult, conversationsResult, followupsResult] = await Promise.all([
+    const [activityResult, conversationsResult, followupsResult, consolidationsResult] = await Promise.all([
       supabase.from('lead_activities').select('*').eq('lead_id', leadId).order('created_at', { ascending: false }).limit(500),
       supabase.from('ai_conversations').select('id,title,started_at,last_message_at,status,opportunity_kind')
         .eq('lead_id',leadId).order('started_at',{ascending:false}).limit(500),
       supabase.from('lead_followups').select('id,created_at,due_at,task,status,completed_at')
-        .eq('lead_id',leadId).order('created_at',{ascending:false}).limit(500)
+        .eq('lead_id',leadId).order('created_at',{ascending:false}).limit(500),
+      supabase.from('crm_lead_consolidations').select('secondary_lead_id,confirmed_at,original_secondary')
+        .eq('primary_lead_id',leadId).order('confirmed_at',{ascending:false}).limit(100)
     ]);
     const {data,error}=activityResult;
 
@@ -73,6 +75,16 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
     const warnings:string[]=[];
     if(conversationsResult.error)warnings.push('Linked chat history could not be loaded.');
     if(followupsResult.error)warnings.push('Scheduled follow-up history could not be loaded.');
+    if(consolidationsResult.error)warnings.push('Consolidated original submissions could not be loaded.');
+    for(const source of consolidationsResult.data??[]){
+      const record=source.original_secondary as {name?:string;source_page?:string;message?:string;created_at?:string};
+      items.push({icon:<FileText size={12}/>,color:'#e6b67c',category:'crm',
+       description:'Original customer submission preserved · '+(record?.name||'Previous record')+
+        ' · '+(record?.source_page||'Original source')+
+        (record?.message?' · '+record.message.slice(0,180):''),
+       actor:null,timestamp:source.confirmed_at,
+       href:'/dashboard/leads?lead='+encodeURIComponent(source.secondary_lead_id)});
+    }
     if((conversationsResult.data?.length??0)===500 || (data?.length??0)===500 || (followupsResult.data?.length??0)===500)
       warnings.push('Some older history may require a separate export.');
     setHistoryWarning(warnings.length?warnings.join(' '):null);
