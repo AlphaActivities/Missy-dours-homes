@@ -19,12 +19,14 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
   void (async()=>{
    const digits=normalizedPhone(lead.phone);
    const phoneQuery=digits.length===10?await supabase.rpc('crm_review_phone_lead_candidates',{p_phone:lead.phone}):null;
+   const phoneIds=(phoneQuery?.data??[]).map(x=>x.id).filter((id:string)=>id!==lead.id);
+   const phoneDetails=phoneIds.length?await supabase.from('leads').select('id,name,email,phone,status,created_at').in('id',phoneIds.slice(0,100)):null;
    const nameQuery=normalizedName(lead.name).length>=3?await supabase.from('leads').select('id,name,email,phone,status,created_at').ilike('name',lead.name.trim()).neq('id',lead.id).limit(50):null;
    const emailQuery=lead.email?.trim()&&lead.email.includes('@')?await supabase.from('leads').select('id,name,email,phone,status,created_at').ilike('email',lead.email.trim()).neq('id',lead.id).limit(50):null;
    if(!live)return;
-   if(phoneQuery?.error||nameQuery?.error||emailQuery?.error)setError('Some related records could not be checked.');
+   if(phoneQuery?.error||phoneDetails?.error||nameQuery?.error||emailQuery?.error)setError('Some related records could not be checked.');
    const results=new Map<string,Candidate>();
-   for(const row of [...(phoneQuery?.data??[]),...(nameQuery?.data??[]),...(emailQuery?.data??[])]){
+   for(const row of [...(phoneDetails?.data??[]),...(nameQuery?.data??[]),...(emailQuery?.data??[])]){
     if(row.id===lead.id)continue;
     const samePhone=digits.length===10&&normalizedPhone(row.phone)===digits;
     const sameName=normalizedName(row.name)===normalizedName(lead.name);
