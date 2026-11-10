@@ -38,6 +38,8 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   const [task, setTask] = useState('');
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [rescheduleId,setRescheduleId]=useState<string|null>(null);
+  const [rescheduleValue,setRescheduleValue]=useState('');
 
   const fetchFollowups = useCallback(async () => {
     const { data, error } = await supabase
@@ -139,30 +141,16 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   };
 
   const handleReschedule = async (fu: LeadFollowup) => {
-    const defaultDate=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(fu.due_at));
-    const newDate=prompt('New date in Dallas (YYYY-MM-DD):',defaultDate);
-    if(!newDate)return;
-    const newTime=prompt('Dallas time (HH:MM, 09:00 to 17:00):','14:00');
-    if(!newTime)return;
+    if(!rescheduleValue)return;
     let dueAt:string;
-    try{dueAt=validateTexasOfficeSlot(newDate,newTime).toISOString();}
+    try{dueAt=validateTexasOfficeSlot(rescheduleValue.slice(0,10),rescheduleValue.slice(11,16)).toISOString();}
     catch(e){showToast(e instanceof Error?e.message:'Choose a valid Dallas office time.','error');return;}
-
     setActionId(fu.id);
-    const { error } = await supabase
-      .from('lead_followups')
-      .update({ due_at: dueAt, status: 'active' })
-      .eq('id', fu.id);
-
-    if (error) {
-      showToast('Failed to reschedule.', 'error');
-      setActionId(null);
-      return;
-    }
-
-    onActivity('followup_rescheduled', `Follow-up rescheduled to ${formatDueDate(dueAt)}`);
-    setFollowups(prev => prev.map(f => f.id === fu.id ? { ...f, due_at: dueAt, status: 'active' } : f));
-    setActionId(null);
+    const {error}=await supabase.from('lead_followups').update({due_at:dueAt,status:'active'}).eq('id',fu.id);
+    if(error){showToast('Failed to reschedule.','error');setActionId(null);return;}
+    onActivity('followup_rescheduled',`Follow-up rescheduled to ${formatDueDate(dueAt)}`);
+    setFollowups(prev=>prev.map(f=>f.id===fu.id?{...f,due_at:dueAt,status:'active'}:f));
+    setRescheduleId(null);setRescheduleValue('');setActionId(null);
     showToast('Follow-up rescheduled.');
   };
 
@@ -172,7 +160,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   const statusColors: Record<string, { text: string; bg: string; ring: string }> = {
     overdue:   { text: '#f08080', bg: 'rgba(240,128,128,0.08)', ring: 'rgba(240,128,128,0.25)' },
     today:     { text: '#d9bc85', bg: 'rgba(200,169,110,0.08)', ring: 'rgba(200,169,110,0.25)' },
-    upcoming:  { text: 'var(--ds-text-secondary)', bg: 'var(--ds-bg-overlay)', ring: 'rgba(255,255,255,0.06)' },
+    upcoming:  { text: 'var(--ds-text-secondary)', bg: 'rgba(37,29,23,0.78)', ring: 'rgba(186,151,98,0.35)' },
     completed: { text: 'var(--ds-text-tertiary)', bg: 'transparent', ring: 'transparent' },
     cancelled: { text: 'var(--ds-text-tertiary)', bg: 'transparent', ring: 'transparent' },
   };
@@ -236,7 +224,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
                   Complete
                 </button>
                 <button
-                  onClick={() => handleReschedule(fu)}
+                  onClick={()=>{setRescheduleId(fu.id);setRescheduleValue('');}}
                   disabled={actionId === fu.id}
                   className="flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md transition-colors duration-150"
                   style={{ color: 'var(--ds-text-secondary)', background: 'var(--ds-bg-overlay)' }}
@@ -257,13 +245,21 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
                   Cancel
                 </button>
               </div>
+              {rescheduleId===fu.id&&<div className="mt-3 space-y-3 rounded-xl border border-[#9b7c52]/50 bg-[#241c16] p-3">
+                <p className="text-xs font-semibold text-[#e8c995]">Reschedule follow-up</p>
+                <TexasCallbackPicker label="New follow-up" value={rescheduleValue} onChange={setRescheduleValue}/>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" className="min-h-11 rounded-xl border border-[#9b7c52]/60 text-xs text-[#ecd0a0]" onClick={()=>{setRescheduleId(null);setRescheduleValue('');}}>Cancel</button>
+                  <button type="button" className="min-h-11 rounded-xl bg-[#c9a16c] text-xs font-semibold text-[#21170e] disabled:opacity-40" disabled={!rescheduleValue||actionId===fu.id} onClick={()=>void handleReschedule(fu)}>Save new time</button>
+                </div>
+              </div>}
             </div>
           );
         })}
 
         {/* New follow-up form */}
         {showForm && (
-          <div className="rounded-xl p-3 space-y-2.5" style={{ background: 'var(--ds-bg-overlay)', boxShadow: '0 0 0 1px rgba(255,255,255,0.06)' }}>
+          <div className="rounded-xl p-3 space-y-2.5" style={{ background: '#241d17', boxShadow: '0 0 0 1px rgba(185,151,96,.35)' }}>
             <TexasCallbackPicker value={dueDate&&dueTime?dueDate+'T'+dueTime:''} onChange={v=>{setDueDate(v.slice(0,10));setDueTime(v.slice(11,16));}} label="Follow-up time"/>
             <input
               type="text"
