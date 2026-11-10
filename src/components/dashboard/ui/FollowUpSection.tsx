@@ -17,13 +17,13 @@ function formatDueDate(iso: string): string {return texasDateTime(iso);}
 function getFollowupStatus(fu: LeadFollowup): 'upcoming' | 'today' | 'overdue' | 'completed' | 'cancelled' {
   if (fu.status === 'completed') return 'completed';
   if (fu.status === 'cancelled') return 'cancelled';
-  const now = new Date();
-  const due = new Date(fu.due_at);
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
-  const diffDays = Math.round((startOfDue.getTime() - startOfToday.getTime()) / 86400000);
-  if (diffDays < 0) return 'overdue';
-  if (diffDays === 0) return 'today';
+  const officeDate=(value:Date)=>new Intl.DateTimeFormat('en-CA',{
+    timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'
+  }).format(value);
+  const today=officeDate(new Date());
+  const dueDay=officeDate(new Date(fu.due_at));
+  if(new Date(fu.due_at).getTime()<Date.now())return 'overdue';
+  if(dueDay===today)return 'today';
   return 'upcoming';
 }
 
