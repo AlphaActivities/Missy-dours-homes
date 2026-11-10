@@ -1,6 +1,7 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
 import {Link} from 'react-router-dom';
-import {UsersRound,ChevronDown,ShieldCheck} from 'lucide-react';
+import {UsersRound,ChevronDown,ShieldCheck,X} from 'lucide-react';
 import {supabase} from '../../../lib/supabase';
 type Candidate={id:string;name:string;phone:string|null;email?:string|null;status:string|null;created_at:string|null;reason:string;safe:boolean;eligible:boolean};
 const normalizedName=(s:string)=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -15,6 +16,32 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
  const [verificationNote,setVerificationNote]=useState('');
  const [busy,setBusy]=useState(false);
  const [version,setVersion]=useState(0);
+ const dialogRef=useRef<HTMLDivElement>(null);
+ const triggerRef=useRef<HTMLButtonElement|null>(null);
+ const closeConfirmation=()=>{if(busy)return;setConfirmId(null);setConfirmed(false);setVerificationNote('');};
+ useEffect(()=>{
+  if(!confirmId)return;
+  const original=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  const focusId=window.requestAnimationFrame(()=>dialogRef.current?.focus());
+  const onKeys=(e:KeyboardEvent)=>{
+   if(e.key==='Escape'){e.stopPropagation();closeConfirmation();}
+   if(e.key==='Tab'&&dialogRef.current){
+    const controls=Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),a[href]'));
+    if(!controls.length)return;
+    const first=controls[0],last=controls[controls.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+   }
+  };
+  document.addEventListener('keydown',onKeys,true);
+  return()=>{
+   window.cancelAnimationFrame(focusId);
+   document.removeEventListener('keydown',onKeys,true);
+   document.body.style.overflow=original;
+   triggerRef.current?.focus();
+  };
+ },[confirmId,busy]);
  useEffect(()=>{
   let live=true;setLoading(true);setError(null);setItems([]);setConfirmId(null);setConfirmed(false);setVerificationNote('');
   void (async()=>{
@@ -76,14 +103,28 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
       <p className="mt-1 text-xs text-[#bea98f]">{candidate.reason}</p>
       <div className="mt-2 flex flex-wrap items-center gap-3">
        <Link to={'/dashboard/leads?lead='+encodeURIComponent(candidate.id)} className="inline-flex min-h-9 items-center text-xs text-[#ebc992] underline underline-offset-2">Inspect history</Link>
-       {candidate.eligible&&<button type="button" onClick={()=>{setConfirmId(candidate.id);setConfirmed(false);setVerificationNote('');}} className="min-h-9 rounded-lg border border-[#be9d68]/55 px-3 text-xs font-semibold text-[#f0d29f]">Verify and consolidate</button>}
+       {candidate.eligible&&<button type="button" onClick={e=>{triggerRef.current=e.currentTarget;setConfirmId(candidate.id);setConfirmed(false);setVerificationNote('');}} className="min-h-9 rounded-lg border border-[#be9d68]/55 px-3 text-xs font-semibold text-[#f0d29f]">Verify and consolidate</button>}
       </div>
      </div>)}
     </div>
    </>}
-   {selected&&<div className="rounded-xl border border-[#c5a16f]/65 bg-[#31261b] p-3">
-    <div className="flex items-center gap-2 text-sm font-semibold text-[#f1d5a5]"><ShieldCheck size={18}/>Confirm customer identity</div>
-    <p className="mt-2 text-xs leading-relaxed text-[#dac6ac]">Consolidate <strong>{selected.name}</strong> into <strong>{lead.name}</strong>. Linked conversations, contact events, activity and follow-ups move to the primary record. The original submission stays archived and auditable. This is not an undoable quick action.</p>
+
+  </div>}
+ </section>
+ {selected&&createPortal(<div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6" role="presentation">
+  <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={closeConfirmation} aria-hidden="true"/>
+  <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="crm-consolidation-title"
+   className="relative z-10 flex w-full max-w-lg max-h-[calc(100dvh-1.5rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-[#c5a16f]/65 bg-[#1e1915] shadow-[0_30px_100px_rgba(0,0,0,.8)] outline-none">
+   <header className="flex shrink-0 items-center justify-between border-b border-[#7a6247]/40 px-4 py-4">
+    <h2 id="crm-consolidation-title" className="flex items-center gap-2 text-base font-semibold text-[#f1d5a5]"><ShieldCheck size={19}/>Confirm Customer Identity</h2>
+    <button type="button" onClick={closeConfirmation} aria-label="Close identity verification" className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#e5cc9f]"><X size={20}/></button>
+   </header>
+   <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
+    <div className="rounded-xl border border-[#745d43]/60 bg-[#2a211b] p-3">
+     <p className="text-xs text-[#c3a98a]">Primary customer</p><p className="font-semibold text-[#f2dbb7]">{lead.name}</p>
+     <p className="mt-3 text-xs text-[#c3a98a]">Related record to consolidate</p><p className="font-semibold text-[#f2dbb7]">{selected.name}</p>
+    </div>
+    <p className="text-xs leading-relaxed text-[#dac6ac]">Only confirm after verifying both records belong to the same customer. Previous submissions, notes and attachments remain preserved for review. This operation is audited.</p>
     {!selected.safe&&<div className="mt-3">
      <label className="text-xs font-semibold text-[#efd4a8]">Identity verification notes (required for different names)
       <textarea rows={3} value={verificationNote} onChange={e=>setVerificationNote(e.target.value)}
@@ -93,11 +134,12 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
      <p className="mt-1 text-[11px] text-[#d3b69a]">Shared phone number alone is not proof. Only continue after confirming identity.</p>
     </div>}
     <label className="mt-3 flex gap-2 text-xs leading-relaxed text-[#edce9c]"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>I have verified these records belong to the same customer.</label>
-    <div className="mt-3 grid grid-cols-2 gap-2">
-     <button type="button" onClick={()=>setConfirmId(null)} className="min-h-11 rounded-lg border border-[#9c805c]/60 text-xs text-[#efce99]">Cancel</button>
-     <button type="button" disabled={!confirmed||busy||(!selected.safe&&verificationNote.trim().length<20)} onClick={()=>void consolidate()} className="min-h-11 rounded-lg bg-[#c5a06d] px-2 text-xs font-semibold text-[#23170d] disabled:opacity-40">{busy?'Saving…':'Confirm consolidation'}</button>
-    </div>
-   </div>}
-  </div>}
- </section>;
+   </div>
+   <footer className="grid shrink-0 grid-cols-2 gap-2 border-t border-[#745d43]/45 bg-[#231c16] px-4 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <button type="button" onClick={closeConfirmation} className="min-h-12 rounded-xl border border-[#9c805c]/60 text-sm text-[#efce99]">Cancel</button>
+    <button type="button" disabled={!confirmed||busy||(!selected.safe&&verificationNote.trim().length<20)} onClick={()=>void consolidate()} className="min-h-12 rounded-xl bg-[#c5a06d] px-2 text-sm font-semibold text-[#23170d] disabled:opacity-40">{busy?'Consolidating…':'Confirm consolidation'}</button>
+   </footer>
+  </div>
+ </div>,document.body)}
+ </>;
 }
