@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import {Link} from 'react-router-dom';
 import { X, Calendar, MessageSquare, ClipboardList } from 'lucide-react';
 import { Lead } from '../LeadList';
 import { LeadStatus } from './StatusBadge';
@@ -15,7 +14,7 @@ import RelatedLeadReview from './RelatedLeadReview';
 import CallbackAttentionPanel from './CallbackAttentionPanel';
 import { supabase } from '../../../lib/supabase';
 import { useToast } from '../../../contexts/ToastContext';
-import { formatDate, formatDashboardDateTime, formatDallasDateTime } from '../../../utils/formatDate';
+import { formatDate } from '../../../utils/formatDate';
 
 interface LeadDrawerProps {
   lead: Lead | null;
