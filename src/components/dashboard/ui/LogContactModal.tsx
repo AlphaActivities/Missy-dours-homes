@@ -167,7 +167,6 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
             </button>
           </div>
         </div>
-      </div>
     </>
   );
 }
