@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import {UsersRound,ChevronDown,ShieldCheck,X} from 'lucide-react';
 import {supabase} from '../../../lib/supabase';
 type Candidate={id:string;name:string;phone:string|null;email?:string|null;status:string|null;created_at:string|null;reason:string;safe:boolean;eligible:boolean};
-const normalizedName=(s:string)=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
+const normalizedName=(s:string)=>s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
 const normalizedPhone=(s:string|null)=>{const p=(s||'').replace(/\D/g,'');return p.length===11&&p.startsWith('1')?p.slice(1):p};
 export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string;name:string;phone:string|null;email?:string|null};onConsolidated?:()=>void}){
  const [items,setItems]=useState<Candidate[]>([]);
