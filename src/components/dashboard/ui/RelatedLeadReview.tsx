@@ -15,10 +15,12 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
  const [confirmed,setConfirmed]=useState(false);
  const [verificationNote,setVerificationNote]=useState('');
  const [busy,setBusy]=useState(false);
+ const busyRef=useRef(false);
+ busyRef.current=busy;
  const [version,setVersion]=useState(0);
  const dialogRef=useRef<HTMLDivElement>(null);
  const triggerRef=useRef<HTMLButtonElement|null>(null);
- const closeConfirmation=()=>{if(busy)return;setConfirmId(null);setConfirmed(false);setVerificationNote('');};
+ const closeConfirmation=()=>{if(busyRef.current)return;setConfirmId(null);setConfirmed(false);setVerificationNote('');};
  useEffect(()=>{
   if(!confirmId)return;
   const original=document.body.style.overflow;
@@ -41,7 +43,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
    document.body.style.overflow=original;
    triggerRef.current?.focus();
   };
- },[confirmId,busy]);
+ },[confirmId]);
  useEffect(()=>{
   let live=true;setLoading(true);setError(null);setItems([]);setConfirmId(null);setConfirmed(false);setVerificationNote('');
   void (async()=>{
@@ -81,7 +83,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
   if(result.error){setError(result.error.message);setBusy(false);return;}
   setBusy(false);setConfirmId(null);setConfirmed(false);setVersion(n=>n+1);onConsolidated?.();
  };
- return <section aria-label="Potential duplicate customer records" className="overflow-hidden rounded-2xl border border-[#987c55]/45 bg-[#1e1915]/80">
+ return <><section aria-label="Potential duplicate customer records" className="overflow-hidden rounded-2xl border border-[#987c55]/45 bg-[#1e1915]/80">
   <button type="button" onClick={()=>setExpanded(v=>!v)} className="flex min-h-16 w-full items-center justify-between gap-3 p-4 text-left" aria-expanded={expanded}>
    <span className="flex min-w-0 items-center gap-2"><UsersRound className="shrink-0 text-[#d7b77f]" size={20}/>
     <span><span className="block text-sm font-semibold text-[#ecd3a9]">Potential Duplicate Records</span>
