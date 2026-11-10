@@ -4,7 +4,7 @@ create or replace function public.crm_normalize_identity_name(p_name text)
 returns text language sql immutable strict set search_path to ''
 as $fn$ select regexp_replace(lower(btrim(p_name)),'[^a-z0-9]+','','g') $fn$;
 revoke all on function public.crm_normalize_identity_name(text) from public,anon;
-grant execute on function public.crm_normalize_identity_name(text) to authenticated,service_role;
+grant execute on function public.crm_normalize_identity_name(text) to anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.ai_concierge_request_human_with_contact(p_conversation uuid, p_token_hash text, p_message text, p_name text, p_phone text, p_consent boolean)
  RETURNS boolean
  LANGUAGE plpgsql
