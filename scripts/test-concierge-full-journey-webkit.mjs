@@ -60,10 +60,12 @@ const badgeMigration=readFileSync(new URL('../supabase/migrations/20261109_unify
 const entranceSource=readFileSync(new URL('../src/components/dashboard/ui/ConciergeSignatureEntrance.tsx',import.meta.url),'utf8');
 const outcomeSource=readFileSync(new URL('../src/pages/dashboard/ConversationsPage.tsx',import.meta.url),'utf8');
 const leadDrawerSource=readFileSync(new URL('../src/components/dashboard/ui/LeadDrawer.tsx',import.meta.url),'utf8');
+const attentionSource=readFileSync(new URL('../src/components/dashboard/ui/CallbackAttentionPanel.tsx',import.meta.url),'utf8');
+const contactModalSource=readFileSync(new URL('../src/components/dashboard/ui/LogContactModal.tsx',import.meta.url),'utf8');
 const customerTimelineSource=readFileSync(new URL('../src/components/dashboard/ui/ActivityHistory.tsx',import.meta.url),'utf8');
 const relatedLeadSource=readFileSync(new URL('../src/components/dashboard/ui/RelatedLeadReview.tsx',import.meta.url),'utf8');
 const conversationsHistorySource=readFileSync(new URL('../src/pages/dashboard/ConversationsPage.tsx',import.meta.url),'utf8');
-assert.ok(leadDrawerSource.includes('Active callback requests (') &&
+assert.ok(attentionSource.includes('Active Requests') &&
  leadDrawerSource.includes('<RelatedLeadReview') &&
  leadDrawerSource.includes('<ActivityHistory'),
  'Lead must distinguish active callback actions from full linked customer history');
@@ -73,8 +75,9 @@ assert.ok(customerTimelineSource.includes("from('ai_conversations')") &&
  customerTimelineSource.includes('Open saved transcript'),
  'Lead timeline must include linked chats, callback states and follow-up history');
 assert.ok(relatedLeadSource.includes("crm_review_phone_lead_candidates") &&
- relatedLeadSource.includes('No records are combined automatically.') &&
- !relatedLeadSource.includes(".update("),
+ relatedLeadSource.includes('crm_consolidate_verified_leads') &&
+ relatedLeadSource.includes('Phone and normalized name match') &&
+ relatedLeadSource.includes('I have verified these records belong to the same customer.'),
  'Possible identity matches must be read-only and rely on verified staff lookup');
 assert.ok(conversationsHistorySource.includes('range(page*PAGE_SIZE,page*PAGE_SIZE+PAGE_SIZE-1)') &&
  conversationsHistorySource.includes('setTotalConversations(count??0)') &&
@@ -87,14 +90,14 @@ assert.ok(conversationsHistorySource.includes("filter==='qa'") &&
 assert.ok(conversationsHistorySource.includes('setLifecycleReviewIds(humanIds.filter(id=>!pending.has(id)))'),
  'Historical human sessions without an open task must be identified without automatically closing them');
 
-assert.ok(leadDrawerSource.includes("?'Received':'Started'") &&
- leadDrawerSource.includes("?'Request':'Live chat'") &&
- leadDrawerSource.includes("month:'short',day:'numeric'"),
+assert.ok(attentionSource.includes('Received') &&
+ attentionSource.includes('Request {i+1}') &&
+ attentionSource.includes("month:'short',day:'numeric'"),
  'Request picker labels must distinguish arrival timestamps from booked callback appointments');
-assert.ok(leadDrawerSource.includes('The times shown are when each request was received, not scheduled appointments.'),
+assert.ok(attentionSource.includes('No appointment has been scheduled.'),
  'Selector should explicitly explain that request times are not actual appointments');
-assert.ok(leadDrawerSource.includes("value={callbackWork?.conversationId??''}") &&
- leadDrawerSource.includes('value={t.conversation_id}'),
+assert.ok(attentionSource.includes("value={request?.conversation_id??''}") &&
+ attentionSource.includes('value={r.conversation_id}'),
  'Selector must retain exact conversation IDs and existing selection behavior');
 
 const callbackPickerSource=readFileSync(new URL('../src/components/dashboard/ui/TexasCallbackPicker.tsx',import.meta.url),'utf8');
@@ -109,10 +112,20 @@ assert.ok(outcomeSource.includes('aria-label="Record chat outcome before returni
  outcomeSource.includes('min-w-0 max-w-full space-y-3 overflow-x-clip'),
  'Outcome form must constrain intrinsic iOS date/time field width');
 assert.ok(outcomeSource.includes('<TexasCallbackPicker') &&
- callbackPickerSource.includes('type="datetime-local"') &&
- callbackPickerSource.includes("minWidth:0,maxWidth:'100%',boxSizing:'border-box'") &&
- callbackPickerSource.includes('overflow-hidden rounded-lg border'),
+ callbackPickerSource.includes('type="date"') &&
+ callbackPickerSource.includes('<select aria-label=') &&
+ callbackPickerSource.includes('grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]'),
  'Shared native iOS follow-up picker must remain clickable but clipped to its bordered container');
+assert.ok(contactModalSource.includes('max-h-[calc(100dvh-2rem)]') &&
+ contactModalSource.includes('overflow-y-auto overscroll-contain') &&
+ contactModalSource.includes("document.body.style.overflow='hidden'") &&
+ contactModalSource.includes('shrink-0 items-center justify-end'),
+ 'Customer interaction form must lock background scroll and keep its own scrollable content and fixed actions');
+assert.ok(attentionSource.includes('Callback Needs Attention') &&
+ attentionSource.includes('View Chat') &&
+ attentionSource.includes('Record Outcome') &&
+ attentionSource.includes('<details'),
+ 'Urgent callback card must present a compact request summary and direct actions');
 assert.ok(activityContext.includes('setAttentionCount(Math.max(0,Number(t?.total??0)))'),
  'Bell and foreground app badges must count actual active inbox cards, not duplicate work records');
 assert.ok(pushDelivery.includes("crm_visible_notification_count_service',{p_staff_email:device.staff_email}"),

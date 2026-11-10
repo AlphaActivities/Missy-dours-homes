@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import {Link} from 'react-router-dom';
 import { X, Calendar, MessageSquare, ClipboardList } from 'lucide-react';
 import { Lead } from '../LeadList';
 import { LeadStatus } from './StatusBadge';
@@ -12,9 +11,10 @@ import LogContactModal from './LogContactModal';
 import FollowUpSection from './FollowUpSection';
 import ActivityHistory from './ActivityHistory';
 import RelatedLeadReview from './RelatedLeadReview';
+import CallbackAttentionPanel from './CallbackAttentionPanel';
 import { supabase } from '../../../lib/supabase';
 import { useToast } from '../../../contexts/ToastContext';
-import { formatDate, formatDashboardDateTime, formatDallasDateTime } from '../../../utils/formatDate';
+import { formatDate } from '../../../utils/formatDate';
 
 interface LeadDrawerProps {
   lead: Lead | null;
@@ -296,48 +296,23 @@ function DrawerContent({
             <Label>Quick actions</Label>
             <div className="mt-2 space-y-2">
               <QuickActionBar phone={lead.phone} email={lead.email} compact={false} />
-              <button
+              {!callbackPending&&<button
                 onClick={() => setShowLogModal(true)}
                 type="button"
                 className={'flex items-center justify-center gap-1.5 rounded-lg w-full min-h-11 px-3 text-[13px] font-semibold transition-all duration-150 '+(callbackPending?'border border-[#ead19f] bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] text-[#191208] shadow-[0_5px_18px_rgba(212,171,102,.2)] hover:brightness-110':'border border-white/10 bg-white/5 text-[#c7b9a3] hover:border-white/25 hover:text-white')}
               >
                 <ClipboardList size={14} />
-                {callbackPending ? 'Record Contact Outcome' : 'Record Interaction'}
-              </button>
+                Record Interaction
+              </button>}
             </div>
           </div>
         )}
 
-        {callbackPending && <section aria-label="Callback next action" className="rounded-xl border border-red-500/50 bg-[#281316]/80 p-4 text-sm text-[#f5d9d2]">
-          <p className="font-semibold text-red-200">{callbackWork?.requestKind==='callback'?'Callback needs attention':'Chat request needs attention'}</p>
-          {callbackChoices.length>1&&<div className="mt-3 space-y-2">
-            <label htmlFor="crm-callback-request" className="block text-xs font-semibold text-amber-200">Active callback requests ({callbackChoices.length})</label>
-            <select id="crm-callback-request" value={callbackWork?.conversationId??''}
-              onChange={e=>{const t=callbackChoices.find(x=>x.conversation_id===e.target.value);if(t)setCallbackWork({
-                owner:t.assigned_to??null,due:t.due_at,status:t.status,conversationId:t.conversation_id,
-                requestKind:t.request_kind==='callback'?'callback':'live_chat',
-                requestedAt:t.created_at,otherRequests:callbackChoices.length-1
-              });}}
-              className="w-full min-h-11 rounded-lg border border-amber-200/40 bg-[#201719] p-2 text-xs text-[#f5dfbd]">
-              {callbackChoices.map((t,i)=><option key={t.conversation_id} value={t.conversation_id}>{t.request_kind==='callback'?'Request':'Live chat'} {i+1} · {t.request_kind==='callback'?'Received':'Started'} {new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(t.created_at))}</option>)}
-            </select>
-            <p className="text-xs leading-relaxed text-[#edd1a4]">Only outstanding requests appear in this action selector. Historical and completed requests remain in the customer timeline below. The times shown are when each request was received, not scheduled appointments.</p>
-          </div>}
-          {callbackWork?.conversationId&&<Link className="mt-2 inline-flex min-h-10 items-center rounded-lg border border-amber-200/40 px-3 py-2 text-xs font-semibold text-[#f2d4a3]" to={'/dashboard/conversations?conversation='+encodeURIComponent(callbackWork.conversationId)}>Open requested conversation</Link>}
-          <p className="mt-2">Assigned to: {callbackWork?.owner?({'yourcustomerflowguy@gmail.com':'Josh','heberherrera92@gmail.com':'Heber','missydourshomes@gmail.com':'Missy'} as Record<string,string>)[callbackWork.owner.toLowerCase()]??'Team member':'Unassigned'}</p>
-          <p className="mt-1">Next action: Review the conversation, contact the visitor when appropriate, then record a confirmed outcome or schedule follow-up for this request.</p>
-          {callbackWork?.requestedAt&&<div className="mt-3 text-xs leading-relaxed text-[#e9d7b8]">
-            <p>Request received · Your local time: {formatDashboardDateTime(callbackWork.requestedAt)}</p>
-            <p>Texas office time: {formatDallasDateTime(callbackWork.requestedAt)}</p>
-          </div>}
-          <div className="mt-2 space-y-1 text-xs leading-relaxed text-[#f4cfac]">
-            <p className="font-semibold">Staff response status · {callbackWork?.status==='claimed'?'Assigned, outcome required':'Awaiting staff attention'}</p>
-            {callbackWork?.due&&callbackWork.requestedAt&&new Date(callbackWork.due).getTime()>new Date(callbackWork.requestedAt).getTime()+5000
-             ?<><p>Next scheduled staff follow-up · {formatDallasDateTime(callbackWork.due)}</p><p className="text-[#cdb79a]">This is a staff-planned follow-up, not a customer-confirmed appointment unless separately agreed.</p></>
-             :<><p>Callback appointment · Not yet scheduled</p><p className="text-[#cdb79a]">The request timestamp is not a promised call time. Choose a future Dallas office-hours appointment when recording an outcome.</p></>}
-          </div>
-          <p className="mt-3 text-xs text-[#e6c89c]">Use the Record Contact Outcome action in Quick Actions above to log the call, text, or email and resolve or schedule follow-up.</p>
-        </section>}
+        {callbackPending&&<CallbackAttentionPanel choices={callbackChoices} selected={callbackWork}
+         onSelect={t=>setCallbackWork({owner:t.assigned_to,due:t.due_at,status:t.status,
+         conversationId:t.conversation_id,requestKind:t.request_kind==='callback'?'callback':'live_chat',
+         requestedAt:t.created_at,otherRequests:callbackChoices.length-1})}
+         onOutcome={()=>setShowLogModal(true)}/>}
 
         {/* Follow-up section */}
         <FollowUpSection leadId={lead.id} leadStatus={lead.status} onActivity={handleActivity} />
@@ -367,7 +342,7 @@ function DrawerContent({
         {lead.message && (
           <div>
             <Label icon={<MessageSquare size={11} />}>Message</Label>
-            <div className="mt-2 rounded-xl p-4" style={{ background: 'var(--ds-bg-overlay)' }}>
+            <div className="mt-2 rounded-xl border border-[#8b704d]/40 bg-[#221b16]/75 p-4 shadow-[inset_0_1px_rgba(255,255,255,.035)]">
               <p className="text-sm leading-relaxed whitespace-pre-wrap italic" style={{ color: '#f0ede8' }}>
                 {lead.message}
               </p>
@@ -375,7 +350,8 @@ function DrawerContent({
           </div>
         )}
 
-        <RelatedLeadReview lead={{id:lead.id,name:lead.name,phone:lead.phone,email:lead.email}} />
+        <RelatedLeadReview lead={{id:lead.id,name:lead.name,phone:lead.phone,email:lead.email}}
+         onConsolidated={()=>{setActivityRefreshKey(n=>n+1);showToast('Verified customer histories consolidated. Original submissions remain archived.');}} />
 
         {/* Combined customer timeline, including archived or completed linked chats. */}
         <ActivityHistory
