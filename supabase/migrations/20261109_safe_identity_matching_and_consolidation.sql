@@ -84,7 +84,7 @@ begin
  values(p_conversation,'human_handoff','urgent',now()+interval '30 minutes','callback')
  on conflict do nothing;
  return true;
-end $function$
+end $function$;
 
 -- Explicit, audited consolidation preserves original lead records and customer intake.
 create table if not exists public.crm_lead_consolidations (
