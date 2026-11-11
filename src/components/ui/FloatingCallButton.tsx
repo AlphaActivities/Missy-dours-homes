@@ -13,7 +13,7 @@ function LuxuryContactEmblem() {
       <path d="M22 18H72C81 18 87 24 87 33V65C87 75 81 81 71 81H42L22 94V80C13 78 9 73 9 63V33C9 24 14 18 22 18Z"
         strokeWidth="5.2"/>
       <path d="M32 37L39 32C42 30 44 31 46 34L52 43C54 46 53 48 50 51L46 55C51 62 57 67 65 71L69 66C72 63 74 63 77 65L85 71C88 73 88 76 85 79L81 84C78 88 73 88 68 86C49 79 33 64 27 47C25 43 27 39 32 37Z"
-        strokeWidth="4.5" transform="translate(-3 -7) scale(.94)"/>
+        strokeWidth="4.5" transform="translate(2 3) scale(.86)"/>
       <circle cx="80" cy="20" r="16" fill="#17130d" stroke="#E4C688" strokeWidth="4.1"/>
       <path d="M80 11.5V28.5M71.5 20H88.5" strokeWidth="4.5"/>
     </svg>
