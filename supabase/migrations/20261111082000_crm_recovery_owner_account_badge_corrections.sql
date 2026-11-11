@@ -96,3 +96,27 @@ BEGIN
 END $fn$;
 REVOKE ALL ON FUNCTION public.crm_finish_badge_correction(text,boolean,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.crm_finish_badge_correction(text,boolean,text) TO service_role;
+
+-- Foreground badge acknowledgement records the actual server count, not a
+-- browser-provided number. This prevents unnecessary corrections after reopening.
+CREATE OR REPLACE FUNCTION public.crm_record_foreground_badge_count(p_device_id uuid)
+RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $fn$
+DECLARE
+ v_staff text:=lower(coalesce(auth.jwt()->>'email',''));
+ v_count integer;
+BEGIN
+ IF coalesce(auth.jwt()->>'role','')<>'authenticated'
+    OR v_staff NOT IN ('yourcustomerflowguy@gmail.com','missydourshomes@gmail.com','heberherrera92@gmail.com')
+    OR NOT EXISTS(SELECT 1 FROM public.ai_concierge_push_subscriptions d
+                  WHERE d.id=p_device_id AND lower(d.staff_email)=v_staff)
+ THEN RAISE EXCEPTION 'Device not authorized'; END IF;
+ v_count=greatest(0,coalesce((public.crm_grouped_activity_counts(v_staff)->>'total')::integer,0));
+ INSERT INTO public.crm_badge_device_state(device_id,staff_email,last_badge_count,updated_at)
+ VALUES(p_device_id,v_staff,v_count,now())
+ ON CONFLICT(device_id) DO UPDATE SET
+  staff_email=excluded.staff_email,last_badge_count=excluded.last_badge_count,updated_at=now();
+ RETURN v_count;
+END $fn$;
+REVOKE ALL ON FUNCTION public.crm_record_foreground_badge_count(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.crm_record_foreground_badge_count(uuid) TO authenticated;
