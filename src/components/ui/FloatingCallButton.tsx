@@ -79,13 +79,13 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
             trackCTA('Open Chatbot', 'mobile_contact_launcher');
             onOpenChat();
           }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium tracking-[.005em] text-[#f8e5c1] transition-colors hover:bg-[#c8a36a]/15 active:bg-[#c8a36a]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcf92]">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#cba76e]/35 bg-[#cba76e]/10 text-[#e9c88e]"><LuxuryMessageIcon size={23} inMenu/></span><span>Message Missy Directly</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center text-[#e9c88e]"><LuxuryMessageIcon size={25} inMenu/></span><span>Message Missy Directly</span>
           </button>
           <a href={CONTACT_INFO.phone.tel} onClick={() => {
             trackPhoneClick('floating_call_button');
             setExpanded(false);
           }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium tracking-[.005em] text-[#f8e5c1] transition-colors hover:bg-[#c8a36a]/15 active:bg-[#c8a36a]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcf92]">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#cba76e]/35 bg-[#cba76e]/10 text-[#e9c88e]"><Phone size={23} strokeWidth={1.9} className="shrink-0" aria-hidden="true"/></span><span>Call Missy Directly</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center text-[#e9c88e]"><Phone size={25} strokeWidth={1.9} className="shrink-0" aria-hidden="true"/></span><span>Call Missy Directly</span>
           </a>
         </div>
       )}
