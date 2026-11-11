@@ -4,18 +4,18 @@ import { useLocation } from 'react-router-dom';
 import { CONTACT_INFO } from '../../config/contact';
 import { trackCTA, trackPhoneClick } from '../../utils/analytics';
 
-/** Bespoke monoline contact emblem: a conversation outline with a handset
- * drawn into the same silhouette, rather than two competing app icons. */
+/** Faithful to approved Option 5: substantial rounded conversation outline,
+ * recognizable handset, and a clear circular plus at the top right. */
 function LuxuryContactEmblem() {
   return (
-    <svg viewBox="0 0 48 48" width="39" height="39" fill="none" aria-hidden="true"
-      stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M13 8.75h21c4.35 0 7 2.65 7 7v13.1c0 4.35-2.65 7-7 7H21.1L12 42v-7.35c-3.08-1.12-5-3.55-5-6.8v-12.1c0-4.35 2.65-7 6-7Z"
-        strokeWidth="1.95"/>
-      <path d="m16.9 17.6 2.7-1.95c.7-.5 1.5-.31 1.97.36l2.1 3.02c.41.58.34 1.28-.16 1.8l-1.38 1.34a15.25 15.25 0 0 0 5.72 5.7l1.35-1.39c.51-.51 1.23-.56 1.8-.16l3.02 2.11c.66.46.84 1.26.35 1.96l-1.95 2.7c-.6.85-1.57 1.22-2.56.91-6.62-2.06-11.3-6.74-13.35-13.34-.3-.98.08-1.96.9-2.56Z"
-        strokeWidth="1.8"/>
-      <circle cx="38.1" cy="9.9" r="7.25" fill="#17130d" stroke="#E4C688" strokeWidth="1.35"/>
-      <path d="M38.1 6.65v6.5M34.85 9.9h6.5" strokeWidth="1.55"/>
+    <svg viewBox="0 0 100 100" width="51" height="51" fill="none"
+      aria-hidden="true" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 18H72C81 18 87 24 87 33V65C87 75 81 81 71 81H42L22 94V80C13 78 9 73 9 63V33C9 24 14 18 22 18Z"
+        strokeWidth="5.2"/>
+      <path d="M32 37L39 32C42 30 44 31 46 34L52 43C54 46 53 48 50 51L46 55C51 62 57 67 65 71L69 66C72 63 74 63 77 65L85 71C88 73 88 76 85 79L81 84C78 88 73 88 68 86C49 79 33 64 27 47C25 43 27 39 32 37Z"
+        strokeWidth="4.5" transform="translate(2 3) scale(.86)"/>
+      <circle cx="80" cy="20" r="16" fill="#17130d" stroke="#E4C688" strokeWidth="4.1"/>
+      <path d="M80 11.5V28.5M71.5 20H88.5" strokeWidth="4.5"/>
     </svg>
   );
 }
