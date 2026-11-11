@@ -11,7 +11,7 @@ function LuxuryContactEmblem() {
     <svg viewBox="0 0 100 100" width="49" height="49" fill="none"
       aria-hidden="true" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
       <path
-        d="M29 21H65C78 21 85 29 85 41V58C85 71 77 78 64 78H43L25 90L29 77C19 75 13 68 13 57V41C13 29 20 21 29 21Z"
+        d="M35 22H61C76 22 85 31 85 45V54C85 68 76 77 61 77H43L24 89L29 76C18 74 12 66 12 54V45C12 31 20 22 35 22Z"
         strokeWidth="4.6"
       />
       <circle cx="34" cy="50" r="3.35" fill="currentColor" stroke="none"/>
