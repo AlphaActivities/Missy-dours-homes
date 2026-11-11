@@ -290,7 +290,7 @@ function DashboardLayoutInner() {
         </div>
 
         {/* Sidebar: Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
+        <nav className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 py-4 space-y-0.5 [scrollbar-width:thin]">
           <p
             className="px-3 mb-3 text-[10px] tracking-[0.22em] uppercase font-medium"
             style={{ color: 'var(--ds-text-tertiary)' }}
