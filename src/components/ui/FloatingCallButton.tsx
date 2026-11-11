@@ -75,9 +75,8 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
         aria-label={expanded ? 'Close contact options' : 'Chat or call Missy'}
         aria-expanded={expanded} aria-controls="missy-mobile-contact-options"
         onClick={() => setExpanded(value => !value)}
-        className="relative flex h-14 w-14 items-center justify-center rounded-full border border-[#f0d69d]/80 bg-gradient-to-br from-[#d8b778] via-[#c4a16a] to-[#7d5e36] text-[#18120b] shadow-[0_8px_25px_rgba(0,0,0,.4),0_0_18px_rgba(213,177,109,.24)] transition-[transform,box-shadow] duration-200 hover:scale-105 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5e3b6]">
-        {expanded ? <X size={24} aria-hidden="true"/> : <MessageCircle size={25} aria-hidden="true"/>}
-        {!expanded && <Phone size={12} aria-hidden="true" className="absolute bottom-3 right-2.5 rounded-full bg-[#d8b778]"/>}
+        className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-[#D5B16D] bg-gradient-to-br from-[#2B251C]/95 to-[#080808]/95 text-[#EBCB83] shadow-[0_10px_35px_rgba(0,0,0,.58),0_0_20px_rgba(213,177,109,.30)] backdrop-blur-xl transition-[transform,box-shadow,border-color] duration-200 hover:border-[#F0D69D] hover:shadow-[0_12px_40px_rgba(0,0,0,.6),0_0_25px_rgba(213,177,109,.43)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]">
+        {expanded ? <X size={26} strokeWidth={2.2} aria-hidden="true"/> : <span className="flex items-center justify-center gap-1" aria-hidden="true"><MessageCircle size={23} strokeWidth={2.2} className="shrink-0"/><Phone size={19} strokeWidth={2.3} className="shrink-0"/></span>}
       </button>
     </div>
   );
