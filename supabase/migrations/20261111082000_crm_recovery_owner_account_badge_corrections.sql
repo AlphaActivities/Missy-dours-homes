@@ -66,24 +66,24 @@ CREATE CONSTRAINT TRIGGER crm_consolidation_badge_correction
  EXECUTE FUNCTION public.crm_schedule_badge_correction_after_consolidation();
 
 CREATE OR REPLACE FUNCTION public.crm_claim_badge_corrections(p_limit integer DEFAULT 10)
-RETURNS TABLE(staff_email text) LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+RETURNS TABLE(staff_email text,request_created_at timestamptz) LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $fn$
 BEGIN
  IF coalesce(auth.jwt()->>'role','') <> 'service_role' THEN RAISE EXCEPTION 'Service only'; END IF;
  RETURN QUERY WITH candidate AS (
   SELECT q.staff_email FROM public.crm_badge_correction_queue q
-  WHERE q.processed_at IS NULL AND q.not_before<=now()
+  WHERE q.processed_at IS NULL AND q.not_before<=now() AND q.attempts<3
    AND (q.claimed_until IS NULL OR q.claimed_until<now())
   ORDER BY q.not_before LIMIT least(greatest(p_limit,1),20) FOR UPDATE SKIP LOCKED
  ), updated AS (
   UPDATE public.crm_badge_correction_queue q SET claimed_until=now()+interval '2 minutes',attempts=q.attempts+1
-  FROM candidate c WHERE q.staff_email=c.staff_email RETURNING q.staff_email
- ) SELECT updated.staff_email FROM updated;
+  FROM candidate c WHERE q.staff_email=c.staff_email RETURNING q.staff_email,q.created_at
+ ) SELECT updated.staff_email,updated.created_at FROM updated;
 END $fn$;
 REVOKE ALL ON FUNCTION public.crm_claim_badge_corrections(integer) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.crm_claim_badge_corrections(integer) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.crm_finish_badge_correction(p_staff_email text,p_success boolean,p_error_code text DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.crm_finish_badge_correction(p_staff_email text,p_request_created_at timestamptz,p_success boolean,p_error_code text DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
 AS $fn$
 BEGIN
@@ -92,10 +92,10 @@ BEGIN
  SET processed_at=CASE WHEN p_success THEN now() ELSE NULL END,
      not_before=CASE WHEN p_success THEN not_before ELSE now()+interval '5 minutes' END,
      claimed_until=null,last_error_code=left(p_error_code,80)
- WHERE staff_email=p_staff_email;
+ WHERE staff_email=p_staff_email AND created_at=p_request_created_at;
 END $fn$;
-REVOKE ALL ON FUNCTION public.crm_finish_badge_correction(text,boolean,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.crm_finish_badge_correction(text,boolean,text) TO service_role;
+REVOKE ALL ON FUNCTION public.crm_finish_badge_correction(text,timestamptz,boolean,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.crm_finish_badge_correction(text,timestamptz,boolean,text) TO service_role;
 
 -- Foreground badge acknowledgement records the actual server count, not a
 -- browser-provided number. This prevents unnecessary corrections after reopening.
