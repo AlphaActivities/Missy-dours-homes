@@ -483,7 +483,22 @@ export default function ConversationsPage() {
   finally{setActionBusy(false);}
  };
 
- const escalatedCount=pendingTasks.filter(t=>t.status==='pending' && (Boolean(t.escalated_at)||Boolean(t.escalation_due_at && new Date(t.escalation_due_at).getTime()<Date.now()))).length;
+ const pendingGroups=useMemo(()=>{
+  type Task=typeof pendingTasks[number];
+  const groups=new Map<string,{id:string;leadId:string|null;name:string;tasks:Task[]}>();
+  for(const task of pendingTasks){
+   const contact=taskContacts[task.conversation_id];
+   const leadId=contact?.lead_id??null;
+   const id=leadId?'lead:'+leadId:'conversation:'+task.conversation_id;
+   const existing=groups.get(id);
+   if(existing){existing.tasks.push(task);continue;}
+   groups.set(id,{id,leadId,name:contact?.visitor_name?.trim()||'Customer conversation',tasks:[task]});
+  }
+  return [...groups.values()].sort((a,b)=>Date.parse(b.tasks[0].created_at)-Date.parse(a.tasks[0].created_at));
+ },[pendingTasks,taskContacts]);
+ const escalatedCount=pendingGroups.filter(group=>group.tasks.some(t=>
+  t.status==='pending'&&(Boolean(t.escalated_at)||Boolean(t.escalation_due_at&&Date.parse(t.escalation_due_at)<Date.now()))
+ )).length;
  const filtered=items.filter(c=>focused||(
    (filter==='qa'?c.title.startsWith('[PRIVATE VISITOR QA] '):!c.title.startsWith('[PRIVATE VISITOR QA] ')) &&
    (filter==='all'||filter==='qa'||c.status===filter)
@@ -495,35 +510,37 @@ export default function ConversationsPage() {
    <button onClick={()=>void refresh()} data-crm-refresh disabled={loading} className="flex items-center gap-2 rounded-lg px-3 py-2 border border-white/15 text-sm"><RefreshCw size={15} className={loading?'animate-spin':''}/><span aria-live="polite">{loading?'Refreshing…':'Refresh'}</span></button>
   </div>
    {error&&<p role="alert" className="mb-4 text-sm text-red-300">{error}</p>}
-  {pendingTasks.length>0&&<section className="ds-page-reveal ds-page-reveal-1 mb-6 rounded-2xl border border-[#b8945d]/55 bg-[linear-gradient(150deg,rgba(32,27,21,.97),rgba(15,15,15,.96))] p-4 shadow-[inset_0_1px_0_rgba(244,210,145,.10),0_12px_30px_rgba(0,0,0,.23)] sm:p-5" aria-label="Team follow-up tasks">
+  {pendingGroups.length>0&&<section className="ds-page-reveal ds-page-reveal-1 mb-6 rounded-2xl border border-[#b8945d]/55 bg-[linear-gradient(150deg,rgba(32,27,21,.97),rgba(15,15,15,.96))] p-4 shadow-[inset_0_1px_0_rgba(244,210,145,.10),0_12px_30px_rgba(0,0,0,.23)] sm:p-5" aria-label="Team follow-up tasks">
    <div className="mb-4 flex items-start gap-3">
     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d7aa65]/40 bg-[#c69a56]/10 text-[#efd09a]"><AlertTriangle size={20} aria-hidden="true"/></span>
-    <div className="min-w-0 flex-1">
-     <h2 className="font-semibold leading-snug text-[#f3e1c1]">Callbacks needing attention</h2>
-     <p className="mt-1 text-xs leading-relaxed text-[#bcad96]">Review the chat or open its lead to record the result.</p>
+    <div className="min-w-0 flex-1"><h2 className="font-semibold text-[#f3e1c1]">Callback customers needing attention</h2>
+     <p className="mt-1 text-xs text-[#bcad96]">{pendingGroups.length} customer {pendingGroups.length===1?'group':'groups'} · {pendingTasks.length} individual outstanding {pendingTasks.length===1?'request':'requests'}. Expand a customer to review each request.</p>
     </div>
-    <span role="status" aria-label={`${pendingTasks.length} callback requests, ${escalatedCount} overdue`} className="shrink-0 rounded-full border border-[#c9a56b]/45 bg-[#ae834b]/20 px-2.5 py-1 text-xs font-bold tabular-nums text-[#f3d7a4]">{pendingTasks.length}</span>
+    <span role="status" aria-label={pendingGroups.length+' customers requiring attention, '+escalatedCount+' with urgent callbacks'} className="shrink-0 rounded-full border border-[#c9a56b]/45 bg-[#ae834b]/20 px-2.5 py-1 text-xs font-bold text-[#f3d7a4]">{pendingGroups.length}</span>
    </div>
-   <div className="grid grid-cols-1 gap-3">
-    {pendingTasks.map(t=>{
-     const conversation=items.find(c=>c.id===t.conversation_id);
-     const escalated=t.status==='pending'&&(Boolean(t.escalated_at)||Boolean(t.escalation_due_at&&new Date(t.escalation_due_at).getTime()<Date.now()));
-     const label=escalated?(t.request_kind==='callback'?'Overdue callback':'Escalated chat request'):t.status==='claimed'?(t.request_kind==='callback'?'Assigned callback':'Team handling chat'):(t.request_kind==='callback'?'Callback requested':'Live chat requested');
-     const preview=conversation?visitorPreview(conversation):null;
-     return <article key={t.id} className="relative overflow-hidden rounded-xl border border-[#9e7c4c]/45 bg-[linear-gradient(140deg,rgba(41,33,23,.88),rgba(19,18,17,.96))] p-3.5 shadow-[inset_0_1px_0_rgba(255,225,169,.08)] sm:p-4">
-      <span aria-hidden="true" className={'absolute inset-y-3 left-0 w-[3px] rounded-r-full '+(escalated?'bg-[#dc8c6b]':'bg-[#c6a16c]')}/>
-      <div className="pl-2">
-       <span className={'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[.10em] '+(escalated?'border-[#d58a70]/40 bg-[#a4523a]/15 text-[#f4ae96]':'border-[#c9a66d]/40 bg-[#b28c55]/15 text-[#e6c894]')}><AlertTriangle size={12} aria-hidden="true"/>{label}</span>
-       {preview&&<p className="mt-2.5 line-clamp-2 break-words text-sm font-medium text-[#f1e4ce]">{preview}</p>}
-       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[#c9b89d]"><Clock3 size={13} aria-hidden="true"/><span>Follow-up due {time(t.due_at)}</span></div>
+   <div className="grid gap-3">
+    {pendingGroups.map(group=>{
+     const hasEscalation=group.tasks.some(t=>t.status==='pending'&&(Boolean(t.escalated_at)||Boolean(t.escalation_due_at&&Date.parse(t.escalation_due_at)<Date.now())));
+     return <details key={group.id} className="group overflow-hidden rounded-xl border border-[#9e7c4c]/50 bg-[#261f18] p-3.5 sm:p-4">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 text-sm text-[#efd9b4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#edca8e]">
+       <span className="min-w-0"><strong className="block break-words">{group.name}</strong><span className="mt-1 block text-xs text-[#c9b69a]">{group.tasks.length} outstanding {group.tasks.length===1?'request':'requests'} · latest {time(group.tasks[0].created_at)}</span></span>
+       <span className="flex shrink-0 items-center gap-2">{hasEscalation&&<span className="rounded-full border border-red-400/35 bg-red-950/30 px-2 py-1 text-[10px] text-red-200">Urgent</span>}<ChevronDown size={18} className="transition-transform group-open:rotate-180"/></span>
+      </summary>
+      <div className="mt-3 space-y-2 border-t border-[#9e7c4c]/35 pt-3">
+       {group.leadId&&<Link to={'/dashboard/leads?lead='+encodeURIComponent(group.leadId)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#edcf91]/50 bg-[#5b4326]/30 px-3 text-xs font-semibold text-[#f0d4a1]"><ClipboardCheck size={14}/>Open lead and review outcomes</Link>}
+       {group.tasks.map((task,index)=>{
+        const overdue=task.status==='pending'&&(Boolean(task.escalated_at)||Boolean(task.escalation_due_at&&Date.parse(task.escalation_due_at)<Date.now()));
+        return <div key={task.id} className="rounded-lg border border-[#a58b63]/25 bg-black/20 p-3">
+         <div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span className="font-semibold text-[#ecd2a5]">Request {group.tasks.length-index} · {task.request_kind==='callback'?'Callback':'Live chat'}</span>{overdue&&<span className="text-red-200">Urgent follow-up</span>}</div>
+         <p className="mt-2 text-xs text-[#bda98d]">Received {time(task.created_at)} · Task due {time(task.due_at)}</p>
+         <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" onClick={()=>focusConversation(task.conversation_id)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#81b8d8]/55 bg-[#16476f]/70 px-3 text-xs font-semibold text-[#ecf7ff]"><MessagesSquare size={15}/>View chat</button>
+          {group.leadId&&<Link to={'/dashboard/leads?lead='+encodeURIComponent(group.leadId)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#edcf91]/65 bg-[#ad874f]/25 px-3 text-xs font-semibold text-[#f6dbab]"><ClipboardCheck size={15}/>Record outcome</Link>}
+         </div>
+        </div>;
+       })}
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 pl-2">
-       <button onClick={()=>focusConversation(t.conversation_id)} type="button" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#bd995f]/55 bg-[#2d261c]/80 px-2 py-2 text-center text-xs font-semibold text-[#ecd5ac] transition-colors hover:border-[#edca8e] hover:bg-[#40311f] active:scale-[.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f3d194]"><MessagesSquare size={15} aria-hidden="true"/>View chat</button>
-       {conversation?.lead_id
-        ?<Link to={'/dashboard/leads?lead='+conversation.lead_id} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-[#edcf91] bg-gradient-to-r from-[#efd8a5] via-[#d6b273] to-[#b99156] px-2 py-2 text-center text-xs font-bold text-[#20170d] shadow-[inset_0_1px_0_rgba(255,245,211,.35)] transition-[filter,transform] hover:brightness-110 active:scale-[.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d9a3]"><ClipboardCheck size={15} aria-hidden="true"/>Log outcome <ArrowUpRight size={13} aria-hidden="true"/></Link>
-        :<button onClick={()=>focusConversation(t.conversation_id)} type="button" className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border border-[#bd995f]/50 px-2 py-2 text-center text-xs font-semibold text-[#edcc9a] hover:bg-[#40311f]"><ClipboardCheck size={15} aria-hidden="true"/>Review contact</button>}
-      </div>
-     </article>;
+     </details>;
     })}
    </div>
   </section>}
