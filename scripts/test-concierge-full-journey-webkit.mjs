@@ -66,6 +66,13 @@ const customerTimelineSource=readFileSync(new URL('../src/components/dashboard/u
 const relatedLeadSource=readFileSync(new URL('../src/components/dashboard/ui/RelatedLeadReview.tsx',import.meta.url),'utf8');
 const followupSectionSource=readFileSync(new URL('../src/components/dashboard/ui/FollowUpSection.tsx',import.meta.url),'utf8');
 const matchingMigration=readFileSync(new URL('../supabase/migrations/20261109_preserve_identity_name_word_boundaries.sql',import.meta.url),'utf8');
+const quickReviewMigration=readFileSync(new URL('../supabase/migrations/20261110_quick_consolidation_verification.sql',import.meta.url),'utf8');
+assert.ok(quickReviewMigration.includes("'customer_confirmed','records_verified'") &&
+ quickReviewMigration.includes("p_confirmation is distinct from 'CONFIRM SAME CUSTOMER'") &&
+ quickReviewMigration.includes("if length(ap)<>10 or ap<>bp") &&
+ quickReviewMigration.includes("Conflicting emails require additional identity verification"),
+ 'Quick verification still requires authorized staff, same phone, no conflicting email and explicit confirmation');
+
 assert.ok(relatedLeadSource.includes('createPortal(') &&
  relatedLeadSource.includes('max-h-[calc(100dvh-1.5rem)]') &&
  relatedLeadSource.includes('overflow-y-auto overscroll-contain') &&
@@ -104,7 +111,11 @@ assert.ok(customerTimelineSource.includes("from('ai_conversations')") &&
 assert.ok(relatedLeadSource.includes("crm_review_phone_lead_candidates") &&
  relatedLeadSource.includes('crm_consolidate_verified_leads') &&
  relatedLeadSource.includes('Phone and normalized name match') &&
- relatedLeadSource.includes('I have verified these records belong to the same customer.'),
+ relatedLeadSource.includes('Customer confirmed directly') &&
+ relatedLeadSource.includes('Independently verified records') &&
+ relatedLeadSource.includes('These records belong to the same customer.') &&
+ !relatedLeadSource.includes('Identity verification notes (required for different names)') &&
+ !relatedLeadSource.includes('verificationNote.trim().length<20'),
  'Possible identity matches must be read-only and rely on verified staff lookup');
 assert.ok(conversationsHistorySource.includes('range(page*PAGE_SIZE,page*PAGE_SIZE+PAGE_SIZE-1)') &&
  conversationsHistorySource.includes('setTotalConversations(count??0)') &&
