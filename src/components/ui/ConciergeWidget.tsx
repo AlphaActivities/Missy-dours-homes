@@ -142,6 +142,14 @@ function hasRealEstateHandoffIntent(messages: Message[]): boolean {
     /\b(?:schedule|book|arrange|set up|tour|view|visit|see|showing)\b.{0,55}\b(?:home|house|property|listing|appointment|showing|tour)\b|\b(?:showing|tour|appointment)\b.{0,55}\b(?:schedule|book|arrange|set up|visit|see|available|time)\b/i.test(message.text));
 }
 
+/** A seller seeking a valuation has enough intent for an optional in-chat callback
+ * after the first substantive AI answer, without forcing a handoff or form. */
+function hasSellerEvaluationIntent(messages: Message[]): boolean {
+  return messages.some(message => message.role === 'visitor' &&
+    /\b(?:sell(?:ing)?|list(?:ing)?|seller|home (?:evaluation|valuation|appraisal)|property (?:evaluation|valuation)|(?:home|house|property) worth|comparative market analysis|\bcma\b|market evaluation)\b/i.test(message.text) &&
+    /\b(?:home|house|property|sell|list|evaluat\w*|valuat\w*|worth|market analysis|cma)\b/i.test(message.text));
+}
+
 function asksForHuman(messages: Message[]): boolean {
   return messages.some(message => message.role === 'visitor' &&
     /\b(?:speak|talk|chat|connect)\s+(?:directly\s+)?(?:with|to)\s+(?:a\s+)?(?:person|human|representative|agent|missy|your team|someone)|\b(?:real\s+person|human\s+agent|live\s+agent|call\s+me|call\s+back|callback|phone\s+call)\b/i.test(message.text));
@@ -223,7 +231,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
   // needs or an explicit person request can surface help sooner after an answer.
   const handoffEligible = (visitorTurns >= 3 && answeredTurns >= 3)
     || (answeredTurns >= 2 && hasRealEstateHandoffIntent(messages))
-    || (answeredTurns >= 1 && asksForHuman(messages));
+    || (answeredTurns >= 1 && (asksForHuman(messages) || hasSellerEvaluationIntent(messages)));
   const showHandoffOption = chatEnabled && !!session && mode === 'ai' && welcomeReady &&
     handoffEligible && (handoffOpen || (!busy && !aiTyping && !welcomeTyping &&
     !composerFocused && !draft.trim() && !listening));
@@ -777,7 +785,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
           {(aiTyping || welcomeTyping) && <div className="shrink-0 overflow-visible px-5 pb-4 pt-2 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Chatbot typing near message box"><AssistantTypingBubble /></div>}
            {showHandoffOption && <div className="shrink-0 flex justify-end px-5 pb-2 pt-1 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]">
             <button type="button" aria-expanded={handoffOpen} aria-controls="missy-callback-request" onClick={()=>setHandoffOpen(open=>!open)} className="inline-flex min-h-9 max-w-full items-center justify-center gap-1.5 rounded-full border border-[#b99b68]/45 bg-[#211a12]/90 px-3 py-1.5 text-[11px] font-medium leading-snug text-[#e6c792] shadow-[0_3px_12px_rgba(0,0,0,.2)] transition-colors hover:border-[#d6b67a] hover:bg-[#332718] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#efcb8d]">
-              {handoffOpen?'Keep chatting':'Prefer to speak with Missy directly?'} <span aria-hidden="true">{handoffOpen?'×':'→'}</span>
+              {handoffOpen?'Keep chatting':hasSellerEvaluationIntent(messages)?'Request a callback about your home?':'Prefer to speak with Missy directly?'} <span aria-hidden="true">{handoffOpen?'×':'→'}</span>
             </button>
            </div>}
            {showHandoffOption && handoffOpen && <div className="min-h-0 max-h-[min(52dvh,430px)] shrink overflow-y-auto overscroll-contain border-t border-[#c6a16c]/25 px-5 py-3 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-label="Optional callback details">
