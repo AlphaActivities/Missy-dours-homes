@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, Phone, X } from 'lucide-react';
+import { MessageCircle, Phone, Plus, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { CONTACT_INFO } from '../../config/contact';
 import { trackCTA, trackPhoneClick } from '../../utils/analytics';
@@ -61,7 +61,7 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
             trackCTA('Open Chatbot', 'mobile_contact_launcher');
             onOpenChat();
           }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold text-[#f3dfb8] transition-colors hover:bg-[#c8a36a]/15 active:bg-[#c8a36a]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcf92]">
-            <MessageCircle size={21} aria-hidden="true"/> Message Missy's Team
+            <MessageCircle size={21} aria-hidden="true"/> Message Missy
           </button>
           <a href={CONTACT_INFO.phone.tel} onClick={() => {
             trackPhoneClick('floating_call_button');
@@ -76,7 +76,7 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
         aria-expanded={expanded} aria-controls="missy-mobile-contact-options"
         onClick={() => setExpanded(value => !value)}
         className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-[#D5B16D] bg-gradient-to-br from-[#2B251C]/95 to-[#080808]/95 text-[#EBCB83] shadow-[0_10px_35px_rgba(0,0,0,.58),0_0_20px_rgba(213,177,109,.30)] backdrop-blur-xl transition-[transform,box-shadow,border-color] duration-200 hover:border-[#F0D69D] hover:shadow-[0_12px_40px_rgba(0,0,0,.6),0_0_25px_rgba(213,177,109,.43)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]">
-        {expanded ? <X size={26} strokeWidth={2.2} aria-hidden="true"/> : <span className="flex items-center justify-center gap-1" aria-hidden="true"><MessageCircle size={23} strokeWidth={2.2} className="shrink-0"/><Phone size={19} strokeWidth={2.3} className="shrink-0"/></span>}
+        {expanded ? <X size={26} strokeWidth={2.2} aria-hidden="true"/> : <span className="relative flex h-9 w-9 items-center justify-center" aria-hidden="true"><MessageCircle size={29} strokeWidth={2.1} className="shrink-0"/><span className="absolute -right-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-[#D5B16D] bg-[#17130d] shadow-[0_0_5px_rgba(213,177,109,.25)]"><Plus size={12} strokeWidth={2.5}/></span></span>}
       </button>
     </div>
   );
