@@ -311,7 +311,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const archive=async(id:string)=>upsertReceipt(id,{read_at:new Date().toISOString(),archived_at:new Date().toISOString()});
  const restore=async(id:string)=>upsertReceipt(id,{archived_at:null});
  const markAllRead=async()=>{const r=await supabase.rpc('crm_mark_all_activity_read');if(r.error)throw r.error;const now=new Date().toISOString();setItems(old=>{const next=old.map(x=>({...x,read_at:x.read_at??now}));loadedRef.current=next;return next;});setCounts(old=>({...old,unread:0}));};
- const setPreference=async(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'callback_reminders_enabled'|'in_app_sound'>,value:boolean)=>{
+ const setPreference=async(name:keyof Pick<NotificationPrefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'callback_reminders_enabled'|'badge_correction_enabled'|'in_app_sound'>,value:boolean)=>{
   if(name==='in_app_sound'&&value)await unlockCrmAudio();
   // Update just the chosen setting; upsert could reset unrelated options to defaults.
   const r=await supabase.from('crm_notification_preferences').update({[name]:value,updated_at:new Date().toISOString()}).eq('staff_email',email);
