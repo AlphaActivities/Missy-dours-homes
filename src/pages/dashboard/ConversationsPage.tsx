@@ -1,6 +1,6 @@
 import TexasCallbackPicker from '../../components/dashboard/ui/TexasCallbackPicker';
 import {validateTexasOfficeSlot} from '../../lib/texasScheduling';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { MessageCircle, MessagesSquare, RefreshCw, Search, Clock3, WifiOff, Activity, AlertTriangle, ArrowUpRight, ClipboardCheck, UserRoundPlus, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -10,7 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 type Conversation = {
   id:string; title:string; summary:string|null; status:'ai'|'waiting_human'|'human'|'closed';
   priority:'unrated'|'hot'|'warm'|'cold'; priority_reason:string|null;opportunity_kind:'buyer'|'seller'|'both'|'investor'|null;
-  language_code:string; last_message_at:string|null; started_at:string; lead_id:string|null; assigned_to:string|null; visitor_name:string|null; visitor_phone:string|null; visitor_expires_at:string|null;
+  language_code:string; last_message_at:string|null; started_at:string; lead_id:string|null; assigned_to:string|null; visitor_name:string|null; visitor_phone:string|null; contact_consent_at:string|null; visitor_expires_at:string|null;
 };
 type Attachment = {id:string;original_filename:string;mime_type:string;file_size_bytes:number;storage_path:string;created_at:string};
 type Message = {id:string; sender:'visitor'|'ai'|'human'|'system';body:string;translated_body:string|null; original_language:string|null;created_at:string;sender_actor:string|null;delivered_to_staff_at:string|null;read_by_staff_at:string|null;delivered_to_visitor_at:string|null;read_by_visitor_at:string|null;};
@@ -125,10 +125,11 @@ export default function ConversationsPage() {
  const [translatedDraft,setTranslatedDraft]=useState<{text:string;conversation:string;original:string;language:string}|null>(null);
  const [previewBusy,setPreviewBusy]=useState(false);
  const previewGeneration=useRef(0);
- const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string;request_kind:'live_chat'|'callback'}>>([]);
+ const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;created_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string;request_kind:'live_chat'|'callback'}>>([]);
+ const [taskContacts,setTaskContacts]=useState<Record<string,{lead_id:string|null;visitor_name:string|null}>>({});
  const refresh=async(showLoading=true)=>{if(showLoading){setLoading(true);setError(null);}try{
   let listQuery=supabase.from('ai_conversations')
-   .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at',{count:'exact'});
+   .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,contact_consent_at,visitor_expires_at',{count:'exact'});
   if(filter==='qa')listQuery=listQuery.like('title','[PRIVATE VISITOR QA] %');
   else {
    listQuery=listQuery.not('title','like','[PRIVATE VISITOR QA] %');
@@ -188,9 +189,15 @@ export default function ConversationsPage() {
   }
   setPresenceReady(true);
   setPresenceClock(Date.now());
-  const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,escalation_due_at,escalated_at,urgency,status,request_kind').in('status',['pending','claimed']).order('due_at',{ascending:true}).limit(50);
+  const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,created_at,escalation_due_at,escalated_at,urgency,status,request_kind').in('status',['pending','claimed']).order('created_at',{ascending:false}).limit(100);
   if(tasks.error)throw tasks.error;
   setPendingTasks(tasks.data??[]);
+  const taskIds=[...new Set((tasks.data??[]).map(t=>t.conversation_id))];
+  if(taskIds.length){
+   const meta=await supabase.from('ai_conversations').select('id,lead_id,visitor_name').in('id',taskIds);
+   if(meta.error)throw meta.error;
+   setTaskContacts(Object.fromEntries((meta.data??[]).map(c=>[c.id,{lead_id:c.lead_id,visitor_name:c.visitor_name}])));
+  }else setTaskContacts({});
  }catch(e){if(showLoading)setError(e instanceof Error?e.message:'Could not load conversations');}finally{if(showLoading)setLoading(false);}};
  useEffect(()=>{
   void refresh();
@@ -220,7 +227,7 @@ export default function ConversationsPage() {
   setFocusedRecordReady(false);
   const fetchRequested=async()=>{
    const result=await supabase.from('ai_conversations')
-    .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,visitor_expires_at')
+    .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,contact_consent_at,visitor_expires_at')
     .eq('id',requestedConversation).maybeSingle();
    if(cancelled)return;
    if(result.error||!result.data){
@@ -385,8 +392,10 @@ export default function ConversationsPage() {
  // Archived leads are history, not routine suggestions for new callbacks.
  const archivedCount=leadCandidates.filter(lead=>lead.status==='archived').length;
  const visibleCandidates=leadCandidates.filter(lead=>showArchivedCandidates||lead.status!=='archived');
+ const canCreateSeparateLead=Boolean(active?.contact_consent_at&&active.visitor_name?.trim()&&active.visitor_name.trim().length>=2&&active.visitor_phone?.replace(/\D/g,'').length>=10);
  const linkReviewed=async(createSeparate:boolean)=>{
   if(!active || active.lead_id || linkBusy)return;
+  if(createSeparate && !canCreateSeparateLead){setError('A separate lead requires a visitor name, phone number and recorded permission to contact. This conversation remains saved.');return;}
   const candidate=leadCandidates.find(x=>x.id===candidateId);
   if(!createSeparate && !candidate)return;
   const message=createSeparate
@@ -524,11 +533,11 @@ export default function ConversationsPage() {
     <span>{filter==='qa'?'Owner-only private test records':'Business conversation history'} · {totalConversations} matching conversation{totalConversations===1?'':'s'}</span>
     <span>Page {page+1} of {Math.max(1,Math.ceil(totalConversations/PAGE_SIZE))}</span>
    </div>
-   <p className="mb-3 text-[11px] text-[#ac9b83]">Searches saved conversation metadata, not full transcript text. Private owner QA sessions are excluded from normal conversation browsing. Older public-site tests remain unclassified until reviewed. Human sessions without an active handoff are flagged for outcome review without being altered.</p>
+   <p className="mb-3 text-[11px] text-[#ac9b83]">Searches saved conversation metadata, not full transcript text. Private owner QA sessions are excluded from normal conversation browsing. Older public-site tests remain unclassified until reviewed. A staff conversation without an active handoff task is flagged for an outcome check; review its history before considering it completed.</p>
    {staffEmail==='yourcustomerflowguy@gmail.com'&&<Link to="/dashboard/concierge-qa" className="mb-4 inline-flex min-h-10 items-center rounded-lg border border-[#c8a96e]/40 px-3 py-2 text-xs font-semibold text-[#efcf97]">Open dedicated private QA testing</Link>}
    </div>
   <div className={focused?'grid grid-cols-1 gap-4':'grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4'}>
-   <section aria-label="Conversation list" className={(focused?'hidden ':'')+'crm-conversation-inbox ds-page-reveal ds-page-reveal-3 relative max-h-[315px] min-h-64 overflow-y-auto overscroll-contain touch-pan-y rounded-xl [scrollbar-width:thin]'}>
+   <section aria-label="Conversation list" className={(focused?'hidden ':'')+'crm-conversation-inbox ds-page-reveal ds-page-reveal-3 relative max-h-[315px] min-h-64 md:min-h-[460px] md:max-h-[min(70dvh,760px)] lg:min-h-[560px] lg:max-h-[min(75dvh,850px)] overflow-y-auto overscroll-contain touch-pan-y rounded-xl [scrollbar-width:thin]'}>
    <div className="crm-inbox-heading sticky top-0 z-10 flex items-center justify-between gap-2 px-4 py-3">
      <div className="flex items-center gap-2"><MessagesSquare size={16} className="text-[#e8c688]" aria-hidden="true"/><span className="text-xs font-semibold uppercase tracking-[.12em] text-[#efd6a5]">Conversation inbox</span></div>
      <span className="flex items-center gap-1 text-[11px] text-[#c3a779]"><ChevronDown size={13} aria-hidden="true"/> Scroll to browse</span>
@@ -536,7 +545,7 @@ export default function ConversationsPage() {
    {filtered.length===0?<p className="p-6 text-sm" style={{color:'var(--ds-text-secondary)'}}>{loading?'Loading conversations…':'No conversations match. Visitor chat is not live yet.'}</p>:filtered.map(c=>{
     const preview=visitorPreview(c);
     return <button key={c.id} onClick={()=>focusConversation(c.id)} className="crm-inbox-item block w-full text-left px-4 py-4 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#efcb89]" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
-     {lifecycleReviewIds.includes(c.id)&&<span className="mb-2 inline-block rounded-full border border-red-400/40 bg-red-900/20 px-2 py-1 text-[10px] font-semibold text-red-200">Staff session · outcome review needed</span>}
+     {lifecycleReviewIds.includes(c.id)&&<span className="mb-2 inline-block rounded-full border border-red-400/40 bg-red-900/20 px-2 py-1 text-[10px] font-semibold text-red-200">Staff conversation · confirm outcome</span>}
      {c.title.startsWith('[PRIVATE VISITOR QA] ')&&<span className="mb-2 inline-block rounded-full border border-amber-400/40 bg-amber-900/20 px-2 py-1 text-[10px] font-semibold text-amber-200">PRIVATE QA TEST · NOT A CUSTOMER</span>}
      {preview?<div className="flex justify-end"><span className="crm-ios-visitor-bubble max-w-[90%] rounded-[24px] rounded-br-[8px] bg-[#0A84FF] px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-[0_4px_14px_rgba(12,80,170,.18)] line-clamp-3 break-words">{preview}</span></div>
       :<><strong className="block text-sm break-words">{c.title}</strong><p className="mt-1 text-xs opacity-70 line-clamp-2">{c.summary||'No summary yet'}</p></>}
@@ -558,13 +567,13 @@ export default function ConversationsPage() {
    <section ref={transcriptRef} data-focused-transcript={focused?'true':undefined} aria-label="Chat History" className={(focused?'focused-transcript-enter ':'ds-page-reveal ds-page-reveal-4 ')+'crm-transcript-frame relative isolate rounded-xl min-h-80 p-5'}>
    {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && !loadingCandidates && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
     <strong className="text-amber-200">Contact identity check needed</strong>
-    <p className="text-[#dec9a5]">The CRM couldn't safely identify one existing contact. Confirm the person before linking an existing lead, or create a separate lead.</p>
+    <p className="text-[#dec9a5]">This conversation has no confirmed customer link. Confirm identity before linking a contact. Creating a new lead requires the visitor’s name, phone and contact consent.</p>
     <div className="space-y-3">
      <div className="flex flex-wrap items-center justify-between gap-2">
       <h3 className="text-sm font-semibold text-[#efd5a5]">Possible existing contacts {visibleCandidates.length>0&&<span className="font-normal text-[#bfae93]">({visibleCandidates.length})</span>}</h3>
       <span className="rounded-full border border-amber-400/25 px-2 py-1 text-[10px] text-amber-200">Identity not verified</span>
      </div>
-     {loadingCandidates?<p role="status" className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">Checking CRM records…</p>:visibleCandidates.length===0?<p className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">{archivedCount>0?'Only archived records share this phone number. Review them only if necessary.':'No active matching contacts. Confirm the person before creating a separate lead.'}</p>:
+     {loadingCandidates?<p role="status" className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">Checking CRM records…</p>:visibleCandidates.length===0?<p className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">{archivedCount>0?'Only archived records share this phone number. Review them only if necessary.':'No matching active contacts. Verify identity and contact details before creating a new lead.'}</p>:
       <div role="group" aria-label="Potential matching CRM leads" className="space-y-2">
        {visibleCandidates.slice(0,showAllCandidates?visibleCandidates.length:4).map(lead=><button key={lead.id} type="button" aria-pressed={candidateId===lead.id}
          onClick={()=>setCandidateId(current=>current===lead.id?'':lead.id)}
@@ -584,7 +593,7 @@ export default function ConversationsPage() {
     {archivedCount>0&&!loadingCandidates&&<button type="button" onClick={()=>{setShowArchivedCandidates(value=>!value);setShowAllCandidates(false);setCandidateId('');}} className="w-full rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-left text-xs text-[#d5b881]">{showArchivedCandidates?'Hide archived contacts':`Review ${archivedCount} archived contact${archivedCount===1?'':'s'}`}</button>}
     <div className="flex flex-wrap gap-2">
      {visibleCandidates.length>0&&<button type="button" disabled={!candidateId||linkBusy} onClick={()=>void linkReviewed(false)} className="rounded-lg bg-[#c8a96e] px-3 py-2 font-semibold text-black disabled:opacity-40">Link Confirmed Lead</button>}
-     <button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>
+     {canCreateSeparateLead&&<button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>}
     </div>
    </div>}
    {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div ref={sessionStatusRef} className={'mb-4 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs '+(focused&&statusLoading?'crm-connection-pending':'crm-connection-ready')} role="status" aria-label="Visitor session status" aria-busy={statusLoading}>
