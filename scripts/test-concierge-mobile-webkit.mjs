@@ -18,28 +18,37 @@ try {
  assert.ok(response?.ok(),'Public page must load successfully');
  const launcher=page.getByRole('button',{name:'Chat or call Missy'});
  await launcher.waitFor({state:'visible',timeout:20000});
- // Both fixed controls must align against the exact same iOS viewport edge.
+ // Both controls share one fixed dock, so iOS visual viewport changes cannot
+ // give them different scrolling or compositing paths.
  await page.evaluate(()=>window.scrollTo(0,2600));
- const backToTop=page.getByRole('button',{name:'Back to top'});
  await page.waitForFunction(()=>{
   const back=document.querySelector('[aria-label="Back to top"]');
   const chat=document.querySelector('[aria-label="Chat or call Missy"]');
   return back&&chat&&Number(getComputedStyle(back).opacity)>0.99&&
-    Number(getComputedStyle(chat.parentElement).opacity)>0.99&&
-    Math.abs(back.getBoundingClientRect().top-chat.getBoundingClientRect().top)<2;
+   Number(getComputedStyle(chat.parentElement).opacity)>0.99;
  },undefined,{timeout:8000});
- const floating=await page.evaluate(()=>{
+ const readDock=()=>page.evaluate(()=>{
+  const dock=document.querySelector('[aria-label="Mobile quick actions"]');
   const back=document.querySelector('[aria-label="Back to top"]');
   const chat=document.querySelector('[aria-label="Chat or call Missy"]');
+  if(!dock||!back||!chat)return null;
   const a=back.getBoundingClientRect(),b=chat.getBoundingClientRect();
-  return {backBottom:window.innerHeight-a.bottom,chatBottom:window.innerHeight-b.bottom,
-    leftSize:[a.width,a.height],rightSize:[b.width,b.height],
-    sharedAnchor:getComputedStyle(back).bottom===getComputedStyle(chat.parentElement).bottom};
+  return {sameDock:back.parentElement===dock&&chat.parentElement?.parentElement===dock,
+   aligned:Math.abs(a.bottom-b.bottom),leftSize:[a.width,a.height],rightSize:[b.width,b.height],
+   anchored:getComputedStyle(dock).position==='fixed',
+   contactOpacityTransition:getComputedStyle(chat.parentElement).transitionDuration,
+   bottomDistance:window.innerHeight-a.bottom};
  });
- assert.equal(floating.sharedAnchor,true,'Both mobile controls must share one computed bottom offset');
- assert.ok(Math.abs(floating.backBottom-floating.chatBottom)<2,'Floating buttons must stay level on iPhone');
- assert.deepEqual(floating.leftSize,[64,64],'Back to top must remain a 64px circle');
- assert.deepEqual(floating.rightSize,[64,64],'Contact launcher must remain a 64px circle');
+ for(const position of [2600,500,1800,900]){
+  await page.evaluate(y=>window.scrollTo(0,y),position);
+  await page.waitForTimeout(120);
+  const aligned=await readDock();
+  assert.ok(aligned?.sameDock,'Both controls must be children of the same fixed dock');
+  assert.equal(aligned.anchored,true,'The shared floating dock must be fixed to the viewport');
+  assert.ok(aligned.aligned<2,'Contact and Back to Top must remain level while scrolling in either direction');
+  assert.deepEqual(aligned.leftSize,[64,64],'Back to Top must remain 64px');
+  assert.deepEqual(aligned.rightSize,[64,64],'Contact must remain 64px');
+ }
  // Start below the top so we can verify opening/closing the overlay preserves the page position.
  await page.evaluate(()=>window.scrollTo(0,500));
  const originalY=await page.evaluate(()=>window.scrollY);

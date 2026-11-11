@@ -130,8 +130,15 @@ function Layout() {
       {isHomePage && <GlobalVideoBackground />}
       <Navbar />
       <Outlet context={outletContext} />
-      {!conciergeOpen && <FloatingCallButton onOpenChat={() => setMobileChatOpenToken(n => n + 1)} />}
-      {!conciergeOpen && <BackToTopButton />}
+      {!conciergeOpen && (
+        <div
+          className="mobile-viewport-floating-bottom pointer-events-none fixed inset-x-6 z-[60] flex items-end justify-between md:hidden"
+          aria-label="Mobile quick actions"
+        >
+          <BackToTopButton />
+          <FloatingCallButton onOpenChat={() => setMobileChatOpenToken(n => n + 1)} />
+        </div>
+      )}
       <ConciergeWidget onOpenChange={setConciergeOpen} mobileOpenToken={mobileChatOpenToken} />
       <ListingTransitionOverlay
         isVisible={showTransition}
