@@ -263,7 +263,7 @@ Deno.serve(async request=>{
    }
   }catch{success=false;}
   const finished=await client.rpc('crm_finish_badge_correction',{
-   p_staff_email:job.staff_email,p_success:success,p_error_code:success?null:'correction_delivery_failed'
+   p_staff_email:job.staff_email,p_request_created_at:job.request_created_at,p_success:success,p_error_code:success?null:'correction_delivery_failed'
   });
   if(finished.error)console.error('Badge correction completion failed',finished.error.code);
  }
