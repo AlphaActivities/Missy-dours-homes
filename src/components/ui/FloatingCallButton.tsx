@@ -64,9 +64,8 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
 
   return (
     <div ref={rootRef}
-      className={'fixed right-6 z-[60] md:hidden transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none ' +
-        (arrived ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0')}
-      style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
+      className={'mobile-viewport-floating-bottom fixed right-6 z-[60] md:hidden transition-opacity duration-700 ease-out motion-reduce:transition-none ' +
+        (arrived ? 'opacity-100' : 'pointer-events-none opacity-0')}>
       {expanded && (
         <div id="missy-mobile-contact-options" role="group" aria-label="Contact Missy"
           className="absolute bottom-[calc(100%+14px)] right-0 w-[min(276px,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-[#d8b575]/65 bg-gradient-to-br from-[#292118] via-[#1c1711] to-[#0f0d0b] p-2.5 shadow-[0_18px_48px_rgba(0,0,0,.65),0_0_22px_rgba(204,162,91,.14),inset_0_1px_0_rgba(255,232,185,.12)] backdrop-blur-xl">

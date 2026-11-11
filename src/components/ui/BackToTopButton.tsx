@@ -45,7 +45,7 @@ export default function BackToTopButton() {
       onClick={handleClick}
       tabIndex={visible ? 0 : -1}
       aria-hidden={!visible}
-      className={`md:hidden fixed bottom-6 left-6 z-50 flex h-16 w-16 items-center justify-center
+      className={`mobile-viewport-floating-bottom md:hidden fixed left-6 z-50 flex h-16 w-16 items-center justify-center
         rounded-full border-2 border-[#D5B16D] bg-gradient-to-br from-[#2B251C]/95 to-[#080808]/95 text-[#EBCB83]
         shadow-[0_10px_35px_rgba(0,0,0,0.58),0_0_20px_rgba(213,177,109,0.30)]
         backdrop-blur-xl transition-all duration-300

@@ -1314,3 +1314,10 @@
   background:rgba(var(--crm-category-rgb),.16);
 }
 .crm-live-alert-action:hover { background:rgba(var(--crm-category-rgb),.25); }
+
+/* One viewport-safe vertical anchor for both 64px floating controls.
+   The iOS browser chrome/safe area must never position them differently. */
+.mobile-viewport-floating-bottom {
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+
