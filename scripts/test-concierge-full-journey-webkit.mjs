@@ -64,6 +64,12 @@ const attentionSource=readFileSync(new URL('../src/components/dashboard/ui/Callb
 const contactModalSource=readFileSync(new URL('../src/components/dashboard/ui/LogContactModal.tsx',import.meta.url),'utf8');
 const customerTimelineSource=readFileSync(new URL('../src/components/dashboard/ui/ActivityHistory.tsx',import.meta.url),'utf8');
 const relatedLeadSource=readFileSync(new URL('../src/components/dashboard/ui/RelatedLeadReview.tsx',import.meta.url),'utf8');
+assert.ok(relatedLeadSource.includes("const showReview=!loading&&(items.length>0||Boolean(error));") &&
+ relatedLeadSource.includes('{showReview&&<section aria-label="Potential duplicate customer records"') &&
+ relatedLeadSource.includes('{completed&&createPortal(') &&
+ relatedLeadSource.includes("setExpanded(true);setItems([]);"),
+ 'Duplicate review should disappear when there are zero candidates, stay absent while loading, preserve merge success and reveal lookup errors');
+
 const followupSectionSource=readFileSync(new URL('../src/components/dashboard/ui/FollowUpSection.tsx',import.meta.url),'utf8');
 const matchingMigration=readFileSync(new URL('../supabase/migrations/20261109_preserve_identity_name_word_boundaries.sql',import.meta.url),'utf8');
 const quickReviewMigration=readFileSync(new URL('../supabase/migrations/20261110_quick_consolidation_verification.sql',import.meta.url),'utf8');

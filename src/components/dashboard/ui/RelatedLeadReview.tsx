@@ -56,7 +56,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
    if(!live)return;
    if(phoneQuery?.error||phoneDetails?.error||nameQuery?.error||emailQuery?.error){
     setError('Related records could not be checked. Refresh before reviewing duplicates.');
-    setItems([]);setLoading(false);return;
+    setExpanded(true);setItems([]);setLoading(false);return;
    }
    const records=[...(phoneDetails?.data??[]),...(nameQuery?.data??[]),...(emailQuery?.data??[])];
    const ids=[...new Set(records.map(row=>row.id))].filter(id=>id!==lead.id);
@@ -67,7 +67,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
    if(!live)return;
    if(already?.error){
     setError('Consolidation history could not be checked. Try refreshing this lead.');
-    setItems([]);setLoading(false);return;
+    setExpanded(true);setItems([]);setLoading(false);return;
    }
    const consolidatedIds=new Set((already?.data??[]).map(row=>row.secondary_lead_id));
    const results=new Map<string,Candidate>();
@@ -89,6 +89,9 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
   })();
   return()=>{live=false;};
  },[lead.id,lead.name,lead.phone,lead.email,version]);
+ // Empty, successfully checked groups need no staff action and must not clutter the lead drawer.
+ // Keep the overlay mounted after a merge, even when it was the last candidate.
+ const showReview=!loading&&(items.length>0||Boolean(error));
  const selected=items.find(x=>x.id===confirmId);
  const consolidate=async()=>{
   if(!selected?.eligible||!confirmed||busy)return;
@@ -117,11 +120,11 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
   setCompleted({primary:lead.name,secondary:selected.name});
   setVersion(n=>n+1);onConsolidated?.();
  };
- return <><section aria-label="Potential duplicate customer records" className="overflow-hidden rounded-2xl border border-[#987c55]/45 bg-[#1e1915]/80">
+ return <>{showReview&&<section aria-label="Potential duplicate customer records" className="overflow-hidden rounded-2xl border border-[#987c55]/45 bg-[#1e1915]/80">
   <button type="button" onClick={()=>setExpanded(v=>!v)} className="flex min-h-16 w-full items-center justify-between gap-3 p-4 text-left" aria-expanded={expanded}>
    <span className="flex min-w-0 items-center gap-2"><UsersRound className="shrink-0 text-[#d7b77f]" size={20}/>
     <span><span className="block text-sm font-semibold text-[#ecd3a9]">Potential Duplicate Records</span>
-     <span className="block text-xs text-[#bca88f]">{loading?'Checking customer history…':items.length+' possible related records · grouped for review'}</span></span></span>
+     <span className="block text-xs text-[#bca88f]">{error?'Review unavailable · check details':items.length+' possible related records · grouped for review'}</span></span></span>
    <ChevronDown className={'shrink-0 text-[#c8a679] transition-transform '+(expanded?'rotate-180':'')} size={18}/>
   </button>
   {expanded&&<div className="space-y-3 border-t border-[#786143]/35 p-4">
@@ -146,7 +149,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
    </>}
 
   </div>}
- </section>
+ </section>}
  {completed&&createPortal(<div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6" role="presentation">
   <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" aria-hidden="true"/>
   <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="crm-consolidation-success-title"
