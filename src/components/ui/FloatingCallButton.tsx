@@ -4,22 +4,18 @@ import { useLocation } from 'react-router-dom';
 import { CONTACT_INFO } from '../../config/contact';
 import { trackCTA, trackPhoneClick } from '../../utils/analytics';
 
-/** Version D: a rounded conversation bubble with three gold dots and a
- * distinct circular plus badge. Keep the emblem crisp at 64px button size. */
+/** Use the same genuinely round Lucide conversation silhouette as the CRM.
+ * The plus is a separate small overlay rather than distorting the chat icon. */
 function LuxuryContactEmblem() {
   return (
-    <svg viewBox="0 0 100 100" width="49" height="49" fill="none"
-      aria-hidden="true" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path
-        d="M35 22H61C76 22 85 31 85 45V54C85 68 76 77 61 77H43L24 89L29 76C18 74 12 66 12 54V45C12 31 20 22 35 22Z"
-        strokeWidth="4.6"
-      />
-      <circle cx="34" cy="50" r="3.35" fill="currentColor" stroke="none"/>
-      <circle cx="48" cy="50" r="3.35" fill="currentColor" stroke="none"/>
-      <circle cx="62" cy="50" r="3.35" fill="currentColor" stroke="none"/>
-      <circle cx="79" cy="23" r="14.5" fill="#17130d" stroke="#E4C688" strokeWidth="3.2"/>
-      <path d="M79 15.5V30.5M71.5 23H86.5" strokeWidth="3.5"/>
-    </svg>
+    <span className="relative flex h-11 w-11 items-center justify-center" aria-hidden="true">
+      <MessageCircleMore size={38} strokeWidth={1.9} className="shrink-0" />
+      <span className="absolute right-[-1px] top-[0px] flex h-[17px] w-[17px] items-center justify-center rounded-full border-[1.5px] border-[#E4C688] bg-[#17130d] shadow-[0_0_0_2px_#17130d]">
+        <svg viewBox="0 0 12 12" width="11" height="11" fill="none" aria-hidden="true">
+          <path d="M6 2.5v7M2.5 6h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+        </svg>
+      </span>
+    </span>
   );
 }
 
