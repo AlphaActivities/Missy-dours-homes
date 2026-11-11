@@ -5,6 +5,15 @@ import {createECDH} from 'node:crypto';
 const json = (body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json','cache-control':'no-store'}});
 const client=createClient(Deno.env.get('SUPABASE_URL')??'',Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'',{auth:{persistSession:false,autoRefreshToken:false}});
 
+// Record badge counts accepted by the push provider per device.
+const recordBadgeDelivery=async(deviceId:string,staffEmail:string,count:number|null)=>{
+ if(count===null||!Number.isFinite(count))return;
+ const {error}=await client.from('crm_badge_device_state').upsert({
+  device_id:deviceId,staff_email:staffEmail.toLowerCase(),
+  last_badge_count:Math.max(0,Math.floor(count)),updated_at:new Date().toISOString()
+ },{onConflict:'device_id'});
+ if(error)console.error('Badge delivery state unavailable',error.code);
+};
 // Standalone delivery service. No schedule or public-chat dependency.
 // Explicit opt-in switch prevents untested delivery and use before VAPID configuration.
 Deno.serve(async request=>{
@@ -141,6 +150,7 @@ Deno.serve(async request=>{
        signal:AbortSignal.timeout(12000)
      });
      if(!provider.ok)throw Object.assign(new Error('Push provider rejected request'),{statusCode:provider.status});
+     await recordBadgeDelivery(device.id,device.staff_email,badge??null);
      const receipt=await client.rpc('ai_concierge_record_push_receipt',{p_event:event.id,p_device:device.id});
      if(receipt.error||receipt.data!==true)throw new Error('Receipt persistence failed');
      successfulDevices++;
@@ -191,6 +201,7 @@ Deno.serve(async request=>{
     signal:AbortSignal.timeout(12000)
    });
    if(!provider.ok)throw Object.assign(new Error('Push provider rejected callback reminder'),{statusCode:provider.status});
+   if(!badgeError)await recordBadgeDelivery(reminder.device_id,reminder.staff_email,Math.max(0,Number(badge)||0));
    const result=await client.rpc('crm_finish_callback_reminder',{p_id:reminder.id,p_success:true});
    if(result.error||result.data!==true)throw new Error('Unable to acknowledge reminder');
   }catch(e){
@@ -200,6 +211,61 @@ Deno.serve(async request=>{
    }
    await client.rpc('crm_finish_callback_reminder',{p_id:reminder.id,p_success:false,p_error_code:'push_delivery_failed'});
   }
+ }
+ // Corrections are one-off, opt-in, user-visible updates after verified
+ // consolidation. Only devices with a previously higher badge are notified.
+ const corrections=await client.rpc('crm_claim_badge_corrections',{p_limit:10});
+ if(corrections.error)console.error('Badge correction queue unavailable',corrections.error.code);
+ for(const job of corrections.data??[]){
+  let success=true;
+  try{
+   const email=String(job.staff_email??'').toLowerCase();
+   const [setting,devicesResult,countResult]=await Promise.all([
+    client.from('crm_notification_preferences').select('badge_correction_enabled').eq('staff_email',email).maybeSingle(),
+    client.from('ai_concierge_push_subscriptions').select('id,staff_email,endpoint,p256dh,auth_key').eq('staff_email',email),
+    client.rpc('crm_visible_notification_count_service',{p_staff_email:email})
+   ]);
+   if(setting.error||devicesResult.error||countResult.error)throw new Error('Correction data unavailable');
+   const count=Math.max(0,Number(countResult.data)||0);
+   if(setting.data?.badge_correction_enabled&&devicesResult.data?.length){
+    const devices=devicesResult.data;
+    const previous=await client.from('crm_badge_device_state').select('device_id,last_badge_count').in('device_id',devices.map(d=>d.id));
+    if(previous.error)throw new Error('Correction baseline unavailable');
+    const last=new Map((previous.data??[]).map(v=>[v.device_id,Number(v.last_badge_count)]));
+    for(const device of devices){
+     const old=last.get(device.id);
+     // Unknown baseline: next genuine push or foreground sync establishes it.
+     if(old===undefined||old<=count)continue;
+     try{
+      const target=new URL(device.endpoint);
+      const trusted=['web.push.apple.com','fcm.googleapis.com','updates.push.services.mozilla.com'].includes(target.hostname);
+      if(target.protocol!=='https:'||!trusted||target.username||target.password||target.port)
+       throw new Error('Untrusted push endpoint');
+      const payload=JSON.stringify({kind:'badge_correction',id:'count-updated',attention_count:count});
+      const prepared=webpush.generateRequestDetails(
+       {endpoint:device.endpoint,keys:{p256dh:device.p256dh,auth:device.auth_key}},payload,{TTL:600}
+      );
+      if(prepared.endpoint!==device.endpoint)throw new Error('Unexpected push endpoint');
+      const provider=await fetch(device.endpoint,{
+       method:'POST',headers:prepared.headers,
+       body:prepared.body?new Uint8Array(prepared.body):undefined,
+       signal:AbortSignal.timeout(12000)
+      });
+      if(!provider.ok)throw Object.assign(new Error('Badge correction provider rejected'),{statusCode:provider.status});
+      await recordBadgeDelivery(device.id,email,count);
+     }catch(e){
+      const status=(e as {statusCode?:number})?.statusCode;
+      if(status===404||status===410){
+       await client.from('ai_concierge_push_subscriptions').delete().eq('id',device.id);
+      }else success=false;
+     }
+    }
+   }
+  }catch{success=false;}
+  const finished=await client.rpc('crm_finish_badge_correction',{
+   p_staff_email:job.staff_email,p_success:success,p_error_code:success?null:'correction_delivery_failed'
+  });
+  if(finished.error)console.error('Badge correction completion failed',finished.error.code);
  }
  return json({processed:(events??[]).length,delivered,failed});
 });
