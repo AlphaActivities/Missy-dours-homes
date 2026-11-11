@@ -283,8 +283,19 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   }
   let cancelled=false;
   const task=attentionCount>0?badgeNavigator.setAppBadge!(attentionCount):badgeNavigator.clearAppBadge!();
-  void task.then(()=>{
+  void task.then(async()=>{
    if(!cancelled)setBadgeSync({supported:true,status:'synced',lastSyncedAt:new Date().toISOString(),lastSyncedCount:attentionCount,error:null});
+   // Record the server-confirmed badge for this device to prevent
+   // redundant correction notifications after ordinary app usage.
+   try{
+    const registration=await navigator.serviceWorker?.getRegistration('/dashboard/');
+    const subscription=await registration?.pushManager?.getSubscription();
+    if(!subscription||cancelled)return;
+    const device=await supabase.from('ai_concierge_push_subscriptions')
+     .select('id').eq('staff_email',email).eq('endpoint',subscription.endpoint).maybeSingle();
+    if(device.error||!device.data?.id||cancelled)return;
+    await supabase.rpc('crm_record_foreground_badge_count',{p_device_id:device.data.id});
+   }catch{/* The operating system may restrict access; don't block CRM. */}
   }).catch(()=>{
    if(!cancelled)setBadgeSync(previous=>({...previous,supported:true,status:'error',error:'The operating system did not accept this badge update.'}));
   });
