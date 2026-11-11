@@ -44,7 +44,7 @@ const GREETING = 'We help people find their happy. What happy answer can we find
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const AI_TYPING_MIN_MS = 4000;
 const INTRO_TITLE = 'Imagine the Life That Awaits.';
-const INTRO_REVEAL_MS = 3100;
+const INTRO_REVEAL_MS = 2000;
 const INTRO_FINISH_PAUSE_MS = 600;
 
 // NANP structural validation, not proof a number is assigned or reachable.
