@@ -392,7 +392,7 @@ export default function ConversationsPage() {
  // Archived leads are history, not routine suggestions for new callbacks.
  const archivedCount=leadCandidates.filter(lead=>lead.status==='archived').length;
  const visibleCandidates=leadCandidates.filter(lead=>showArchivedCandidates||lead.status!=='archived');
- const canCreateSeparateLead=Boolean(active?.contact_consent_at&&active.visitor_name?.trim()&&active.visitor_name.trim().length>=2&&active.visitor_phone?.replace(/\D/g,'').length>=10);
+ const canCreateSeparateLead=Boolean(active?.contact_consent_at&&(active.visitor_name?.trim().length??0)>=2&&active.visitor_phone?.replace(/\D/g,'').length>=10);
  const linkReviewed=async(createSeparate:boolean)=>{
   if(!active || active.lead_id || linkBusy)return;
   if(createSeparate && !canCreateSeparateLead){setError('A separate lead requires a visitor name, phone number and recorded permission to contact. This conversation remains saved.');return;}
