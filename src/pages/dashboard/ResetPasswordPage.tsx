@@ -19,6 +19,10 @@ export default function ResetPasswordPage(){
  const [notice,setNotice]=useState('');
  const [error,setError]=useState('');
  useEffect(()=>{
+  // PKCE may exchange and clear the URL code before this page mounts.
+  if(session&&stage==='request')setStage('update');
+ },[session,stage]);
+ useEffect(()=>{
   const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
    if(event==='PASSWORD_RECOVERY')setStage('update');
   });
