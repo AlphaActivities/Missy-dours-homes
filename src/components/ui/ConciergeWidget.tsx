@@ -44,6 +44,8 @@ const GREETING = 'We help people find their happy. What happy answer can we find
 const INITIAL: Message[] = [{ id: 0, role: 'concierge', text: GREETING }];
 const AI_TYPING_MIN_MS = 4000;
 const INTRO_TITLE = 'Imagine the Life That Awaits.';
+const INTRO_REVEAL_MS = 3100;
+const INTRO_FINISH_PAUSE_MS = 600;
 
 // NANP structural validation, not proof a number is assigned or reachable.
 function callbackPhoneDigits(input: string) {
@@ -198,6 +200,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
   const [welcomeReady,setWelcomeReady] = useState(false);
   const [welcomeTyping,setWelcomeTyping] = useState(false);
   const introPlayedRef = useRef(false);
+  const introFinishTimerRef = useRef<number | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadFeedback, setUploadFeedback] = useState<string|null>(null);
   const [handoffOpen, setHandoffOpen] = useState(false);
@@ -369,6 +372,20 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
       return () => window.clearTimeout(timer);
     }
   }, [open, onOpenChange, welcomeReady]);
+
+  // Cancel the finishing pause on close or unmount; never reveal a stale panel.
+  useEffect(()=>{
+    if(!open && introFinishTimerRef.current !== null){
+      window.clearTimeout(introFinishTimerRef.current);
+      introFinishTimerRef.current=null;
+    }
+    return ()=>{
+      if(introFinishTimerRef.current !== null){
+        window.clearTimeout(introFinishTimerRef.current);
+        introFinishTimerRef.current=null;
+      }
+    };
+  },[open]);
 
   // Run the entrance only for a genuinely new visitor, never over restored chat history.
   // This is a UI presentation delay only; visitor session verification runs normally.
@@ -704,7 +721,15 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
           </header>
           <div ref={chatHistoryRef} className="missy-concierge-body min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y space-y-4 px-5 py-4 md:px-7 lg:px-[max(2rem,calc((100vw-900px)/2))]" aria-live="polite">
             {privateQA && <p className="rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">PRIVATE TEST ONLY. This is not a customer inquiry. Use the reserved callback details and clear the test when finished.</p>}
-            <div className="missy-concierge-intro mx-auto w-full max-w-sm py-2 text-center"><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 min-h-[28px] font-serif text-lg tracking-wide text-[#ebd5ae]" aria-label={INTRO_TITLE}><motion.span className="inline-block max-w-full text-left align-top" aria-hidden="true" initial={false} animate={{clipPath: introAnimating || introDone ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)'}} transition={{duration:0.85,ease:'linear'}} onAnimationComplete={()=>{if(introAnimating){setIntroAnimating(false);setIntroDone(true);}}}>{INTRO_TITLE}</motion.span></p></div>
+            <div className="missy-concierge-intro mx-auto w-full max-w-sm py-2 text-center"><p className="text-[10px] uppercase tracking-[.28em] text-[#bfa273]">A more personal way to connect</p><p className="mt-2 min-h-[28px] font-serif text-lg tracking-wide text-[#ebd5ae]" aria-label={INTRO_TITLE}><motion.span className="inline-block max-w-full text-left align-top" aria-hidden="true" initial={false} animate={{clipPath: introAnimating || introDone ? 'inset(0 0% 0 0)' : 'inset(0 100% 0 0)'}} transition={{duration:INTRO_REVEAL_MS/1000,ease:'linear'}} onAnimationComplete={()=>{
+              if(introAnimating && introFinishTimerRef.current === null){
+                introFinishTimerRef.current=window.setTimeout(()=>{
+                  introFinishTimerRef.current=null;
+                  setIntroAnimating(false);
+                  setIntroDone(true);
+                },INTRO_FINISH_PAUSE_MS);
+              }
+            }}>{INTRO_TITLE}</motion.span></p></div>
             {chatEnabled && introDone && !session && <section aria-label="Security check explanation" className="mx-auto w-full max-w-sm rounded-2xl border border-[#b9945d]/35 bg-gradient-to-br from-[#211b14]/95 to-[#12100e]/95 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,230,174,.06)]">
               <p className="text-center text-xs font-semibold uppercase tracking-[.15em] text-[#e7c58d]">Secure connection</p>
               <p className="mt-1.5 text-center text-xs leading-relaxed text-[#c3af8d]">Security check: confirming this is a real visitor, not an automated bot. This helps protect your conversation. It may take a moment.</p>
