@@ -153,7 +153,8 @@ export default function LoginPage() {
             </div>
 
             {/* Password */}
-            <div>
+            <div className="relative">
+              <button type="button" onClick={() => navigate('/dashboard/reset-password', {state:{email:email.trim()}})} className="absolute right-0 top-0 text-[11px] font-medium text-[#d9bd8e] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#edca8d]" aria-label="Forgot password? Request an email reset link">Forgot password?</button>
               <label
                 htmlFor="password"
                 className="block text-[11px] font-medium tracking-[0.14em] uppercase mb-1.5"
