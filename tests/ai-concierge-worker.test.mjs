@@ -243,3 +243,44 @@ test('Official consumer resources and non-manipulative follow ups are available 
   }
  }finally{globalThis.fetch=saved;}
 });
+
+
+test('Seller valuation stays inside chat, offers callback, and does not invent visitor location', async () => {
+  const simulatedModel = [
+    'How urgent is your timeline, and are you aiming for the highest possible offer?',
+    'You are in Farmers Branch, and Missy can prepare a comparative market analysis.',
+    'You can reach Missy’s team directly here: https://missydours.com/#contact.'
+  ].join('\n\n');
+  let captured=[];
+  const response=await worker.fetch(request({
+    language:'en',
+    messages:[
+      {role:'user',content:'Hello, how are you?'},
+      {role:'assistant',content:'Doing well! How can I help?'},
+      {role:'user',content:'Simply wanting to sell my home soon, and wanted an evaluation.'}
+    ]
+  }),{
+    CONCIERGE_BRIDGE_SECRET:secret,
+    AI:{run:async(_model,opts)=>{captured=opts.messages;return {response:simulatedModel};}}
+  });
+  assert.equal(response.status,200);
+  const {reply}=await response.json();
+  assert.doesNotMatch(reply,/missydours\.com\/#contact/i);
+  assert.doesNotMatch(reply,/you are in farmers branch/i);
+  assert.match(reply,/request a callback right here in the chat/i);
+  assert.match(reply,/comparative market analysis/i);
+  assert.ok(captured.some(m=>m.role==='system'&&m.content.includes('website #contact link ONLY if the visitor explicitly asks')));
+  assert.ok(captured.some(m=>m.role==='system'&&m.content.includes('Never assume or invent a seller property location')));
+});
+
+test('Explicit visitor request for the website contact page keeps the contact link', async () => {
+  const response=await worker.fetch(request({
+    language:'en',
+    messages:[{role:'user',content:'Please send me the website contact page link.'}]
+  }),{
+    CONCIERGE_BRIDGE_SECRET:secret,
+    AI:{run:async()=>({response:'Contact page: https://missydours.com/#contact'})}
+  });
+  assert.equal(response.status,200);
+  assert.match((await response.json()).reply,/https:\/\/missydours\.com\/#contact/);
+});
