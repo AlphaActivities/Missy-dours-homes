@@ -145,10 +145,13 @@ function DrawerContent({
       const {data:tasks}=await supabase.from('ai_concierge_tasks')
         .select('conversation_id,due_at,status,assigned_to,created_at,request_kind')
         .in('conversation_id',conversations.map(c=>c.id)).in('status',['pending','claimed'])
-        .order('due_at',{ascending:true}).limit(25);
+        // Display the newest received request first. Due dates are for scheduling,
+         // not for deciding which customer submission is shown by default.
+         .order('created_at',{ascending:false})
+         .order('conversation_id',{ascending:false}).limit(25);
       if(!alive)return;
       setCallbackChoices(tasks??[]);
-      const first=tasks?.[0];
+      const first=tasks?.[0]; // Most recently received request
       if(!first)return;
       setCallbackPending(true);
       setCallbackWork({owner:first.assigned_to??conversations.find(c=>c.id===first.conversation_id)?.assigned_to??null,

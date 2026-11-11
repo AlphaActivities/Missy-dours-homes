@@ -19,7 +19,7 @@ export default function CallbackAttentionPanel({choices,selected,onSelect,onOutc
     {choices.length>1?<div className="relative">
      <select id="crm-callback-request" className="min-h-12 w-full appearance-none truncate rounded-lg border border-[#b99a68]/55 bg-[#171412] py-3 pl-3 pr-9 text-sm font-semibold text-[#f2dfc6] outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]"
       value={request?.conversation_id??''} onChange={e=>{const r=choices.find(x=>x.conversation_id===e.target.value);if(r)onSelect(r);}}>
-      {choices.map((r,i)=><option key={r.conversation_id} value={r.conversation_id}>Request {i+1} · Received {new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(r.created_at))}</option>)}
+      {choices.map((r,i)=><option key={r.conversation_id} value={r.conversation_id}>Request {choices.length-i} · Received {new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(r.created_at))}</option>)}
      </select><ChevronDown size={17} className="pointer-events-none absolute right-3 top-4 text-[#d4b58a]"/>
     </div>:<p className="text-sm font-medium text-[#efdbc0]">One active request</p>}
     {request&&<div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
