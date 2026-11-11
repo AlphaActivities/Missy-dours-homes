@@ -33,7 +33,7 @@ export default function CalendarPage(){
   try{
    // Allow a two-day boundary around Dallas-local month, including DST changes.
    const start=new Date(Date.UTC(month.year,month.month-1,-1)).toISOString();
-   const end=new Date(Date.UTC(month.year,month.month+1,2)).toISOString();
+   const end=new Date(Date.UTC(month.year,month.month,2)).toISOString();
    const [followups,requests]=await Promise.all([
     supabase.from('lead_followups').select('id,lead_id,due_at,task,status').eq('status','active').gte('due_at',start).lt('due_at',end).order('due_at',{ascending:true}).limit(1000),
     supabase.from('ai_concierge_tasks').select('conversation_id,status,request_kind,created_at,due_at').in('status',['pending','claimed']).order('created_at',{ascending:false}).limit(250)
@@ -63,13 +63,13 @@ export default function CalendarPage(){
    }
    setOutstanding([...grouped.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name)));
    const scheduledCallbacks=tasks.filter(t=>
-    t.request_kind==='callback'&&Boolean(t.due_at)&&
+    Boolean(t.due_at)&&
     Date.parse(t.due_at)>Date.parse(t.created_at)+5000
    ).map(t=>{
     const conversation=byConversation.get(t.conversation_id);
     const leadId=conversation?.lead_id??null;
     return {id:'callback:'+t.conversation_id,lead_id:leadId,conversation_id:t.conversation_id,
-     due_at:t.due_at,task:'Scheduled website callback',status:t.status,
+     due_at:t.due_at,task:t.request_kind==='callback'?'Scheduled website callback':'Scheduled chat follow-up',status:t.status,
      customer:(leadId?names.get(leadId):conversation?.visitor_name)||'Callback visitor',kind:'callback' as const};
    });
    const booked:Event[]=[
