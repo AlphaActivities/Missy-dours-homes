@@ -732,7 +732,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
             }}>{INTRO_TITLE}</motion.span></p></div>
             {chatEnabled && introDone && !session && <section aria-label="Security check explanation" className="mx-auto w-full max-w-sm rounded-2xl border border-[#b9945d]/35 bg-gradient-to-br from-[#211b14]/95 to-[#12100e]/95 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,230,174,.06)]">
               <p className="text-center text-xs font-semibold uppercase tracking-[.15em] text-[#e7c58d]">Secure connection</p>
-              <p className="mt-1.5 text-center text-xs leading-relaxed text-[#c3af8d]">Security check: confirming this is a real visitor, not an automated bot. This helps protect your conversation. It may take a moment.</p>
+              <p className="mt-1.5 text-center text-xs leading-relaxed text-[#c3af8d]">A simple security check to protect your conversation.</p>
               <div className="mt-3 flex justify-center"><TurnstileVerifier siteKey={turnstileSiteKey} onToken={(token) => { void beginVerifiedSession(token); }} /></div>
             </section>}
             {messages.filter(m=>m.id!==0 || welcomeReady).map((m,index,visibleMessages) => <motion.div
