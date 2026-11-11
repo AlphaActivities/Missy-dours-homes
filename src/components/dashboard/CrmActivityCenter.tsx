@@ -1,5 +1,5 @@
 import {useMemo,useState} from 'react';
-import {Archive,RotateCcw,ArrowRight,RefreshCw,AlertTriangle,Inbox,MessagesSquare,UserRoundPlus,CheckCircle2,Sparkles} from 'lucide-react';
+import {ArrowRight,RefreshCw,AlertTriangle,Inbox,MessagesSquare,UserRoundPlus,CheckCircle2,Sparkles} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 import {IosNativeTap} from './DashboardHaptics';
@@ -16,7 +16,7 @@ const isChatRequest=(item:CrmActivity)=>item.category==='handoff'||item.category
 const hasActiveEscalation=(item:CrmActivity)=>item.category==='escalation'&&Boolean(item.callback_escalated_at);
 const isFollowupScheduled=(item:CrmActivity)=>isChatRequest(item)&&item.callback_outcome==='follow_up'&&Boolean(item.callback_followup_at)&&!item.callback_escalated_at;
 const categoryLabel=(item:CrmActivity)=>item.category==='escalation'?(item.callback_request_kind==='callback'?'Urgent Callback':'Urgent Chat Request'):item.category==='lead'?'Website Contact Form':item.category==='handoff'?(item.callback_request_kind==='callback'?'Callback Request':'Direct Chat Request'):item.category==='opportunity'?'AI Chat Opportunity':'Staff Activity';
-const displayTitle=(item:DisplayActivity)=>item.customerUrgentCount&&item.customerRequestCount&&item.customerRequestCount>1&&item.callback_status!=='claimed'?(item.callback_request_kind==='callback'?'Urgent Callback Requests':'Urgent Chat Requests'):isChatRequest(item)&&item.callback_status==='claimed'?'Assigned to '+staffName(item.callback_assignee):isFollowupScheduled(item)?'Follow-up Scheduled':item.category==='handoff'?(item.callback_request_kind==='callback'?'Callback Requested':'New Chat Request'):item.category==='escalation'?(item.callback_escalated_at?(item.callback_request_kind==='callback'?'Urgent Callback Request':'Urgent Chat Request'):(item.callback_request_kind==='callback'?'Callback Requested':'New Chat Request')):item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot').replace(/^Live (Buyer|Seller|Investor) Interest/i,'$1 Interest Detected');
+const displayTitle=(item:DisplayActivity)=>item.customerUrgentCount&&item.customerRequestCount&&item.customerRequestCount>1&&item.callback_status!=='claimed'?(item.callback_request_kind==='callback'?'Urgent Callback Requests':'Urgent Chat Requests'):isChatRequest(item)&&item.callback_status==='claimed'?'Callback Requests · Follow-Up Needed':isFollowupScheduled(item)?'Follow-up Scheduled':item.category==='handoff'?(item.callback_request_kind==='callback'?'Callback Requested':'New Chat Request'):item.category==='escalation'?(item.callback_escalated_at?(item.callback_request_kind==='callback'?'Urgent Callback Request':'Urgent Chat Request'):(item.callback_request_kind==='callback'?'Callback Requested':'New Chat Request')):item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot').replace(/^Live (Buyer|Seller|Investor) Interest/i,'$1 Interest Detected');
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'||/^\/dashboard\/conversations\?conversation=[0-9a-f-]{36}$/i.test(value)?value:'/dashboard/conversations';
 const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|·)/gi,'$1Homepage');
 // Keep the CTA's destination, label and next-step guidance consistent.
@@ -59,7 +59,7 @@ const matchesFilter=(e:DisplayActivity,filter:Filter)=>{
  return e.category===filter;
 };
 export default function CrmActivityCenter(){
- const {items,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive,restore}=useCrmActivity();
+ const {items,hasMore,loadingMore,loadMore,loading,error,refresh,markRead}=useCrmActivity();
  const [filter,setFilter]=useState<Filter>('all');
  const [working,setWorking]=useState(false);
  const [notice,setNotice]=useState('');
@@ -107,8 +107,7 @@ export default function CrmActivityCenter(){
   key,(key==='history'?items:activeEvents).filter(e=>matchesFilter(e,key)).length
  ])) as Record<Filter,number>,[items,activeEvents]);
  const requiresAction=(item:DisplayActivity)=>Boolean(item.category!=='opportunity'&&!item.lead_archived&&!item.archived_at &&
-   (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'||
-    (isUrgent(item)&&item.callback_status==='claimed')));
+   ((isChatRequest(item)&&activeChat(item))||item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'));
  // Every actionable card receives a matching category-colored border sweep;
  // informational or completed cards keep a quiet, premium static border.
  const isFeatured=(item:DisplayActivity)=>requiresAction(item)||(item.category==='opportunity'&&item.callback_status==='ai');
@@ -126,11 +125,6 @@ export default function CrmActivityCenter(){
   const ids=new Set(item.groupEventIds??[item.id]);
   const related=items.filter(e=>ids.has(e.id));
   return Promise.all(related.filter(e=>!e.read_at).map(e=>markRead(e.id))).then(()=>{});
- };
- const hideNotice=(item:DisplayActivity)=>{
-  if(requiresAction(item)){setNotice('Resolve this request from its lead record, or acknowledge it without hiding the work.');return;}
-  if(!window.confirm('Hide only this notification? The lead, callback and conversation will remain unchanged.'))return;
-  void execute(()=>archive(item.id));
  };
  return <section id="crm-activity" className="mt-5 text-[#edddc4]" aria-label="CRM notifications inbox">
   <div>
@@ -164,7 +158,7 @@ export default function CrmActivityCenter(){
    {loading&&items.length===0&&<p className="rounded-xl border border-white/10 p-6 text-center text-sm text-[#bdb0a0]">Loading notifications…</p>}
    {!loading&&visible.length===0&&<div className="rounded-xl border border-white/10 bg-black/20 p-8 text-center text-sm text-[#bdb0a0]">
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
-    {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
+    {filter==='history'?'No completed or archived activity.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
    {visible.map(item=><article key={filter!=='history'&&isChatRequest(item)?'active-chat:'+customerKey(item):item.id} data-category={item.category} data-opportunity-kind={item.opportunity_kind??undefined} data-urgent-transition={isChatRequest(item)&&isUrgent(item)?'true':'false'} data-work-state={requiresAction(item)?'action':isResolved(item)?'complete':isInProgress(item)?'progress':'info'} className={'crm-category-notification relative isolate overflow-hidden rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(isFeatured(item)?'crm-actionable-notification ':'')}>
     <div className="min-w-0">
@@ -187,16 +181,16 @@ export default function CrmActivityCenter(){
       {overdue24h(item)&&<span className="inline-flex items-center rounded-md border border-red-400/50 bg-red-900/20 px-2 py-1 font-semibold text-red-200">Overdue 24h+</span>}
       {isFollowupScheduled(item)&&<span className="inline-flex items-center rounded-md border border-[#c8a96e]/45 px-2 py-1 font-semibold text-[#edce93]">Next follow-up {new Date(item.callback_followup_at!).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>}
      </div>}
-     {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked chat lead audit':item.category==='handoff'&&['completed','closed'].includes(item.callback_status??'')?'Completed chat request':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Team activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
+     {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked chat lead audit':item.category==='handoff'&&['completed','closed'].includes(item.callback_status??'')?'Completed chat request':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Team activity audit':item.lead_archived?'Archived lead': 'Historical activity'}</span>}
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'||item.category==='escalation'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot request'):friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot activity')}</p>
      {Boolean(item.customerRequestCount&&item.customerRequestCount>1)&&<p className="mt-2 text-xs leading-relaxed text-[#dfc391]">Latest request shown. Open this lead to review and record outcomes for all outstanding requests individually.</p>}
      {(item.category==='handoff'||item.category==='escalation')&&item.callback_requested_at&&<div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#bba995]" aria-label="Request activity timeline">
       <span>Requested {new Date(item.callback_requested_at).toLocaleString(undefined,{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>
       {item.callback_escalated_at&&<><span aria-hidden="true">→</span><span className="font-semibold text-[#e4a18e]">Escalated {new Date(item.callback_escalated_at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</span></>}
-      {item.callback_status==='claimed'&&<><span aria-hidden="true">→</span><span>Assigned to {staffName(item.callback_assignee)}</span></>}
+      {item.callback_status==='claimed'&&<><span aria-hidden="true">→</span><span>{staffName(item.callback_assignee)} handling request</span></>}
       {['completed','closed'].includes(item.callback_status??'')&&<><span aria-hidden="true">→</span><span>Completed</span></>}
      </div>}
-     {item.callback_status==='claimed'&&isChatRequest(item)&&<p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#dcb979]"><CheckCircle2 size={15} aria-hidden="true"/> Assigned · Outcome not yet recorded</p>}
+     {item.callback_status==='claimed'&&isChatRequest(item)&&<p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#dcb979]"><CheckCircle2 size={15} aria-hidden="true"/> Awaiting contact outcome</p>}
      {isInProgress(item)&&!isChatRequest(item)&&!requiresAction(item)&&<p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#dcb979]"><CheckCircle2 size={15} aria-hidden="true"/> Staff handling this item</p>}
      {isFollowupScheduled(item)&&<p className="mt-3 text-xs text-[#dcb979]">A next step is recorded. This callback remains open until verified contact or completion.</p>}
      {!(item.category==='handoff'||item.category==='escalation')&&<time className="mt-2 block text-[11px] text-[#a99c89]" dateTime={item.created_at}>{new Date(item.created_at).toLocaleString(undefined,{year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</time>}
@@ -210,14 +204,12 @@ export default function CrmActivityCenter(){
      </Link>
      {!item.read_at&&item.category==='staff'&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
       className="inline-flex items-center rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">Acknowledge update</button>}
-     {!item.lead_archived&&!requiresAction(item)&&<button type="button" disabled={working} onClick={()=>item.archived_at?void execute(()=>restore(item.id)):hideNotice(item)}
-      className="inline-flex items-center gap-1 rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">
-      {item.archived_at?<RotateCcw size={13}/>:<Archive size={13}/>} {item.archived_at?'Restore notification':'Hide notification'}</button>}
+
     </div>
    </article>)}
   </div>
   {hasMore&&<div className="mt-5 flex justify-center"><button type="button" onClick={()=>void loadMore()} disabled={loadingMore}
    className="rounded-lg border border-[#c8a96e]/40 px-5 py-2.5 text-sm text-[#edce93] disabled:opacity-50">{loadingMore?'Loading older activity…':'Load older notifications'}</button></div>}
-  <p className="mt-5 text-xs text-[#a99c89]">Notifications from archived leads move to History automatically and return to the active inbox if the lead is reopened. Manually hiding a notification affects only your account; it never changes the lead or conversation.</p>
+  <p className="mt-5 text-xs text-[#a99c89]">Completed requests and archived leads move to History automatically. Open a lead or conversation to record outcomes. Viewing an alert does not resolve outstanding work.</p>
  </section>;
 }
