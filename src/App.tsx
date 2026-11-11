@@ -138,7 +138,7 @@ function Layout() {
           <BackToTopButton />
           <FloatingCallButton onOpenChat={() => setMobileChatOpenToken(n => n + 1)} />
         </div>
-      )
+      )}
       <ConciergeWidget onOpenChange={setConciergeOpen} mobileOpenToken={mobileChatOpenToken} />
       <ListingTransitionOverlay
         isVisible={showTransition}
