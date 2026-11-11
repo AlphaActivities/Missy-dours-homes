@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, type MouseEvent } from 'r
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastProvider } from '../../contexts/ToastContext';
-import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle, Settings2, ShieldCheck, BellRing, BarChart3 } from 'lucide-react';
+import { LogOut, Users, LayoutDashboard, Menu, X, MessageCircle, Settings2, ShieldCheck, BellRing, BarChart3, CalendarDays } from 'lucide-react';
 import {CrmActivityProvider,useCrmActivity} from './CrmActivityContext';
 import DashboardVideoBackground from './ui/DashboardVideoBackground';
 import ConciergeSignatureEntrance from './ui/ConciergeSignatureEntrance';
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: '/dashboard',       label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/leads', label: 'Leads',    icon: Users,            end: false },
   { to: '/dashboard/conversations', label: 'Conversations', icon: MessageCircle, end: false },
+  { to: '/dashboard/calendar', label: 'Calendar', icon: CalendarDays, end: true },
   { to: '/dashboard/notifications', label: 'Notifications', icon: BellRing, end: true },
   { to: '/dashboard/analytics', label: 'Analytics', icon: BarChart3, end: true },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings2, end: true },
@@ -62,7 +63,7 @@ function DashboardLayoutInner() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isLoginRoute = pathname === '/dashboard/login' || pathname === '/dashboard/reset-password';
-  const mobileSection=pathname.startsWith('/dashboard/analytics')?'Analytics':pathname.startsWith('/dashboard/notifications')?'Notifications':pathname.startsWith('/dashboard/conversations')?'Conversations':pathname.startsWith('/dashboard/leads')?'Leads':pathname.startsWith('/dashboard/settings')?'Settings':pathname.startsWith('/dashboard/admin')?'Admin Dashboard':'Admin Dashboard';
+  const mobileSection=pathname.startsWith('/dashboard/analytics')?'Analytics':pathname.startsWith('/dashboard/notifications')?'Notifications':pathname.startsWith('/dashboard/conversations')?'Conversations':pathname.startsWith('/dashboard/calendar')?'Calendar':pathname.startsWith('/dashboard/leads')?'Leads':pathname.startsWith('/dashboard/settings')?'Settings':pathname.startsWith('/dashboard/admin')?'Admin Dashboard':'Admin Dashboard';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
