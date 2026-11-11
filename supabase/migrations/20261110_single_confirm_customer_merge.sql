@@ -26,7 +26,8 @@ begin
  -- staff confirmation for different-name records; the same-phone and
  -- conflicting-email safeguards continue to apply.
  if public.crm_normalize_identity_name(a.name)<>public.crm_normalize_identity_name(b.name)
-    and p_verification_note is distinct from 'staff_confirmed_same_customer'
+    and coalesce(p_verification_note,'') not in ('staff_confirmed_same_customer','customer_confirmed','records_verified')
+    and (p_verification_note is null or length(btrim(p_verification_note))<20)
  then raise exception 'Confirm both records belong to the same customer';end if;
  if a.email<>'' and b.email<>'' and lower(a.email)<>lower(b.email)
  then raise exception 'Conflicting emails require additional identity verification';end if;
