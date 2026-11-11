@@ -39,7 +39,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState<string|null>(null);
  const [liveAlert,setLiveAlert]=useState<CrmActivity|null>(null);
- const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false),loadedRef=useRef<CrmActivity[]>([]);
+ const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false),refreshQueuedRef=useRef(false),loadedRef=useRef<CrmActivity[]>([]);
  const PAGE_SIZE=60;
  // A notification being read does not mean the associated inquiry was handled.
  // Query the CURRENT lead stage separately; preserve personal read receipts.
@@ -157,7 +157,9 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  },[]);
 
  const refresh=useCallback(async()=>{
-  if(!permitted.includes(email)||inFlight.current)return;
+  if(!permitted.includes(email))return;
+  // A push or focus event arriving mid-request must not be dropped.
+  if(inFlight.current){refreshQueuedRef.current=true;return;}
   inFlight.current=true;
   try {
    const [events,summary,preferences,totals]=await Promise.all([
@@ -210,7 +212,13 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    setBreakdown({new_leads:Number(c?.new_leads??0),open_tasks:Number(c?.open_tasks??0),waiting_conversations:Number(c?.waiting_conversations??0)});
    setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Unable to load activity');}
-  finally{setLoading(false);inFlight.current=false;}
+  finally{
+   setLoading(false);inFlight.current=false;
+   if(refreshQueuedRef.current){
+    refreshQueuedRef.current=false;
+    window.setTimeout(()=>void refresh(),0);
+   }
+  }
  },[email]);
  const loadMore=async()=>{
   if(loadingMore||!hasMore||!permitted.includes(email))return;
@@ -227,7 +235,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   finally{setLoadingMore(false);}
  };
  useEffect(()=>{
-  firstLoaded.current=false;lastEvent.current=null;loadedRef.current=[];setItems([]);setLiveAlert(null);
+  firstLoaded.current=false;lastEvent.current=null;loadedRef.current=[];refreshQueuedRef.current=false;setItems([]);setLiveAlert(null);
   setHasMore(false);setCounts({unread:0,urgent:0,today:0,hidden:0});setPrefs(defaults(email));setLoading(true);
   if(!permitted.includes(email))return;
   void refresh();
@@ -239,16 +247,21 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   const badgeChannel=typeof BroadcastChannel==='function'?new BroadcastChannel('missy-crm-badge-'+email):null;
   badgeChannelRef.current=badgeChannel;
   if(badgeChannel)badgeChannel.onmessage=()=>{void refresh();};
-  const timer=window.setInterval(()=>void refresh(),15000); // Cross-device fallback for receipt/lead updates.
+  const timer=window.setInterval(()=>{if(document.visibilityState==='visible')void refresh();},15000); // Foreground check; iOS cannot run this timer while closed.
   const visible=()=>{if(document.visibilityState==='visible')void refresh();};
   document.addEventListener('visibilitychange',visible);
   window.addEventListener('focus',visible);
   window.addEventListener('pageshow',visible);
+  const onWorkerMessage=(event:MessageEvent)=>{
+   if(event.data?.kind==='missy-crm-push-arrived'&&document.visibilityState==='visible')void refresh();
+  };
+  navigator.serviceWorker?.addEventListener('message',onWorkerMessage);
   return()=>{
    window.clearInterval(timer);
    document.removeEventListener('visibilitychange',visible);
    window.removeEventListener('focus',visible);
    window.removeEventListener('pageshow',visible);
+   navigator.serviceWorker?.removeEventListener('message',onWorkerMessage);
    badgeChannel?.close();badgeChannelRef.current=null;
    void supabase.removeChannel(channel);
   };
@@ -277,7 +290,14 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   });
   return()=>{cancelled=true;};
  },[attentionCount,email,loading,badgeSyncRevision]);
- const syncBadgeNow=async()=>{await refresh();setBadgeSyncRevision(n=>n+1);};
+ const syncBadgeNow=async()=>{
+  // Directly verify the current count, even if another refresh is already running.
+  const {data,error}=await supabase.rpc('crm_activity_totals');
+  if(error){setBadgeSync(previous=>({...previous,status:'error',error:'Could not verify the current count with the server.'}));return;}
+  setAttentionCount(Math.max(0,Number((data as {total?:number}|null)?.total??0)));
+  setBadgeSyncRevision(n=>n+1);
+  void refresh();
+ };
  const upsertReceipt=async(id:string,changes:{read_at?:string|null;archived_at?:string|null})=>{
   const before=items.find(x=>x.id===id);if(!before)return;
   const payload={event_id:id,staff_email:email,read_at:changes.read_at===undefined?before.read_at:changes.read_at,archived_at:changes.archived_at===undefined?before.archived_at:changes.archived_at};
