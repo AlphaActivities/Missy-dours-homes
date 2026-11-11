@@ -127,7 +127,7 @@ export default function CalendarPage(){
      const count=valid?(byDay.get(date)?.length||0):0;
      return valid?<button key={i} type="button" aria-pressed={selected===date} aria-label={date+', '+count+' scheduled follow-ups'} onClick={()=>setSelected(date)}
       className={'flex min-h-[58px] min-w-0 flex-col items-center justify-center gap-1 bg-[#1d1814] p-1 text-sm transition-colors hover:bg-[#342819] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f0cf90] sm:min-h-20 '+(selected===date?'bg-[#5b4428] text-[#ffdfa2] ring-1 ring-inset ring-[#dbb773]':'text-[#e9d9bf]')}>
-      <span>{day}</span>{count>0&&<span className="inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[#c7a36c] px-1 text-[10px] font-bold text-[#20150a]">{count}</span>}
+      <span>{day}</span>{count>0&&<span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c7a36c] text-[11px] font-bold leading-none tabular-nums text-[#20150a] aspect-square" aria-hidden="true">{count>99?'99+':count}</span>}
      </button>:<div key={i} aria-hidden="true" className="min-h-[58px] bg-[#151310] sm:min-h-20"/>;
     })}</div>
     <p className="px-4 py-3 text-xs text-[#b7a58e]">Dates and times use Dallas, Texas (Central Time). Select a day to review its scheduled work.</p>
