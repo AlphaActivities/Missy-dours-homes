@@ -20,13 +20,13 @@ const devices=[
 ];
 function queryResult(data){
   const query={
-    select(){return query;},eq(){return query;},limit(){return query;},maybeSingle(){return query;},
-    delete(){return query;},
+    select(){return query;},eq(){return query;},in(){return query;},limit(){return query;},maybeSingle(){return query;},
+    delete(){return query;},upsert(){return query;},
     then(resolve,reject){return Promise.resolve({data,error:null}).then(resolve,reject);}
   };
   return query;
 }
-async function makeServer({pushEnabled=false,events=[],registered=devices,receipts=[],reminders=[]}={}){
+async function makeServer({pushEnabled=false,events=[],registered=devices,receipts=[],reminders=[],corrections=[],badgeEnabled=false,badgeStates=[]}={}){
   const calls=[],sent=[];
   const currentEventKind=events[0]?.event_type||'handoff_created';
   const db={
@@ -35,6 +35,8 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
       if(method==='ai_concierge_get_sender_secret')return {data:'mock-vault-secret-for-cron-1234567890123456',error:null};
       if(method==='ai_concierge_claim_push_batch')return {data:events,error:null};
       if(method==='crm_claim_callback_reminders')return {data:reminders,error:null};
+      if(method==='crm_claim_badge_corrections')return {data:corrections,error:null};
+      if(method==='crm_finish_badge_correction')return {data:null,error:null};
       if(method==='crm_finish_callback_reminder')return {data:true,error:null};
       if(method==='crm_visible_notification_count_service'){
         const byStaff={'missydourshomes@gmail.com':5,'yourcustomerflowguy@gmail.com':4,'heberherrera92@gmail.com':3};
@@ -48,7 +50,12 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
       calls.push({kind:'from',table});
       if(table==='ai_concierge_push_subscriptions')return queryResult(registered);
       if(table==='ai_concierge_push_receipts')return queryResult(receipts);
-      if(table==='crm_notification_preferences')return queryResult(devices.map(device=>({staff_email:device.staff_email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true})));
+      if(table==='crm_notification_preferences'){
+        const q=queryResult(devices.map(device=>({staff_email:device.staff_email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true})));
+        q.maybeSingle=()=>Promise.resolve({data:{badge_correction_enabled:badgeEnabled},error:null});
+        return q;
+      }
+      if(table==='crm_badge_device_state')return queryResult(badgeStates);
       if(table==='ai_concierge_tasks')return queryResult({conversation_id:'e14725bf-9f1d-4572-ac4e-554e5e173cc2'});
       throw Error('Unexpected table: '+table);
     }
@@ -197,4 +204,32 @@ test('Scheduled callback reminders use deduplicated per-device queue and privacy
  assert.equal(notifications[0].payload.lead_id,reminders[0].lead_id);
  assert.ok(!JSON.stringify(notifications[0].payload).includes('customer_name'));
  assert.ok(calls.some(x=>x.method==='crm_finish_callback_reminder'&&x.args.p_success===true));
+});
+
+
+test('Opt-in correction sends one user-visible update only to a device with an outdated higher badge',async()=>{
+ const {handler,calls,sent}=await makeServer({
+  pushEnabled:true,corrections:[{staff_email:'yourcustomerflowguy@gmail.com'}],badgeEnabled:true,
+  badgeStates:[{device_id:'josh-device',last_badge_count:7},
+               {device_id:'missy-device',last_badge_count:5}]
+ });
+ const res=await call(handler);
+ assert.equal(res.status,200);
+ const updates=calls.filter(x=>x.kind==='prepared'&&x.payload.kind==='badge_correction');
+ assert.equal(updates.length,1);
+ assert.equal(updates[0].endpoint,devices[1].endpoint);
+ assert.equal(updates[0].payload.attention_count,4);
+ assert.equal(sent.length,1);
+ const finished=calls.find(x=>x.method==='crm_finish_badge_correction');
+ assert.equal(finished.args.p_success,true);
+});
+test('Badge correction opt-out never sends a correction notification',async()=>{
+ const {handler,calls,sent}=await makeServer({
+  pushEnabled:true,corrections:[{staff_email:'yourcustomerflowguy@gmail.com'}],
+  badgeEnabled:false,badgeStates:[{device_id:'josh-device',last_badge_count:9}]
+ });
+ const res=await call(handler);
+ assert.equal(res.status,200);
+ assert.equal(sent.length,0);
+ assert.equal(calls.find(x=>x.method==='crm_finish_badge_correction').args.p_success,true);
 });
