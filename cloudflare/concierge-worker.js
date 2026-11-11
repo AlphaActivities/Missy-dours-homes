@@ -192,15 +192,27 @@ export default {
       if (!reply.trim()) return json({error:'AI temporarily unavailable',code:'empty_model_reply'},503);
       // Keep qualified visitors in the conversation unless they explicitly ask
       // for the website contact page. Prompt guidance alone is not a guarantee.
-      const visitorText = body.messages.filter(m=>m.role==='user').map(m=>m.content).join(' ');
-      const requestedContactPage = /\b(?:contact\s+(?:page|link|url|website)|(?:page|link|url|website)\s+(?:for|to|of)?\s*contact|where\s+(?:is|can\s+i\s+find)\s+(?:the\s+)?contact)\b/i.test(visitorText);
-      const sellerHelp = /\b(?:sell|selling|seller|list\s+(?:my|our)|valuation|evaluation|what(?:'s| is)\s+my\s+(?:house|home)\s+worth|market\s+analysis)\b/i.test(visitorText);
+      const visitorMessages = body.messages.filter(m=>m.role==='user');
+      const visitorText = visitorMessages.map(m=>m.content).join(' ');
+      // A past request for a contact page must not authorize repeated links on later turns.
+      const latestVisitorText = visitorMessages.at(-1)?.content || '';
+      const requestedContactPage = /\b(?:contact\s+(?:page|link|url|website)|(?:page|link|url|website)\s+(?:for|to|of)?\s*contact|where\s+(?:is|can\s+i\s+find)\s+(?:the\s+)?contact)\b/i.test(latestVisitorText);
+      const sellerHelp = /\b(?:sell|selling|seller|list\s+(?:my|our)|valuation|evaluation|what(?:'s| is)\s+my\s+(?:house|home)\s+worth|market\s+analysis)\b/i.test(latestVisitorText);
       let finalReply = reply.trim();
-      // Suppress an unsolicited website detour, preserving substantive paragraphs.
-      if (!requestedContactPage && /https:\/\/missydours\.com\/#contact/i.test(finalReply)) {
-        finalReply=finalReply.split(/\n{2,}/).filter(p=>!p.includes('https://missydours.com/#contact')).join('\n\n').trim();
-        if (!finalReply) finalReply='I can help you explore the best next step for your real estate plans.';
-        if (sellerHelp) finalReply+='\n\nIf you would like Missy to review your home, you can request a callback right here in the chat.';
+      // Remove unsolicited homepage contact links without deleting the actual answer.
+      // Handle www, protocol variations and URL punctuation; never introduce a detour by default.
+      if (!requestedContactPage) {
+        const contactLink = /(?:https?:\/\/)?(?:www\.)?missydours\.com\/#contact\b\/?/gi;
+        const hadContactLink = contactLink.test(finalReply);
+        if (hadContactLink) {
+          finalReply = finalReply.replace(contactLink, '').replace(/\s+([.,!?])/g, '$1').replace(/[ \t]{2,}/g, ' ').trim();
+          if (!finalReply || /^(?:contact missy|visit the (?:contact page|website)|click here|you can contact missy)[\s.,!]*$/i.test(finalReply)) {
+            finalReply = 'I can help you with that here. What would you like to know next?';
+          }
+          if (sellerHelp && !/request a callback/i.test(finalReply)) {
+            finalReply += '\n\nIf you would like Missy to review your home, you can request a callback right here in the chat.';
+          }
+        }
       }
       // Never infer where a visitor lives from unrelated website listing examples.
       finalReply=finalReply.replace(/\bYou are in ([A-Z][a-z]+(?: [A-Z][a-z]+){0,3}),?\s*(?:and\s+)?/g,(claim,city)=>
