@@ -61,7 +61,7 @@ function DashboardLayoutInner() {
   const {attentionCount}=useCrmActivity();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const isLoginRoute = pathname === '/dashboard/login';
+  const isLoginRoute = pathname === '/dashboard/login' || pathname === '/dashboard/reset-password';
   const mobileSection=pathname.startsWith('/dashboard/analytics')?'Analytics':pathname.startsWith('/dashboard/notifications')?'Notifications':pathname.startsWith('/dashboard/conversations')?'Conversations':pathname.startsWith('/dashboard/leads')?'Leads':pathname.startsWith('/dashboard/settings')?'Settings':pathname.startsWith('/dashboard/admin')?'Admin Dashboard':'Admin Dashboard';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
