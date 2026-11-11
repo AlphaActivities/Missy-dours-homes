@@ -28,7 +28,7 @@ try {
  await page.locator('body').click({position:{x:10,y:10}});
  assert.equal(await choices.count(),0,'Tapping outside should dismiss choices');
  await launcher.click();
- await choices.getByRole('button',{name:'Message Missy'}).click();
+ await choices.getByRole('button',{name:'Message Missy Directly'}).click();
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  await dialog.waitFor({state:'visible',timeout:8000});
  const intro=dialog.locator('.missy-concierge-intro');
