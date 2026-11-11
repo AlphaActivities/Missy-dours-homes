@@ -74,6 +74,12 @@ self.addEventListener('push', event => {
         else if(count===0 && typeof self.navigator.clearAppBadge==='function')await self.navigator.clearAppBadge();
       } catch { /* iOS/desktop badge support varies; never block a notification. */ }
     }
+    // If the CRM is already open, ask it to re-read the canonical count rather
+    // than trusting a possibly delayed push payload as the final badge state.
+    const openCrmTabs=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    for(const tab of openCrmTabs){
+      try{if(new URL(tab.url).pathname.startsWith('/dashboard/'))tab.postMessage({kind:'missy-crm-push-arrived'});}catch{/* Ignore untrusted/malformed client URLs. */}
+    }
     await self.registration.showNotification(title, {
       body,
       // Re-use the task tag for new-handoff, claim and escalation updates.
