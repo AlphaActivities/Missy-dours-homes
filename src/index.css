@@ -704,8 +704,9 @@
    State (needs attention/complete) is separate; category never means urgency. */
 .ds-shell .crm-category-notification {
   --crm-category-rgb: 209, 177, 112;
-  border-width: 2px;
-  border-color: rgba(var(--crm-category-rgb), .58);
+  /* The masked pseudo-element below owns the ONE visible border. */
+  border-width: 0;
+  border-color: transparent;
   background: linear-gradient(135deg,
     rgba(var(--crm-category-rgb), .065) 0%, rgba(18, 16, 15, .96) 48%, rgba(14, 13, 13, .97) 100%);
   box-shadow: inset 0 1px 0 rgba(var(--crm-category-rgb), .1),
@@ -746,7 +747,7 @@
     radial-gradient(ellipse 68% 74% at 91% 55%, rgba(255, 156, 0, .075), transparent 78%),
     linear-gradient(125deg, rgba(32, 25, 15, .97) 0%, rgba(22, 19, 15, .97) 46%, rgba(14, 13, 12, .98) 100%);
   box-shadow: inset 0 1px 0 rgba(255, 208, 96, .12),
-    0 0 0 1px rgba(255, 157, 0, .25), 0 0 18px rgba(255, 151, 0, .12);
+    0 0 18px rgba(255, 151, 0, .12);
 }
 .ds-shell .crm-category-notification .crm-notification-source {
   color: rgb(var(--crm-category-rgb));
@@ -754,14 +755,12 @@
   background: rgba(var(--crm-category-rgb), .09);
 }
 .ds-shell .crm-category-notification[data-work-state="action"] {
-  box-shadow: 0 0 0 1px rgba(var(--crm-category-rgb), .28),
-    0 0 16px rgba(var(--crm-category-rgb), .12);
+  box-shadow: 0 0 16px rgba(var(--crm-category-rgb), .12);
 }
 /* Action-state shadows must never reintroduce red onto an orange lead. */
 .ds-shell .crm-category-notification[data-category="lead"][data-work-state="action"] {
   border-color: #ff9c00;
-  box-shadow: inset 0 0 0 1px rgba(255, 189, 48, .24),
-    0 0 0 1px rgba(255, 160, 0, .47), 0 0 28px rgba(255, 157, 0, .23);
+  box-shadow: 0 0 28px rgba(255, 157, 0, .23);
 }
 .ds-shell .crm-category-notification[data-work-state="complete"] {
   background: linear-gradient(135deg,
@@ -778,11 +777,11 @@
 @keyframes crm-request-escalate-in {
   from {
     border-color: rgba(125, 187, 181, .65);
-    box-shadow: 0 0 0 1px rgba(125, 187, 181, .25), 0 0 17px rgba(125, 187, 181, .15);
+    box-shadow: 0 0 17px rgba(125, 187, 181, .15);
   }
   to {
     border-color: rgba(225, 101, 105, .82);
-    box-shadow: 0 0 0 1px rgba(207, 119, 100, .25), 0 0 20px rgba(207, 119, 100, .18);
+    box-shadow: 0 0 20px rgba(207, 119, 100, .18);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -798,7 +797,7 @@
   initial-value: 0deg;
 }
 .ds-shell .crm-actionable-notification {
-  box-shadow: inset 0 0 0 1px rgba(var(--crm-category-rgb), .22), 0 0 20px rgba(var(--crm-category-rgb), .14);
+  box-shadow: 0 0 20px rgba(var(--crm-category-rgb), .14);
 }
 /* The original dark-card traveling light returns in a restrained form.
    Its hue follows each category; the thick living border is unaffected. */
@@ -866,22 +865,22 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 2.25px;
-  /* Most of the ring is transparent; one bright, category-tinted segment
-     crosses each edge, like the three living-border Overview stat cards. */
+  padding: 3px;
+  /* A single uninterrupted 3px colored ring, with a brighter traveling
+     highlight. No separate static stroke or transparent dark gap. */
   background: conic-gradient(
     from var(--crm-alert-border-angle),
-    rgba(var(--crm-category-rgb), 0) 0deg,
-    rgba(var(--crm-category-rgb), .02) 70deg,
-    rgba(var(--crm-category-rgb), .14) 118deg,
+    rgba(var(--crm-category-rgb), .68) 0deg,
+    rgba(var(--crm-category-rgb), .68) 70deg,
+    rgba(var(--crm-category-rgb), .74) 118deg,
     rgba(var(--crm-category-rgb), .62) 153deg,
     rgb(var(--crm-category-rgb)) 172deg,
     color-mix(in srgb, rgb(var(--crm-category-rgb)) 60%, white) 180deg,
     rgb(var(--crm-category-rgb)) 188deg,
     rgba(var(--crm-category-rgb), .62) 207deg,
-    rgba(var(--crm-category-rgb), .14) 242deg,
-    rgba(var(--crm-category-rgb), .02) 290deg,
-    rgba(var(--crm-category-rgb), 0) 360deg
+    rgba(var(--crm-category-rgb), .74) 242deg,
+    rgba(var(--crm-category-rgb), .68) 290deg,
+    rgba(var(--crm-category-rgb), .68) 360deg
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
