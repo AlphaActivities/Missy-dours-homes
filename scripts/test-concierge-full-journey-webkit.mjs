@@ -373,8 +373,9 @@ try {
  });
  const response=await page.goto('http://127.0.0.1:4173',{waitUntil:'domcontentloaded'});
  assert.ok(response?.ok());
- const launcher=page.getByRole('button',{name:'Open Missy Dours concierge'});
+ const launcher=page.getByRole('button',{name:'Chat or call Missy'});
  await launcher.click();
+ await page.getByRole('group',{name:'Contact Missy'}).getByRole('button',{name:"Message Missy's Team"}).click();
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  const composer=dialog.getByRole('textbox',{name:"Message Missy's concierge"});
  assert.equal(await dialog.getByRole('button',{name:'Close concierge'}).count(),0);
