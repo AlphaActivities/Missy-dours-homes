@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {Link} from 'react-router-dom';
-import {UsersRound,ChevronDown,ShieldCheck,X} from 'lucide-react';
+import {UsersRound,ChevronDown,ShieldCheck,X,CheckCircle2} from 'lucide-react';
 import {supabase} from '../../../lib/supabase';
 type Candidate={id:string;name:string;phone:string|null;email?:string|null;status:string|null;created_at:string|null;reason:string;safe:boolean;eligible:boolean};
 const normalizedName=(s:string)=>s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
@@ -13,15 +13,16 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
  const [expanded,setExpanded]=useState(false);
  const [confirmId,setConfirmId]=useState<string|null>(null);
  const [confirmed,setConfirmed]=useState(false);
+ const [completed,setCompleted]=useState<{primary:string;secondary:string}|null>(null);
  const [busy,setBusy]=useState(false);
  const busyRef=useRef(false);
  busyRef.current=busy;
  const [version,setVersion]=useState(0);
  const dialogRef=useRef<HTMLDivElement>(null);
  const triggerRef=useRef<HTMLButtonElement|null>(null);
- const closeConfirmation=()=>{if(busyRef.current)return;setConfirmId(null);setConfirmed(false);};
+ const closeConfirmation=()=>{if(busyRef.current)return;setConfirmId(null);setConfirmed(false);setCompleted(null);};
  useEffect(()=>{
-  if(!confirmId)return;
+  if(!confirmId&&!completed)return;
   const original=document.body.style.overflow;
   document.body.style.overflow='hidden';
   const focusId=window.requestAnimationFrame(()=>dialogRef.current?.focus());
@@ -42,7 +43,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
    document.body.style.overflow=original;
    triggerRef.current?.focus();
   };
- },[confirmId]);
+ },[confirmId,completed]);
  useEffect(()=>{
   let live=true;setLoading(true);setError(null);setItems([]);setConfirmId(null);setConfirmed(false);
   void (async()=>{
@@ -53,9 +54,25 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
    const nameQuery=normalizedName(lead.name).length>=3?await supabase.from('leads').select('id,name,email,phone,status,created_at').ilike('name',lead.name.trim()).neq('id',lead.id).limit(50):null;
    const emailQuery=lead.email?.trim()&&lead.email.includes('@')?await supabase.from('leads').select('id,name,email,phone,status,created_at').ilike('email',lead.email.trim()).neq('id',lead.id).limit(50):null;
    if(!live)return;
-   if(phoneQuery?.error||phoneDetails?.error||nameQuery?.error||emailQuery?.error)setError('Some related records could not be checked.');
+   if(phoneQuery?.error||phoneDetails?.error||nameQuery?.error||emailQuery?.error){
+    setError('Related records could not be checked. Refresh before reviewing duplicates.');
+    setItems([]);setLoading(false);return;
+   }
+   const records=[...(phoneDetails?.data??[]),...(nameQuery?.data??[]),...(emailQuery?.data??[])];
+   const ids=[...new Set(records.map(row=>row.id))].filter(id=>id!==lead.id);
+   // Reconcile candidate options against the durable consolidation audit, not
+   // merely the archived status. Archived but not merged leads remain reviewable.
+   const already=ids.length?await supabase.from('crm_lead_consolidations')
+     .select('secondary_lead_id').in('secondary_lead_id',ids):null;
+   if(!live)return;
+   if(already?.error){
+    setError('Consolidation history could not be checked. Try refreshing this lead.');
+    setItems([]);setLoading(false);return;
+   }
+   const consolidatedIds=new Set((already?.data??[]).map(row=>row.secondary_lead_id));
    const results=new Map<string,Candidate>();
-   for(const row of [...(phoneDetails?.data??[]),...(nameQuery?.data??[]),...(emailQuery?.data??[])]){
+   for(const row of records){
+    if(consolidatedIds.has(row.id))continue;
     if(row.id===lead.id)continue;
     const samePhone=digits.length===10&&normalizedPhone(row.phone)===digits;
     const sameName=normalizedName(row.name)===normalizedName(lead.name);
@@ -79,8 +96,26 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
   const result=await supabase.rpc('crm_consolidate_verified_leads',{
    p_primary:lead.id,p_secondary:selected.id,p_confirmation:'CONFIRM SAME CUSTOMER',p_verification_note:'staff_confirmed_same_customer'
   });
-  if(result.error){setError(result.error.message);setBusy(false);return;}
-  setBusy(false);setConfirmId(null);setConfirmed(false);setVersion(n=>n+1);onConsolidated?.();
+  if(result.error){
+   // A stale tab may have retained this candidate after another staff member
+   // merged it. Reconcile instead of repeatedly offering a duplicate action.
+   if(result.error.message.toLowerCase().includes('already consolidated')){
+    const existing=await supabase.from('crm_lead_consolidations')
+     .select('primary_lead_id').eq('secondary_lead_id',selected.id).maybeSingle();
+    setBusy(false);setConfirmId(null);setConfirmed(false);setVersion(n=>n+1);
+    if(!existing.error&&existing.data?.primary_lead_id===lead.id){
+     setCompleted({primary:lead.name,secondary:selected.name});
+     onConsolidated?.();
+    }else{
+     setError('This record has already been consolidated. The available matches were refreshed.');
+    }
+    return;
+   }
+   setError(result.error.message);setBusy(false);return;
+  }
+  setBusy(false);setConfirmId(null);setConfirmed(false);
+  setCompleted({primary:lead.name,secondary:selected.name});
+  setVersion(n=>n+1);onConsolidated?.();
  };
  return <><section aria-label="Potential duplicate customer records" className="overflow-hidden rounded-2xl border border-[#987c55]/45 bg-[#1e1915]/80">
   <button type="button" onClick={()=>setExpanded(v=>!v)} className="flex min-h-16 w-full items-center justify-between gap-3 p-4 text-left" aria-expanded={expanded}>
@@ -112,6 +147,23 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
 
   </div>}
  </section>
+ {completed&&createPortal(<div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6" role="presentation">
+  <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" aria-hidden="true"/>
+  <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="crm-consolidation-success-title"
+   className="relative z-10 flex w-full max-w-lg max-h-[calc(100dvh-1.5rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-[#c8a575]/75 bg-[#201a16] shadow-[0_30px_100px_rgba(0,0,0,.8)] outline-none">
+   <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[#81684a]/40 px-4 py-4">
+    <h2 id="crm-consolidation-success-title" className="flex items-center gap-2 text-lg font-semibold text-[#f0d8b0]"><CheckCircle2 size={23} className="text-[#8ed0aa]"/>Customer Records Combined</h2>
+    <button type="button" onClick={closeConfirmation} aria-label="Close consolidation confirmation" className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-[#e5cc9f]"><X size={20}/></button>
+   </header>
+   <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4" role="status" aria-live="polite">
+    <p className="text-sm leading-relaxed text-[#e5cfaa]"><strong className="text-[#f5dfbc]">{completed.secondary}</strong> has been combined into <strong className="text-[#f5dfbc]">{completed.primary}</strong>.</p>
+    <div className="rounded-xl border border-[#806b4d]/50 bg-[#2a211a] p-3 text-sm leading-relaxed text-[#d6bea0]">The completed record is no longer available to consolidate again. Its original submissions, messages, and notes remain in customer history.</div>
+   </div>
+   <footer className="shrink-0 border-t border-[#81684a]/45 bg-[#241c17] px-4 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <button type="button" onClick={closeConfirmation} className="min-h-12 w-full rounded-xl bg-gradient-to-r from-[#efd5a2] to-[#bd955d] px-4 text-sm font-semibold text-[#20160e]">Done · Return to Customer</button>
+   </footer>
+  </div>
+ </div>,document.body)}
  {selected&&createPortal(<div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6" role="presentation">
   <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={closeConfirmation} aria-hidden="true"/>
   <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="crm-consolidation-title"
