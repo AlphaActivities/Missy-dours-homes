@@ -8,7 +8,7 @@ type Request={conversation_id:string;status:string;request_kind:string;created_a
 type Conversation={id:string;lead_id:string|null;visitor_name:string|null};
 type Event=FollowUp&{customer:string};
 const zone='America/Chicago';
-const dayKey=(value:string|Date)=>new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+const dayKey=(value:string|Date)=>{const d=dayParts(value);return key(d.year,d.month,d.day);};
 const dayParts=(value:string|Date)=>{
  const parts=new Intl.DateTimeFormat('en-US',{timeZone:zone,year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date(value));
  const part=(type:string)=>Number(parts.find(p=>p.type===type)?.value||0);
