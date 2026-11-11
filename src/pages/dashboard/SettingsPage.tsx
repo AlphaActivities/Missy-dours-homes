@@ -1,5 +1,6 @@
 import {useCallback,useEffect,useState} from 'react';
 import {CheckCircle2,Monitor,Smartphone,RefreshCw,Trash2,Send,ShieldCheck} from 'lucide-react';
+import {Link} from 'react-router-dom';
 import {useAuth} from '../../contexts/AuthContext';
 import {supabase} from '../../lib/supabase';
 import DesktopAppInstallCard from '../../components/dashboard/DesktopAppInstallCard';
@@ -152,6 +153,8 @@ export default function SettingsPage(){
    <h2 className="font-serif text-xl text-[#edcfa0]">My account</h2>
    <p className="mt-2 text-sm text-[#c7b9a6]">Signed in as <strong className="break-all text-[#e9d6b6]">{email}</strong></p>
    <p className="mt-2 text-xs text-[#bdb0a0]">Personal notification preferences and registered devices belong to your account. Business-wide controls are kept separately in the owner-only Admin area.</p>
+   <Link to="/dashboard/reset-password" className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-[#c8a96e]/55 bg-[#35291b] px-4 py-2 text-sm font-medium text-[#efcf97] hover:border-[#f0d69d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#edce93]">Change my password</Link>
+   <p className="mt-2 text-xs text-[#bdb0a0]">Passwords are protected by Supabase Auth. A new password replaces the old one; existing passwords cannot be viewed.</p>
   </section>
   <section id="badge-diagnostics" className={label+' mt-5'} aria-label="App badge synchronization diagnostics">
    <h2 className="font-serif text-xl text-[#edcfa0]">App Badge Diagnostics</h2>
