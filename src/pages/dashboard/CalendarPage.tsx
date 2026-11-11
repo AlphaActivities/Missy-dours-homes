@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {Link} from 'react-router-dom';
-import {CalendarDays,ChevronLeft,ChevronRight,RefreshCw,Clock3,ClipboardList,MessagesSquare} from 'lucide-react';
+import {CalendarDays,ChevronLeft,ChevronRight,RefreshCw,Clock3,MessagesSquare} from 'lucide-react';
 import {supabase} from '../../lib/supabase';
 
 type FollowUp={id:string;lead_id:string;due_at:string;task:string;status:string};
