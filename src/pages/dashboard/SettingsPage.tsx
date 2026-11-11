@@ -196,11 +196,36 @@ export default function SettingsPage(){
   <div id="app-install-settings" className="scroll-mt-5"><DesktopAppInstallCard/></div>
   <section className={label+' mt-5'}>
    <h2 className="flex items-center gap-2 font-serif text-xl text-[#edcfa0]"><ShieldCheck size={19}/> App & Browser Setup</h2>
-   <div className="mt-3 space-y-3 text-sm text-[#d6c4aa]">
-    <p><strong>iPhone or iPad:</strong> Open the CRM in Safari, Share → Add to Home Screen, launch the installed app, then enable notifications here. An ordinary Safari tab cannot receive iOS web push.</p>
-    <p><strong>Android:</strong> Use a current supported browser, allow notifications, and keep browser notifications enabled in Android settings. Installing the CRM may improve access.</p>
-    <p><strong>Windows, macOS or Linux:</strong> Use a current browser with web push support. Chrome and Edge support standalone app installation on desktop; Safari on supported macOS versions offers Add to Dock. Firefox desktop supports push where available but not a standard native PWA install prompt. Allow notifications in both the browser and operating system.</p>
-    <p>For every additional device, sign in to the CRM, open Settings and repeat registration and the test.</p>
+   <div className="mt-4 space-y-5">
+    <div className="rounded-xl border border-[#c8a96e]/20 bg-black/20 p-4">
+     <h3 className="font-serif text-lg font-normal leading-snug text-[#efcf97]">iPhone or iPad</h3>
+     <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-[#d6c4aa] marker:text-[#c8a96e]">
+      <li>Open Missy's CRM in Safari.</li>
+      <li>Tap Share, then select Add to Home Screen.</li>
+      <li>Launch the installed app from your Home Screen.</li>
+      <li>Open My Settings and enable device notifications.</li>
+     </ul>
+     <p className="mt-3 text-xs leading-relaxed text-[#bdb0a0]">An ordinary Safari browser tab cannot receive iOS web push notifications.</p>
+    </div>
+    <div className="rounded-xl border border-[#c8a96e]/20 bg-black/20 p-4">
+     <h3 className="font-serif text-lg font-normal leading-snug text-[#efcf97]">Android</h3>
+     <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-[#d6c4aa] marker:text-[#c8a96e]">
+      <li>Open the CRM using a current supported browser.</li>
+      <li>Allow notifications and confirm they are enabled in Android settings.</li>
+      <li>Optionally install the CRM from the browser menu for easier access.</li>
+     </ul>
+    </div>
+    <div className="rounded-xl border border-[#c8a96e]/20 bg-black/20 p-4">
+     <h3 className="font-serif text-lg font-normal leading-snug text-[#efcf97]">Windows, macOS or Linux</h3>
+     <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed text-[#d6c4aa] marker:text-[#c8a96e]">
+      <li>Use a current web browser supporting push notifications.</li>
+      <li>Chrome or Edge can install the CRM as a standalone desktop app.</li>
+      <li>Supported versions of Safari on macOS can add the site to the Dock.</li>
+      <li>Firefox desktop supports web push where available, but does not offer a standard built-in PWA installation prompt.</li>
+      <li>Enable notifications in both your browser and operating system.</li>
+     </ul>
+    </div>
+    <p className="text-sm leading-relaxed text-[#d6c4aa]">For each additional device, sign in to the CRM, open My Settings, register the device, and send a test notification.</p>
    </div>
   </section>
   <p className="mt-5 text-xs text-[#aaa092]">Desktop and iOS notification sounds and app badges depend on platform support. Activity history and actionable-work counts remain available in this dashboard.</p>
