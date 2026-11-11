@@ -166,9 +166,13 @@ assert.ok(conversationsHistorySource.includes('setLifecycleReviewIds(humanIds.fi
  'Historical human sessions without an open task must be identified without automatically closing them');
 
 assert.ok(attentionSource.includes('Received') &&
- attentionSource.includes('Request {i+1}') &&
+ attentionSource.includes('Request {choices.length-i}') &&
  attentionSource.includes("month:'short',day:'numeric'"),
  'Request picker labels must distinguish arrival timestamps from booked callback appointments');
+assert.ok(leadDrawerSource.includes(".order('created_at',{ascending:false})") &&
+  leadDrawerSource.includes(".order('conversation_id',{ascending:false})") &&
+  leadDrawerSource.includes('const first=tasks?.[0]'),
+  'Multiple active submissions must default to the most recently received request, not the earliest due date');
 assert.ok(attentionSource.includes('No appointment has been scheduled.'),
  'Selector should explicitly explain that request times are not actual appointments');
 assert.ok(attentionSource.includes("value={request?.conversation_id??''}") &&
