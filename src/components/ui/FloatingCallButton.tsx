@@ -4,12 +4,16 @@ import { useLocation } from 'react-router-dom';
 import { CONTACT_INFO } from '../../config/contact';
 import { trackCTA, trackPhoneClick } from '../../utils/analytics';
 
-/** Use the same genuinely round Lucide conversation silhouette as the CRM.
- * The plus is a separate small overlay rather than distorting the chat icon. */
+/** Shared round CRM conversation glyph for the launcher and its message action. */
+function LuxuryMessageIcon({ size = 38 }: { size?: number }) {
+  return <MessageCircleMore size={size} strokeWidth={1.9} className="shrink-0" aria-hidden="true" />;
+}
+
+/** The plus belongs to the launcher only, never to the message menu action. */
 function LuxuryContactEmblem() {
   return (
     <span className="relative flex h-11 w-11 items-center justify-center" aria-hidden="true">
-      <MessageCircleMore size={38} strokeWidth={1.9} className="shrink-0" />
+      <LuxuryMessageIcon />
       <span className="absolute right-[-1px] top-[0px] flex h-[17px] w-[17px] items-center justify-center rounded-full border-[1.5px] border-[#E4C688] bg-[#17130d] shadow-[0_0_0_2px_#17130d]">
         <svg viewBox="0 0 12 12" width="11" height="11" fill="none" aria-hidden="true">
           <path d="M6 2.5v7M2.5 6h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
@@ -75,7 +79,7 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
             trackCTA('Open Chatbot', 'mobile_contact_launcher');
             onOpenChat();
           }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium tracking-[.005em] text-[#f8e5c1] transition-colors hover:bg-[#c8a36a]/15 active:bg-[#c8a36a]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcf92]">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#cba76e]/35 bg-[#cba76e]/10 text-[#e9c88e]"><MessageCircleMore size={21} strokeWidth={1.85} aria-hidden="true"/></span><span>Message Missy Directly</span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#cba76e]/35 bg-[#cba76e]/10 text-[#e9c88e]"><LuxuryMessageIcon size={24}/></span><span>Message Missy Directly</span>
           </button>
           <a href={CONTACT_INFO.phone.tel} onClick={() => {
             trackPhoneClick('floating_call_button');
