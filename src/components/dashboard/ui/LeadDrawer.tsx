@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Calendar, MessageSquare, ClipboardList } from 'lucide-react';
+import { X, Calendar, MessageSquare, ClipboardList, PhoneCall } from 'lucide-react';
 import { Lead } from '../LeadList';
 import { LeadStatus } from './StatusBadge';
 import { ContactChannel } from '../types';
@@ -15,6 +15,7 @@ import CallbackAttentionPanel from './CallbackAttentionPanel';
 import { supabase } from '../../../lib/supabase';
 import { useToast } from '../../../contexts/ToastContext';
 import { formatDate } from '../../../utils/formatDate';
+import { displayLeadMessage, isRecoveredCallbackMessage } from '../../../utils/leadMessage';
 
 interface LeadDrawerProps {
   lead: Lead | null;
@@ -304,13 +305,20 @@ function DrawerContent({
           </div>
         )}
 
-        {/* Message */}
+        {/* Older recovered callbacks are internal CRM intake markers, not customer-written messages. */}
         {lead.message && (
           <div>
-            <Label icon={<MessageSquare size={11} />}>Message</Label>
-            <div className="mt-2 rounded-xl border border-[#8b704d]/40 bg-[#221b16]/75 p-4 shadow-[inset_0_1px_rgba(255,255,255,.035)]">
-              <p className="text-sm leading-relaxed whitespace-pre-wrap italic" style={{ color: '#f0ede8' }}>
-                {lead.message}
+            <Label icon={isRecoveredCallbackMessage(lead.message)?<PhoneCall size={11}/>:<MessageSquare size={11}/>}>
+              {isRecoveredCallbackMessage(lead.message)?'Callback request':'Customer message'}
+            </Label>
+            <div className="relative mt-2 overflow-hidden rounded-xl border border-[#dfbb7b]/70 bg-gradient-to-br from-[#342719] via-[#251d17] to-[#1e1915] p-4 shadow-[0_0_0_1px_rgba(240,195,121,.10),0_8px_28px_rgba(199,143,71,.13),inset_0_1px_rgba(255,245,216,.09)]">
+              <div aria-hidden="true" className="pointer-events-none absolute inset-y-3 left-0 w-[3px] rounded-full bg-[#eac588] shadow-[0_0_12px_rgba(234,197,136,.65)]"/>
+              {isRecoveredCallbackMessage(lead.message)&&
+                <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.09em] text-[#eacc95]">
+                  <PhoneCall size={14} aria-hidden="true"/> Previous callback request
+                </div>}
+              <p className="whitespace-pre-wrap text-sm leading-relaxed font-medium not-italic text-[#f6ebda]">
+                {displayLeadMessage(lead.message)}
               </p>
             </div>
           </div>
