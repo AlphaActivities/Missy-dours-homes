@@ -4,9 +4,9 @@ import {CalendarDays,ChevronLeft,ChevronRight,RefreshCw,Clock3,ClipboardList,Mes
 import {supabase} from '../../lib/supabase';
 
 type FollowUp={id:string;lead_id:string;due_at:string;task:string;status:string};
-type Request={conversation_id:string;status:string;request_kind:string;created_at:string};
+type Request={conversation_id:string;status:string;request_kind:string;created_at:string;due_at:string};
 type Conversation={id:string;lead_id:string|null;visitor_name:string|null};
-type Event=FollowUp&{customer:string};
+type Event={id:string;lead_id:string|null;conversation_id?:string;due_at:string;task:string;status:string;customer:string;kind:'followup'|'callback'};
 const zone='America/Chicago';
 const dayKey=(value:string|Date)=>{const d=dayParts(value);return key(d.year,d.month,d.day);};
 const dayParts=(value:string|Date)=>{
@@ -36,7 +36,7 @@ export default function CalendarPage(){
    const end=new Date(Date.UTC(month.year,month.month+1,2)).toISOString();
    const [followups,requests]=await Promise.all([
     supabase.from('lead_followups').select('id,lead_id,due_at,task,status').eq('status','active').gte('due_at',start).lt('due_at',end).order('due_at',{ascending:true}).limit(1000),
-    supabase.from('ai_concierge_tasks').select('conversation_id,status,request_kind,created_at').in('status',['pending','claimed']).order('created_at',{ascending:false}).limit(250)
+    supabase.from('ai_concierge_tasks').select('conversation_id,status,request_kind,created_at,due_at').in('status',['pending','claimed']).order('created_at',{ascending:false}).limit(250)
    ]);
    if(followups.error)throw followups.error;
    if(requests.error)throw requests.error;
@@ -62,9 +62,23 @@ export default function CalendarPage(){
     grouped.set(groupKey,{key:groupKey,leadId,name:(leadId?names.get(leadId):conversation?.visitor_name)||'Unlinked conversation',count:1});
    }
    setOutstanding([...grouped.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name)));
-   setEvents(active.map(e=>({...e,customer:names.get(e.lead_id)||'Customer'})).filter(e=>{
+   const scheduledCallbacks=tasks.filter(t=>
+    t.request_kind==='callback'&&Boolean(t.due_at)&&
+    Date.parse(t.due_at)>Date.parse(t.created_at)+5000
+   ).map(t=>{
+    const conversation=byConversation.get(t.conversation_id);
+    const leadId=conversation?.lead_id??null;
+    return {id:'callback:'+t.conversation_id,lead_id:leadId,conversation_id:t.conversation_id,
+     due_at:t.due_at,task:'Scheduled website callback',status:t.status,
+     customer:(leadId?names.get(leadId):conversation?.visitor_name)||'Callback visitor',kind:'callback' as const};
+   });
+   const booked:Event[]=[
+    ...active.map(e=>({...e,customer:names.get(e.lead_id)||'Customer',kind:'followup' as const})),
+    ...scheduledCallbacks
+   ];
+   setEvents(booked.filter(e=>{
     const d=dayParts(e.due_at);return d.year===month.year&&d.month===month.month;
-   }));
+   }).sort((a,b)=>Date.parse(a.due_at)-Date.parse(b.due_at)));
   }catch(e){setError(e instanceof Error?e.message:'Calendar data unavailable.');}
   finally{setLoading(false);}
  },[month.year,month.month]);
@@ -96,7 +110,7 @@ export default function CalendarPage(){
    <button type="button" data-crm-refresh onClick={()=>void load()} disabled={loading} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#c8a96e]/50 px-4 text-sm text-[#e9ce9c] disabled:opacity-50"><RefreshCw size={16} className={loading?'animate-spin':''}/>Refresh calendar</button>
   </div>
   <div className="mb-5 grid gap-3 sm:grid-cols-2">
-   <div className="rounded-xl border border-[#c8a96e]/35 bg-[#231c16] p-4"><span className="text-xs uppercase tracking-widest text-[#c5a982]">Scheduled this month</span><p className="mt-1 font-serif text-2xl text-[#f4d8a9]">{total}</p><p className="text-xs text-[#bba990]">Active follow-up appointments and tasks</p></div>
+   <div className="rounded-xl border border-[#c8a96e]/35 bg-[#231c16] p-4"><span className="text-xs uppercase tracking-widest text-[#c5a982]">Scheduled this month</span><p className="mt-1 font-serif text-2xl text-[#f4d8a9]">{total}</p><p className="text-xs text-[#bba990]">Active follow-ups and scheduled callbacks</p></div>
    <div className="rounded-xl border border-[#75ada9]/35 bg-[#17211f] p-4"><span className="text-xs uppercase tracking-widest text-[#a1cbc7]">Outstanding callback customers</span><p className="mt-1 font-serif text-2xl text-[#e5d3b4]">{outstanding.length}</p><p className="text-xs text-[#bcae97]">Requests without a confirmed appointment are kept separate</p></div>
   </div>
   {error&&<p role="alert" className="mb-4 rounded-lg border border-red-400/40 bg-red-900/20 p-4 text-sm text-red-200">{error}</p>}
@@ -122,9 +136,9 @@ export default function CalendarPage(){
     <section className="rounded-2xl border border-[#c8a96e]/40 bg-[#1d1814] p-4">
      <h2 className="font-serif text-lg text-[#ebd0a0]">Agenda · {shortDate(selected+'T12:00:00Z')}</h2>
      {loading?<p className="mt-3 text-sm text-[#c2b09a]">Loading schedule…</p>:selectedEvents.length===0?<p className="mt-3 text-sm text-[#c2b09a]">No active follow-ups scheduled for this date.</p>:<div className="mt-3 space-y-3">
-      {selectedEvents.map(e=><Link key={e.id} to={'/dashboard/leads?lead='+encodeURIComponent(e.lead_id)} className="block rounded-xl border border-[#c8a96e]/35 bg-[#30251a] p-3 transition-colors hover:border-[#f3d394]">
+      {selectedEvents.map(e=><Link key={e.id} to={e.lead_id?'/dashboard/leads?lead='+encodeURIComponent(e.lead_id):'/dashboard/conversations?conversation='+encodeURIComponent(e.conversation_id??'')} className="block rounded-xl border border-[#c8a96e]/35 bg-[#30251a] p-3 transition-colors hover:border-[#f3d394]">
        <p className="flex items-center gap-2 text-sm font-semibold text-[#f3d9aa]"><Clock3 size={15}/>{time(e.due_at)}</p>
-       <p className="mt-2 text-sm text-[#f0e1c9]">{e.customer}</p><p className="mt-1 break-words text-xs text-[#cbb99f]">{e.task||'Customer follow-up'}</p><p className="mt-2 text-xs text-[#dfc18b]">Open lead to update outcome</p>
+       <p className="mt-2 text-sm text-[#f0e1c9]">{e.customer}</p><p className="mt-1 break-words text-xs text-[#cbb99f]">{e.task||'Customer follow-up'}</p><p className="mt-2 text-xs text-[#dfc18b]">{e.kind==='callback'?'Scheduled callback · review request':'Staff follow-up · open lead to update'}</p>
       </Link>)}
      </div>}
     </section>
