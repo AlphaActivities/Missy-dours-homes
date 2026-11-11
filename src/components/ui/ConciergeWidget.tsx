@@ -131,7 +131,8 @@ function renderConciergeText(text: string, aiGenerated = true) {
         && !url.username && !url.password && url.port === '';
     } catch { /* Keep malformed URLs as plain text. */ }
     if (!permitted) return part;
-    return <span key={index}><a href={urlText} target="_blank" rel="noopener noreferrer" className="font-medium text-[#92c7ff] underline underline-offset-2 decoration-[#92c7ff]/65 break-all hover:text-[#c8e3ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#92c7ff]">{urlText}</a>{suffix}</span>;
+    const isContact = /^https:\/\/(?:www\.)?missydours\.com\/#contact$/i.test(urlText);
+    return <span key={index}><a href={urlText} target="_blank" rel="noopener noreferrer" className="font-medium text-[#92c7ff] underline underline-offset-2 decoration-[#92c7ff]/65 break-all hover:text-[#c8e3ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#92c7ff]">{isContact ? 'Contact Missy directly' : urlText}</a>{suffix}</span>;
   });
 }
 
@@ -222,7 +223,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
   const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '0x4AAAAAAFoyCod-DYcyxjUw');
   const chatEnabled = privateQA || Boolean(turnstileSiteKey);
   const mayUpload = chatEnabled && !!session && !uploadBusy && (privateQA || mode === 'human');
-  const mayCompose = chatEnabled && welcomeReady && !!session && !busy && mode !== 'closed' && mode !== 'waiting_human';
+  const mayType = chatEnabled && welcomeReady && !!session && mode !== 'closed' && mode !== 'waiting_human';
+  const mayCompose = mayType && !busy;
   // A secondary offer only after genuine conversational value has been delivered.
   // Never count the initial greeting or an optimistic unsent visitor message.
   const answeredTurns = messages.filter(message => message.sender === 'ai' && message.id !== 0).length;
@@ -373,11 +375,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
     if (open) {
       setInvitation(false);
       sessionStorage.setItem('missy_concierge_invite_dismissed', '1');
-      // Avoid opening the iOS keyboard automatically just by opening the chat.
-      const timer = window.setTimeout(() => {
-        if (welcomeReady && window.matchMedia('(min-width: 768px)').matches) inputRef.current?.focus();
-      }, 180);
-      return () => window.clearTimeout(timer);
+      // Never focus the composer on open; the visitor controls keyboard activation.
     }
   }, [open, onOpenChange, welcomeReady]);
 
@@ -636,7 +634,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
         ]);
       }
       if (result.status === 'human') setMode('human');
-      setDraft('');
+      // Do not erase a new draft typed while the assistant was responding.
     } catch (error) {
       // A network timeout does not prove that the server failed to save the message.
       // Reconcile the transcript before offering a retry to avoid duplicate sends.
@@ -646,7 +644,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
         setMode(latest.status);
         setMessages([INITIAL[0], ...latest.messages.filter(m => m.sender !== 'system').map(mapSyncedMessage)]);
         if (lastVisitor?.body === message) {
-          setDraft('');
+          // The original message was already cleared when sending; preserve any new draft.
           setTransportError(null);
         } else {
           setTransportError('Could not confirm delivery. Check the conversation before resending.');
@@ -821,7 +819,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
                 <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" aria-label="Choose a photo or document" className="sr-only" disabled={!mayUpload} onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAttachment(file);e.target.value='';}}/>
               </div>
               <div className="relative min-w-0 flex-1">
-                <textarea ref={inputRef} rows={1} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!mayCompose} readOnly={listening} value={draft} onFocus={()=>{setComposerFocused(true);setHandoffOpen(false);}} onBlur={()=>setComposerFocused(false)} onChange={e=>{
+                <textarea ref={inputRef} rows={1} maxLength={2000} aria-label="Message Missy's concierge" placeholder={chatEnabled ? 'How can we help?' : 'Messaging coming soon'} disabled={!mayType} readOnly={listening} value={draft} onFocus={()=>{setComposerFocused(true);setHandoffOpen(false);}} onBlur={()=>setComposerFocused(false)} onChange={e=>{
                   const nextDraft=e.target.value;
                   setDraft(nextDraft);
                   const visitor=sessionRef.current??session;
@@ -831,7 +829,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
                     void conciergeTransport.typing(visitor).catch(()=>{});
                   }
                 }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(mayCompose&&!listening)sendMessage();}}} className={`block max-h-28 min-h-[48px] w-full resize-none overflow-y-auto rounded-[25px] border bg-[#242427] px-4 py-[11px] text-base leading-6 text-white outline-none placeholder:text-[#898991] focus:border-[#d3bb93] disabled:cursor-not-allowed disabled:opacity-50 ${listening?'border-[#c5a16a]/75 pr-[80px]':'border-[#6d6662]/60 pr-12'}`} />
-                {<button type="button" onClick={startDictation} disabled={!mayCompose} aria-label={listening?'Stop dictation and keep transcribed text':draft.trim()?'Resume voice dictation':'Start voice dictation'} aria-pressed={listening} title={listening?'Tap to stop listening':draft.trim()?'Continue dictating this message':'Dictate your message'} className={`absolute bottom-[5px] right-[5px] flex h-[38px] items-center justify-center gap-[5px] rounded-full transition-[width,background-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5d89a] disabled:opacity-40 ${listening?'w-[66px] bg-[#c5a16a] text-[#18130c] shadow-[0_0_0_3px_rgba(197,161,106,.16)]':'w-[38px] text-[#bdbec4] hover:bg-white/10'}`}>{listening?<><ListeningWaveform/><Square size={10} strokeWidth={2.4} fill="currentColor"/></>:<Mic size={20}/>}</button>}
+                {<button type="button" onClick={startDictation} disabled={!mayType} aria-label={listening?'Stop dictation and keep transcribed text':draft.trim()?'Resume voice dictation':'Start voice dictation'} aria-pressed={listening} title={listening?'Tap to stop listening':draft.trim()?'Continue dictating this message':'Dictate your message'} className={`absolute bottom-[5px] right-[5px] flex h-[38px] items-center justify-center gap-[5px] rounded-full transition-[width,background-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5d89a] disabled:opacity-40 ${listening?'w-[66px] bg-[#c5a16a] text-[#18130c] shadow-[0_0_0_3px_rgba(197,161,106,.16)]':'w-[38px] text-[#bdbec4] hover:bg-white/10'}`}>{listening?<><ListeningWaveform/><Square size={10} strokeWidth={2.4} fill="currentColor"/></>:<Mic size={20}/>}</button>}
               </div>
               {draft.trim() && !listening && <button type="submit" disabled={!mayCompose||listening} aria-label="Send message" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#c5a16a] text-[#16110b] transition-[transform,opacity] active:scale-95 disabled:opacity-40"><ArrowUp size={23} strokeWidth={2.7}/></button>}
             </form>
