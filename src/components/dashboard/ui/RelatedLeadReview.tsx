@@ -13,14 +13,14 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
  const [expanded,setExpanded]=useState(false);
  const [confirmId,setConfirmId]=useState<string|null>(null);
  const [confirmed,setConfirmed]=useState(false);
- const [verificationNote,setVerificationNote]=useState('');
+ const [verificationMethod,setVerificationMethod]=useState<'customer_confirmed'|'records_verified'|''>('');
  const [busy,setBusy]=useState(false);
  const busyRef=useRef(false);
  busyRef.current=busy;
  const [version,setVersion]=useState(0);
  const dialogRef=useRef<HTMLDivElement>(null);
  const triggerRef=useRef<HTMLButtonElement|null>(null);
- const closeConfirmation=()=>{if(busyRef.current)return;setConfirmId(null);setConfirmed(false);setVerificationNote('');};
+ const closeConfirmation=()=>{if(busyRef.current)return;setConfirmId(null);setConfirmed(false);setVerificationMethod('');};
  useEffect(()=>{
   if(!confirmId)return;
   const original=document.body.style.overflow;
@@ -45,7 +45,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
   };
  },[confirmId]);
  useEffect(()=>{
-  let live=true;setLoading(true);setError(null);setItems([]);setConfirmId(null);setConfirmed(false);setVerificationNote('');
+  let live=true;setLoading(true);setError(null);setItems([]);setConfirmId(null);setConfirmed(false);setVerificationMethod('');
   void (async()=>{
    const digits=normalizedPhone(lead.phone);
    const phoneQuery=digits.length===10?await supabase.rpc('crm_review_phone_lead_candidates',{p_phone:lead.phone}):null;
@@ -75,10 +75,10 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
  },[lead.id,lead.name,lead.phone,lead.email,version]);
  const selected=items.find(x=>x.id===confirmId);
  const consolidate=async()=>{
-  if(!selected?.eligible||!confirmed||busy||(!selected.safe&&verificationNote.trim().length<20))return;
+  if(!selected?.eligible||!confirmed||busy||(!selected.safe&&!verificationMethod))return;
   setBusy(true);setError(null);
   const result=await supabase.rpc('crm_consolidate_verified_leads',{
-   p_primary:lead.id,p_secondary:selected.id,p_confirmation:'CONFIRM SAME CUSTOMER',p_verification_note:verificationNote.trim()||null
+   p_primary:lead.id,p_secondary:selected.id,p_confirmation:'CONFIRM SAME CUSTOMER',p_verification_note:selected.safe?null:verificationMethod
   });
   if(result.error){setError(result.error.message);setBusy(false);return;}
   setBusy(false);setConfirmId(null);setConfirmed(false);setVersion(n=>n+1);onConsolidated?.();
@@ -105,7 +105,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
       <p className="mt-1 text-xs text-[#bea98f]">{candidate.reason}</p>
       <div className="mt-2 flex flex-wrap items-center gap-3">
        <Link to={'/dashboard/leads?lead='+encodeURIComponent(candidate.id)} className="inline-flex min-h-9 items-center text-xs text-[#ebc992] underline underline-offset-2">Inspect history</Link>
-       {candidate.eligible&&<button type="button" onClick={e=>{triggerRef.current=e.currentTarget;setConfirmId(candidate.id);setConfirmed(false);setVerificationNote('');}} className="min-h-9 rounded-lg border border-[#be9d68]/55 px-3 text-xs font-semibold text-[#f0d29f]">Verify and consolidate</button>}
+       {candidate.eligible&&<button type="button" onClick={e=>{triggerRef.current=e.currentTarget;setConfirmId(candidate.id);setConfirmed(false);setVerificationMethod('');}} className="min-h-9 rounded-lg border border-[#be9d68]/55 px-3 text-xs font-semibold text-[#f0d29f]">Verify and consolidate</button>}
       </div>
      </div>)}
     </div>
@@ -126,20 +126,31 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
      <p className="text-xs text-[#c3a98a]">Primary customer</p><p className="font-semibold text-[#f2dbb7]">{lead.name}</p>
      <p className="mt-3 text-xs text-[#c3a98a]">Related record to consolidate</p><p className="font-semibold text-[#f2dbb7]">{selected.name}</p>
     </div>
-    <p className="text-xs leading-relaxed text-[#dac6ac]">Only confirm after verifying both records belong to the same customer. Previous submissions, notes and attachments remain preserved for review. This operation is audited.</p>
-    {!selected.safe&&<div className="mt-3">
-     <label className="text-xs font-semibold text-[#efd4a8]">Identity verification notes (required for different names)
-      <textarea rows={3} value={verificationNote} onChange={e=>setVerificationNote(e.target.value)}
-       placeholder="Describe how you verified the customer controls both records, for example, direct contact with the customer."
-       className="mt-1 w-full rounded-lg border border-[#b79764]/50 bg-[#181411] p-2 text-xs text-[#f0debd] outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]"/>
-     </label>
-     <p className="mt-1 text-[11px] text-[#d3b69a]">Shared phone number alone is not proof. Only continue after confirming identity.</p>
-    </div>}
-    <label className="mt-3 flex gap-2 text-xs leading-relaxed text-[#edce9c]"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>I have verified these records belong to the same customer.</label>
+    <div className="rounded-xl border border-[#745d43]/45 bg-[#211a16] p-3 text-xs text-[#ddc6a5]">
+     <p className="font-semibold text-[#ebd2aa]">Quick identity check</p>
+     <p className="mt-2">Both records use a phone ending in {normalizedPhone(lead.phone).slice(-4) || 'unknown'}.</p>
+     <p className="mt-1">Original submissions and conversation history will remain available.</p>
+    </div>
+    {!selected.safe&&<fieldset className="space-y-2">
+     <legend className="text-xs font-semibold text-[#efd4a8]">How was the customer verified?</legend>
+     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <label className={'flex min-h-12 items-center gap-2 rounded-xl border p-3 text-xs '+(verificationMethod==='customer_confirmed'?'border-[#d9b27a] bg-[#3c2d20] text-[#f4dcaf]':'border-[#876b4b] bg-[#241c17] text-[#d0b99a]')}>
+       <input type="radio" name="crm-verification-method" checked={verificationMethod==='customer_confirmed'} onChange={()=>setVerificationMethod('customer_confirmed')}/>
+       Customer confirmed directly
+      </label>
+      <label className={'flex min-h-12 items-center gap-2 rounded-xl border p-3 text-xs '+(verificationMethod==='records_verified'?'border-[#d9b27a] bg-[#3c2d20] text-[#f4dcaf]':'border-[#876b4b] bg-[#241c17] text-[#d0b99a]')}>
+       <input type="radio" name="crm-verification-method" checked={verificationMethod==='records_verified'} onChange={()=>setVerificationMethod('records_verified')}/>
+       Independently verified records
+      </label>
+     </div>
+     <p className="text-[11px] leading-relaxed text-[#c4aa8c]">Select only a method actually used. A matching phone alone is not enough.</p>
+    </fieldset>}
+    {error&&<p role="alert" className="rounded-lg border border-[#b46b5f]/60 bg-[#421f1c] p-3 text-xs text-[#f4c3bd]">{error}</p>}
+    <label className="flex min-h-11 items-center gap-3 text-xs leading-relaxed text-[#edce9c]"><input className="h-5 w-5 shrink-0" type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>These records belong to the same customer.</label>
    </div>
    <footer className="grid shrink-0 grid-cols-2 gap-2 border-t border-[#745d43]/45 bg-[#231c16] px-4 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
     <button type="button" onClick={closeConfirmation} className="min-h-12 rounded-xl border border-[#9c805c]/60 text-sm text-[#efce99]">Cancel</button>
-    <button type="button" disabled={!confirmed||busy||(!selected.safe&&verificationNote.trim().length<20)} onClick={()=>void consolidate()} className="min-h-12 rounded-xl bg-[#c5a06d] px-2 text-sm font-semibold text-[#23170d] disabled:opacity-40">{busy?'Consolidating…':'Confirm consolidation'}</button>
+    <button type="button" disabled={!confirmed||busy||(!selected.safe&&!verificationMethod)} onClick={()=>void consolidate()} className="min-h-12 rounded-xl bg-[#c5a06d] px-2 text-sm font-semibold text-[#23170d] disabled:opacity-40">{busy?'Consolidating…':'Confirm consolidation'}</button>
    </footer>
   </div>
  </div>,document.body)}
