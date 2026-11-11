@@ -5,6 +5,7 @@ import StatusSelect from './ui/StatusSelect';
 import QuickActionBar from './ui/QuickActionBar';
 import ContactTimer from './ui/ContactTimer';
 import { formatDate } from '../../utils/formatDate';
+import { displayLeadMessage, isRecoveredCallbackMessage } from '../../utils/leadMessage';
 
 export interface Lead {
   id: string;
@@ -138,11 +139,11 @@ function LeadTable({
               <td className="px-4 py-4 align-top max-w-[240px]">
                 {lead.message ? (
                   <p
-                    className="text-xs leading-relaxed line-clamp-3 italic"
+                    className={'text-xs leading-relaxed line-clamp-3 '+(isRecoveredCallbackMessage(lead.message)?'font-medium not-italic':'italic')}
                     style={{ color: '#f0ede8' }}
-                    title={lead.message}
+                    title={displayLeadMessage(lead.message)}
                   >
-                    {lead.message}
+                    {displayLeadMessage(lead.message)}
                   </p>
                 ) : (
                   <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>—</span>
