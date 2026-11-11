@@ -31,6 +31,7 @@ function Layout() {
   const csInitialPageViewSentRef = useRef(false);
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set());
   const [conciergeOpen, setConciergeOpen] = useState(false);
+  const [mobileChatOpenToken, setMobileChatOpenToken] = useState(0);
 
   const transitionPreview = (location.state as any)?.transitionPreview;
   const isListingDetailRoute =
@@ -127,9 +128,9 @@ function Layout() {
       {isHomePage && <GlobalVideoBackground />}
       <Navbar />
       <Outlet context={outletContext} />
-      {!conciergeOpen && <FloatingCallButton />}
+      {!conciergeOpen && <FloatingCallButton onOpenChat={() => setMobileChatOpenToken(n => n + 1)} />}
       {!conciergeOpen && <BackToTopButton />}
-      <ConciergeWidget onOpenChange={setConciergeOpen} />
+      <ConciergeWidget onOpenChange={setConciergeOpen} mobileOpenToken={mobileChatOpenToken} />
       <ListingTransitionOverlay
         isVisible={showTransition}
         heroImage={transitionPreview?.heroImage}

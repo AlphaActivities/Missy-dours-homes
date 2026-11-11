@@ -16,12 +16,19 @@ try {
  });
  const response=await page.goto(base,{waitUntil:'domcontentloaded',timeout:30000});
  assert.ok(response?.ok(),'Public page must load successfully');
- const launcher=page.getByRole('button',{name:'Open Missy Dours concierge'});
+ const launcher=page.getByRole('button',{name:'Chat or call Missy'});
  await launcher.waitFor({state:'visible',timeout:20000});
  // Start below the top so we can verify opening/closing the overlay preserves the page position.
  await page.evaluate(()=>window.scrollTo(0,500));
  const originalY=await page.evaluate(()=>window.scrollY);
  await launcher.click();
+ const choices=page.getByRole('group',{name:'Contact Missy'});
+ await choices.waitFor({state:'visible'});
+ assert.equal(await choices.getByRole('link',{name:'Call Missy Directly'}).count(),1,'Direct call option must remain available');
+ await page.locator('body').click({position:{x:10,y:10}});
+ assert.equal(await choices.count(),0,'Tapping outside should dismiss choices');
+ await launcher.click();
+ await choices.getByRole('button',{name:"Message Missy's Team"}).click();
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  await dialog.waitFor({state:'visible',timeout:8000});
  const intro=dialog.locator('.missy-concierge-intro');
