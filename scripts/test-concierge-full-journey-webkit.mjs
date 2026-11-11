@@ -189,7 +189,9 @@ assert.ok(outcomeSource.includes('aria-label="Record chat outcome before returni
 assert.ok(outcomeSource.includes('<TexasCallbackPicker') &&
  callbackPickerSource.includes('type="date"') &&
  callbackPickerSource.includes('<select aria-label=') &&
- callbackPickerSource.includes('grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]'),
+ callbackPickerSource.includes('flex min-w-0 flex-col gap-3') &&
+ callbackPickerSource.includes('box-border rounded-xl') &&
+ !callbackPickerSource.includes('grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]'),
  'Shared native iOS follow-up picker must remain clickable but clipped to its bordered container');
 assert.ok(contactModalSource.includes('max-h-[calc(100dvh-2rem)]') &&
  contactModalSource.includes('overflow-y-auto overscroll-contain') &&

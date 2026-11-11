@@ -16,16 +16,16 @@ export default function TexasCallbackPicker({value,onChange,label='Scheduled fol
  });
  return <div className="min-w-0 max-w-full space-y-3">
   <label className="block text-xs font-semibold text-[#e7c998]">{label} · Dallas time</label>
-  <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-2">
-   <label className="min-w-0 text-[11px] font-medium text-[#cfb99a]">Date
+  <div className="flex min-w-0 flex-col gap-3" aria-label="Dallas follow-up date and time">
+   <label className="block min-w-0 w-full text-[11px] font-medium text-[#cfb99a]">Date
     <input type="date" required={required} aria-label={label+' date in Dallas'}
       value={date} onChange={e=>onChange(e.target.value?(e.target.value+'T'+(time||'10:00')):'')}
-      className="mt-1.5 block h-12 w-full min-w-0 max-w-full rounded-xl border border-[#a9875c]/55 bg-[#171310] px-2 text-sm text-[#f1d8b2] [color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]"/>
+      className="mt-1.5 block h-12 w-full min-w-0 max-w-full box-border rounded-xl border border-[#a9875c]/55 bg-[#171310] px-3 text-sm text-[#f1d8b2] [color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]"/>
    </label>
-   <label className="min-w-0 text-[11px] font-medium text-[#cfb99a]">Time
+   <label className="block min-w-0 w-full text-[11px] font-medium text-[#cfb99a]">Time
     <select aria-label={label+' time in Dallas'} required={required} value={time}
       onChange={e=>onChange((date||nextTexasSlot(10).date)+'T'+e.target.value)}
-      className="mt-1.5 block h-12 w-full min-w-0 max-w-full rounded-xl border border-[#a9875c]/55 bg-[#171310] px-2 text-sm text-[#f1d8b2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]">
+      className="mt-1.5 block h-12 w-full min-w-0 max-w-full box-border rounded-xl border border-[#a9875c]/55 bg-[#171310] px-3 text-sm text-[#f1d8b2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]">
       <option value="" disabled>Time</option>{options.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
     </select>
    </label>
