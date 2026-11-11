@@ -18,11 +18,14 @@ const devices=[
   {id:'josh-device',staff_email:'yourcustomerflowguy@gmail.com',endpoint:'https://web.push.apple.com/josh',p256dh:'a',auth_key:'b'},
   {id:'heber-device',staff_email:'heberherrera92@gmail.com',endpoint:'https://web.push.apple.com/heber',p256dh:'a',auth_key:'b'}
 ];
-function queryResult(data){
+function queryResult(data,filterable=false){
+  let rows=data;
   const query={
-    select(){return query;},eq(){return query;},in(){return query;},limit(){return query;},maybeSingle(){return query;},
+    select(){return query;},
+    eq(field,value){if(filterable&&Array.isArray(rows))rows=rows.filter(item=>item[field]===value);return query;},
+    in(){return query;},limit(){return query;},maybeSingle(){return query;},
     delete(){return query;},upsert(){return query;},
-    then(resolve,reject){return Promise.resolve({data,error:null}).then(resolve,reject);}
+    then(resolve,reject){return Promise.resolve({data:rows,error:null}).then(resolve,reject);}
   };
   return query;
 }
@@ -48,7 +51,7 @@ async function makeServer({pushEnabled=false,events=[],registered=devices,receip
     },
     from(table){
       calls.push({kind:'from',table});
-      if(table==='ai_concierge_push_subscriptions')return queryResult(registered);
+      if(table==='ai_concierge_push_subscriptions')return queryResult(registered,true);
       if(table==='ai_concierge_push_receipts')return queryResult(receipts);
       if(table==='crm_notification_preferences'){
         const q=queryResult(devices.map(device=>({staff_email:device.staff_email,handoff_enabled:true,escalation_enabled:true,staff_enabled:true})));
