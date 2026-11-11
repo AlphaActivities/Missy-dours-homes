@@ -87,6 +87,20 @@ const badgeMigration=readFileSync(new URL('../supabase/migrations/20261109_unify
 
 const entranceSource=readFileSync(new URL('../src/components/dashboard/ui/ConciergeSignatureEntrance.tsx',import.meta.url),'utf8');
 const outcomeSource=readFileSync(new URL('../src/pages/dashboard/ConversationsPage.tsx',import.meta.url),'utf8');
+const calendarSource=readFileSync(new URL('../src/pages/dashboard/CalendarPage.tsx',import.meta.url),'utf8');
+assert.ok(calendarSource.includes("from('lead_followups')") &&
+ calendarSource.includes("from('ai_concierge_tasks')") &&
+ calendarSource.includes('Date.parse(t.due_at)>Date.parse(t.created_at)+5000') &&
+ calendarSource.includes("timeZone:zone"),
+ 'Calendar must include scheduled follow-ups and only explicitly scheduled chatbot task times in Dallas time');
+assert.ok(outcomeSource.includes('const pendingGroups=useMemo') &&
+ outcomeSource.includes("const id=leadId?'lead:'+leadId:'conversation:'") &&
+ outcomeSource.includes('group.tasks.map') &&
+ outcomeSource.includes('md:min-h-[520px]') &&
+ outcomeSource.includes('max-h-[315px]') &&
+ outcomeSource.includes('canCreateSeparateLead&&'),
+ 'Conversations must group by verified customer, preserve tasks, expand tablet/desktop list without changing mobile or unsafe lead creation');
+
 const leadDrawerSource=readFileSync(new URL('../src/components/dashboard/ui/LeadDrawer.tsx',import.meta.url),'utf8');
 const attentionSource=readFileSync(new URL('../src/components/dashboard/ui/CallbackAttentionPanel.tsx',import.meta.url),'utf8');
 const contactModalSource=readFileSync(new URL('../src/components/dashboard/ui/LogContactModal.tsx',import.meta.url),'utf8');
@@ -221,7 +235,7 @@ assert.ok(outcomeSource.includes('aria-label="Record chat outcome before returni
 assert.ok(outcomeSource.includes('<TexasCallbackPicker') &&
  callbackPickerSource.includes('type="date"') &&
  callbackPickerSource.includes('<select aria-label=') &&
- callbackPickerSource.includes('flex min-w-0 flex-col gap-3') &&
+ callbackPickerSource.includes('flex w-full min-w-0 max-w-full flex-col gap-3') &&
  callbackPickerSource.includes('box-border rounded-xl') &&
  !callbackPickerSource.includes('grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]'),
  'Shared native iOS follow-up picker must remain clickable but clipped to its bordered container');
