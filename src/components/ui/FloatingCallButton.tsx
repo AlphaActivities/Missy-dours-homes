@@ -1,8 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircleMore, PhoneCall, Plus, X } from 'lucide-react';
+import { MessageCircleMore, PhoneCall, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { CONTACT_INFO } from '../../config/contact';
 import { trackCTA, trackPhoneClick } from '../../utils/analytics';
+
+/** Bespoke monoline contact emblem: a conversation outline with a handset
+ * drawn into the same silhouette, rather than two competing app icons. */
+function LuxuryContactEmblem() {
+  return (
+    <svg viewBox="0 0 48 48" width="39" height="39" fill="none" aria-hidden="true"
+      stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 8.75h21c4.35 0 7 2.65 7 7v13.1c0 4.35-2.65 7-7 7H21.1L12 42v-7.35c-3.08-1.12-5-3.55-5-6.8v-12.1c0-4.35 2.65-7 6-7Z"
+        strokeWidth="1.95"/>
+      <path d="m16.9 17.6 2.7-1.95c.7-.5 1.5-.31 1.97.36l2.1 3.02c.41.58.34 1.28-.16 1.8l-1.38 1.34a15.25 15.25 0 0 0 5.72 5.7l1.35-1.39c.51-.51 1.23-.56 1.8-.16l3.02 2.11c.66.46.84 1.26.35 1.96l-1.95 2.7c-.6.85-1.57 1.22-2.56.91-6.62-2.06-11.3-6.74-13.35-13.34-.3-.98.08-1.96.9-2.56Z"
+        strokeWidth="1.8"/>
+      <circle cx="38.1" cy="9.9" r="7.25" fill="#17130d" stroke="#E4C688" strokeWidth="1.35"/>
+      <path d="M38.1 6.65v6.5M34.85 9.9h6.5" strokeWidth="1.55"/>
+    </svg>
+  );
+}
 
 /** One compact mobile contact control; desktop keeps its own chat launcher. */
 export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => void }) {
@@ -76,7 +92,7 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
         aria-expanded={expanded} aria-controls="missy-mobile-contact-options"
         onClick={() => setExpanded(value => !value)}
         className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-[#D5B16D] bg-gradient-to-br from-[#2B251C]/95 to-[#080808]/95 text-[#EBCB83] shadow-[0_10px_35px_rgba(0,0,0,.58),0_0_20px_rgba(213,177,109,.30)] backdrop-blur-xl transition-[transform,box-shadow,border-color] duration-200 hover:border-[#F0D69D] hover:shadow-[0_12px_40px_rgba(0,0,0,.6),0_0_25px_rgba(213,177,109,.43)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]">
-        {expanded ? <X size={25} strokeWidth={1.9} aria-hidden="true"/> : <span className="relative flex h-10 w-10 items-center justify-center" aria-hidden="true"><MessageCircleMore size={31} strokeWidth={1.8} className="shrink-0 drop-shadow-[0_0_4px_rgba(236,203,131,.24)]"/><span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-[#e4c688] bg-[#1a150e] shadow-[0_0_0_2px_#17130d,0_0_7px_rgba(213,177,109,.28)]"><Plus size={10} strokeWidth={2.15}/></span></span>}
+        {expanded ? <X size={25} strokeWidth={1.9} aria-hidden="true"/> : <LuxuryContactEmblem/>}
       </button>
     </div>
   );
