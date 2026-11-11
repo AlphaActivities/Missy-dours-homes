@@ -100,7 +100,7 @@ export default function CrmActivityCenter(){
    (isChatRequest(b)?requestTime(b):Date.parse(b.created_at))-
    (isChatRequest(a)?requestTime(a):Date.parse(a.created_at))||b.id.localeCompare(a.id));
  },[items]);
- const visible=useMemo(()=>(filter==='history'?items:activeEvents).filter(e=>matchesFilter(e,filter)),[items,activeEvents,filter]);
+ const visible=useMemo<DisplayActivity[]>(()=>(filter==='history'?items:activeEvents).filter(e=>matchesFilter(e,filter)),[items,activeEvents,filter]);
  // Filter badges use the identical grouping and visibility predicate as cards.
  // Urgent is intentionally a subset of Direct Chat; do not sum filter badges.
  const filterCounts=useMemo(()=>Object.fromEntries(filters.map(({key})=>[
