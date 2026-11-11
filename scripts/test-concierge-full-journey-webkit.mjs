@@ -8,6 +8,22 @@ const apiSource=readFileSync(new URL('../supabase/functions/concierge-api/index.
 
 const activityCenter=readFileSync(new URL('../src/components/dashboard/CrmActivityCenter.tsx',import.meta.url),'utf8');
 const activityContext=readFileSync(new URL('../src/components/dashboard/CrmActivityContext.tsx',import.meta.url),'utf8');
+
+const resetSource=readFileSync(new URL('../src/pages/dashboard/ResetPasswordPage.tsx',import.meta.url),'utf8');
+const loginSource=readFileSync(new URL('../src/pages/dashboard/LoginPage.tsx',import.meta.url),'utf8');
+const ownerAdminSource=readFileSync(new URL('../src/pages/dashboard/OwnerAdminPage.tsx',import.meta.url),'utf8');
+const correctionsMigration=readFileSync(new URL('../supabase/migrations/20261111082000_crm_recovery_owner_account_badge_corrections.sql',import.meta.url),'utf8');
+assert.ok(loginSource.includes('Forgot password?') &&
+ resetSource.includes('supabase.auth.resetPasswordForEmail') &&
+ resetSource.includes('supabase.auth.updateUser({password})') &&
+ !ownerAdminSource.includes('encrypted_password'),
+ 'Password recovery must use Supabase Auth without exposing passwords');
+assert.ok(correctionsMigration.includes('badge_correction_enabled boolean NOT NULL DEFAULT false') &&
+ correctionsMigration.includes('crm_schedule_badge_correction_after_consolidation') &&
+ correctionsMigration.includes('crm_badge_device_state') &&
+ correctionsMigration.includes("now()+interval '60 seconds'"),
+ 'Badge correction notifications must be opt-in, event-driven and coalesced');
+
 const groupedCountsSource=readFileSync(new URL('../supabase/migrations/20261111153000_group_active_notifications_by_customer.sql',import.meta.url),'utf8');
 assert.ok(activityCenter.includes("const customerKey=(item:CrmActivity)=>item.callback_lead_id?") &&
   activityCenter.includes('customerRequestCount:tasks.length') &&
@@ -29,16 +45,17 @@ assert.ok(activityContext.includes("from('ai_concierge_handoff_outcomes')") &&
 assert.ok(activityContext.includes("expiry<=Date.now()?'expired'") &&
  activityContext.includes("Date.now()-lastSeen<75000"),
  'Expired session and live visitor presence must be distinguished');
-assert.ok(activityCenter.includes("item.callback_status==='claimed'?'Assigned to '") &&
+assert.ok(activityCenter.includes("item.callback_status==='claimed'?'Callback Requests · Follow-Up Needed'") &&
  activityCenter.includes("staffName(item.callback_assignee)"),
- 'Staff claim means assigned, not proof of a response to the visitor');
+ 'A claimed chat must show the work status and the responsible team member');
 assert.ok(activityCenter.includes("if(filter==='urgent')return isUrgent(e)") &&
  activityCenter.includes("item.callback_outcome==='follow_up'") &&
  activityCenter.includes("!item.callback_escalated_at"),
  'Keep an unresolved escalation urgent until its recorded outcome resets the task escalation');
-assert.ok(activityCenter.includes("(isUrgent(item)&&item.callback_status==='claimed')") &&
- activityCenter.includes("if(requiresAction(item)){setNotice("),
- 'Claimed escalations must remain actionable and cannot be hidden until an outcome is recorded');
+assert.ok(activityCenter.includes("(isChatRequest(item)&&activeChat(item))") &&
+ !activityCenter.includes('Hide notification') &&
+ !activityCenter.includes('hideNotice('),
+ 'All unresolved callbacks remain actionable, without a manual hide control');
 assert.ok(activityCenter.includes("Overdue 24h+") &&
  activityCenter.includes("Chat Session Expired") &&
  activityCenter.includes("Visitor Offline"),
