@@ -154,8 +154,10 @@ const SESSION_LIFETIME = 24 * 60 * 60 * 1000;
  * until signed sessions, rate limiting and persistence are verified server-side.
  * Never put a Supabase service key or model API token in browser code.
  */
-export default function ConciergeWidget({ onOpenChange, privateQA = false }: { onOpenChange?: (open: boolean) => void; privateQA?: boolean }) {
+export default function ConciergeWidget({ onOpenChange, privateQA = false, mobileOpenToken = 0 }: { onOpenChange?: (open: boolean) => void; privateQA?: boolean; mobileOpenToken?: number }) {
   const [open, setOpen] = useState(false);
+  // Mobile contact launcher opens the same verified chat, never a duplicate session.
+  useEffect(() => { if (mobileOpenToken > 0 && !privateQA) setOpen(true); }, [mobileOpenToken, privateQA]);
   const navigate = useNavigate();
   const location = useLocation();
   const [draft, setDraft] = useState('');
@@ -681,7 +683,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false }: { o
   return (
     <>
       {!open && (
-        <div className="fixed bottom-28 right-7 md:bottom-7 md:right-7 z-[55] flex flex-col items-end gap-3">
+        <div className={'fixed bottom-28 right-7 md:bottom-7 md:right-7 z-[55] flex-col items-end gap-3 ' + (privateQA ? 'flex' : 'hidden md:flex')}>
           {invitation && !dismissed && <div className="relative max-w-[270px] rounded-2xl border border-[#cba86c]/50 bg-[#12100e]/95 p-4 pr-9 text-[#f5ead3] shadow-2xl backdrop-blur-xl">
             <button type="button" aria-label="Dismiss invitation" onClick={dismissInvitation} className="absolute right-2 top-2 rounded-md p-1 hover:bg-white/10"><X size={15}/></button>
             <p className="font-serif text-base mb-1">Imagine the Life That Awaits.</p>
