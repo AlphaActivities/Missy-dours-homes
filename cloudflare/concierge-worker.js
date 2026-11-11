@@ -193,17 +193,17 @@ export default {
       // Keep qualified visitors in the conversation unless they explicitly ask
       // for the website contact page. Prompt guidance alone is not a guarantee.
       const visitorText = body.messages.filter(m=>m.role==='user').map(m=>m.content).join(' ');
-      const requestedContactPage = /\\b(?:contact\\s+(?:page|link|url|website)|(?:page|link|url|website)\\s+(?:for|to|of)?\\s*contact|where\\s+(?:is|can\\s+i\\s+find)\\s+(?:the\\s+)?contact)\\b/i.test(visitorText);
-      const sellerHelp = /\\b(?:sell|selling|seller|list\\s+(?:my|our)|valuation|evaluation|what(?:'s| is)\\s+my\\s+(?:house|home)\\s+worth|market\\s+analysis)\\b/i.test(visitorText);
+      const requestedContactPage = /\b(?:contact\s+(?:page|link|url|website)|(?:page|link|url|website)\s+(?:for|to|of)?\s*contact|where\s+(?:is|can\s+i\s+find)\s+(?:the\s+)?contact)\b/i.test(visitorText);
+      const sellerHelp = /\b(?:sell|selling|seller|list\s+(?:my|our)|valuation|evaluation|what(?:'s| is)\s+my\s+(?:house|home)\s+worth|market\s+analysis)\b/i.test(visitorText);
       let finalReply = reply.trim();
       // Suppress an unsolicited website detour, preserving substantive paragraphs.
-      if (!requestedContactPage && /https:\\/\\/missydours\\.com\\/#contact/i.test(finalReply)) {
-        finalReply=finalReply.split(/\\n{2,}/).filter(p=>!p.includes('https://missydours.com/#contact')).join('\\n\\n').trim();
+      if (!requestedContactPage && /https:\/\/missydours\.com\/#contact/i.test(finalReply)) {
+        finalReply=finalReply.split(/\n{2,}/).filter(p=>!p.includes('https://missydours.com/#contact')).join('\n\n').trim();
         if (!finalReply) finalReply='I can help you explore the best next step for your real estate plans.';
-        if (sellerHelp) finalReply+='\\n\\nIf you would like Missy to review your home, you can request a callback right here in the chat.';
+        if (sellerHelp) finalReply+='\n\nIf you would like Missy to review your home, you can request a callback right here in the chat.';
       }
       // Never infer where a visitor lives from unrelated website listing examples.
-      finalReply=finalReply.replace(/\\bYou are in ([A-Z][a-z]+(?: [A-Z][a-z]+){0,3}),?\\s*(?:and\\s+)?/g,(claim,city)=>
+      finalReply=finalReply.replace(/\bYou are in ([A-Z][a-z]+(?: [A-Z][a-z]+){0,3}),?\s*(?:and\s+)?/g,(claim,city)=>
         visitorText.toLowerCase().includes(city.toLowerCase())?claim:'');
       return json({reply:finalReply.slice(0,5000),language});
     } catch { return json({error:'AI temporarily unavailable',code:'model_execution_failed'},503); }
