@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, Phone, Plus, X } from 'lucide-react';
+import { MessageCircleMore, PhoneCall, Plus, X } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { CONTACT_INFO } from '../../config/contact';
 import { trackCTA, trackPhoneClick } from '../../utils/analytics';
@@ -54,20 +54,20 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
       style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
       {expanded && (
         <div id="missy-mobile-contact-options" role="group" aria-label="Contact Missy"
-          className="absolute bottom-[calc(100%+14px)] right-0 w-[min(250px,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-[#d8b575]/70 bg-gradient-to-br from-[#2c2318] via-[#1c1711] to-[#100e0b] p-2 shadow-[0_18px_48px_rgba(0,0,0,.62),0_0_20px_rgba(204,162,91,.15)] backdrop-blur-xl">
+          className="absolute bottom-[calc(100%+14px)] right-0 w-[min(276px,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-[#d8b575]/65 bg-gradient-to-br from-[#292118] via-[#1c1711] to-[#0f0d0b] p-2.5 shadow-[0_18px_48px_rgba(0,0,0,.65),0_0_22px_rgba(204,162,91,.14),inset_0_1px_0_rgba(255,232,185,.12)] backdrop-blur-xl">
           <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[.17em] text-[#d5b981]">Connect with Missy</p>
           <button type="button" onClick={() => {
             setExpanded(false);
             trackCTA('Open Chatbot', 'mobile_contact_launcher');
             onOpenChat();
-          }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold text-[#f3dfb8] transition-colors hover:bg-[#c8a36a]/15 active:bg-[#c8a36a]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcf92]">
-            <MessageCircle size={21} aria-hidden="true"/> Message Missy
+          }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium tracking-[.005em] text-[#f8e5c1] transition-colors hover:bg-[#c8a36a]/15 active:bg-[#c8a36a]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcf92]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#cba76e]/35 bg-[#cba76e]/10 text-[#e9c88e]"><MessageCircleMore size={21} strokeWidth={1.85} aria-hidden="true"/></span><span>Message Missy Directly</span>
           </button>
           <a href={CONTACT_INFO.phone.tel} onClick={() => {
             trackPhoneClick('floating_call_button');
             setExpanded(false);
-          }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold text-[#f3dfb8] transition-colors hover:bg-[#c8a36a]/15 active:bg-[#c8a36a]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcf92]">
-            <Phone size={21} aria-hidden="true"/> Call Missy Directly
+          }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium tracking-[.005em] text-[#f8e5c1] transition-colors hover:bg-[#c8a36a]/15 active:bg-[#c8a36a]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcf92]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#cba76e]/35 bg-[#cba76e]/10 text-[#e9c88e]"><PhoneCall size={21} strokeWidth={1.85} aria-hidden="true"/></span><span>Call Missy Directly</span>
           </a>
         </div>
       )}
@@ -76,7 +76,7 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
         aria-expanded={expanded} aria-controls="missy-mobile-contact-options"
         onClick={() => setExpanded(value => !value)}
         className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-[#D5B16D] bg-gradient-to-br from-[#2B251C]/95 to-[#080808]/95 text-[#EBCB83] shadow-[0_10px_35px_rgba(0,0,0,.58),0_0_20px_rgba(213,177,109,.30)] backdrop-blur-xl transition-[transform,box-shadow,border-color] duration-200 hover:border-[#F0D69D] hover:shadow-[0_12px_40px_rgba(0,0,0,.6),0_0_25px_rgba(213,177,109,.43)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]">
-        {expanded ? <X size={26} strokeWidth={2.2} aria-hidden="true"/> : <span className="relative flex h-9 w-9 items-center justify-center" aria-hidden="true"><MessageCircle size={29} strokeWidth={2.1} className="shrink-0"/><span className="absolute -right-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-[#D5B16D] bg-[#17130d] shadow-[0_0_5px_rgba(213,177,109,.25)]"><Plus size={12} strokeWidth={2.5}/></span></span>}
+        {expanded ? <X size={25} strokeWidth={1.9} aria-hidden="true"/> : <span className="relative flex h-10 w-10 items-center justify-center" aria-hidden="true"><MessageCircleMore size={31} strokeWidth={1.8} className="shrink-0 drop-shadow-[0_0_4px_rgba(236,203,131,.24)]"/><span className="absolute -right-0.5 -top-0.5 flex h-[17px] w-[17px] items-center justify-center rounded-full border border-[#e4c688] bg-[#1a150e] shadow-[0_0_0_2px_#17130d,0_0_7px_rgba(213,177,109,.28)]"><Plus size={10} strokeWidth={2.15}/></span></span>}
       </button>
     </div>
   );
