@@ -1,7 +1,7 @@
 import TexasCallbackPicker from './TexasCallbackPicker';
 import {validateTexasOfficeSlot,texasDateTime} from '../../../lib/texasScheduling';
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Check, X, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { Calendar, CalendarPlus, Check, X, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { LeadFollowup } from '../types';
 import { useToast } from '../../../contexts/ToastContext';
@@ -167,19 +167,20 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
 
   return (
     <div>
-      <div className="flex items-center justify-between pl-2.5" style={{ borderLeft: '2px solid var(--ds-gold-dim)' }}>
+      <div className="flex min-w-0 items-center justify-between gap-2 pl-2.5" style={{ borderLeft: '2px solid var(--ds-gold-dim)' }}>
         <p className="text-[10px] font-medium tracking-[0.14em] uppercase" style={{ color: 'var(--ds-text-secondary)' }}>
           Next Follow-Up
         </p>
         {active.length === 0 && !showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="text-[11px] font-medium transition-colors duration-150"
+            type="button"
+            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border border-[#c8a96e]/55 bg-[#34291b] px-3 py-2 text-xs font-semibold text-[#efd4a1] shadow-[0_3px_14px_rgba(201,161,108,.12)] transition-[background-color,border-color,transform] duration-150 hover:border-[#efd4a1] hover:bg-[#49371f] active:scale-[.97]"
             style={{ color: 'var(--ds-gold-dim)' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-gold)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--ds-gold-dim)')}
           >
-            + Schedule
+            <CalendarPlus size={15} aria-hidden="true"/> Schedule
           </button>
         )}
       </div>
@@ -259,7 +260,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
 
         {/* New follow-up form */}
         {showForm && (
-          <div className="rounded-xl p-3 space-y-2.5" style={{ background: '#241d17', boxShadow: '0 0 0 1px rgba(185,151,96,.35)' }}>
+          <div className="min-w-0 max-w-full overflow-x-clip rounded-xl p-3 space-y-2.5" style={{ background: '#241d17', boxShadow: '0 0 0 1px rgba(185,151,96,.35)' }}>
             <TexasCallbackPicker value={dueDate&&dueTime?dueDate+'T'+dueTime:''} onChange={v=>{setDueDate(v.slice(0,10));setDueTime(v.slice(11,16));}} label="Follow-up time"/>
             <input
               type="text"

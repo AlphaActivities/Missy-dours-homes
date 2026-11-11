@@ -14,13 +14,14 @@ export default function TexasCallbackPicker({value,onChange,label='Scheduled fol
   const hh=String(hours).padStart(2,'0'),mm=String(mins).padStart(2,'0');
   return {value:hh+':'+mm,label:new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(Date.UTC(2026,0,1,hours,mins)))+' CT'};
  });
- return <div className="min-w-0 max-w-full space-y-3">
+ return <div className="w-full min-w-0 max-w-full overflow-x-clip space-y-3">
   <label className="block text-xs font-semibold text-[#e7c998]">{label} · Dallas time</label>
-  <div className="flex min-w-0 flex-col gap-3" aria-label="Dallas follow-up date and time">
+  <div className="flex w-full min-w-0 max-w-full flex-col gap-3" aria-label="Dallas follow-up date and time">
    <label className="block min-w-0 w-full text-[11px] font-medium text-[#cfb99a]">Date
     <input type="date" required={required} aria-label={label+' date in Dallas'}
       value={date} onChange={e=>onChange(e.target.value?(e.target.value+'T'+(time||'10:00')):'')}
-      className="mt-1.5 block h-12 w-full min-w-0 max-w-full box-border rounded-xl border border-[#a9875c]/55 bg-[#171310] px-3 text-sm text-[#f1d8b2] [color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]"/>
+      style={{ WebkitAppearance:'none', appearance:'none', width:'100%', maxWidth:'100%', minWidth:0 }}
+      className="mt-1.5 block h-12 w-full min-w-0 max-w-full box-border overflow-hidden rounded-xl border border-[#a9875c]/55 bg-[#171310] px-2 text-base text-[#f1d8b2] [color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a36a]"/>
    </label>
    <label className="block min-w-0 w-full text-[11px] font-medium text-[#cfb99a]">Time
     <select aria-label={label+' time in Dallas'} required={required} value={time}
@@ -30,7 +31,7 @@ export default function TexasCallbackPicker({value,onChange,label='Scheduled fol
     </select>
    </label>
   </div>
-  <div className="grid grid-cols-2 gap-2">
+  <div className="grid min-w-0 grid-cols-2 gap-2">
    <button type="button" onClick={()=>{const s=nextTexasSlot(10);onChange(s.date+'T'+s.time)}} className="min-h-11 rounded-xl border border-[#b99b6f]/60 bg-[#30251b] px-2 text-xs font-semibold text-[#f0d5a4]">Next 10 AM CT</button>
    <button type="button" onClick={()=>{const s=nextTexasSlot(14);onChange(s.date+'T'+s.time)}} className="min-h-11 rounded-xl border border-[#b99b6f]/60 bg-[#30251b] px-2 text-xs font-semibold text-[#f0d5a4]">Next 2 PM CT</button>
   </div>

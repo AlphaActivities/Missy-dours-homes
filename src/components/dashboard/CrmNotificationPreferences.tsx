@@ -5,13 +5,14 @@ const options=[
  {name:'handoff_enabled' as const,title:'New concierge handoffs',detail:'Alert when a visitor requests staff assistance.'},
  {name:'escalation_enabled' as const,title:'Urgent escalations',detail:'Alert when a visitor request becomes overdue.'},
  {name:'staff_enabled' as const,title:'Team takeover updates',detail:'Alert when a staff member claims a conversation.'},
- {name:'callback_reminders_enabled' as const,title:'Scheduled callback reminders',detail:'Receive booking confirmation, 15-minute advance, due-now, and unresolved overdue callback reminders. Available to all authorized team members who opt in.'}
+ {name:'callback_reminders_enabled' as const,title:'Scheduled callback reminders',detail:'Receive booking confirmation, 15-minute advance, due-now, and unresolved overdue callback reminders. Available to all authorized team members who opt in.'},
+ {name:'badge_correction_enabled' as const,title:'Optional iOS badge correction',detail:'After verified customer consolidation, receive at most one grouped, visible correction alert if your last pushed app badge is higher than the current count. No recurring reminders.'}
 ];
 export default function CrmNotificationPreferences(){
  const {prefs,setPreference}=useCrmActivity();
  const [working,setWorking]=useState('');
  const [message,setMessage]=useState('');
- const change=async(name:keyof Pick<typeof prefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'callback_reminders_enabled'|'in_app_sound'>,value:boolean)=>{
+ const change=async(name:keyof Pick<typeof prefs,'handoff_enabled'|'escalation_enabled'|'staff_enabled'|'callback_reminders_enabled'|'badge_correction_enabled'|'in_app_sound'>,value:boolean)=>{
   if(working)return;setWorking(name);setMessage('');
   try{await setPreference(name,value);}catch(e){setMessage(e instanceof Error?e.message:'Unable to save preference');}
   finally{setWorking('');}

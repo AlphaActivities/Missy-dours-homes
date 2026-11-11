@@ -19,17 +19,21 @@ export default function OwnerAdminPage(){
  const [refreshing,setRefreshing]=useState(false);
  const [auditEvents,setAuditEvents]=useState<{created_at:string;action:string;details:Record<string,unknown>}[]>([]);
  const [auditError,setAuditError]=useState('');
+ const [staffAccounts,setStaffAccounts]=useState<Array<{email:string;created_at:string|null;email_confirmed_at:string|null;last_sign_in_at:string|null;account_enabled:boolean}>>([]);
+ const [staffAccountError,setStaffAccountError]=useState('');
  const refresh=async()=>{
   setRefreshing(true);
   try{
-   const [a,b,c]=await Promise.all([
+   const [a,b,c,d]=await Promise.all([
     supabase.rpc('missy_owner_concierge_launch_status'),
     supabase.from('ai_conversations').select('id',{count:'exact',head:true}),
-    supabase.rpc('missy_owner_recent_audit',{p_limit:20})
+    supabase.rpc('missy_owner_recent_audit',{p_limit:20}),
+    supabase.rpc('missy_owner_staff_account_snapshot')
    ]);
    if(!a.error)setLive(a.data===true);else setLaunchFeedback(a.error.message);
    if(!b.error)setCount(b.count??0);
    if(c.error)setAuditError('Audit history unavailable');else{setAuditError('');setAuditEvents((c.data??[]) as {created_at:string;action:string;details:Record<string,unknown>}[]);}
+   if(d.error)setStaffAccountError('Staff account status unavailable');else{setStaffAccountError('');setStaffAccounts((d.data??[]) as typeof staffAccounts);}
   }finally{setRefreshing(false);}
  };
  useEffect(()=>{if(owner)void refresh();},[owner]);
@@ -64,6 +68,7 @@ export default function OwnerAdminPage(){
   <div className="mb-6 flex items-center gap-2"><Settings2 size={21} className="text-[#d5b16d]"/><div><h1 className="font-serif text-2xl">Admin Control Center</h1><p className="mt-1 text-sm text-[#bfb3a2]">Owner-only business operations, diagnostics and data safeguards</p></div></div>
   <nav aria-label="Owner administration sections" className="mb-5 flex flex-wrap gap-2 text-xs">
    <a href="#concierge-operations" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Concierge operations</a>
+   <a href="#staff-access" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Staff access</a>
    <a href="#owner-testing" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Private testing</a>
    <a href="#owner-diagnostics" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Diagnostics</a>
    <a href="#owner-audit" className="rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-[#e3c99b]">Audit history</a>
@@ -85,6 +90,17 @@ export default function OwnerAdminPage(){
    <input id="publish-phrase" className="mt-2 w-full rounded-lg border border-[#c8a96e]/35 bg-black/30 p-3 text-base text-white" value={launchPhrase} onChange={e=>setLaunchPhrase(e.target.value)} autoComplete="off" />
    <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={()=>void changeLaunch()} disabled={launchBusy||live===null||launchPhrase!==(live?'PAUSE CONCIERGE':'PUBLISH CONCIERGE')} className="rounded-lg border border-[#c8a96e] px-4 py-2 text-sm text-[#e6cb98] disabled:opacity-40">{live?'Pause public chat':'Launch public chat'}</button><button type="button" onClick={()=>void refresh()} data-crm-refresh disabled={refreshing} aria-busy={refreshing} className="inline-flex min-w-[145px] items-center justify-center gap-2 rounded-lg border border-white/20 px-4 py-2 text-sm disabled:opacity-60"><RefreshCw size={14} className={refreshing?'animate-spin':''}/>{refreshing?'Refreshing…':'Refresh status'}</button></div>
    {launchFeedback&&<p role="status" className="mt-3 text-sm">{launchFeedback}</p>}
+  </section>
+  <section id="staff-access" className="mb-5 scroll-mt-5 rounded-xl border border-[#c8a96e]/30 bg-[#14110d]/75 p-4">
+   <h2 className="font-serif text-lg text-[#edcfa0]">Staff account status</h2>
+   <p className="mt-2 text-xs leading-relaxed text-[#bdb0a0]">Read-only Supabase Auth account details for the three approved staff members. Existing passwords cannot be viewed; use the password reset email to recover access.</p>
+   {staffAccountError&&<p role="alert" className="mt-2 text-xs text-amber-200">{staffAccountError}</p>}
+   <div className="mt-3 grid gap-2 sm:grid-cols-2">{staffAccounts.map(account=><div key={account.email} className="rounded-lg border border-[#c8a96e]/20 bg-black/20 p-3 text-xs">
+    <p className="break-all font-semibold text-[#e9d6b6]">{account.email}</p>
+    <p className="mt-2 text-[#c7b9a6]">{account.account_enabled?'Account active':'Account not created yet'} · {account.email_confirmed_at?'Email verified':'Email unverified'}</p>
+    <p className="mt-1 text-[#c7b9a6]">Last sign-in: {account.last_sign_in_at?new Date(account.last_sign_in_at).toLocaleString():'Not available'}</p>
+    <p className="mt-1 text-[#aa9c8a]">Created: {account.created_at?new Date(account.created_at).toLocaleDateString():'Not available'}</p>
+   </div>)}</div>
   </section>
   <section id="owner-testing" className="mb-5 scroll-mt-5 rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/50 p-4">
    <h2 className="text-sm font-semibold text-[#e6cb98]">Private visitor testing</h2>

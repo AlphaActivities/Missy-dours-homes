@@ -20,6 +20,10 @@ self.addEventListener('push', event => {
   // app. Use the notification title to describe the event instead of repeating
   // the app name. Keep lock-screen copy free of visitor contact information.
   const messages = {
+    badge_correction: {
+      title: 'Notification Count Updated',
+      body: 'Your CRM now has '+Math.max(0,Math.floor(Number(payload.attention_count)||0))+' active notifications. No action is required for this update.'
+    },
     device_test: {
       title: 'Push Notifications Active',
       body: 'Your device is ready to receive real-time team alerts.'
@@ -84,7 +88,7 @@ self.addEventListener('push', event => {
       body,
       // Re-use the task tag for new-handoff, claim and escalation updates.
       // This avoids stacking several native banners for one visitor request.
-      tag: (payload.kind==='callback_reminder'?'missy-callback-':'missy-crm-') + (typeof payload.id === 'string' ? payload.id.slice(0, 50) : 'attention'),
+      tag: payload.kind==='badge_correction'?'missy-badge-correction':(payload.kind==='callback_reminder'?'missy-callback-':'missy-crm-') + (typeof payload.id === 'string' ? payload.id.slice(0, 50) : 'attention'),
       renotify: false,
       icon: '/images/Favicons/web-app-manifest-192x192.png',
       badge: '/images/Favicons/favicon-96x96.png',

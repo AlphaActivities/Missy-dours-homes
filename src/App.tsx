@@ -14,6 +14,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import DashboardLayout from './components/dashboard/DashboardLayout';
 import ProtectedRoute from './components/dashboard/ProtectedRoute';
 import LoginPage from './pages/dashboard/LoginPage';
+import ResetPasswordPage from './pages/dashboard/ResetPasswordPage';
 import DashboardOverviewPage from './pages/dashboard/DashboardOverviewPage';
 import LeadsPage from './pages/dashboard/LeadsPage';
 import ConversationsPage from './pages/dashboard/ConversationsPage';
@@ -158,6 +159,7 @@ export default function App() {
         {/* Dashboard — isolated layout, no public Navbar/Footer */}
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard/login" element={<LoginPage />} />
+          <Route path="/dashboard/reset-password" element={<ResetPasswordPage />} />
           <Route
             path="/dashboard"
             element={
