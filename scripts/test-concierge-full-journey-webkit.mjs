@@ -67,6 +67,20 @@ const relatedLeadSource=readFileSync(new URL('../src/components/dashboard/ui/Rel
 const followupSectionSource=readFileSync(new URL('../src/components/dashboard/ui/FollowUpSection.tsx',import.meta.url),'utf8');
 const matchingMigration=readFileSync(new URL('../supabase/migrations/20261109_preserve_identity_name_word_boundaries.sql',import.meta.url),'utf8');
 const quickReviewMigration=readFileSync(new URL('../supabase/migrations/20261110_quick_consolidation_verification.sql',import.meta.url),'utf8');
+const oneConfirmMigration=readFileSync(new URL('../supabase/migrations/20261110_single_confirm_customer_merge.sql',import.meta.url),'utf8');
+assert.ok(oneConfirmMigration.includes("'staff_confirmed_same_customer'") &&
+ oneConfirmMigration.includes("p_confirmation is distinct from 'CONFIRM SAME CUSTOMER'") &&
+ oneConfirmMigration.includes("if length(ap)<>10 or ap<>bp") &&
+ oneConfirmMigration.includes('Conflicting emails require additional identity verification') &&
+ oneConfirmMigration.includes('crm_lead_consolidations'),
+ 'One-step consolidation keeps staff authorization, matching phone, conflicting-email guard and audit');
+assert.ok(relatedLeadSource.includes('I confirm these records belong to the same customer.') &&
+ relatedLeadSource.includes("p_verification_note:'staff_confirmed_same_customer'") &&
+ !relatedLeadSource.includes('How was the customer verified?') &&
+ !relatedLeadSource.includes('Customer confirmed directly') &&
+ !relatedLeadSource.includes('Independently verified records'),
+ 'Confirmation dialog must not require staff to select or describe a verification method');
+
 assert.ok(quickReviewMigration.includes("'customer_confirmed','records_verified'") &&
  quickReviewMigration.includes("p_confirmation is distinct from 'CONFIRM SAME CUSTOMER'") &&
  quickReviewMigration.includes("if length(ap)<>10 or ap<>bp") &&
@@ -111,10 +125,8 @@ assert.ok(customerTimelineSource.includes("from('ai_conversations')") &&
 assert.ok(relatedLeadSource.includes("crm_review_phone_lead_candidates") &&
  relatedLeadSource.includes('crm_consolidate_verified_leads') &&
  relatedLeadSource.includes('Phone and normalized name match') &&
- relatedLeadSource.includes('Customer confirmed directly') &&
- relatedLeadSource.includes('Independently verified records') &&
- relatedLeadSource.includes('These records belong to the same customer.') &&
- !relatedLeadSource.includes('Identity verification notes (required for different names)') &&
+ relatedLeadSource.includes('I confirm these records belong to the same customer.') &&
+ !relatedLeadSource.includes('How was the customer verified?') &&
  !relatedLeadSource.includes('verificationNote.trim().length<20'),
  'Possible identity matches must be read-only and rely on verified staff lookup');
 assert.ok(conversationsHistorySource.includes('range(page*PAGE_SIZE,page*PAGE_SIZE+PAGE_SIZE-1)') &&

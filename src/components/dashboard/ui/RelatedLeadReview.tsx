@@ -13,14 +13,13 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
  const [expanded,setExpanded]=useState(false);
  const [confirmId,setConfirmId]=useState<string|null>(null);
  const [confirmed,setConfirmed]=useState(false);
- const [verificationMethod,setVerificationMethod]=useState<'customer_confirmed'|'records_verified'|''>('');
  const [busy,setBusy]=useState(false);
  const busyRef=useRef(false);
  busyRef.current=busy;
  const [version,setVersion]=useState(0);
  const dialogRef=useRef<HTMLDivElement>(null);
  const triggerRef=useRef<HTMLButtonElement|null>(null);
- const closeConfirmation=()=>{if(busyRef.current)return;setConfirmId(null);setConfirmed(false);setVerificationMethod('');};
+ const closeConfirmation=()=>{if(busyRef.current)return;setConfirmId(null);setConfirmed(false);};
  useEffect(()=>{
   if(!confirmId)return;
   const original=document.body.style.overflow;
@@ -45,7 +44,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
   };
  },[confirmId]);
  useEffect(()=>{
-  let live=true;setLoading(true);setError(null);setItems([]);setConfirmId(null);setConfirmed(false);setVerificationMethod('');
+  let live=true;setLoading(true);setError(null);setItems([]);setConfirmId(null);setConfirmed(false);
   void (async()=>{
    const digits=normalizedPhone(lead.phone);
    const phoneQuery=digits.length===10?await supabase.rpc('crm_review_phone_lead_candidates',{p_phone:lead.phone}):null;
@@ -75,10 +74,10 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
  },[lead.id,lead.name,lead.phone,lead.email,version]);
  const selected=items.find(x=>x.id===confirmId);
  const consolidate=async()=>{
-  if(!selected?.eligible||!confirmed||busy||(!selected.safe&&!verificationMethod))return;
+  if(!selected?.eligible||!confirmed||busy)return;
   setBusy(true);setError(null);
   const result=await supabase.rpc('crm_consolidate_verified_leads',{
-   p_primary:lead.id,p_secondary:selected.id,p_confirmation:'CONFIRM SAME CUSTOMER',p_verification_note:selected.safe?null:verificationMethod
+   p_primary:lead.id,p_secondary:selected.id,p_confirmation:'CONFIRM SAME CUSTOMER',p_verification_note:'staff_confirmed_same_customer'
   });
   if(result.error){setError(result.error.message);setBusy(false);return;}
   setBusy(false);setConfirmId(null);setConfirmed(false);setVersion(n=>n+1);onConsolidated?.();
@@ -105,7 +104,7 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
       <p className="mt-1 text-xs text-[#bea98f]">{candidate.reason}</p>
       <div className="mt-2 flex flex-wrap items-center gap-3">
        <Link to={'/dashboard/leads?lead='+encodeURIComponent(candidate.id)} className="inline-flex min-h-9 items-center text-xs text-[#ebc992] underline underline-offset-2">Inspect history</Link>
-       {candidate.eligible&&<button type="button" onClick={e=>{triggerRef.current=e.currentTarget;setConfirmId(candidate.id);setConfirmed(false);setVerificationMethod('');}} className="min-h-9 rounded-lg border border-[#be9d68]/55 px-3 text-xs font-semibold text-[#f0d29f]">Verify and consolidate</button>}
+       {candidate.eligible&&<button type="button" onClick={e=>{triggerRef.current=e.currentTarget;setConfirmId(candidate.id);setConfirmed(false);}} className="min-h-9 rounded-lg border border-[#be9d68]/55 px-3 text-xs font-semibold text-[#f0d29f]">Verify and consolidate</button>}
       </div>
      </div>)}
     </div>
@@ -131,26 +130,12 @@ export default function RelatedLeadReview({lead,onConsolidated}:{lead:{id:string
      <p className="mt-2">Both records use a phone ending in {normalizedPhone(lead.phone).slice(-4) || 'unknown'}.</p>
      <p className="mt-1">Original submissions and conversation history will remain available.</p>
     </div>
-    {!selected.safe&&<fieldset className="space-y-2">
-     <legend className="text-xs font-semibold text-[#efd4a8]">How was the customer verified?</legend>
-     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      <label className={'flex min-h-12 items-center gap-2 rounded-xl border p-3 text-xs '+(verificationMethod==='customer_confirmed'?'border-[#d9b27a] bg-[#3c2d20] text-[#f4dcaf]':'border-[#876b4b] bg-[#241c17] text-[#d0b99a]')}>
-       <input type="radio" name="crm-verification-method" checked={verificationMethod==='customer_confirmed'} onChange={()=>setVerificationMethod('customer_confirmed')}/>
-       Customer confirmed directly
-      </label>
-      <label className={'flex min-h-12 items-center gap-2 rounded-xl border p-3 text-xs '+(verificationMethod==='records_verified'?'border-[#d9b27a] bg-[#3c2d20] text-[#f4dcaf]':'border-[#876b4b] bg-[#241c17] text-[#d0b99a]')}>
-       <input type="radio" name="crm-verification-method" checked={verificationMethod==='records_verified'} onChange={()=>setVerificationMethod('records_verified')}/>
-       Independently verified records
-      </label>
-     </div>
-     <p className="text-[11px] leading-relaxed text-[#c4aa8c]">Select only a method actually used. A matching phone alone is not enough.</p>
-    </fieldset>}
     {error&&<p role="alert" className="rounded-lg border border-[#b46b5f]/60 bg-[#421f1c] p-3 text-xs text-[#f4c3bd]">{error}</p>}
-    <label className="flex min-h-11 items-center gap-3 text-xs leading-relaxed text-[#edce9c]"><input className="h-5 w-5 shrink-0" type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>These records belong to the same customer.</label>
+    <label className="flex min-h-11 items-center gap-3 text-xs leading-relaxed text-[#edce9c]"><input className="h-5 w-5 shrink-0" type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>I confirm these records belong to the same customer.</label>
    </div>
    <footer className="grid shrink-0 grid-cols-2 gap-2 border-t border-[#745d43]/45 bg-[#231c16] px-4 py-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
     <button type="button" onClick={closeConfirmation} className="min-h-12 rounded-xl border border-[#9c805c]/60 text-sm text-[#efce99]">Cancel</button>
-    <button type="button" disabled={!confirmed||busy||(!selected.safe&&!verificationMethod)} onClick={()=>void consolidate()} className="min-h-12 rounded-xl bg-[#c5a06d] px-2 text-sm font-semibold text-[#23170d] disabled:opacity-40">{busy?'Consolidating…':'Confirm consolidation'}</button>
+    <button type="button" disabled={!confirmed||busy} onClick={()=>void consolidate()} className="min-h-12 rounded-xl bg-[#c5a06d] px-2 text-sm font-semibold text-[#23170d] disabled:opacity-40">{busy?'Consolidating…':'Confirm consolidation'}</button>
    </footer>
   </div>
  </div>,document.body)}
