@@ -5,24 +5,30 @@ import {useCrmActivity,type CrmActivity} from './CrmActivityContext';
 import {IosNativeTap} from './DashboardHaptics';
 
 type Filter='all'|'urgent'|'opportunity'|'lead'|'handoff'|'staff'|'history';
+type DisplayActivity=CrmActivity & {customerRequestCount?:number;customerUrgentCount?:number;customerOverdue?:boolean;groupEventIds?:string[]};
+const requestTime=(item:CrmActivity)=>Date.parse(item.callback_requested_at??item.created_at)||0;
+const activeChat=(item:CrmActivity)=>isChatRequest(item)&&!['completed','closed','cancelled'].includes(item.callback_status??'')&&!item.archived_at&&!item.lead_archived;
+const customerKey=(item:CrmActivity)=>item.callback_lead_id?'lead:'+item.callback_lead_id:'conversation:'+(item.callback_conversation_id??item.callback_task_id??item.id);
+const isUrgent=(item:DisplayActivity)=>Boolean(item.customerUrgentCount)||hasActiveEscalation(item);
 const staffNames:Record<string,string>={'yourcustomerflowguy@gmail.com':'Josh','missydourshomes@gmail.com':'Missy','heberherrera92@gmail.com':'Heber'};
 const staffName=(email?:string|null)=>email?staffNames[email.toLowerCase()]??'Team member':'Team member';
 const isChatRequest=(item:CrmActivity)=>item.category==='handoff'||item.category==='escalation';
 const hasActiveEscalation=(item:CrmActivity)=>item.category==='escalation'&&Boolean(item.callback_escalated_at);
 const isFollowupScheduled=(item:CrmActivity)=>isChatRequest(item)&&item.callback_outcome==='follow_up'&&Boolean(item.callback_followup_at)&&!item.callback_escalated_at;
 const categoryLabel=(item:CrmActivity)=>item.category==='escalation'?(item.callback_request_kind==='callback'?'Urgent Callback':'Urgent Chat Request'):item.category==='lead'?'Website Contact Form':item.category==='handoff'?(item.callback_request_kind==='callback'?'Callback Request':'Direct Chat Request'):item.category==='opportunity'?'AI Chat Opportunity':'Staff Activity';
-const displayTitle=(item:CrmActivity)=>isChatRequest(item)&&item.callback_status==='claimed'?'Assigned to '+staffName(item.callback_assignee):isFollowupScheduled(item)?'Follow-up Scheduled':item.category==='handoff'?(item.callback_request_kind==='callback'?'Callback Requested':'New Chat Request'):item.category==='escalation'?(item.callback_escalated_at?(item.callback_request_kind==='callback'?'Urgent Callback Request':'Urgent Chat Request'):(item.callback_request_kind==='callback'?'Callback Requested':'New Chat Request')):item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot').replace(/^Live (Buyer|Seller|Investor) Interest/i,'$1 Interest Detected');
+const displayTitle=(item:DisplayActivity)=>item.customerUrgentCount&&item.customerRequestCount&&item.customerRequestCount>1&&item.callback_status!=='claimed'?(item.callback_request_kind==='callback'?'Urgent Callback Requests':'Urgent Chat Requests'):isChatRequest(item)&&item.callback_status==='claimed'?'Assigned to '+staffName(item.callback_assignee):isFollowupScheduled(item)?'Follow-up Scheduled':item.category==='handoff'?(item.callback_request_kind==='callback'?'Callback Requested':'New Chat Request'):item.category==='escalation'?(item.callback_escalated_at?(item.callback_request_kind==='callback'?'Urgent Callback Request':'Urgent Chat Request'):(item.callback_request_kind==='callback'?'Callback Requested':'New Chat Request')):item.event_key.startsWith('staff:completed:')?'Follow-up Completed':item.event_key.startsWith('staff:claimed:')?'Team Member Joined':item.category==='lead'&&item.event_key.startsWith('lead:')?'New Lead Received':item.title.replace(/Concierge/gi,'Chatbot').replace(/^Live (Buyer|Seller|Investor) Interest/i,'$1 Interest Detected');
 const safeTarget=(value:string)=>value.startsWith('/dashboard/leads?lead=')||value==='/dashboard/conversations'||/^\/dashboard\/conversations\?conversation=[0-9a-f-]{36}$/i.test(value)?value:'/dashboard/conversations';
 const friendlySummary=(summary:string)=>summary.replace(/(Source:\s*)\/(?=\s|$|·)/gi,'$1Homepage');
 // Keep the CTA's destination, label and next-step guidance consistent.
 const opensLead=(item:CrmActivity)=>item.category==='lead'||(item.category!=='handoff'&&item.category!=='escalation'&&item.target_path.startsWith('/dashboard/leads?lead='));
-const actionLabel=(item:CrmActivity)=>item.category==='opportunity'?'View Conversation':isChatRequest(item)?
+const actionLabel=(item:DisplayActivity)=>item.customerRequestCount&&item.customerRequestCount>1?'Open Lead · Review Requests':item.category==='opportunity'?'View Conversation':isChatRequest(item)?
  (item.callback_status==='completed'?'Review Conversation':
  item.callback_connection==='expired'||item.callback_connection==='offline'?
  (item.callback_lead_id?'Open Lead · Follow Up':'Review Conversation · Follow Up'):
  item.callback_connection==='online'?'Open Conversation · Respond':
  'Review Conversation · Check Status'):opensLead(item)?'Open Lead':'View Conversation';
-const actionTarget=(item:CrmActivity)=>isChatRequest(item)&&
+const actionTarget=(item:DisplayActivity)=>item.customerRequestCount&&item.customerRequestCount>1&&item.callback_lead_id
+ ?'/dashboard/leads?lead='+encodeURIComponent(item.callback_lead_id):isChatRequest(item)&&
  ['offline','expired'].includes(item.callback_connection??'')&&item.callback_lead_id
  ?'/dashboard/leads?lead='+encodeURIComponent(item.callback_lead_id):
  isChatRequest(item)&&item.callback_conversation_id?'/dashboard/conversations?conversation='+item.callback_conversation_id:
@@ -38,7 +44,7 @@ const filters:Array<{key:Filter;label:string;mobileLabel?:string;mobileSpan:stri
  {key:'staff',label:'Staff Activity',mobileSpan:'col-span-4'},
  {key:'history',label:'History',mobileSpan:'col-span-3'}
 ];
-const matchesFilter=(e:CrmActivity,filter:Filter)=>{
+const matchesFilter=(e:DisplayActivity,filter:Filter)=>{
  const historicalChat=(e.category==='handoff'||e.category==='escalation')&&['completed','closed','cancelled'].includes(e.callback_status??'');
  const inactiveOpportunity=e.category==='opportunity'&&e.callback_status!=='ai';
  const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
@@ -48,7 +54,7 @@ const matchesFilter=(e:CrmActivity,filter:Filter)=>{
  if(filter==='all')return e.category!=='staff';
  // Only an active, unresolved escalation belongs to Urgent. Claiming it
  // does not clear urgency; recording a future follow-up resets escalation.
- if(filter==='urgent')return hasActiveEscalation(e);
+ if(filter==='urgent')return isUrgent(e);
  if(filter==='handoff')return e.category==='handoff'||e.category==='escalation';
  return e.category===filter;
 };
@@ -59,59 +65,69 @@ export default function CrmActivityCenter(){
  const [notice,setNotice]=useState('');
  const [refreshing,setRefreshing]=useState(false);
  const refreshInbox=async()=>{if(refreshing)return;setRefreshing(true);try{await refresh();}finally{setRefreshing(false);}};
- // Collapse only events that belong to the SAME real handoff task.
- // Escalation updates the existing card; both original events remain in
- // the database and are shown independently in History after resolution.
- const groupKey=(item:CrmActivity)=>item.callback_conversation_id??item.callback_task_id;
- const activeEvents=useMemo(()=>{
-  const byConversation=new Map<string,CrmActivity>();
+ // Preserve each task and audit event, while showing one active card per
+ // verified customer. Never infer identity from a matching name or phone.
+ const activeEvents=useMemo<DisplayActivity[]>(()=>{
+  const perConversation=new Map<string,CrmActivity>();
+  const groupMembers=new Map<string,CrmActivity[]>();
   for(const item of items){
-   const key=groupKey(item);
-   if((item.category==='handoff'||item.category==='escalation')&&key
-      &&!['completed','closed','cancelled'].includes(item.callback_status??'')){
-    const existing=byConversation.get(key);
-    const urgent=Boolean(item.callback_escalated_at);
-    if(!existing||(urgent&&item.category==='escalation'&&existing.category!=='escalation')
-       ||(!urgent&&item.category==='handoff'&&existing.category==='escalation')){
-      byConversation.set(key,item);
-    }
-   }
+   if(!activeChat(item))continue;
+   const conversation=item.callback_conversation_id??item.callback_task_id??item.id;
+   const existing=perConversation.get(conversation);
+   const urgent=hasActiveEscalation(item);
+   if(!existing||(urgent&&item.category==='escalation'&&existing.category!=='escalation')||
+      (!urgent&&item.category==='handoff'&&existing.category==='escalation'))perConversation.set(conversation,item);
+   const key=customerKey(item);
+   groupMembers.set(key,[...(groupMembers.get(key)??[]),item]);
   }
-  return items.filter(item=>{
-   const key=groupKey(item);
-   if((item.category!=='handoff'&&item.category!=='escalation')||!key)return true;
-   if(['completed','closed','cancelled'].includes(item.callback_status??''))return true;
-   return byConversation.get(key)?.id===item.id;
-  });
+  const customers=new Map<string,CrmActivity[]>();
+  for(const task of perConversation.values()){
+   const key=customerKey(task);
+   customers.set(key,[...(customers.get(key)??[]),task]);
+  }
+  const customerCards=new Map<string,DisplayActivity>();
+  for(const [key,tasks] of customers){
+   tasks.sort((a,b)=>requestTime(b)-requestTime(a)||b.id.localeCompare(a.id));
+   const latest=tasks[0];
+   const urgentCount=tasks.filter(hasActiveEscalation).length;
+   const overdue=tasks.some(task=>hasActiveEscalation(task)&&Boolean(task.callback_escalated_at)&&
+    Date.now()-Date.parse(task.callback_escalated_at!)>=24*60*60*1000);
+   customerCards.set(key,{...latest,category:urgentCount>0?'escalation':latest.category,customerRequestCount:tasks.length,customerUrgentCount:urgentCount,
+    customerOverdue:overdue,groupEventIds:[...new Set((groupMembers.get(key)??[]).map(event=>event.id))]});
+  }
+  const other=items.filter(item=>!activeChat(item));
+  return [...other,...customerCards.values()].sort((a,b)=>
+   (isChatRequest(b)?requestTime(b):Date.parse(b.created_at))-
+   (isChatRequest(a)?requestTime(a):Date.parse(a.created_at))||b.id.localeCompare(a.id));
  },[items]);
- const visible=useMemo(()=>(filter==='history'?items:activeEvents).filter(e=>matchesFilter(e,filter)),[items,activeEvents,filter]);
+ const visible=useMemo<DisplayActivity[]>(()=>(filter==='history'?items:activeEvents).filter(e=>matchesFilter(e,filter)),[items,activeEvents,filter]);
  // Filter badges use the identical grouping and visibility predicate as cards.
  // Urgent is intentionally a subset of Direct Chat; do not sum filter badges.
  const filterCounts=useMemo(()=>Object.fromEntries(filters.map(({key})=>[
   key,(key==='history'?items:activeEvents).filter(e=>matchesFilter(e,key)).length
  ])) as Record<Filter,number>,[items,activeEvents]);
- const requiresAction=(item:CrmActivity)=>Boolean(item.category!=='opportunity'&&!item.lead_archived&&!item.archived_at &&
+ const requiresAction=(item:DisplayActivity)=>Boolean(item.category!=='opportunity'&&!item.lead_archived&&!item.archived_at &&
    (item.lead_status==='new'||item.callback_status==='pending'||item.callback_status==='waiting_human'||
-    (hasActiveEscalation(item)&&item.callback_status==='claimed')));
+    (isUrgent(item)&&item.callback_status==='claimed')));
  // Every actionable card receives a matching category-colored border sweep;
  // informational or completed cards keep a quiet, premium static border.
- const isFeatured=(item:CrmActivity)=>requiresAction(item)||(item.category==='opportunity'&&item.callback_status==='ai');
- const isInProgress=(item:CrmActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
- const overdue24h=(item:CrmActivity)=>hasActiveEscalation(item)&&
+ const isFeatured=(item:DisplayActivity)=>requiresAction(item)||(item.category==='opportunity'&&item.callback_status==='ai');
+ const isInProgress=(item:DisplayActivity)=>item.callback_status==='claimed'||item.lead_status==='contacted';
+ const overdue24h=(item:DisplayActivity)=>Boolean(item.customerOverdue)||(hasActiveEscalation(item)&&
   Number.isFinite(Date.parse(item.callback_escalated_at!))&&
-  Date.now()-Date.parse(item.callback_escalated_at!)>=24*60*60*1000;
+  Date.now()-Date.parse(item.callback_escalated_at!)>=24*60*60*1000);
  const isResolved=(item:CrmActivity)=>item.category==='opportunity'&&item.callback_status==='closed'||item.callback_status==='completed'||item.callback_status==='closed'||item.event_key.startsWith('staff:completed:');
  const execute=async(task:()=>Promise<void>)=>{
   if(working)return;setWorking(true);setNotice('');
   try{await task();}catch(e){setNotice(e instanceof Error?e.message:'Unable to update notification');}
   finally{setWorking(false);}
  };
- const acknowledgeGroup=(item:CrmActivity)=>{
-  const key=groupKey(item);
-  const related=items.filter(e=>e.id===item.id||(key&&(e.category==='handoff'||e.category==='escalation')&&groupKey(e)===key));
+ const acknowledgeGroup=(item:DisplayActivity)=>{
+  const ids=new Set(item.groupEventIds??[item.id]);
+  const related=items.filter(e=>ids.has(e.id));
   return Promise.all(related.filter(e=>!e.read_at).map(e=>markRead(e.id))).then(()=>{});
  };
- const hideNotice=(item:CrmActivity)=>{
+ const hideNotice=(item:DisplayActivity)=>{
   if(requiresAction(item)){setNotice('Resolve this request from its lead record, or acknowledge it without hiding the work.');return;}
   if(!window.confirm('Hide only this notification? The lead, callback and conversation will remain unchanged.'))return;
   void execute(()=>archive(item.id));
@@ -150,7 +166,7 @@ export default function CrmActivityCenter(){
     <Inbox className="mx-auto mb-3 text-[#c8a96e]" size={28}/>
     {filter==='history'?'No archived-lead or manually hidden notifications.':filter==='all'?'You’re all caught up. New CRM activity will appear here.':'No notifications match this filter.'}
    </div>}
-   {visible.map(item=><article key={filter!=='history'&&groupKey(item)&&(item.category==='handoff'||item.category==='escalation')?'active-chat:'+groupKey(item):item.id} data-category={item.category} data-opportunity-kind={item.opportunity_kind??undefined} data-urgent-transition={item.category==='escalation'&&Boolean(item.callback_escalated_at)?'true':'false'} data-work-state={requiresAction(item)?'action':isResolved(item)?'complete':isInProgress(item)?'progress':'info'} className={'crm-category-notification relative isolate overflow-hidden rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(isFeatured(item)?'crm-actionable-notification ':'')}>
+   {visible.map(item=><article key={filter!=='history'&&isChatRequest(item)?'active-chat:'+customerKey(item):item.id} data-category={item.category} data-opportunity-kind={item.opportunity_kind??undefined} data-urgent-transition={isChatRequest(item)&&isUrgent(item)?'true':'false'} data-work-state={requiresAction(item)?'action':isResolved(item)?'complete':isInProgress(item)?'progress':'info'} className={'crm-category-notification relative isolate overflow-hidden rounded-xl border p-4 transition-[border-color,box-shadow] duration-300 '+(isFeatured(item)?'crm-actionable-notification ':'')}>
     <div className="min-w-0">
      <div className="flex min-h-[32px] items-center justify-between gap-2">
       <div className="flex min-w-0 items-center gap-2">
@@ -167,11 +183,13 @@ export default function CrmActivityCenter(){
       <span className={'inline-flex items-center rounded-md border px-2 py-1 '+(item.callback_connection==='online'?'border-emerald-500/40 text-emerald-200':item.callback_connection==='expired'?'border-red-400/35 text-red-200':'border-amber-400/30 text-[#e0c79c]')}>
        {item.callback_connection==='online'?'Visitor Online · Chat Open':item.callback_connection==='away'?'Visitor Away · Chat Hidden':item.callback_connection==='expired'?'Chat Session Expired':item.callback_connection==='offline'?'Visitor Offline':'Connection Unconfirmed'}
       </span>
+      {Boolean(item.customerRequestCount&&item.customerRequestCount>1)&&<span className="inline-flex items-center rounded-md border border-[#c8a96e]/50 bg-[#c8a96e]/10 px-2 py-1 font-semibold text-[#f1d7ab]">{item.customerRequestCount} outstanding requests · {item.customerUrgentCount} urgent</span>}
       {overdue24h(item)&&<span className="inline-flex items-center rounded-md border border-red-400/50 bg-red-900/20 px-2 py-1 font-semibold text-red-200">Overdue 24h+</span>}
       {isFollowupScheduled(item)&&<span className="inline-flex items-center rounded-md border border-[#c8a96e]/45 px-2 py-1 font-semibold text-[#edce93]">Next follow-up {new Date(item.callback_followup_at!).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>}
      </div>}
      {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked chat lead audit':item.category==='handoff'&&['completed','closed'].includes(item.callback_status??'')?'Completed chat request':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Team activity audit':item.lead_archived?'Archived lead': 'Manually hidden'}</span>}
      <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'||item.category==='escalation'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot request'):friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot activity')}</p>
+     {Boolean(item.customerRequestCount&&item.customerRequestCount>1)&&<p className="mt-2 text-xs leading-relaxed text-[#dfc391]">Latest request shown. Open this lead to review and record outcomes for all outstanding requests individually.</p>}
      {(item.category==='handoff'||item.category==='escalation')&&item.callback_requested_at&&<div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#bba995]" aria-label="Request activity timeline">
       <span>Requested {new Date(item.callback_requested_at).toLocaleString(undefined,{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>
       {item.callback_escalated_at&&<><span aria-hidden="true">→</span><span className="font-semibold text-[#e4a18e]">Escalated {new Date(item.callback_escalated_at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}</span></>}

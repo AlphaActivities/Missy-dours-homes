@@ -8,6 +8,17 @@ const apiSource=readFileSync(new URL('../supabase/functions/concierge-api/index.
 
 const activityCenter=readFileSync(new URL('../src/components/dashboard/CrmActivityCenter.tsx',import.meta.url),'utf8');
 const activityContext=readFileSync(new URL('../src/components/dashboard/CrmActivityContext.tsx',import.meta.url),'utf8');
+const groupedCountsSource=readFileSync(new URL('../supabase/migrations/20261111153000_group_active_notifications_by_customer.sql',import.meta.url),'utf8');
+assert.ok(activityCenter.includes("const customerKey=(item:CrmActivity)=>item.callback_lead_id?") &&
+  activityCenter.includes('customerRequestCount:tasks.length') &&
+  activityCenter.includes('groupEventIds:') &&
+  activityCenter.includes("if(filter==='urgent')return isUrgent(e)") &&
+  activityCenter.includes('Open Lead · Review Requests'),
+  'Customer-linked notification requests must show one newest-first card while retaining all underlying actions');
+assert.ok(groupedCountsSource.includes("count(DISTINCT group_key) FILTER(WHERE is_active)") &&
+  groupedCountsSource.includes("coalesce(c.lead_id::text,'conversation:'||ht.conversation_id::text)") &&
+  groupedCountsSource.includes('public.crm_visible_notification_count_service'),
+  'Bell and push badge totals must group callbacks by canonical lead without combining unrelated visitors');
 assert.ok(activityContext.includes("callback_assignee?:string|null") &&
  activityContext.includes("callback_connection?:VisitorConnection|null") &&
  activityContext.includes("callback_outcome?:'follow_up'|'resolved'|null"),
@@ -21,11 +32,11 @@ assert.ok(activityContext.includes("expiry<=Date.now()?'expired'") &&
 assert.ok(activityCenter.includes("item.callback_status==='claimed'?'Assigned to '") &&
  activityCenter.includes("staffName(item.callback_assignee)"),
  'Staff claim means assigned, not proof of a response to the visitor');
-assert.ok(activityCenter.includes("if(filter==='urgent')return hasActiveEscalation(e)") &&
+assert.ok(activityCenter.includes("if(filter==='urgent')return isUrgent(e)") &&
  activityCenter.includes("item.callback_outcome==='follow_up'") &&
  activityCenter.includes("!item.callback_escalated_at"),
  'Keep an unresolved escalation urgent until its recorded outcome resets the task escalation');
-assert.ok(activityCenter.includes("(hasActiveEscalation(item)&&item.callback_status==='claimed')") &&
+assert.ok(activityCenter.includes("(isUrgent(item)&&item.callback_status==='claimed')") &&
  activityCenter.includes("if(requiresAction(item)){setNotice("),
  'Claimed escalations must remain actionable and cannot be hidden until an outcome is recorded');
 assert.ok(activityCenter.includes("Overdue 24h+") &&
