@@ -406,7 +406,7 @@ try {
  assert.ok(response?.ok());
  const launcher=page.getByRole('button',{name:'Chat or call Missy'});
  await launcher.click();
- await page.getByRole('group',{name:'Contact Missy'}).getByRole('button',{name:'Message Missy'}).click();
+ await page.getByRole('group',{name:'Contact Missy'}).getByRole('button',{name:'Message Missy Directly'}).click();
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  const composer=dialog.getByRole('textbox',{name:"Message Missy's concierge"});
  assert.equal(await dialog.getByRole('button',{name:'Close concierge'}).count(),0);
