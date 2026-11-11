@@ -23,11 +23,11 @@ export default function CallbackAttentionPanel({choices,selected,onSelect,onOutc
      </select><ChevronDown size={17} className="pointer-events-none absolute right-3 top-4 text-[#d4b58a]"/>
     </div>:<p className="text-sm font-medium text-[#efdbc0]">One active request</p>}
     {request&&<div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-     <span className="flex items-center gap-2 text-[#d3bda4]"><UserRound size={14}/>Assigned to <strong className="text-[#f1d6ad]">{staffName(selected?.owner??request.assigned_to)}</strong></span>
+     <span className="flex items-center gap-2 text-[#d3bda4]"><UserRound size={14}/>Handled by <strong className="text-[#f1d6ad]">{staffName(selected?.owner??request.assigned_to)}</strong></span>
      <span className="flex items-center gap-2 text-[#d3bda4]"><CalendarClock size={14}/>{appointment?'Next follow-up: '+appointment:'Follow-up not scheduled'}</span>
     </div>}
    </div>
-   <p className="text-xs leading-relaxed text-[#cbb3a0]">{selected?.status==='claimed'?'Assigned, awaiting recorded outcome.':'Awaiting staff attention.'} Original request time: {selected?.requestedAt?formatDashboardDateTime(selected.requestedAt):'Unknown'}.</p>
+   <p className="text-xs leading-relaxed text-[#cbb3a0]">{selected?.status==='claimed'?'Awaiting contact outcome.':'Awaiting staff attention.'} Original request time: {selected?.requestedAt?formatDashboardDateTime(selected.requestedAt):'Unknown'}.</p>
    <div className="grid grid-cols-2 gap-2">
     <Link to={'/dashboard/conversations?conversation='+encodeURIComponent(request?.conversation_id??'')}
      className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#a98b64]/60 bg-[#201a16] px-2 text-center text-xs font-semibold text-[#efd3a6]"><MessageCircle size={16}/>View Chat</Link>
@@ -37,7 +37,7 @@ export default function CallbackAttentionPanel({choices,selected,onSelect,onOutc
     <summary className="cursor-pointer font-medium text-[#e1c49b]">Request details</summary>
     <div className="mt-3 space-y-1.5 leading-relaxed">
      <p>Received in Texas: {selected?.requestedAt?formatDallasDateTime(selected.requestedAt):'Unknown'}</p>
-     <p>Response: {selected?.status==='claimed'?'Staff assigned':'Awaiting staff'}</p>
+     <p>Response: {selected?.status==='claimed'?'Team member handling request':'Awaiting staff'}</p>
      <p>{appointment?'Staff-planned follow-up: '+appointment+'. Confirm directly with the customer.':'No appointment has been scheduled. Request receipt time is not a booked appointment.'}</p>
     </div>
    </details>
