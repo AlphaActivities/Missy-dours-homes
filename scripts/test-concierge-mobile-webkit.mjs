@@ -27,7 +27,7 @@ try {
   return back&&chat&&Number(getComputedStyle(back).opacity)>0.99&&
     Number(getComputedStyle(chat.parentElement).opacity)>0.99&&
     Math.abs(back.getBoundingClientRect().top-chat.getBoundingClientRect().top)<2;
- },{timeout:8000});
+ },undefined,{timeout:8000});
  const floating=await page.evaluate(()=>{
   const back=document.querySelector('[aria-label="Back to top"]');
   const chat=document.querySelector('[aria-label="Chat or call Missy"]');
