@@ -68,6 +68,25 @@ const followupSectionSource=readFileSync(new URL('../src/components/dashboard/ui
 const matchingMigration=readFileSync(new URL('../supabase/migrations/20261109_preserve_identity_name_word_boundaries.sql',import.meta.url),'utf8');
 const quickReviewMigration=readFileSync(new URL('../supabase/migrations/20261110_quick_consolidation_verification.sql',import.meta.url),'utf8');
 const oneConfirmMigration=readFileSync(new URL('../supabase/migrations/20261110_single_confirm_customer_merge.sql',import.meta.url),'utf8');
+const excludedCandidatesMigration=readFileSync(new URL('../supabase/migrations/20261111_exclude_consolidated_lead_candidates.sql',import.meta.url),'utf8');
+assert.ok(excludedCandidatesMigration.includes('crm_review_phone_lead_candidates') &&
+ excludedCandidatesMigration.includes('consolidated.secondary_lead_id = l.id') &&
+ excludedCandidatesMigration.includes('crm_lead_consolidations'),
+ 'Server candidate lookup must never offer already consolidated secondary records');
+assert.ok(relatedLeadSource.includes("from('crm_lead_consolidations')") &&
+ relatedLeadSource.includes("consolidatedIds.has(row.id)") &&
+ relatedLeadSource.includes("setItems([]);setLoading(false);return;") &&
+ relatedLeadSource.includes("setVersion(n=>n+1)"),
+ 'Duplicate UI must reconcile recorded consolidations and refresh candidates instead of leaving stale actions');
+assert.ok(relatedLeadSource.includes('Customer Records Combined') &&
+ relatedLeadSource.includes('Done · Return to Customer') &&
+ relatedLeadSource.includes('setCompleted({primary:lead.name,secondary:selected.name})') &&
+ relatedLeadSource.includes('This record has already been consolidated.'),
+ 'Successful or stale consolidation must show an accessible persistent result, not an invisible toast');
+assert.ok(relatedLeadSource.includes('crm-consolidation-success-title') &&
+ relatedLeadSource.includes('pb-[max(1rem,env(safe-area-inset-bottom))]'),
+ 'Success confirmation must fit mobile viewport and keep its Done action visible');
+
 assert.ok(oneConfirmMigration.includes("'staff_confirmed_same_customer'") &&
  oneConfirmMigration.includes("p_confirmation is distinct from 'CONFIRM SAME CUSTOMER'") &&
  oneConfirmMigration.includes("if length(ap)<>10 or ap<>bp") &&

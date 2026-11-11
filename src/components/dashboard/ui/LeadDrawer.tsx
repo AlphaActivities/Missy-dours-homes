@@ -314,7 +314,7 @@ function DrawerContent({
         )}
 
         <RelatedLeadReview lead={{id:lead.id,name:lead.name,phone:lead.phone,email:lead.email}}
-         onConsolidated={()=>{setActivityRefreshKey(n=>n+1);onConsolidated?.();showToast('Verified customer histories consolidated. Original submissions remain archived.');}} />
+         onConsolidated={()=>{setActivityRefreshKey(n=>n+1);onConsolidated?.();}} />
 
         {/* Combined customer timeline, including archived or completed linked chats. */}
         <ActivityHistory
