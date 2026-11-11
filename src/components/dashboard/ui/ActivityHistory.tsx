@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Calendar, FileText, CheckCircle2, Clock, StickyNote, Paperclip, Trash2, AlertCircle, MessagesSquare } from 'lucide-react';
+import { displayLeadMessage } from '../../../utils/leadMessage';
 import { supabase } from '../../../lib/supabase';
 import { LeadActivity } from '../types';
 
@@ -91,7 +92,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
       items.push({icon:<FileText size={12}/>,color:'#e6b67c',category:'crm',
        description:'Original customer submission preserved · '+(record?.name||'Previous record')+
         ' · '+(record?.source_page||'Original source')+
-        (record?.message?' · '+record.message.slice(0,180):''),
+        (record?.message?' · '+displayLeadMessage(record.message).slice(0,180):''),
        actor:null,timestamp:record.created_at||source.confirmed_at,
        href:'/dashboard/leads?lead='+encodeURIComponent(source.secondary_lead_id)});
       const rawNotes=(record as {notes?:string}).notes;
