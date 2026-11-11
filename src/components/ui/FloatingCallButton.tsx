@@ -4,18 +4,21 @@ import { useLocation } from 'react-router-dom';
 import { CONTACT_INFO } from '../../config/contact';
 import { trackCTA, trackPhoneClick } from '../../utils/analytics';
 
-/** Faithful to approved Option 5: substantial rounded conversation outline,
- * recognizable handset, and a clear circular plus at the top right. */
+/** Version D: a rounded conversation bubble with three gold dots and a
+ * distinct circular plus badge. Keep the emblem crisp at 64px button size. */
 function LuxuryContactEmblem() {
   return (
-    <svg viewBox="0 0 100 100" width="51" height="51" fill="none"
+    <svg viewBox="0 0 100 100" width="49" height="49" fill="none"
       aria-hidden="true" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 18H72C81 18 87 24 87 33V65C87 75 81 81 71 81H42L22 94V80C13 78 9 73 9 63V33C9 24 14 18 22 18Z"
-        strokeWidth="5.2"/>
-      <path d="M32 37L39 32C42 30 44 31 46 34L52 43C54 46 53 48 50 51L46 55C51 62 57 67 65 71L69 66C72 63 74 63 77 65L85 71C88 73 88 76 85 79L81 84C78 88 73 88 68 86C49 79 33 64 27 47C25 43 27 39 32 37Z"
-        strokeWidth="4.5" transform="translate(2 3) scale(.86)"/>
-      <circle cx="80" cy="20" r="16" fill="#17130d" stroke="#E4C688" strokeWidth="4.1"/>
-      <path d="M80 11.5V28.5M71.5 20H88.5" strokeWidth="4.5"/>
+      <path
+        d="M29 21H65C78 21 85 29 85 41V58C85 71 77 78 64 78H43L25 90L29 77C19 75 13 68 13 57V41C13 29 20 21 29 21Z"
+        strokeWidth="4.6"
+      />
+      <circle cx="34" cy="50" r="3.35" fill="currentColor" stroke="none"/>
+      <circle cx="48" cy="50" r="3.35" fill="currentColor" stroke="none"/>
+      <circle cx="62" cy="50" r="3.35" fill="currentColor" stroke="none"/>
+      <circle cx="79" cy="23" r="14.5" fill="#17130d" stroke="#E4C688" strokeWidth="3.2"/>
+      <path d="M79 15.5V30.5M71.5 23H86.5" strokeWidth="3.5"/>
     </svg>
   );
 }
