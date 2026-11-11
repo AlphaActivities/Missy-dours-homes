@@ -64,7 +64,7 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
 
   return (
     <div ref={rootRef}
-      className={'mobile-viewport-floating-bottom fixed right-6 z-[60] md:hidden transition-opacity duration-700 ease-out motion-reduce:transition-none ' +
+      className={'relative pointer-events-auto shrink-0 transition-opacity duration-300 ease-out motion-reduce:transition-none ' +
         (arrived ? 'opacity-100' : 'pointer-events-none opacity-0')}>
       {expanded && (
         <div id="missy-mobile-contact-options" role="group" aria-label="Contact Missy"
