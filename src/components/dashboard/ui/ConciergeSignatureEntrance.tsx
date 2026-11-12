@@ -24,7 +24,6 @@ const formatDeviceDate = () => new Intl.DateTimeFormat(navigator.language || 'en
 
 export default function ConciergeSignatureEntrance() {
  const { user } = useAuth();
- const {attentionCount,loading:activityLoading,error:activityError}=useCrmActivity();
  const greeting = getDashboardGreeting(user?.email);
  const entranceStartedAt=useRef(performance.now());
  const [visible,setVisible]=useState(()=>!entrancePlayed);
