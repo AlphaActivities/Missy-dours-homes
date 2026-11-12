@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
-export const ROYAL_GRAVITY_SEEN_KEY = 'missy_royal_gravity_entrance_v3';
+export const ROYAL_GRAVITY_SEEN_KEY = 'missy_royal_gravity_entrance_v4';
 const MIN_HOME_MS = 6000;
 const AFTER_HERO_MS = 4000;
-const ANIMATION_MS = 2700;
+const ANIMATION_MS = 3100;
 
 /**
  * One-shot, GPU-friendly visual entrance. The actual contact controls remain
@@ -143,6 +143,14 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
       const reboundHeights = [72, 23, 7].map(height => Math.min(height, Math.max(4, dropY * .38)));
       const bounceEnd = dropDuration + flightDurations.reduce((sum, duration) => sum + duration, 0);
       const rollEnd = ANIMATION_MS;
+      const cardRightX = surface ? Math.max(contactX + 36, surface.right - destination.width * .82) : endX;
+      const edgeX = Math.max(contactX + 36, Math.min(cardRightX, endX));
+      const bounceTravel = Math.max(20, (edgeX - contactX) * .38);
+      const rollStartX = contactX + bounceTravel;
+      const rollTravel = Math.max(0, edgeX - rollStartX);
+      const rollFinishTime = bounceEnd + (rollEnd - bounceEnd) * .74;
+      const edgeTurns = Math.max(1, Math.round(rollTravel / (Math.PI * destination.width)));
+      const edgeRotation = edgeTurns * 360;
       const step = 1000 / 60;
       // Use exactly one contact plane: the bottom of the ball is aligned with
       // the measured card top at each impact.
@@ -170,22 +178,28 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
           const arc = 4 * u * (1 - u);
           y = dropY - reboundHeights[index] * arc;
           const elapsed = (time - dropDuration) / (bounceEnd - dropDuration);
-          x = contactX + Math.min(36, Math.max(0, endX - contactX) * .18) * elapsed;
+          x = contactX + bounceTravel * elapsed;
           rotation = 70 * elapsed;
           // Subtle contact deformation, limited to the first few milliseconds.
           const contact = Math.min(u, 1 - u);
           const squash = Math.max(0, 1 - contact / .075) * (.075 / (index + 1));
           sx = 1 + squash;
           sy = 1 - squash;
+        } else if (time <= rollFinishTime) {
+          const u = Math.min(1, (time - bounceEnd) / (rollFinishTime - bounceEnd));
+          // Keep horizontal speed visible across the card. Decelerate only
+          // near the right edge, never while still halfway across the surface.
+          const progress = 1 - Math.pow(1 - u, 1.35);
+          x = rollStartX + rollTravel * progress;
+          y = dropY;
+          rotation = 70 + (edgeRotation - 70) * progress;
         } else {
-          const u = Math.min(1, (time - bounceEnd) / (rollEnd - bounceEnd));
-          const smooth = u * u * (3 - 2 * u);
-          const rollStartX = contactX + Math.min(36, Math.max(0, endX - contactX) * .18);
-          x = rollStartX + (endX - rollStartX) * smooth;
-          // Travel smoothly to the anchored button while keeping the glyph
-          // upright at the end of an integral number of revolutions.
-          y = dropY + (endY - dropY) * smooth;
-          rotation = 70 + (finalRotation - 70) * smooth;
+          const u = Math.min(1, (time - rollFinishTime) / (rollEnd - rollFinishTime));
+          const progress = u * u * (3 - 2 * u);
+          x = edgeX + (endX - edgeX) * progress;
+          y = dropY + (endY - dropY) * u * u;
+          // Continuous clockwise rotation through a complete final turn.
+          rotation = edgeRotation + (finalRotation + 360 - edgeRotation) * progress;
         }
         sample(time, x, y, rotation, sx, sy);
       }
