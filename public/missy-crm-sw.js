@@ -69,9 +69,11 @@ self.addEventListener('push', event => {
   const notification = messages[payload.kind] || messages.handoff_created;
   const {title,body} = notification;
   event.waitUntil((async () => {
-    // Test pushes do not increment the business-work badge.
-    // The server supplies an authoritative count for real concierge events.
-    if(payload.kind !== 'device_test' && Number.isFinite(payload.attention_count)) {
+    // Foreground CRM pages own the badge; never overwrite their deduplicated count with a stale push payload.
+
+    const hasOpenCrm=openCrmTabs.some(tab=>{try{return new URL(tab.url).pathname.startsWith('/dashboard/');}catch{return false;}});
+    // Background pushes can update the installed badge while the CRM is closed.
+    if(!hasOpenCrm && payload.kind !== 'device_test' && Number.isFinite(payload.attention_count)) {
       try {
         const count=Math.max(0,Math.floor(payload.attention_count));
         if(count>0 && typeof self.navigator.setAppBadge==='function')await self.navigator.setAppBadge(count);
