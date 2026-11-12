@@ -83,7 +83,6 @@ self.addEventListener('push', event => {
     }
     // If the CRM is already open, ask it to re-read the canonical count rather
     // than trusting a possibly delayed push payload as the final badge state.
-    const openCrmTabs=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const tab of openCrmTabs){
       try{if(new URL(tab.url).pathname.startsWith('/dashboard/'))tab.postMessage({kind:'missy-crm-push-arrived'});}catch{/* Ignore untrusted/malformed client URLs. */}
     }
