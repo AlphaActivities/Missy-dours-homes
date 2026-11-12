@@ -106,7 +106,7 @@ function LeadTable({
               <td className="px-4 py-4 align-top">
                 <div className="space-y-1">
                   <span className="text-sm font-medium whitespace-nowrap" style={{ color: 'var(--ds-text-primary)' }}>
-                    {lead.name || '—'}
+                    {(lead.name || '—').replace(/\bJosh\s+Lad\b/gi,'Josh')}
                   </span>
                   {lead.status !== 'closed' && lead.status !== 'archived' && (
                     <ContactTimer compact createdAt={lead.created_at} lastContactedAt={lead.last_contacted_at} status={lead.status} />
@@ -207,7 +207,7 @@ function LeadCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate" style={{ color: 'var(--ds-text-primary)' }}>
-              {lead.name || '—'}
+              {(lead.name || '—').replace(/\bJosh\s+Lad\b/gi,'Josh')}
             </p>
             <p className="flex items-center gap-1.5 text-xs mt-0.5" style={{ color: 'var(--ds-text-tertiary)' }}>
               <Calendar size={10} />
