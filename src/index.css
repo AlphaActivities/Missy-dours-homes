@@ -1334,5 +1334,4 @@
   box-shadow: 0 10px 25px rgba(0,0,0,.48), 0 0 12px rgba(213,177,109,.28);
   will-change: transform,opacity; contain: layout paint style;
 }
-.royal-gravity-avatar svg { width: 65%; height: 65%; }
 @media (prefers-reduced-motion: reduce) { .royal-gravity-avatar { display:none; } }
