@@ -193,7 +193,17 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     supabase.rpc('crm_activity_totals')
    ]);
    if(events.error||summary.error||preferences.error||totals.error)throw events.error||summary.error||preferences.error||totals.error;
-   const newest=await attachLeadStatuses((events.data??[]) as CrmActivity[]);
+   // Fetch all activity in bounded database pages so unresolved older inquiries
+   // cannot disappear merely because newer events pushed them past page one.
+   const rawEvents=[...((events.data??[]) as CrmActivity[])];
+   let page=rawEvents.slice(-PAGE_SIZE);
+   while(page.length===PAGE_SIZE){
+    const older=await supabase.rpc('crm_activity_page',{p_offset:rawEvents.length,p_limit:PAGE_SIZE});
+    if(older.error)throw older.error;
+    page=(older.data??[]) as CrmActivity[];
+    rawEvents.push(...page);
+   }
+   const newest=await attachLeadStatuses(rawEvents);
    const recent=newest;
    const rawPrefs=preferences.data as Partial<NotificationPrefs>|null;
    const baseline=defaults(email);
