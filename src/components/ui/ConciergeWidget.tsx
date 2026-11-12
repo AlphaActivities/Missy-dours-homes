@@ -773,10 +773,10 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
             </div>}
             
             {mode === 'human' && <p className="text-xs text-[#eacb99]">A member of Missy’s team has joined this conversation. You can now share photos or PDFs using the + button.</p>}
-            {mode === 'waiting_human' && <div className="space-y-3 rounded-2xl border border-[#c6a16c]/30 bg-[#21190f]/60 p-4">
-              <p className="text-sm leading-relaxed text-[#f0d6a5]">Waiting for a team member. Need a faster response? You can also reach Missy through the website.</p>
-              <button type="button" onClick={goToContact} className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center rounded-xl border border-[#f0d49d] bg-gradient-to-r from-[#efd49f] via-[#d9b878] to-[#c6a065] px-6 py-3 text-sm font-semibold text-[#1c150c] shadow-[0_8px_24px_rgba(197,161,106,.22)] transition-[transform,filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_10px_28px_rgba(197,161,106,.34)] active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">
-                Contact Missy directly
+            {mode === 'waiting_human' && <div className="rounded-2xl border border-[#c6a16c]/30 bg-[#21190f]/60 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,231,180,.05)]">
+              <p className="text-[13px] leading-snug text-[#f0d6a5]">Waiting for Missy’s team. Need a faster response?</p>
+              <button type="button" onClick={goToContact} className="mt-2 inline-flex min-h-10 w-auto max-w-full items-center justify-center rounded-xl border border-[#f0d49d] bg-gradient-to-r from-[#efd49f] via-[#d9b878] to-[#c6a065] px-4 py-2 text-[13px] font-semibold text-[#1c150c] shadow-[0_5px_15px_rgba(197,161,106,.18)] transition-[transform,filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_8px_20px_rgba(197,161,106,.28)] active:scale-[.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">
+                Contact Missy
               </button>
             </div>}
             {busy && !aiTyping && <p className="text-sm text-[#d4bb91]">Connecting securely…</p>}
