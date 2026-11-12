@@ -25,7 +25,7 @@ export default function AboutSection() {
 
           {/* LEFT — PORTRAIT CARD */}
           <LuxFadeIn delay={0.1}>
-            <div className="relative rounded-[2rem] overflow-hidden bg-gradient-to-b from-black/45 via-black/20 to-black/5 shadow-[0_28px_80px_rgba(15,23,42,0.6)] backdrop-blur-xl h-[400px] md:h-[480px] lg:h-[520px]">
+            <div data-royal-gravity-platform="portrait" className="relative rounded-[2rem] overflow-hidden bg-gradient-to-b from-black/45 via-black/20 to-black/5 shadow-[0_28px_80px_rgba(15,23,42,0.6)] backdrop-blur-xl h-[400px] md:h-[480px] lg:h-[520px]">
               {images.map((img, index) => (
                 <img
                   key={img}
@@ -54,7 +54,7 @@ export default function AboutSection() {
             <div className="flex flex-col justify-center gap-6 lg:gap-7 text-center lg:text-left">
 
               {/* GOLD ACCENT RULE */}
-              <div className="h-[1px] lg:h-[2px] w-32 sm:w-40 lg:w-48 bg-gradient-to-r from-[#C79B4B] to-transparent mb-2 mx-auto lg:mx-0"></div>
+              <div data-royal-gravity-platform="accent" className="h-[1px] lg:h-[2px] w-32 sm:w-40 lg:w-48 bg-gradient-to-r from-[#C79B4B] to-transparent mb-2 mx-auto lg:mx-0"></div>
 
               {/* HEADING */}
               <h2 className="text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold tracking-tight text-[#111111]">
