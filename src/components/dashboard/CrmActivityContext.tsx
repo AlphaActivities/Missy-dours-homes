@@ -72,6 +72,12 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     const convo=await supabase.from('ai_conversations').select('id,status,lead_id,visitor_expires_at').in('id',convoIds);
     if(convo.error)throw convo.error;
     (convo.data??[]).forEach(c=>conversations.set(c.id,{status:c.status,lead_id:c.lead_id,visitor_expires_at:c.visitor_expires_at}));
+    const extraLeadIds=[...new Set((convo.data??[]).map(c=>c.lead_id).filter((id):id is string=>Boolean(id)&&!statuses.has(id)))];
+    if(extraLeadIds.length){
+     const linkedLeads=await supabase.from('leads').select('id,status').in('id',extraLeadIds);
+     if(linkedLeads.error)throw linkedLeads.error;
+     (linkedLeads.data??[]).forEach(l=>statuses.set(l.id,l.status));
+    }
    }
    // A recorded follow-up is authoritative evidence that the urgent task has
    // a next step. It does not mean that the callback was completed.
