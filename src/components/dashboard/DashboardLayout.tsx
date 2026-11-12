@@ -324,6 +324,11 @@ function DashboardLayoutInner() {
                     style={{ color: isActive ? 'var(--ds-gold)' : 'var(--ds-text-tertiary)' }}
                   />
                   <span className="min-w-0 truncate" style={{color:isActive?'var(--ds-text-primary)':'var(--ds-text-secondary)'}}>{label}</span>
+                  {to==='/dashboard/notifications'&&attentionCount>0&&(
+                    <span aria-label={attentionCount+' active notifications'} className="ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#b63138] px-1.5 text-[11px] font-bold leading-none text-white shadow-[0_0_0_2px_#14110e]">
+                      {attentionCount>99?'99+':attentionCount}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>
