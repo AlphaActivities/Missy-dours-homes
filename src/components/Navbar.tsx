@@ -179,7 +179,7 @@ const Navbar: React.FC = () => {
                   className="group flex w-full min-h-12 items-center justify-between rounded-2xl border border-[#b69a6d]/20 bg-gradient-to-r from-white/[.075] to-white/[.025] px-4 py-3 text-left text-[12px] font-medium tracking-[.24em] uppercase text-[#f3eadd] transition-[background-color,border-color,transform] duration-300 hover:border-[#d5b67e]/55 hover:bg-white/10 active:scale-[.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e7c78a]"
                 >
                   <span>{item.label}</span>
-                  <span className="h-[3px] w-[3px] rounded-full bg-[#d5b67e]/80 shadow-[0_0_9px_rgba(213,182,126,.6)]" aria-hidden="true" />
+                  <span className="h-px w-10 shrink-0 bg-gradient-to-r from-transparent via-[#e8d29e]/90 to-transparent shadow-[0_0_8px_rgba(232,210,158,.32)] transition-all duration-300 group-hover:w-12 group-hover:via-[#f8e6b9]" aria-hidden="true" />
                 </button>
               </li>
             ))}
@@ -192,10 +192,9 @@ const Navbar: React.FC = () => {
               navigateToSection('contact', navigate, location.pathname);
               setIsMobileMenuOpen(false);
             }}
-            className="relative isolate w-full min-h-[62px] overflow-hidden rounded-2xl border border-[#fff1c7]/75 bg-gradient-to-[115deg] from-[#f9e6b7] via-[#d9b36f] to-[#ad7837] px-5 py-4 text-center text-[12px] font-semibold leading-relaxed tracking-[.19em] uppercase text-[#25170b] shadow-[0_14px_34px_rgba(184,129,54,.24),inset_0_1px_0_rgba(255,255,255,.65)] transition-[filter,transform,box-shadow] duration-300 hover:brightness-110 hover:shadow-[0_16px_42px_rgba(216,169,96,.38)] active:scale-[.985] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff0bf]"
+            className="relative isolate w-full min-h-[62px] overflow-hidden rounded-2xl border border-[#fff1c7]/75 bg-[linear-gradient(115deg,#f9e6b7_0%,#e9c88d_42%,#c99b55_100%)] px-5 py-4 text-center text-[12px] font-semibold leading-relaxed tracking-[.19em] uppercase text-[#211609] shadow-[0_14px_34px_rgba(184,129,54,.24),inset_0_1px_0_rgba(255,255,255,.65)] transition-[filter,transform,box-shadow] duration-300 hover:brightness-110 hover:shadow-[0_16px_42px_rgba(216,169,96,.38)] active:scale-[.985] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff0bf]"
           >
-            <span className="relative z-10">Request a Private Consultation</span>
-            <span className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 skew-x-[-24deg] bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-70 transition-transform duration-700 " aria-hidden="true" />
+            <span className="relative z-10 drop-shadow-[0_1px_0_rgba(255,255,255,.3)]">Request a Private Consultation</span>
           </button>
         </nav>
       </div>
