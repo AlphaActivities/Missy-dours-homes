@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 export const ROYAL_GRAVITY_SEEN_KEY = 'missy_royal_gravity_entrance_v4';
 const MIN_HOME_MS = 6000;
 const AFTER_HERO_MS = 4000;
-const ANIMATION_MS = 3100;
+const ANIMATION_MS = 3400;
 
 /**
  * One-shot, GPU-friendly visual entrance. The actual contact controls remain
@@ -143,19 +143,20 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
       const reboundHeights = [72, 23, 7].map(height => Math.min(height, Math.max(4, dropY * .38)));
       const bounceEnd = dropDuration + flightDurations.reduce((sum, duration) => sum + duration, 0);
       const rollEnd = ANIMATION_MS;
-      const cardRightX = surface ? Math.max(contactX + 36, surface.right - destination.width * .82) : endX;
-      const edgeX = Math.max(contactX + 36, Math.min(cardRightX, endX));
-      const bounceTravel = Math.max(20, (edgeX - contactX) * .38);
+      const contactX = landX;
+      const cardRightX = surface ? Math.max(contactX + 36, surface.right - destination.width * .90) : Math.max(endX, window.innerWidth - destination.width - 14);
+      const edgeX = Math.max(contactX + 36, Math.min(cardRightX, Math.max(endX, contactX + 36)));
+      const bounceTravel = Math.max(12, (edgeX - contactX) * .18);
       const rollStartX = contactX + bounceTravel;
       const rollTravel = Math.max(0, edgeX - rollStartX);
-      const rollFinishTime = bounceEnd + (rollEnd - bounceEnd) * .74;
-      const edgeTurns = Math.max(1, Math.round(rollTravel / (Math.PI * destination.width)));
+      // Reserve a short final hop. Most post-bounce time is genuine horizontal rolling.
+      const rollFinishTime = bounceEnd + (rollEnd - bounceEnd) * .79;
+      const edgeTurns = Math.max(1, Math.ceil((rollTravel + destination.width * .5) / (Math.PI * destination.width)));
       const edgeRotation = edgeTurns * 360;
       const finalRotation = Math.max(baseRotation, edgeRotation + 360);
       const step = 1000 / 60;
       // Use exactly one contact plane: the bottom of the ball is aligned with
       // the measured card top at each impact.
-      const contactX = landX;
       for (let t = 0; t <= ANIMATION_MS; t += step) {
         const time = Math.min(t, ANIMATION_MS);
         let x: number;
@@ -196,11 +197,14 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
           rotation = 70 + (edgeRotation - 70) * progress;
         } else {
           const u = Math.min(1, (time - rollFinishTime) / (rollEnd - rollFinishTime));
-          const progress = u * u * (3 - 2 * u);
-          x = edgeX + (endX - edgeX) * progress;
-          y = dropY + (endY - dropY) * u * u;
-          // Continuous clockwise rotation through a complete final turn.
-          rotation = edgeRotation + (finalRotation - edgeRotation) * progress;
+          // Launch a short, visible hop from the surface to the fixed control.
+          // Parabolic arc ends at the exact destination without any zoom/scale.
+          const horizontal = u * u * (3 - 2 * u);
+          const hopHeight = Math.min(90, Math.max(34, destination.height * .85));
+          x = edgeX + (endX - edgeX) * horizontal;
+          y = dropY + (endY - dropY) * u - 4 * hopHeight * u * (1 - u);
+          // A whole forward revolution finishes level; no snap or reverse flip.
+          rotation = edgeRotation + (finalRotation - edgeRotation) * horizontal;
         }
         sample(time, x, y, rotation, sx, sy);
       }
