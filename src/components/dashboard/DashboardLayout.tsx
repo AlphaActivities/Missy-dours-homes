@@ -142,13 +142,10 @@ function DashboardLayoutInner() {
     document.body.classList.remove('overflow-hidden');
   }, []);
 
-  // Keep the original Clancy Realty favicon untouched. Browser tab titles
-  // cannot render a CSS badge; use Unicode circled numerals beside a red dot.
+  // Preserve the original Clancy Realty favicon and a clean browser tab title.
   useEffect(() => {
-    const circled = ['⓪','①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
-    const countLabel = attentionCount <= 20 ? circled[attentionCount] : ' (' + attentionCount + ')';
-    document.title = attentionCount > 0 ? 'Missy Dours CRM 🔴' + countLabel : 'Missy Dours CRM';
-  }, [attentionCount]);
+    document.title = 'Missy Dours CRM';
+  }, []);
 
   // Provide a separate installable identity for the staff CRM only.
   useEffect(() => {
