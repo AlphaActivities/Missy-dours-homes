@@ -562,13 +562,13 @@ export default function ConversationsPage() {
    </div>
   <div className={focused?'grid grid-cols-1 gap-4':'grid grid-cols-1 xl:grid-cols-[minmax(300px,0.85fr)_minmax(0,1.6fr)] gap-4'}>
    <section aria-label="Conversation list" className={(focused?'hidden ':'')+'crm-conversation-inbox ds-page-reveal ds-page-reveal-3 relative max-h-[315px] xl:max-h-[min(76vh,850px)] min-h-64 md:min-h-[520px] md:max-h-[min(76dvh,800px)] lg:min-h-[680px] lg:max-h-[min(82dvh,940px)] overflow-y-auto overscroll-contain touch-pan-y rounded-xl [scrollbar-width:thin]'}>
-   <div className="crm-inbox-heading sticky top-0 z-10 flex items-center justify-between gap-2 px-4 py-3">
+   <div className="crm-inbox-heading sticky top-0 z-20 flex items-center justify-between gap-2 px-4 py-3">
      <div className="flex items-center gap-2"><MessagesSquare size={16} className="text-[#e8c688]" aria-hidden="true"/><span className="text-xs font-semibold uppercase tracking-[.12em] text-[#efd6a5]">Conversation inbox</span></div>
      <span className="flex items-center gap-1 text-[11px] text-[#c3a779]"><ChevronDown size={13} aria-hidden="true"/> Scroll to browse</span>
     </div>
    {filtered.length===0?<p className="p-6 text-sm" style={{color:'var(--ds-text-secondary)'}}>{loading?'Loading conversations…':'No conversations match. Visitor chat is not live yet.'}</p>:filtered.map(c=>{
     const preview=visitorPreview(c);
-    return <button key={c.id} onClick={()=>focusConversation(c.id)} className="crm-inbox-item block w-full text-left px-4 py-4 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#efcb89]" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
+    return <button key={c.id} onClick={()=>focusConversation(c.id)} className="crm-inbox-item relative isolate z-0 block w-full text-left px-4 py-4 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#efcb89]" style={{background:selected===c.id?'rgba(196,164,106,.12)':undefined}}>
      {lifecycleReviewIds.includes(c.id)&&<span className="mb-2 inline-block rounded-full border border-red-400/40 bg-red-900/20 px-2 py-1 text-[10px] font-semibold text-red-200">Staff conversation · confirm outcome</span>}
      {c.title.startsWith('[PRIVATE VISITOR QA] ')&&<span className="mb-2 inline-block rounded-full border border-amber-400/40 bg-amber-900/20 px-2 py-1 text-[10px] font-semibold text-amber-200">PRIVATE QA TEST · NOT A CUSTOMER</span>}
      {preview?<div className="flex min-w-0 justify-end"><span className="crm-ios-visitor-bubble block min-w-0 max-w-[90%] rounded-[24px] rounded-br-[8px] bg-[#0A84FF] px-3.5 py-2.5 text-sm leading-relaxed text-white shadow-[0_4px_14px_rgba(12,80,170,.18)]"><span className="relative z-10 block min-w-0 overflow-hidden break-words [overflow-wrap:anywhere] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]">{preview}</span></span></div>
@@ -583,7 +583,7 @@ export default function ConversationsPage() {
      </div>
     </button>;
    })}
-   {!focused&&totalConversations>PAGE_SIZE&&<div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t border-[#bca06c]/25 bg-[#1c1814] p-3">
+   {!focused&&totalConversations>PAGE_SIZE&&<div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 border-t border-[#bca06c]/25 bg-[#1c1814] p-3">
      <button type="button" disabled={page===0||loading} onClick={()=>setPage(n=>Math.max(0,n-1))} className="min-h-10 rounded-lg border border-[#c5a777]/45 px-3 text-xs text-[#edcf96] disabled:opacity-40">Newer</button>
      <span className="text-xs text-[#bba585]">{page*PAGE_SIZE+1}–{Math.min((page+1)*PAGE_SIZE,totalConversations)} of {totalConversations}</span>
      <button type="button" disabled={(page+1)*PAGE_SIZE>=totalConversations||loading} onClick={()=>setPage(n=>n+1)} className="min-h-10 rounded-lg border border-[#c5a777]/45 px-3 text-xs text-[#edcf96] disabled:opacity-40">Older</button>
