@@ -334,8 +334,8 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   const {data,error}=await supabase.rpc('crm_activity_totals');
   if(error){setBadgeSync(previous=>({...previous,status:'error',error:'Could not verify the current count with the server.'}));return;}
   // Refresh recalculates the badge from visible, deduplicated All cards.
+  await refresh();
   setBadgeSyncRevision(n=>n+1);
-  void refresh();
  };
  const upsertReceipt=async(id:string,changes:{read_at?:string|null;archived_at?:string|null})=>{
   const before=items.find(x=>x.id===id);if(!before)return;
