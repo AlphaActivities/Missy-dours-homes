@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth, getDashboardGreeting } from '../../../contexts/AuthContext';
 import {BellRing} from 'lucide-react';
-import {supabase} from '../../../lib/supabase';
+import {useCrmActivity} from '../CrmActivityContext';
 
 let entrancePlayed = false;
 // A new successful login should replay the same entrance, even after signing out
@@ -24,6 +24,7 @@ const formatDeviceDate = () => new Intl.DateTimeFormat(navigator.language || 'en
 
 export default function ConciergeSignatureEntrance() {
  const { user } = useAuth();
+ const {attentionCount,loading:activityLoading,error:activityError}=useCrmActivity();
  const greeting = getDashboardGreeting(user?.email);
  const entranceStartedAt=useRef(performance.now());
  const [visible,setVisible]=useState(()=>!entrancePlayed);
@@ -31,34 +32,13 @@ export default function ConciergeSignatureEntrance() {
  const [target,setTarget]=useState<Target>({x:0,y:0,scale:1,radius:16,innerScale:1});
  const [reduced,setReduced]=useState(false);
  const [deviceDate,setDeviceDate]=useState(formatDeviceDate);
- // Use the exact canonical active inbox total powering the CRM bell and All
- // filter. Loading-screen counts must never use the older workflow attention
- // summary, which can include a different number of leads and callback tasks.
+ // The entrance and dashboard bell share one state; never query an independent total.
  const [entranceAttention,setEntranceAttention]=useState<{count:number|null}|null>(null);
  const [greetingFinished,setGreetingFinished]=useState(false);
  useEffect(()=>{
-  let cancelled=false;
-  let settled=false;
-  // A poor connection must not trap the user behind the cinematic overlay.
-  // An expired/error response is explicitly unavailable, never a fake zero.
-  const timer=window.setTimeout(()=>{
-   if(cancelled||settled)return;
-   settled=true;
-   setEntranceAttention({count:null});
-  },2500);
-  void Promise.resolve(supabase.rpc('crm_activity_totals')).then(({data,error})=>{
-   if(cancelled||settled)return;
-   settled=true;window.clearTimeout(timer);
-   const raw=(data as {total?:unknown}|null)?.total;
-   const count=Number(raw);
-   setEntranceAttention({count:!error&&raw!==undefined&&raw!==null&&Number.isSafeInteger(count)&&count>=0?count:null});
-  }).catch(()=>{
-   if(cancelled||settled)return;
-   settled=true;window.clearTimeout(timer);
-   setEntranceAttention({count:null});
-  });
-  return()=>{cancelled=true;window.clearTimeout(timer);};
- },[]);
+  if(activityLoading)return;
+  setEntranceAttention({count:activityError?null:attentionCount});
+ },[activityLoading,activityError,attentionCount]);
  useEffect(()=>{
   const updateDate=()=>setDeviceDate(formatDeviceDate());
   const interval=window.setInterval(updateDate,60_000);
