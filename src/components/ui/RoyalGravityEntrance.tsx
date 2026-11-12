@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
-export const ROYAL_GRAVITY_SEEN_KEY = 'missy_royal_gravity_entrance_v4';
+export const ROYAL_GRAVITY_SEEN_KEY = 'missy_royal_gravity_entrance_v5';
 const MIN_HOME_MS = 6000;
 const AFTER_HERO_MS = 4000;
 const ANIMATION_MS = 3400;
@@ -62,25 +62,36 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
       // Choose a visible card edge that can support the circular avatar.
       // The card is never moved or altered: only its geometry is sampled.
       const radius = destination.width / 2;
+      // Select an actual visible homepage surface, even after deep scrolling.
+      // The portrait, thin gold rule, cards and footer are explicitly opted in.
+      // Other structural sections contribute their top edges as fallbacks.
       const candidates = Array.from(document.querySelectorAll<HTMLElement>(
-        '#choose-your-path .grid button, #featured-listings article, #mid-tier-homes article, #new-to-homeownership article'
-      )).map(element => element.getBoundingClientRect()).filter(rect =>
-        rect.width >= radius * 3 &&
-        rect.top > radius * 1.5 &&
-        rect.top < window.innerHeight - radius * 2 &&
-        rect.right > radius * 3
-      );
-      const surface = candidates.sort((a, b) =>
-        Math.abs(a.top - window.innerHeight * .57) - Math.abs(b.top - window.innerHeight * .57)
-      )[0];
+        '[data-royal-gravity-platform], #featured-listings article, #mid-tier-homes article, #new-to-homeownership article, #communities article, #testimonials article, #contact form'
+      )).map(element => ({ element, rect: element.getBoundingClientRect() }))
+        .filter(({ element, rect }) => {
+          const thinAccent = element.dataset.royalGravityPlatform === 'accent';
+          const minimum = thinAccent ? radius * 2.2 : radius * 3;
+          return rect.width >= minimum && rect.height >= 1 &&
+            rect.top >= radius * .65 && rect.top < window.innerHeight - radius * 1.3 &&
+            rect.right > radius * 2 && rect.left < window.innerWidth - radius;
+        });
+      const surface = candidates.sort((a, b) => {
+        const score = ({ element, rect }: typeof a) => {
+          const visibleWidth = Math.min(window.innerWidth, rect.right) - Math.max(0, rect.left);
+          const vertical = Math.abs(rect.top - window.innerHeight * .53);
+          const priority = element.dataset.royalGravityPlatform ? -45 : 0;
+          return vertical + (visibleWidth < destination.width * 2.5 ? 90 : 0) + priority;
+        };
+        return score(a) - score(b);
+      })[0]?.rect;
       const floorY = surface
-        ? Math.min(window.innerHeight - radius * 1.3, surface.top - destination.height)
+        ? Math.max(radius * 1.8, Math.min(window.innerHeight - destination.height - 8, surface.top - destination.height))
         : window.innerHeight - destination.height - 12;
       const startX = Math.max(10, Math.min(window.innerWidth * .12, 76));
       const endX = destination.left;
       const endY = destination.top;
       const landX = surface
-        ? Math.max(startX + 12, Math.min(surface.left + radius, endX - 80))
+        ? Math.max(8, Math.min(surface.left + Math.min(radius * .65, surface.width * .14), surface.right - destination.width - 6))
         : Math.max(startX + 12, Math.min(window.innerWidth * .22, endX - 80));
       const dropY = Math.max(radius * 1.8, floorY);
       // Complete whole revolutions, never rotate backward or snap upright at the end.
@@ -144,8 +155,10 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
       const bounceEnd = dropDuration + flightDurations.reduce((sum, duration) => sum + duration, 0);
       const rollEnd = ANIMATION_MS;
       const contactX = landX;
-      const cardRightX = surface ? Math.max(contactX + 36, surface.right - destination.width * .90) : Math.max(endX, window.innerWidth - destination.width - 14);
-      const edgeX = Math.max(contactX + 36, Math.min(cardRightX, Math.max(endX, contactX + 36)));
+      const cardRightX = surface ? Math.max(contactX, surface.right - destination.width - 6) : Math.max(endX, window.innerWidth - destination.width - 14);
+      const edgeX = Math.max(contactX, Math.min(cardRightX, Math.max(endX, contactX)));
+      // Narrow gold accents may support a bounce but never force the ball
+      // beyond the visible platform's right edge.
       const bounceTravel = Math.max(12, (edgeX - contactX) * .18);
       const rollStartX = contactX + bounceTravel;
       const rollTravel = Math.max(0, edgeX - rollStartX);
