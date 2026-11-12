@@ -85,7 +85,7 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
       const dropY = Math.max(radius * 1.8, floorY);
       // Complete whole revolutions, never rotate backward or snap upright at the end.
       const revolutions = Math.max(1, Math.round(Math.max(0, endX - landX) / (Math.PI * destination.width)));
-      const finalRotation = revolutions * 360;
+      const baseRotation = revolutions * 360;
 
       // Lock only for the short cinematic sequence, restoring the exact
       // scroll position and pre-existing inline styles afterward.
@@ -151,6 +151,7 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
       const rollFinishTime = bounceEnd + (rollEnd - bounceEnd) * .74;
       const edgeTurns = Math.max(1, Math.round(rollTravel / (Math.PI * destination.width)));
       const edgeRotation = edgeTurns * 360;
+      const finalRotation = Math.max(baseRotation, edgeRotation + 360);
       const step = 1000 / 60;
       // Use exactly one contact plane: the bottom of the ball is aligned with
       // the measured card top at each impact.
@@ -199,7 +200,7 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
           x = edgeX + (endX - edgeX) * progress;
           y = dropY + (endY - dropY) * u * u;
           // Continuous clockwise rotation through a complete final turn.
-          rotation = edgeRotation + (finalRotation + 360 - edgeRotation) * progress;
+          rotation = edgeRotation + (finalRotation - edgeRotation) * progress;
         }
         sample(time, x, y, rotation, sx, sy);
       }
