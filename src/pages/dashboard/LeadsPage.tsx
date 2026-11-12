@@ -367,7 +367,7 @@ export default function LeadsPage() {
 
         {/* ── Filter tabs ───────────────────────────────────── */}
         <div
-          className="ds-page-reveal ds-page-reveal-1 flex items-center gap-1 mb-4 overflow-x-auto py-1 px-1 -mx-1"
+          className="ds-page-reveal ds-page-reveal-1 grid grid-cols-3 gap-2 mb-4 py-1 sm:flex sm:flex-wrap sm:items-center"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {FILTER_TABS.map(tab => {
@@ -375,30 +375,13 @@ export default function LeadsPage() {
             const isActive = !isSearchMode && filter === tab.value;
             const tone = FILTER_COLORS[tab.value];
             return (
-              <IosNativeTap key={tab.value} className="relative inline-flex flex-shrink-0"><button
+              <IosNativeTap key={tab.value} className="relative flex min-w-0"><button
                 onClick={() => handleFilterChange(tab.value)}
-                className={`ds-filter-tab ${isActive ? 'ds-filter-tab-active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${isSearchMode ? 'opacity-50' : ''}`}
+                className={`ds-filter-tab ${isActive ? 'ds-filter-tab-active' : ''} w-full min-w-0 px-1.5 sm:px-3.5 py-2 rounded-lg text-[11px] sm:text-xs font-medium transition-all duration-150 ${isSearchMode ? 'opacity-50' : ''}`}
                 style={{
-                  background: isActive ? `rgba(${tone.rgb},0.17)` : 'rgba(12,11,10,0.55)',
-                  color: tone.text,
-                  boxShadow: isActive
-                    ? `0 0 0 1px rgba(${tone.rgb},0.7), 0 0 12px rgba(${tone.rgb},0.22)`
-                    : `0 0 0 1px rgba(${tone.rgb},0.38)`,
-                }}
-                onMouseEnter={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = tone.text;
-                    e.currentTarget.style.boxShadow = `0 0 0 1px rgba(${tone.rgb},0.65), 0 0 10px rgba(${tone.rgb},0.14)`;
-                    e.currentTarget.style.background = `rgba(${tone.rgb},0.09)`;
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = tone.text;
-                    e.currentTarget.style.boxShadow = `0 0 0 1px rgba(${tone.rgb},0.38)`;
-                    e.currentTarget.style.background = 'rgba(12,11,10,0.55)';
-                  }
-                }}
+                  '--lead-filter-rgb': tone.rgb,
+                  '--lead-filter-color': tone.text,
+                } as React.CSSProperties}
               >
                 {tab.label}
               </button></IosNativeTap>
