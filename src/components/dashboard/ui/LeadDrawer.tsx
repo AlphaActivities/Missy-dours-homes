@@ -275,11 +275,13 @@ function DrawerContent({
           </div>
         )}
 
-        {callbackPending&&<CallbackAttentionPanel choices={callbackChoices} selected={callbackWork}
+        {callbackPending&&lead.status!=='archived'&&<CallbackAttentionPanel choices={callbackChoices} selected={callbackWork}
          onSelect={t=>setCallbackWork({owner:t.assigned_to,due:t.due_at,status:t.status,
          conversationId:t.conversation_id,requestKind:t.request_kind==='callback'?'callback':'live_chat',
          requestedAt:t.created_at,otherRequests:callbackChoices.length-1})}
          onOutcome={()=>setShowLogModal(true)}/>}
+
+        {callbackPending&&lead.status==='archived'&&<p className="rounded-lg border border-white/10 px-3 py-2 text-xs text-[#cbb995]">Archived customer · Outstanding callback history is retained. Restore the lead to resume follow-up.</p>}
 
         {/* Follow-up section */}
         <FollowUpSection leadId={lead.id} leadStatus={lead.status} onActivity={handleActivity} />
