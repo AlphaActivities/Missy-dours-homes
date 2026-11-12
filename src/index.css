@@ -520,30 +520,28 @@
   border-radius: 14px;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
-/* Filter tabs: clearer states over moving background */
+/* Status-specific Leads filters. CSS variables intentionally override legacy !important rules. */
 .ds-filter-tab {
-  background: rgba(12, 11, 10, 0.55) !important;
-  color: #f5f5f5 !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+  background: rgba(var(--lead-filter-rgb), 0.075) !important;
+  color: var(--lead-filter-color) !important;
+  box-shadow: 0 0 0 1px rgba(var(--lead-filter-rgb), 0.42) !important;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 .ds-filter-tab:hover {
-  color: #ffffff !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.32) !important;
-  background: rgba(20, 18, 16, 0.6) !important;
+  color: var(--lead-filter-color) !important;
+  background: rgba(var(--lead-filter-rgb), 0.14) !important;
+  box-shadow: 0 0 0 1px rgba(var(--lead-filter-rgb), 0.72), 0 0 12px rgba(var(--lead-filter-rgb), 0.16) !important;
 }
 .ds-filter-tab.ds-filter-tab-active {
-  background: var(--ds-gold-muted) !important;
-  color: var(--ds-gold-light) !important;
-  box-shadow: 0 0 0 1px rgba(196, 164, 106, 0.55), 0 0 12px rgba(196, 164, 106, 0.2) !important;
+  color: var(--lead-filter-color) !important;
+  background: rgba(var(--lead-filter-rgb), 0.22) !important;
+  box-shadow: 0 0 0 1px rgba(var(--lead-filter-rgb), 0.85), 0 0 14px rgba(var(--lead-filter-rgb), 0.22) !important;
 }
 .ds-filter-tab:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(196, 164, 106, 0.7) !important;
+  outline: 2px solid var(--lead-filter-color);
+  outline-offset: 3px;
 }
-
-
 /* Mobile-first concierge motion: compositor-only opacity/transform. No blur filters. */
 @keyframes missy-launcher-enter {
   0% { opacity:0; transform:translate3d(0,18px,0) scale(.82); }
