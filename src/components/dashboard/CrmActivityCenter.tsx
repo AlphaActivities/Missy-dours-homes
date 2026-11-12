@@ -48,7 +48,7 @@ const matchesFilter=(e:DisplayActivity,filter:Filter)=>{
  const historicalChat=(e.category==='handoff'||e.category==='escalation')&&['completed','closed','cancelled'].includes(e.callback_status??'');
  const inactiveOpportunity=e.category==='opportunity'&&e.callback_status!=='ai';
  const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
- const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
+ const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||((teamUpdate||e.category==='staff')&&Boolean(e.read_at));
  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity);
  if(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity)return false;
  if(filter==='all')return e.category!=='staff';
@@ -59,7 +59,7 @@ const matchesFilter=(e:DisplayActivity,filter:Filter)=>{
  return e.category===filter;
 };
 export default function CrmActivityCenter(){
- const {items,hasMore,loadingMore,loadMore,loading,error,refresh,markRead}=useCrmActivity();
+ const {items,hasMore,loadingMore,loadMore,loading,error,refresh,markRead,archive}=useCrmActivity();
  const [filter,setFilter]=useState<Filter>('all');
  const [working,setWorking]=useState(false);
  const [notice,setNotice]=useState('');
@@ -203,7 +203,8 @@ export default function CrmActivityCenter(){
       <ArrowRight size={18} strokeWidth={1.7} aria-hidden="true" className="crm-open-notification-arrow shrink-0"/>
      </Link>
      {!item.read_at&&item.category==='staff'&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
-      className="inline-flex items-center rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">Acknowledge update</button>}
+      className="inline-flex items-center rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">Acknowledge update</button>
+     {item.category==='staff'&&!item.archived_at&&<button type="button" disabled={working} onClick={()=>void execute(()=>archive(item.id))} className="inline-flex items-center rounded-md border border-white/20 px-3 py-1.5 text-xs text-[#d5b881] disabled:opacity-40">Move to History</button>}}
 
     </div>
    </article>)}
