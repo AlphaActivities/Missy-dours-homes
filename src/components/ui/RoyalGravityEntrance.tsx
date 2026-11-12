@@ -29,6 +29,7 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
     let pastHero = false;
     let heroDelayFinished = false;
     let started = false;
+    let preparing = false;
     let disposed = false;
     let overlay: HTMLDivElement | null = null;
     let animation: Animation | null = null;
@@ -47,8 +48,8 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
       if (!disposed && started) completeRef.current();
     };
 
-    const launch = () => {
-      if (started || disposed || !elapsed || !pastHero || !heroDelayFinished || document.hidden) return;
+    const launch = async () => {
+      if (started || preparing || disposed || !elapsed || !pastHero || !heroDelayFinished || document.hidden) return;
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { completeRef.current(); return; }
       const mobile = window.matchMedia('(max-width: 767px)').matches;
       const selector = mobile
@@ -56,50 +57,8 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
         : '[data-royal-gravity-launcher="desktop"]';
       const launcher = document.querySelector<HTMLElement>(selector);
       if (!launcher) { completeRef.current(); return; }
-      const destination = launcher.getBoundingClientRect();
-      if (destination.width < 30 || destination.height < 30) { completeRef.current(); return; }
-
-      // Choose a visible card edge that can support the circular avatar.
-      // The card is never moved or altered: only its geometry is sampled.
-      const radius = destination.width / 2;
-      // Select an actual visible homepage surface, even after deep scrolling.
-      // The portrait, thin gold rule, cards and footer are explicitly opted in.
-      // Other structural sections contribute their top edges as fallbacks.
-      const candidates = Array.from(document.querySelectorAll<HTMLElement>(
-        '[data-royal-gravity-platform], #featured-listings article, #mid-tier-homes article, #new-to-homeownership article, #communities article, #testimonials article, #contact form'
-      )).map(element => ({ element, rect: element.getBoundingClientRect() }))
-        .filter(({ element, rect }) => {
-          const thinAccent = element.dataset.royalGravityPlatform === 'accent';
-          const minimum = thinAccent ? radius * 2.2 : radius * 3;
-          return rect.width >= minimum && rect.height >= 1 &&
-            rect.top >= radius * .65 && rect.top < window.innerHeight - radius * 1.3 &&
-            rect.right > radius * 2 && rect.left < window.innerWidth - radius;
-        });
-      const surface = candidates.sort((a, b) => {
-        const score = ({ element, rect }: typeof a) => {
-          const visibleWidth = Math.min(window.innerWidth, rect.right) - Math.max(0, rect.left);
-          const vertical = Math.abs(rect.top - window.innerHeight * .53);
-          const priority = element.dataset.royalGravityPlatform ? -45 : 0;
-          return vertical + (visibleWidth < destination.width * 2.5 ? 90 : 0) + priority;
-        };
-        return score(a) - score(b);
-      })[0]?.rect;
-      const floorY = surface
-        ? Math.max(radius * 1.8, Math.min(window.innerHeight - destination.height - 8, surface.top - destination.height))
-        : window.innerHeight - destination.height - 12;
-      const startX = Math.max(10, Math.min(window.innerWidth * .12, 76));
-      const endX = destination.left;
-      const endY = destination.top;
-      const landX = surface
-        ? Math.max(8, Math.min(surface.left + Math.min(radius * .65, surface.width * .14), surface.right - destination.width - 6))
-        : Math.max(startX + 12, Math.min(window.innerWidth * .22, endX - 80));
-      const dropY = Math.max(radius * 1.8, floorY);
-      // Complete whole revolutions, never rotate backward or snap upright at the end.
-      const revolutions = Math.max(1, Math.round(Math.max(0, endX - landX) / (Math.PI * destination.width)));
-      const baseRotation = revolutions * 360;
-
-      // Lock only for the short cinematic sequence, restoring the exact
-      // scroll position and pre-existing inline styles afterward.
+      preparing = true;
+      // Freeze scrolling BEFORE measuring anything. Keep the exact previous styles.
       const html = document.documentElement;
       const body = document.body;
       const previousHtmlOverflow = html.style.overflow;
@@ -119,7 +78,76 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
         document.removeEventListener('touchmove', preventTouch);
         window.scrollTo(scrollX, scrollY);
       };
+      // Allow in-view motion and momentum to settle, but never wait indefinitely.
+      const settled = async () => {
+        const deadline = performance.now() + 1200;
+        let previous = '';
+        let stableFrames = 0;
+        while (!disposed && performance.now() < deadline) {
+          await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+          if (disposed) return;
+          const moving = document.getAnimations().some(animation =>
+            animation.playState === 'running' &&
+            animation.effect?.getComputedTiming().iterations !== Infinity &&
+            animation.effect?.getComputedTiming().endTime !== Infinity
+          );
+          const rect = document.querySelector<HTMLElement>('[data-royal-gravity-platform="button"]')?.getBoundingClientRect();
+          const signature = rect ? [rect.left, rect.top, rect.width, rect.height].map(n => n.toFixed(1)).join(',') : '';
+          stableFrames = !moving && signature === previous ? stableFrames + 1 : 0;
+          previous = signature;
+          if (stableFrames >= 3) break;
+        }
+      };
+      await settled();
+      if (disposed || document.hidden) { preparing = false; unlock?.(); unlock = null; return; }
+      const destination = launcher.getBoundingClientRect();
+      if (destination.width < 30 || destination.height < 30) {
+        preparing = false; unlock?.(); unlock = null; completeRef.current(); return;
+      }
 
+      // Choose a visible card edge that can support the circular avatar.
+      // The card is never moved or altered: only its geometry is sampled.
+      const radius = destination.width / 2;
+      // Select an actual visible homepage surface, even after deep scrolling.
+      // The portrait, thin gold rule, cards and footer are explicitly opted in.
+      // Other structural sections contribute their top edges as fallbacks.
+      const candidates = Array.from(document.querySelectorAll<HTMLElement>(
+        '[data-royal-gravity-platform], main section button, main section a[href], #featured-listings article, #mid-tier-homes article, #new-to-homeownership article, #communities article, #testimonials article, #contact form'
+      )).map(element => ({ element, rect: element.getBoundingClientRect() }))
+        .filter(({ element, rect }) => {
+          const thinAccent = element.dataset.royalGravityPlatform === 'accent';
+          const isButton = element.matches('button, a[href]');
+          const minimum = thinAccent ? radius * 2.2 : isButton ? radius * 2.5 : radius * 3;
+          return rect.width >= minimum && rect.height >= 1 &&
+            rect.top >= radius * .65 && rect.top < window.innerHeight - radius * 1.3 &&
+            rect.right > radius * 2 && rect.left < window.innerWidth - radius;
+        });
+      const surface = candidates.sort((a, b) => {
+        const score = ({ element, rect }: typeof a) => {
+          const visibleWidth = Math.min(window.innerWidth, rect.right) - Math.max(0, rect.left);
+          const vertical = Math.abs(rect.top - window.innerHeight * .53);
+          const priority = element.dataset.royalGravityPlatform === 'consultation' ? -1000 : element.dataset.royalGravityPlatform ? -45 : 0;
+          return vertical + (visibleWidth < destination.width * 2.5 ? 90 : 0) + priority;
+        };
+        return score(a) - score(b);
+      })[0]?.rect;
+      // Never bounce on an invented floor without a physical surface.
+      if (!surface) { preparing = false; unlock?.(); unlock = null; completeRef.current(); return; }
+      const floorY = surface
+        ? Math.max(radius * 1.8, Math.min(window.innerHeight - destination.height - 8, surface.top - destination.height))
+        : window.innerHeight - destination.height - 12;
+      const startX = Math.max(10, Math.min(window.innerWidth * .12, 76));
+      const endX = destination.left;
+      const endY = destination.top;
+      const landX = surface
+        ? Math.max(8, Math.min(surface.left + Math.min(radius * .65, surface.width * .14), surface.right - destination.width - 6))
+        : Math.max(startX + 12, Math.min(window.innerWidth * .22, endX - 80));
+      const dropY = Math.max(radius * 1.8, floorY);
+      // Complete whole revolutions, never rotate backward or snap upright at the end.
+      const revolutions = Math.max(1, Math.round(Math.max(0, endX - landX) / (Math.PI * destination.width)));
+      const baseRotation = revolutions * 360;
+
+      preparing = false;
       started = true;
       playedRef.current = true;
       try { sessionStorage.setItem(ROYAL_GRAVITY_SEEN_KEY, '1'); } catch { /* no-op */ }
