@@ -215,7 +215,27 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const c=summary.data as {attention_count?:number;new_leads?:number;open_tasks?:number;waiting_conversations?:number}|null;
    // Match the native iOS badge and CRM bell to the All filter's actual active cards,
    // not overlapping lead, callback task and waiting-conversation work records.
-   setAttentionCount(Math.max(0,Number(t?.total??0)));
+   // The bell counts the same distinct, visible cards as the All filter.
+   // Never add the All count to the category counts or count hidden history.
+   const chatEvents=new Map<string,CrmActivity>();
+   for(const event of newest){
+    if(!['handoff','escalation'].includes(event.category)||['completed','closed','cancelled'].includes(event.callback_status??'')||event.archived_at||event.lead_archived)continue;
+    const id=event.callback_conversation_id??event.callback_task_id??event.id;
+    const prior=chatEvents.get(id);
+    const urgent=event.category==='escalation'&&Boolean(event.callback_escalated_at);
+    if(!prior||(urgent&&prior.category!=='escalation')||(!urgent&&event.category==='handoff'&&prior.category==='escalation'))chatEvents.set(id,event);
+   }
+   const chatCustomers=new Set([...chatEvents.values()].map(event=>event.callback_lead_id?'lead:'+event.callback_lead_id:'conversation:'+(event.callback_conversation_id??event.callback_task_id??event.id)));
+   const otherActive=newest.filter(event=>{
+    if(['handoff','escalation'].includes(event.category)&&!['completed','closed','cancelled'].includes(event.callback_status??'')&&!event.archived_at&&!event.lead_archived)return false;
+    const historicalChat=['handoff','escalation'].includes(event.category)&&['completed','closed','cancelled'].includes(event.callback_status??'');
+    const teamUpdate=event.event_key.startsWith('staff:completed:')||event.event_key.startsWith('staff:claimed:');
+    const audit=event.category==='staff'&&(event.event_key.startsWith('staff:archive:')||event.event_key.startsWith('staff:stage:'));
+    return !event.archived_at&&!event.lead_archived&&!event.chat_lead_audit&&!historicalChat&&!(teamUpdate&&event.read_at)&&
+     !(event.category==='opportunity'&&event.callback_status!=='ai')&&!(audit&&event.read_at)&&
+     (event.category!=='staff'||audit);
+   });
+   setAttentionCount(otherActive.length+chatCustomers.size);
    setBreakdown({new_leads:Number(c?.new_leads??0),open_tasks:Number(c?.open_tasks??0),waiting_conversations:Number(c?.waiting_conversations??0)});
    setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Unable to load activity');}
