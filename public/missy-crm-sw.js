@@ -71,6 +71,7 @@ self.addEventListener('push', event => {
   event.waitUntil((async () => {
     // Foreground CRM pages own the badge; never overwrite their deduplicated count with a stale push payload.
 
+    const openCrmTabs=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     const hasOpenCrm=openCrmTabs.some(tab=>{try{return new URL(tab.url).pathname.startsWith('/dashboard/');}catch{return false;}});
     // Background pushes can update the installed badge while the CRM is closed.
     if(!hasOpenCrm && payload.kind !== 'device_test' && Number.isFinite(payload.attention_count)) {
