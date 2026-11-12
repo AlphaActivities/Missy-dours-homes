@@ -1341,7 +1341,6 @@
 }
 .royal-gravity-avatar svg { width: 65%; height: 65%; }
 .royal-gravity-active [data-royal-gravity-launcher] { opacity: 0 !important; }
-.royal-gravity-active .missy-concierge-launcher ~ * { pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .royal-gravity-avatar { display: none; }
 }
