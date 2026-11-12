@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { navigateToSection } from '../utils/scrollToSection';
 import { trackCTA } from '../utils/analytics';
@@ -7,6 +7,32 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  
+  const [headerHeight, setHeaderHeight] = useState(120);
+
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const measure = () => setHeaderHeight(header.getBoundingClientRect().height);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => { setIsMobileMenuOpen(false); }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setIsMobileMenuOpen(false); };
+    const onPointer = (event: PointerEvent) => {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) setIsMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointer);
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onPointer); };
+  }, [isMobileMenuOpen]);
 
 
   useEffect(() => {
@@ -33,6 +59,7 @@ const Navbar: React.FC = () => {
 
   return (
     <header
+      ref={headerRef}
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${shellClasses}`}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between pl-4 pr-4 sm:pl-6 sm:pr-6 md:pr-8 lg:pl-8 lg:pr-10 py-3 md:py-4 gap-4">
@@ -66,6 +93,7 @@ const Navbar: React.FC = () => {
           type="button"
           onClick={() => setIsMobileMenuOpen((open) => !open)}
           aria-expanded={isMobileMenuOpen}
+          aria-controls="missy-mobile-navigation"
           aria-label="Toggle navigation"
           className="md:hidden inline-flex items-center justify-center rounded-full border border-white/18 bg-black/70 px-3.5 py-2 text-[0.65rem] tracking-[0.26em] uppercase text-white/85 shadow-[0_0_28px_rgba(0,0,0,0.85)] backdrop-blur-2xl transition hover:border-[#f5e3b6]/70 hover:text-[#f5e3b6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f5e3b6]/80 z-[60]"
         >
@@ -98,22 +126,28 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile nav panel – only on small screens */}
+      {/* Mobile menu opens BELOW the measured header, never across the brand. */}
       <div
-        className={`md:hidden fixed inset-x-0 top-[64px] z-[50] px-4 pb-6 transition-all duration-250 ease-out ${
+        id="missy-mobile-navigation"
+        aria-hidden={!isMobileMenuOpen}
+        className={`md:hidden absolute inset-x-0 top-full z-[55] px-3 sm:px-5 pt-3 transition-[opacity,transform,filter] duration-[420ms] ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none ${
           isMobileMenuOpen
-            ? 'opacity-100 translate-y-0 pointer-events-auto'
-            : 'opacity-0 -translate-y-2 pointer-events-none'
+            ? 'opacity-100 translate-y-0 scale-100 blur-0 pointer-events-auto'
+            : 'opacity-0 -translate-y-4 scale-[.975] blur-[3px] pointer-events-none'
         }`}
+        style={{ transformOrigin: 'top center' }}
+        inert={!isMobileMenuOpen}
       >
         <nav
           aria-label="Mobile navigation"
-          className="mx-auto max-w-md rounded-3xl border border-white/14 bg-black shadow-[0_30px_120px_rgba(0,0,0,0.95)] px-5 py-5 space-y-4"
+          className="relative mx-auto max-w-md overflow-y-auto overscroll-contain rounded-[30px] border border-[#d3b67d]/55 bg-[radial-gradient(ellipse_at_50%_0%,#30251a_0%,#16120f_44%,#080808_100%)] px-4 py-5 sm:px-6 sm:py-6 shadow-[0_28px_85px_rgba(0,0,0,.72),0_0_0_1px_rgba(255,235,195,.08),inset_0_1px_0_rgba(255,238,204,.14)]"
+          style={{ maxHeight: `calc(100dvh - ${headerHeight}px - 26px)` }}
         >
-          <p className="text-[0.7rem] tracking-[0.3em] uppercase text-white/60">
-            Main Navigation
-          </p>
-
+          <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#f5dca2]/80 to-transparent" />
+          <div className="mb-5 flex items-center gap-3">
+            <span className="h-px w-8 bg-gradient-to-r from-[#c59d5b] to-transparent" aria-hidden="true" />
+            <p className="text-[10px] font-semibold tracking-[.31em] uppercase text-[#d8bb88]">Explore Missy Dours</p>
+          </div>
           <ul className="space-y-2">
             {navItems.map((item) => (
               <li key={item.label}>
@@ -123,15 +157,15 @@ const Navbar: React.FC = () => {
                     navigateToSection(item.target, navigate, location.pathname);
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full text-left rounded-2xl px-4 py-3 text-[0.8rem] tracking-[0.24em] uppercase text-white/85 hover:text-[#f5e3b6] transition flex items-center justify-between bg-white/5 hover:bg-white/10"
+                  className="group flex w-full min-h-12 items-center justify-between rounded-2xl border border-[#b69a6d]/20 bg-gradient-to-r from-white/[.075] to-white/[.025] px-4 py-3 text-left text-[12px] font-medium tracking-[.24em] uppercase text-[#f3eadd] transition-[background-color,border-color,transform] duration-300 hover:border-[#d5b67e]/55 hover:bg-white/10 active:scale-[.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e7c78a]"
                 >
                   <span>{item.label}</span>
-                  <span className="h-[1px] w-8 bg-gradient-to-r from-transparent via-[#f5e3b6] to-transparent opacity-70" />
+                  <span className="h-[3px] w-[3px] rounded-full bg-[#d5b67e]/80 shadow-[0_0_9px_rgba(213,182,126,.6)]" aria-hidden="true" />
                 </button>
               </li>
             ))}
           </ul>
-
+          <div className="my-5 h-px bg-gradient-to-r from-transparent via-[#c6a268]/50 to-transparent" aria-hidden="true" />
           <button
             type="button"
             onClick={() => {
@@ -139,9 +173,10 @@ const Navbar: React.FC = () => {
               navigateToSection('contact', navigate, location.pathname);
               setIsMobileMenuOpen(false);
             }}
-            className="mt-3 w-full rounded-2xl bg-gradient-to-r from-[#f5e3b6] via-[#e7c78a] to-[#c89c4f] px-4 py-3 text-[0.78rem] tracking-[0.26em] uppercase text-[#1b1b1b] text-center shadow-[0_14px_40px_rgba(0,0,0,0.75)] hover:brightness-105 transition"
+            className="relative isolate w-full min-h-[62px] overflow-hidden rounded-2xl border border-[#fff1c7]/75 bg-gradient-to-[115deg] from-[#f9e6b7] via-[#d9b36f] to-[#ad7837] px-5 py-4 text-center text-[12px] font-semibold leading-relaxed tracking-[.19em] uppercase text-[#25170b] shadow-[0_14px_34px_rgba(184,129,54,.24),inset_0_1px_0_rgba(255,255,255,.65)] transition-[filter,transform,box-shadow] duration-300 hover:brightness-110 hover:shadow-[0_16px_42px_rgba(216,169,96,.38)] active:scale-[.985] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff0bf]"
           >
-            Request a Private Consultation
+            <span className="relative z-10">Request a Private Consultation</span>
+            <span className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 skew-x-[-24deg] bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-70 transition-transform duration-700 " aria-hidden="true" />
           </button>
         </nav>
       </div>
