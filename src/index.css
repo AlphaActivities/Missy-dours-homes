@@ -1118,11 +1118,8 @@
   scrollbar-color: #d2aa6d #1a1713;
   animation: crm-inbox-gold-halo 5.5s ease-in-out infinite;
 }
-/* iOS Safari: the sticky rail must be fully opaque and isolated so scrolled
-   conversation previews cannot paint through its header or border. */
 .ds-shell .crm-inbox-heading {
-  isolation: isolate;
-  background: linear-gradient(110deg, rgb(60, 44, 25), rgb(23, 21, 18));
+  background: linear-gradient(110deg, rgba(60, 44, 25, .98), rgba(23, 21, 18, .98));
   border-bottom: 1px solid rgba(224, 180, 109, .44);
   box-shadow: 0 6px 16px rgba(0,0,0,.32);
 }
