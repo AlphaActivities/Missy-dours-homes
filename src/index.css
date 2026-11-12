@@ -1321,26 +1321,3 @@
   bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
 }
 
-
-/* One-shot concierge arrival: only the real launcher is temporarily concealed.
-   The overlay is decorative and the original controls retain their state. */
-.royal-gravity-avatar {
-  position: fixed;
-  z-index: 90;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  border: 2px solid #d5b16d;
-  color: #ebcb83;
-  background: linear-gradient(145deg, #30261a, #0a0908);
-  box-shadow: 0 10px 25px rgba(0,0,0,.48), 0 0 12px rgba(213,177,109,.28);
-  will-change: transform, opacity;
-  contain: layout paint style;
-}
-.royal-gravity-avatar svg { width: 65%; height: 65%; }
-.royal-gravity-active [data-royal-gravity-launcher] { opacity: 0 !important; }
-@media (prefers-reduced-motion: reduce) {
-  .royal-gravity-avatar { display: none; }
-}
