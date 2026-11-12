@@ -553,8 +553,8 @@ export default function ConversationsPage() {
    <p className="mb-3 text-[11px] text-[#ac9b83]">Searches saved conversation metadata, not full transcript text. Private owner QA sessions are excluded from normal conversation browsing. Older public-site tests remain unclassified until reviewed. A staff conversation without an active handoff task is flagged for an outcome check; review its history before considering it completed.</p>
    {staffEmail==='yourcustomerflowguy@gmail.com'&&<Link to="/dashboard/concierge-qa" className="mb-4 inline-flex min-h-10 items-center rounded-lg border border-[#c8a96e]/40 px-3 py-2 text-xs font-semibold text-[#efcf97]">Open dedicated private QA testing</Link>}
    </div>
-  <div className={focused?'grid grid-cols-1 gap-4':'grid grid-cols-1 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.6fr)] gap-4'}>
-   <section aria-label="Conversation list" className={(focused?'hidden ':'')+'crm-conversation-inbox ds-page-reveal ds-page-reveal-3 relative max-h-[315px] min-h-64 md:min-h-[520px] md:max-h-[min(76dvh,800px)] lg:min-h-[680px] lg:max-h-[min(82dvh,940px)] overflow-y-auto overscroll-contain touch-pan-y rounded-xl [scrollbar-width:thin]'}>
+  <div className={focused?'grid grid-cols-1 gap-4':'grid grid-cols-1 xl:grid-cols-[minmax(300px,0.85fr)_minmax(0,1.6fr)] gap-4'}>
+   <section aria-label="Conversation list" className={(focused?'hidden ':'')+'crm-conversation-inbox ds-page-reveal ds-page-reveal-3 relative max-h-[315px] xl:max-h-[min(76vh,850px)] min-h-64 md:min-h-[520px] md:max-h-[min(76dvh,800px)] lg:min-h-[680px] lg:max-h-[min(82dvh,940px)] overflow-y-auto overscroll-contain touch-pan-y rounded-xl [scrollbar-width:thin]'}>
    <div className="crm-inbox-heading sticky top-0 z-10 flex items-center justify-between gap-2 px-4 py-3">
      <div className="flex items-center gap-2"><MessagesSquare size={16} className="text-[#e8c688]" aria-hidden="true"/><span className="text-xs font-semibold uppercase tracking-[.12em] text-[#efd6a5]">Conversation inbox</span></div>
      <span className="flex items-center gap-1 text-[11px] text-[#c3a779]"><ChevronDown size={13} aria-hidden="true"/> Scroll to browse</span>
