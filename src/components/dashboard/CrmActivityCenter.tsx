@@ -44,14 +44,16 @@ const filters:Array<{key:Filter;label:string;mobileLabel?:string;mobileSpan:stri
  {key:'staff',label:'Staff Activity',mobileSpan:'col-span-4'},
  {key:'history',label:'History',mobileSpan:'col-span-3'}
 ];
+const isStaffAudit=(e:CrmActivity)=>e.category==='staff'&&(e.event_key.startsWith('staff:archive:')||e.event_key.startsWith('staff:stage:'));
+const displaySafe=(value:string)=>value.replace(/\bJosh\s+Lad\b/gi,'Josh');
 const matchesFilter=(e:DisplayActivity,filter:Filter)=>{
  const historicalChat=(e.category==='handoff'||e.category==='escalation')&&['completed','closed','cancelled'].includes(e.callback_status??'');
  const inactiveOpportunity=e.category==='opportunity'&&e.callback_status!=='ai';
  const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
  const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
- if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity);
- if(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity)return false;
- if(filter==='all')return e.category!=='staff'||e.event_key.startsWith('staff:archive:');
+ if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity||(isStaffAudit(e)&&Boolean(e.read_at)));
+ if(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity||(isStaffAudit(e)&&Boolean(e.read_at)))return false;
+ if(filter==='all')return e.category!=='staff'||isStaffAudit(e);
  // Only an active, unresolved escalation belongs to Urgent. Claiming it
  // does not clear urgency; recording a future follow-up resets escalation.
  if(filter==='urgent')return isUrgent(e);
@@ -182,7 +184,7 @@ export default function CrmActivityCenter(){
       {isFollowupScheduled(item)&&<span className="inline-flex items-center rounded-md border border-[#c8a96e]/45 px-2 py-1 font-semibold text-[#edce93]">Next follow-up {new Date(item.callback_followup_at!).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>}
      </div>}
      {filter==='history'&&<span className="mt-2 inline-flex rounded border border-white/15 px-2 py-1 text-[10px] text-[#d2bfa2]">{item.chat_lead_audit?'Linked chat lead audit':item.category==='handoff'&&['completed','closed'].includes(item.callback_status??'')?'Completed chat request':(item.event_key.startsWith('staff:completed:')||item.event_key.startsWith('staff:claimed:'))?'Team activity audit':item.lead_archived?'Archived lead': 'Historical activity'}</span>}
-     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'||item.category==='escalation'?friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot request'):friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot activity')}</p>
+     <p className="mt-2 text-xs leading-relaxed text-[#c7b7a0]">{item.category==='handoff'||item.category==='escalation'?displaySafe(friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot request')):displaySafe(friendlySummary(item.summary).replace(/Concierge activity/gi,'Chatbot activity'))}</p>
      {Boolean(item.customerRequestCount&&item.customerRequestCount>1)&&<p className="mt-2 text-xs leading-relaxed text-[#dfc391]">Latest request shown. Open this lead to review and record outcomes for all outstanding requests individually.</p>}
      {(item.category==='handoff'||item.category==='escalation')&&item.callback_requested_at&&<div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#bba995]" aria-label="Request activity timeline">
       <span>Requested {new Date(item.callback_requested_at).toLocaleString(undefined,{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})}</span>
