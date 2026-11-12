@@ -222,7 +222,8 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
   const turnstileSiteKey = String(import.meta.env.VITE_MISSY_TURNSTILE_SITE_KEY || '0x4AAAAAAFoyCod-DYcyxjUw');
   const chatEnabled = privateQA || Boolean(turnstileSiteKey);
   const mayUpload = chatEnabled && !!session && !uploadBusy && (privateQA || mode === 'human');
-  const mayCompose = chatEnabled && welcomeReady && !!session && !busy && mode !== 'closed' && mode !== 'waiting_human';
+  const mayCompose = chatEnabled && welcomeReady && !!session && mode !== 'closed' && mode !== 'waiting_human';
+  const maySend = mayCompose && !busy;
   // A secondary offer only after genuine conversational value has been delivered.
   // Never count the initial greeting or an optimistic unsent visitor message.
   const answeredTurns = messages.filter(message => message.sender === 'ai' && message.id !== 0).length;
@@ -636,7 +637,6 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
         ]);
       }
       if (result.status === 'human') setMode('human');
-      setDraft('');
     } catch (error) {
       // A network timeout does not prove that the server failed to save the message.
       // Reconcile the transcript before offering a retry to avoid duplicate sends.
@@ -810,7 +810,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
             </form>}
            </div>}
           <div className="missy-concierge-composer relative z-10 shrink-0 border-t border-[#b9945d]/25 bg-gradient-to-b from-[#18140f] to-[#0b0a09] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 md:px-6 lg:px-[max(2rem,calc((100vw-900px)/2))]">
-            <form onSubmit={e => {e.preventDefault();if(mayCompose&&!listening)sendMessage();}} className="flex items-end gap-2" aria-label="Message composer">
+            <form onSubmit={e => {e.preventDefault();if(maySend&&!listening)sendMessage();}} className="flex items-end gap-2" aria-label="Message composer">
               <div ref={attachmentMenuRef} className="relative shrink-0">
                 <button type="button" onClick={()=>setAttachmentMenuOpen(opened=>!opened)} aria-label="Attachments" aria-expanded={attachmentMenuOpen} className="flex h-11 w-11 items-center justify-center rounded-full border border-[#99856b]/45 bg-[#302920] text-[#e4cba2] transition-colors hover:bg-[#453827] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e4c58b]"><Plus size={24}/></button>
                 {attachmentMenuOpen && <div className="absolute bottom-[calc(100%+12px)] left-0 z-30 w-[min(290px,calc(100vw-40px))] rounded-2xl border border-[#b9945d]/40 bg-[#211c19] p-3 text-[#f0e5d4] shadow-[0_18px_45px_rgba(0,0,0,.55)]" role="group" aria-label="Attachment options">
@@ -833,7 +833,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
                 }} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();if(mayCompose&&!listening)sendMessage();}}} className={`block max-h-28 min-h-[48px] w-full resize-none overflow-y-auto rounded-[25px] border bg-[#242427] px-4 py-[11px] text-base leading-6 text-white outline-none placeholder:text-[#898991] focus:border-[#d3bb93] disabled:cursor-not-allowed disabled:opacity-50 ${listening?'border-[#c5a16a]/75 pr-[80px]':'border-[#6d6662]/60 pr-12'}`} />
                 {<button type="button" onClick={startDictation} disabled={!mayCompose} aria-label={listening?'Stop dictation and keep transcribed text':draft.trim()?'Resume voice dictation':'Start voice dictation'} aria-pressed={listening} title={listening?'Tap to stop listening':draft.trim()?'Continue dictating this message':'Dictate your message'} className={`absolute bottom-[5px] right-[5px] flex h-[38px] items-center justify-center gap-[5px] rounded-full transition-[width,background-color,color] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5d89a] disabled:opacity-40 ${listening?'w-[66px] bg-[#c5a16a] text-[#18130c] shadow-[0_0_0_3px_rgba(197,161,106,.16)]':'w-[38px] text-[#bdbec4] hover:bg-white/10'}`}>{listening?<><ListeningWaveform/><Square size={10} strokeWidth={2.4} fill="currentColor"/></>:<Mic size={20}/>}</button>}
               </div>
-              {draft.trim() && !listening && <button type="submit" disabled={!mayCompose||listening} aria-label="Send message" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#c5a16a] text-[#16110b] transition-[transform,opacity] active:scale-95 disabled:opacity-40"><ArrowUp size={23} strokeWidth={2.7}/></button>}
+              {draft.trim() && !listening && <button type="submit" disabled={!maySend||listening} aria-label={busy ? 'Wait for current reply before sending' : 'Send message'} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#c5a16a] text-[#16110b] transition-[transform,opacity] active:scale-95 disabled:opacity-40"><ArrowUp size={23} strokeWidth={2.7}/></button>}
             </form>
             {listening && <div role="status" aria-live="polite" className="mt-2 flex items-center justify-center gap-2 text-xs text-[#efd3a5]"><span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#c5a16a] animate-pulse motion-reduce:animate-none"/><span><strong className="font-semibold">Listening live</strong> · Your words appear above. Tap the waveform to finish.</span></div>}
             {voiceFeedback && <p role="status" className="mt-2 text-center text-xs text-[#e8cb9d]">{voiceFeedback}</p>}
