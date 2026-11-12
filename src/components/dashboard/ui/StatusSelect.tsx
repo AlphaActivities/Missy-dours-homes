@@ -17,7 +17,7 @@ interface StatusSelectProps {
   onChange: (next: LeadStatus) => void;
 }
 
-const MENU_WIDTH = 140;
+const MENU_WIDTH = 164;
 const VIEWPORT_PADDING = 8;
 
 export default function StatusSelect({ status, disabled = false, onChange }: StatusSelectProps) {
@@ -30,11 +30,11 @@ export default function StatusSelect({ status, disabled = false, onChange }: Sta
   const placeMenu = () => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const menuHeight = 188;
+    const menuHeight = 212;
     const below = window.innerHeight - rect.bottom - VIEWPORT_PADDING;
     const above = rect.top - VIEWPORT_PADDING;
     const openAbove = below < menuHeight && above > below;
-    const maxHeight = Math.max(70, openAbove ? above - 6 : below - 6);
+    const maxHeight = Math.max(70, Math.min(menuHeight,openAbove ? above - 6 : below - 6));
     setPosition({
       top: openAbove ? Math.max(VIEWPORT_PADDING, rect.top - Math.min(menuHeight, maxHeight) - 6) : rect.bottom + 6,
       left: Math.max(VIEWPORT_PADDING, Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - VIEWPORT_PADDING)),
@@ -107,10 +107,10 @@ export default function StatusSelect({ status, disabled = false, onChange }: Sta
       {/* Portal escapes the clipped drawer; position is viewport-aware. */}
       {open && position && createPortal(
         <div data-lead-status-menu
-          className="fixed min-w-[140px] overflow-y-auto rounded-xl py-1 z-[100]"
-          style={{top:position.top,left:position.left,maxHeight:position.maxHeight,
-            background: 'var(--ds-bg-overlay)',
-            boxShadow: 'var(--ds-shadow-float)',
+          className="fixed w-[164px] overflow-y-auto rounded-xl py-1"
+          style={{top:position.top,left:position.left,maxHeight:position.maxHeight,zIndex:2147483000,
+            background: '#211c19',
+            boxShadow: '0 18px 45px rgba(0,0,0,0.95), 0 0 0 1px rgba(215,181,111,0.3)',
             border: '1px solid rgba(255,255,255,0.07)',
           }}
           role="listbox"
