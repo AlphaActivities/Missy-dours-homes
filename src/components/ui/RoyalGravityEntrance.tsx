@@ -33,8 +33,10 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
     let overlay: HTMLDivElement | null = null;
     let animation: Animation | null = null;
     let unlock: (() => void) | null = null;
+    let safetyTimer: number | undefined;
 
     const cleanupAnimation = () => {
+      window.clearTimeout(safetyTimer);
       animation?.cancel();
       animation = null;
       overlay?.remove();
@@ -141,6 +143,42 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
         { offset: .92, transform: point(endX, endY + 4, finalRotation - 7, .97) },
         { offset: 1, transform: point(endX, endY, finalRotation), opacity: 1 }
       ];
-97) },
-        { offset: 1, transform: point(endX, endY, finalRotation), opacity: 1 }
-      ];
+      animation = overlay.animate(frames, {
+        duration: ANIMATION_MS,
+        easing: 'linear',
+        fill: 'forwards'
+      });
+      safetyTimer = window.setTimeout(cleanupAnimation, ANIMATION_MS + 800);
+      animation.finished.then(() => { if (!disposed) cleanupAnimation(); })
+        .catch(() => { if (!disposed) cleanupAnimation(); });
+    };
+
+    const check = () => {
+      if (started || disposed) return;
+      const hero = document.getElementById('home');
+      const nowPast = !!hero && hero.getBoundingClientRect().bottom <= 0;
+      if (nowPast !== pastHero) {
+        pastHero = nowPast;
+        window.clearTimeout(afterHeroTimer);
+        heroDelayFinished = false;
+        if (pastHero) afterHeroTimer = window.setTimeout(() => { heroDelayFinished = true; launch(); }, AFTER_HERO_MS);
+      }
+    };
+    const markReady = () => { elapsed = true; launch(); };
+    homeTimer = window.setTimeout(markReady, MIN_HOME_MS);
+    // Scroll is passive; no layout work runs continuously during the animation.
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    check();
+    return () => {
+      disposed = true;
+      window.clearTimeout(homeTimer);
+      window.clearTimeout(afterHeroTimer);
+      window.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+      cleanupAnimation();
+    };
+  }, [pathname]);
+
+  return null;
+}
