@@ -385,7 +385,9 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   if(r.error)throw r.error;
   setItems(old=>{const next=old.map(x=>x.id===id?{...x,...changes}:x);loadedRef.current=next;return next;});
   badgeChannelRef.current?.postMessage({kind:'receipt-updated'});
-  await refresh();
+  if(changes.archived_at)showActionNotice('Notification moved to History');
+  else if(changes.archived_at===null)showActionNotice('Notification restored');
+  void refresh();
  };
  const markRead=async(id:string)=>upsertReceipt(id,{read_at:new Date().toISOString()});
  const archive=async(id:string)=>upsertReceipt(id,{read_at:new Date().toISOString(),archived_at:new Date().toISOString()});
