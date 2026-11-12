@@ -1184,19 +1184,6 @@
   position: relative;
   overflow: visible;
 }
-/* Reserve space inside the rounded tail corner across public chat and CRM.
-   The decorative tail stays outside the bubble; text never occupies its bend. */
-.missy-ios-outgoing-bubble,
-.crm-ios-visitor-bubble {
-  padding-inline-end: max(22px, 1.35em) !important;
-  padding-bottom: max(16px, 1em) !important;
-}
-.missy-ios-incoming-bubble,
-.crm-ios-ai-bubble,
-.crm-ios-team-bubble {
-  padding-inline-start: max(22px, 1.35em) !important;
-  padding-bottom: max(16px, 1em) !important;
-}
 .missy-ios-incoming-bubble::after,
 .missy-ios-outgoing-bubble::after,
 .crm-ios-visitor-bubble::after,
