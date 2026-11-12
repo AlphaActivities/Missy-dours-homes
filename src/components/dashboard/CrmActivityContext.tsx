@@ -133,7 +133,9 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     callback_assignee:task?.assigned_to??null,callback_connection:task?connectionByConversation.get(task.conversation_id)??'unconfirmed':null,
     callback_followup_at:task?outcomeByTask.get(e.event_key.split(':').pop()??'')?.followup_at??null:null,
     callback_outcome:task?outcomeByTask.get(e.event_key.split(':').pop()??'')?.disposition??null:null,
-    chat_lead_audit:e.category==='lead'&&Boolean(id)&&sources.get(id)==='AI Concierge'&&chatLeadIds.has(id)};
+    chat_lead_audit:e.category==='lead'&&Boolean(id)&&sources.get(id)==='AI Concierge'&&chatLeadIds.has(id),
+     // Archiving a lead removes its lead alerts; the archival staff audit remains visible until acknowledged.
+     lead_archived:e.category==='staff'?false:(e.lead_archived||Boolean((convo?.lead_id&&statuses.get(convo.lead_id)==='archived')))};
   });
  };
 
