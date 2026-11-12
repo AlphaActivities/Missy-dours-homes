@@ -89,7 +89,7 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
           </a>
         </div>
       )}
-      <button data-royal-gravity-launcher="mobile" ref={triggerRef} type="button"
+      <button ref={triggerRef} type="button"
         aria-label={expanded ? 'Close contact options' : 'Chat or call Missy'}
         aria-expanded={expanded} aria-controls="missy-mobile-contact-options"
         onClick={() => setExpanded(value => !value)}
