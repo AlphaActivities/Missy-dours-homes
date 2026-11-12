@@ -142,6 +142,14 @@ function DashboardLayoutInner() {
     document.body.classList.remove('overflow-hidden');
   }, []);
 
+  // Browser tab count mirrors the same unique active notifications as the bell.
+  // The installed app badge is handled by CrmActivityContext.
+  useEffect(() => {
+    document.title = attentionCount > 0
+      ? '(' + attentionCount + ') Missy Dours Private CRM'
+      : 'Missy Dours Private CRM';
+  }, [attentionCount]);
+
   // Provide a separate installable identity for the staff CRM only.
   useEffect(() => {
     const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
@@ -149,7 +157,7 @@ function DashboardLayoutInner() {
     const previous = manifest.href;
     const originalTitle = document.title;
     manifest.href = '/missy-crm.webmanifest';
-    document.title = 'Missy Dours Private CRM';
+    document.title = attentionCount > 0 ? '(' + attentionCount + ') Missy Dours Private CRM' : 'Missy Dours Private CRM';
     return () => {
       manifest.href = previous;
       document.title = originalTitle;
