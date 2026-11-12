@@ -26,7 +26,7 @@ const actionLabel=(item:DisplayActivity)=>item.customerRequestCount&&item.custom
  item.callback_connection==='expired'||item.callback_connection==='offline'?
  (item.callback_lead_id?'Open Lead · Follow Up':'Review Conversation · Follow Up'):
  item.callback_connection==='online'?'Open Conversation · Respond':
- 'Review Conversation · Check Status'):opensLead(item)?'Open Lead':'View Conversation';
+ 'Review Request · Check Status'):opensLead(item)?'Open Lead':'View Conversation';
 const actionTarget=(item:DisplayActivity)=>item.customerRequestCount&&item.customerRequestCount>1&&item.callback_lead_id
  ?'/dashboard/leads?lead='+encodeURIComponent(item.callback_lead_id):isChatRequest(item)&&
  ['offline','expired'].includes(item.callback_connection??'')&&item.callback_lead_id
