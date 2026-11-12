@@ -29,9 +29,28 @@ const Navbar: React.FC = () => {
     const onPointer = (event: PointerEvent) => {
       if (headerRef.current && !headerRef.current.contains(event.target as Node)) setIsMobileMenuOpen(false);
     };
+    // Detect the scroll *gesture*, not just a scroll event: body overflow is
+    // locked while the menu is open, so iOS may never emit a scroll event.
+    let touchStartY: number | null = null;
+    const onTouchStart = (event: TouchEvent) => {
+      touchStartY = event.touches.length === 1 ? event.touches[0].clientY : null;
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (touchStartY !== null && event.touches.length === 1 &&
+          Math.abs(event.touches[0].clientY - touchStartY) > 12) {
+        touchStartY = null;
+        setIsMobileMenuOpen(false);
+      }
+    };
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) > 2) setIsMobileMenuOpen(false);
+    };
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('wheel', onWheel, { passive: true });
     document.addEventListener('keydown', onKey);
     document.addEventListener('pointerdown', onPointer);
-    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onPointer); };
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onPointer); document.removeEventListener('touchstart', onTouchStart); document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('wheel', onWheel); };
   }, [isMobileMenuOpen]);
 
 
