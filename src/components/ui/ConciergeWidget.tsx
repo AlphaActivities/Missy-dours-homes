@@ -847,20 +847,84 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
   );
 }
 
-type TurnstileInstance = { render: (element: HTMLElement, options: { sitekey: string; callback: (token:string)=>void; 'error-callback':()=>void; 'expired-callback':()=>void }) => string; remove: (id:string)=>void };
+type TurnstileInstance = { render: (element: HTMLElement, options: { sitekey: string; callback: (token:string)=>void; 'error-callback':()=>void; 'expired-callback':()=>void; 'timeout-callback'?:()=>void }) => string; remove: (id:string)=>void; reset: (id:string)=>void };
 declare global { interface Window { turnstile?: TurnstileInstance } }
 function TurnstileVerifier({siteKey,onToken}:{siteKey:string;onToken:(token:string)=>void}) {
  const root=useRef<HTMLDivElement>(null);
  const tokenHandler=useRef(onToken);
+ const [status,setStatus]=useState<'loading'|'ready'|'retry'>('loading');
+ const [attempt,setAttempt]=useState(0);
  useEffect(()=>{tokenHandler.current=onToken;},[onToken]);
  useEffect(()=>{
-  let mounted=true;let widget:string|null=null;
-  const start=()=>{if(!mounted||!root.current||!window.turnstile||widget)return;widget=window.turnstile.render(root.current,{sitekey:siteKey,callback:(token)=>tokenHandler.current(token),'error-callback':()=>{},'expired-callback':()=>{}});};
+  let mounted=true;
+  let widget:string|null=null;
+  let recoveryTimer:number|undefined;
+  let watchdog:number|undefined;
+  const fail=()=>{
+   if(!mounted)return;
+   window.clearTimeout(watchdog);
+   setStatus('retry');
+  };
+  const start=()=>{
+   if(!mounted||!root.current||!window.turnstile||widget)return;
+   try {
+    root.current.replaceChildren();
+    widget=window.turnstile.render(root.current,{
+     sitekey:siteKey,
+     callback:(token)=>{if(mounted){window.clearTimeout(watchdog);setStatus('ready');tokenHandler.current(token);}},
+     'error-callback':fail,
+     'expired-callback':fail,
+     'timeout-callback':fail
+    });
+    setStatus('ready');
+   } catch {fail();}
+  };
   const scriptId='missy-concierge-turnstile';
   let script=document.getElementById(scriptId) as HTMLScriptElement|null;
-  if(!script){script=document.createElement('script');script.id=scriptId;script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;script.defer=true;document.head.appendChild(script);}
-  script.addEventListener('load',start);start();
-  return()=>{mounted=false;script?.removeEventListener('load',start);if(widget&&window.turnstile)window.turnstile.remove(widget);};
- },[siteKey]);
- return <div className="flex justify-center" ref={root} aria-label="Verify you are human"/>;
+  if(!script){
+   script=document.createElement('script');
+   script.id=scriptId;
+   script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+   script.async=true;script.defer=true;
+   document.head.appendChild(script);
+  }
+  const onLoad=()=>start();
+  const onError=()=>fail();
+  script.addEventListener('load',onLoad);
+  script.addEventListener('error',onError);
+  start();
+  // One bounded automatic recovery for transient script/challenge failures.
+  watchdog=window.setTimeout(()=>{
+   if(!mounted)return;
+   if(!window.turnstile){
+    script?.removeEventListener('load',onLoad);
+    script?.removeEventListener('error',onError);
+    script?.remove();
+    const replacement=document.createElement('script');
+    replacement.id=scriptId;
+    replacement.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    replacement.async=true;replacement.defer=true;
+    replacement.addEventListener('load',onLoad);
+    replacement.addEventListener('error',onError);
+    document.head.appendChild(replacement);
+    script=replacement;
+    recoveryTimer=window.setTimeout(()=>{if(!window.turnstile)fail();else start();},7000);
+   } else if(!widget)start();
+  },7000);
+  return()=>{
+   mounted=false;
+   window.clearTimeout(watchdog);window.clearTimeout(recoveryTimer);
+   script?.removeEventListener('load',onLoad);
+   script?.removeEventListener('error',onError);
+   if(widget&&window.turnstile)window.turnstile.remove(widget);
+  };
+ },[siteKey,attempt]);
+ return <div className="flex flex-col items-center gap-2">
+  <div className="flex justify-center" ref={root} aria-label="Verify you are human"/>
+  {status==='loading'&&<p role="status" className="text-center text-xs text-[#c3af8d]">Connecting securely…</p>}
+  {status==='retry'&&<div className="flex flex-col items-center gap-2">
+   <p role="alert" className="text-center text-xs text-[#e7c58d]">Security check interrupted. Please try again.</p>
+   <button type="button" className="rounded-lg border border-[#b9945d]/60 px-4 py-2 text-sm text-[#e7c58d]" onClick={()=>{setStatus('loading');setAttempt(n=>n+1);}}>Retry secure connection</button>
+  </div>}
+ </div>;
 }
