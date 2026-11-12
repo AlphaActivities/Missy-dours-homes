@@ -142,10 +142,12 @@ function DashboardLayoutInner() {
     document.body.classList.remove('overflow-hidden');
   }, []);
 
-  // Preserve the original Clancy Realty favicon and a clean browser tab title.
+  // Preserve the original Clancy Realty favicon; show the same unique
+  // attention count as the CRM bell in the browser tab title.
   useEffect(() => {
-    document.title = 'Missy Dours CRM';
-  }, []);
+    const suffix = attentionCount > 0 ? '  🔔 ' + attentionCount : '';
+    document.title = 'Missy Dours CRM' + suffix;
+  }, [attentionCount]);
 
   // Provide a separate installable identity for the staff CRM only.
   useEffect(() => {
