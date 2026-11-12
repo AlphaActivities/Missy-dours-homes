@@ -51,7 +51,7 @@ const matchesFilter=(e:DisplayActivity,filter:Filter)=>{
  const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
  if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity);
  if(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity)return false;
- if(filter==='all')return e.category!=='staff';
+ if(filter==='all')return e.category!=='staff'||e.event_key.startsWith('staff:archive:');
  // Only an active, unresolved escalation belongs to Urgent. Claiming it
  // does not clear urgency; recording a future follow-up resets escalation.
  if(filter==='urgent')return isUrgent(e);
