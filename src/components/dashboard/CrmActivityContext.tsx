@@ -333,7 +333,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   // Directly verify the current count, even if another refresh is already running.
   const {data,error}=await supabase.rpc('crm_activity_totals');
   if(error){setBadgeSync(previous=>({...previous,status:'error',error:'Could not verify the current count with the server.'}));return;}
-  setAttentionCount(Math.max(0,Number((data as {total?:number}|null)?.total??0)));
+  // Refresh recalculates the badge from visible, deduplicated All cards.
   setBadgeSyncRevision(n=>n+1);
   void refresh();
  };
