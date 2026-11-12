@@ -213,29 +213,10 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    const t=totals.data as {total?:number;unread?:number;urgent?:number;today?:number;hidden?:number}|null;
    setCounts({unread:Number(t?.unread??0),urgent:Number(t?.urgent??0),today:Number(t?.today??0),hidden:Number(t?.hidden??0)});
    const c=summary.data as {attention_count?:number;new_leads?:number;open_tasks?:number;waiting_conversations?:number}|null;
-   // Match the native iOS badge and CRM bell to the All filter's actual active cards,
-   // not overlapping lead, callback task and waiting-conversation work records.
-   // The bell counts the same distinct, visible cards as the All filter.
-   // Never add the All count to the category counts or count hidden history.
-   const chatEvents=new Map<string,CrmActivity>();
-   for(const event of newest){
-    if(!['handoff','escalation'].includes(event.category)||['completed','closed','cancelled'].includes(event.callback_status??'')||event.archived_at||event.lead_archived)continue;
-    const id=event.callback_conversation_id??event.callback_task_id??event.id;
-    const prior=chatEvents.get(id);
-    const urgent=event.category==='escalation'&&Boolean(event.callback_escalated_at);
-    if(!prior||(urgent&&prior.category!=='escalation')||(!urgent&&event.category==='handoff'&&prior.category==='escalation'))chatEvents.set(id,event);
-   }
-   const chatCustomers=new Set([...chatEvents.values()].map(event=>event.callback_lead_id?'lead:'+event.callback_lead_id:'conversation:'+(event.callback_conversation_id??event.callback_task_id??event.id)));
-   const otherActive=newest.filter(event=>{
-    if(['handoff','escalation'].includes(event.category)&&!['completed','closed','cancelled'].includes(event.callback_status??'')&&!event.archived_at&&!event.lead_archived)return false;
-    const historicalChat=['handoff','escalation'].includes(event.category)&&['completed','closed','cancelled'].includes(event.callback_status??'');
-    const teamUpdate=event.event_key.startsWith('staff:completed:')||event.event_key.startsWith('staff:claimed:');
-    const audit=event.category==='staff'&&(event.event_key.startsWith('staff:archive:')||event.event_key.startsWith('staff:stage:'));
-    return !event.archived_at&&!event.lead_archived&&!event.chat_lead_audit&&!historicalChat&&!(teamUpdate&&event.read_at)&&
-     !(event.category==='opportunity'&&event.callback_status!=='ai')&&!(audit&&event.read_at)&&
-     (event.category!=='staff'||audit);
-   });
-   setAttentionCount(otherActive.length+chatCustomers.size);
+   // Canonical server count includes all active grouped cards, not only page 1.
+   const verifiedTotal=Number(t?.total);
+   if(!Number.isSafeInteger(verifiedTotal)||verifiedTotal<0)throw new Error('Invalid CRM notification total');
+   setAttentionCount(verifiedTotal);
    setBreakdown({new_leads:Number(c?.new_leads??0),open_tasks:Number(c?.open_tasks??0),waiting_conversations:Number(c?.waiting_conversations??0)});
    setError(null);
   }catch(e){setError(e instanceof Error?e.message:'Unable to load activity');}
@@ -293,6 +274,36 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    void supabase.removeChannel(channel);
   };
  },[email,refresh]);
+ // Five-second lightweight foreground verification; full inbox stays at 15 seconds.
+ useEffect(()=>{
+  if(!permitted.includes(email))return;
+  let disposed=false;
+  let checking=false;
+  const check=async()=>{
+   if(disposed||checking||document.visibilityState!=='visible')return;
+   checking=true;
+   try{
+    const {data,error}=await supabase.rpc('crm_activity_totals');
+    if(disposed||error)return;
+    const raw=(data as {total?:unknown}|null)?.total;
+    const count=Number(raw);
+    if(raw!=null&&Number.isSafeInteger(count)&&count>=0)setAttentionCount(count);
+   }catch{/* A failed check must not clear a previously verified badge. */}
+   finally{checking=false;}
+  };
+  void check();
+  const timer=window.setInterval(()=>void check(),5000);
+  const onResume=()=>{if(document.visibilityState==='visible')void check();};
+  document.addEventListener('visibilitychange',onResume);
+  window.addEventListener('focus',onResume);
+  window.addEventListener('pageshow',onResume);
+  return()=>{
+   disposed=true;window.clearInterval(timer);
+   document.removeEventListener('visibilitychange',onResume);
+   window.removeEventListener('focus',onResume);
+   window.removeEventListener('pageshow',onResume);
+  };
+ },[email]);
  useEffect(()=>{
   // Keep the installed app badge synchronized with the visible active inbox total.
   // Some browsers/platforms do not implement the Badging API.
@@ -333,9 +344,12 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   // Directly verify the current count, even if another refresh is already running.
   const {data,error}=await supabase.rpc('crm_activity_totals');
   if(error){setBadgeSync(previous=>({...previous,status:'error',error:'Could not verify the current count with the server.'}));return;}
-  // Refresh recalculates the badge from visible, deduplicated All cards.
-  await refresh();
+  const raw=(data as {total?:unknown}|null)?.total;
+  const count=Number(raw);
+  if(raw==null||!Number.isSafeInteger(count)||count<0){setBadgeSync(previous=>({...previous,status:'error',error:'Invalid server notification count.'}));return;}
+  setAttentionCount(count);
   setBadgeSyncRevision(n=>n+1);
+  void refresh();
  };
  const upsertReceipt=async(id:string,changes:{read_at?:string|null;archived_at?:string|null})=>{
   const before=items.find(x=>x.id===id);if(!before)return;
