@@ -47,7 +47,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
         boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)',
         borderLeft: isSuccess ? '2px solid rgba(139,175,148,0.55)' : '2px solid rgba(200,110,110,0.45)',
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.97)',
+        transform: visible ? 'translateY(0) scale(1)' : 'translateY(-8px) scale(0.97)',
       }}
       role="alert"
       aria-live="assertive"
@@ -90,8 +90,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {/* Bottom-right desktop / bottom-center mobile */}
-      <div className="fixed z-[200] bottom-4 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 flex flex-col gap-2.5 items-stretch sm:items-end pointer-events-none">
+      {/* Top-center mobile / top-right desktop, below the fixed dashboard header */}
+      <div className="fixed z-[200] top-[calc(env(safe-area-inset-top)+84px)] left-4 right-4 sm:left-auto sm:right-6 flex flex-col gap-2.5 items-stretch sm:items-end pointer-events-none">
         <div className="pointer-events-auto flex flex-col gap-2.5 items-stretch sm:items-end">
           {toasts.map(t => (
             <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
