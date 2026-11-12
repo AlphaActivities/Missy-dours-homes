@@ -1,5 +1,7 @@
 import {createContext,useCallback,useContext,useEffect,useRef,useState,type ReactNode} from 'react';
 import {useNavigate} from 'react-router-dom';
+import {createPortal} from 'react-dom';
+import {AnimatePresence,motion} from 'framer-motion';
 import {supabase} from '../../lib/supabase';
 import {useAuth} from '../../contexts/AuthContext';
 import {isCrmAudioRunning,unlockCrmAudio,playCrmSound,previewCrmSound,isCrmSound,type CrmSound} from './crmSounds';
@@ -46,12 +48,12 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const showAlert=(event:CrmActivity)=>{
   if(liveAlertTimer.current)clearTimeout(liveAlertTimer.current);
   setLiveAlert(event);
-  liveAlertTimer.current=setTimeout(()=>setLiveAlert(null),4500);
+  liveAlertTimer.current=setTimeout(()=>setLiveAlert(null),4000);
  };
  const showActionNotice=(message:string)=>{
   if(actionTimer.current)clearTimeout(actionTimer.current);
   setActionNotice(message);
-  actionTimer.current=setTimeout(()=>setActionNotice(null),3500);
+  actionTimer.current=setTimeout(()=>setActionNotice(null),4000);
  };
  useEffect(()=>()=>{if(liveAlertTimer.current)clearTimeout(liveAlertTimer.current);if(actionTimer.current)clearTimeout(actionTimer.current);},[]);
  const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false),refreshQueuedRef=useRef(false),loadedRef=useRef<CrmActivity[]>([]);
@@ -413,9 +415,12 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   :liveAlert?.target_path?.startsWith('/dashboard/')?liveAlert.target_path:'/dashboard/notifications';
  return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,syncBadgeNow,badgeSync,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
  {children}
- {actionNotice&&<div role="status" className="fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[125] mx-auto max-w-sm rounded-xl border border-[#c4a369]/50 bg-[#17120e] px-5 py-3 text-center text-sm font-medium text-[#edd2a3] shadow-xl">{actionNotice}</div>}
+ {typeof document!=='undefined'&&createPortal(
+  <div className="pointer-events-none fixed inset-0 z-[9999]">
+   <AnimatePresence mode="sync">
+ {actionNotice&&<motion.div key="action-notice" initial={{opacity:0,y:-18,scale:.96,filter:'blur(6px)'}} animate={{opacity:1,y:0,scale:1,filter:'blur(0px)'}} exit={{opacity:0,y:-24,scale:.97,filter:'blur(8px)'}} transition={{duration:.42,ease:[.22,1,.36,1]}} role="status" className="pointer-events-auto fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[9999] mx-auto max-w-sm rounded-xl border border-[#c4a369]/50 bg-[#17120e] px-5 py-3 text-center text-sm font-medium text-[#edd2a3] shadow-xl">{actionNotice}</motion.div>}
  {liveAlert&&permitted.includes(email)&&
-  <div role="alert" aria-live="assertive" data-category={liveAlert.category} data-opportunity-kind={liveAlert.opportunity_kind??undefined} className="crm-live-alert fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[120] mx-auto max-w-md rounded-2xl border p-4 text-[#f0dfbd] backdrop-blur-xl">
+  <motion.div key={liveAlert.id} initial={{opacity:0,y:-22,scale:.95,filter:'blur(8px)'}} animate={{opacity:1,y:0,scale:1,filter:'blur(0px)'}} exit={{opacity:0,y:-30,scale:.97,filter:'blur(10px)'}} transition={{duration:.48,ease:[.22,1,.36,1]}} role="alert" aria-live="assertive" data-category={liveAlert.category} data-opportunity-kind={liveAlert.opportunity_kind??undefined} className="crm-live-alert pointer-events-auto fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[9999] mx-auto max-w-md rounded-2xl border p-4 text-[#f0dfbd] backdrop-blur-xl">
    <div className="flex items-start justify-between gap-3">
     <div className="min-w-0">
      <p className="crm-live-alert-source text-[10px] font-semibold uppercase tracking-[.15em]">{liveAlert.category==='escalation'?(liveAlert.callback_request_kind==='callback'?'Urgent Callback Request':'Urgent Chat Request'):liveAlert.category==='lead'?'Website Contact Form':liveAlert.category==='opportunity'?'AI Chat Opportunity':liveAlert.category==='handoff'?(liveAlert.callback_request_kind==='callback'?'Callback Request':'Direct Chat Request'):'Staff Activity'}</p>
@@ -427,7 +432,10 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    <button type="button" onClick={()=>{
     dismissLiveAlert();navigate(alertTarget);
    }} className="crm-live-alert-action mt-3 flex min-h-11 w-full items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold">View Notification · Open Details</button>
-  </div>}
+  </motion.div>}
+   </AnimatePresence>
+  </div>,document.body)}
+
  </Context.Provider>;
 }
 export function useCrmActivity(){const ctx=useContext(Context);if(!ctx)throw new Error('CRM activity provider missing');return ctx;}
