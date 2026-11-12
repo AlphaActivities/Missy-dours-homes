@@ -164,7 +164,6 @@ const Navbar: React.FC = () => {
         >
           <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#f5dca2]/80 to-transparent" />
           <div className="mb-5 flex items-center gap-3">
-            <span className="h-px w-8 bg-gradient-to-r from-[#c59d5b] to-transparent" aria-hidden="true" />
             <p className="text-[10px] font-semibold tracking-[.31em] uppercase text-[#d8bb88]">Explore Missy Dours</p>
           </div>
           <ul className="space-y-2">
