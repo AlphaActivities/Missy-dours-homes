@@ -70,9 +70,12 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
     <div ref={rootRef}
       className={'relative pointer-events-auto shrink-0 transition-opacity duration-300 ease-out motion-reduce:transition-none ' +
         (arrived ? 'opacity-100' : 'pointer-events-none opacity-0')}>
-      {expanded && (
-        <div id="missy-mobile-contact-options" role="group" aria-label="Contact Missy"
-          className="absolute bottom-[calc(100%+14px)] right-0 w-[min(276px,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-[#d8b575]/65 bg-gradient-to-br from-[#292118] via-[#1c1711] to-[#0f0d0b] p-2.5 shadow-[0_18px_48px_rgba(0,0,0,.65),0_0_22px_rgba(204,162,91,.14),inset_0_1px_0_rgba(255,232,185,.12)] backdrop-blur-xl">
+      <div id="missy-mobile-contact-options" role="group" aria-label="Contact Missy"
+        aria-hidden={!expanded} inert={!expanded}
+        className={'absolute bottom-[calc(100%+14px)] right-0 w-[min(276px,calc(100vw-3rem))] origin-bottom-right overflow-hidden rounded-2xl border bg-gradient-to-br from-[#292118] via-[#1c1711] to-[#0f0d0b] p-2.5 backdrop-blur-xl transform-gpu transition-[opacity,transform,box-shadow,border-color,visibility] motion-reduce:transition-none ' +
+          (expanded
+            ? 'visible pointer-events-auto opacity-100 translate-y-0 scale-100 border-[#d8b575]/65 shadow-[0_18px_48px_rgba(0,0,0,.65),0_0_22px_rgba(204,162,91,.14),inset_0_1px_0_rgba(255,232,185,.12)] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)]'
+            : 'invisible pointer-events-none opacity-0 translate-y-3 scale-[0.94] border-[#d8b575]/30 shadow-[0_8px_22px_rgba(0,0,0,.25)] duration-[220ms] ease-in')}>
           <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[.17em] text-[#d5b981]">Connect with Missy</p>
           <button type="button" onClick={() => {
             setExpanded(false);
@@ -87,8 +90,7 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
           }} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium tracking-[.005em] text-[#f8e5c1] transition-colors hover:bg-[#c8a36a]/15 active:bg-[#c8a36a]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#efcf92]">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center text-[#e9c88e]"><Phone size={25} strokeWidth={1.9} className="shrink-0" aria-hidden="true"/></span><span>Call Missy Directly</span>
           </a>
-        </div>
-      )}
+      </div>
       <button data-royal-gravity-launcher="mobile" ref={triggerRef} type="button"
         aria-label={expanded ? 'Close contact options' : 'Chat or call Missy'}
         aria-expanded={expanded} aria-controls="missy-mobile-contact-options"
