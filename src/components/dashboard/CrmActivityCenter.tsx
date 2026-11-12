@@ -204,8 +204,11 @@ export default function CrmActivityCenter(){
       <span className="relative z-[1] min-w-0 flex-1 text-center">{actionLabel(item)}</span>
       <ArrowRight size={18} strokeWidth={1.7} aria-hidden="true" className="crm-open-notification-arrow shrink-0"/>
      </Link>
-     {!item.read_at&&item.category==='staff'&&<button type="button" disabled={working} onClick={()=>void execute(()=>markRead(item.id))}
-      className="inline-flex items-center rounded-md border border-white/20 px-3 py-1.5 text-xs disabled:opacity-40">Acknowledge update</button>}
+     {!item.read_at&&item.category==='staff'&&<button type="button" disabled={working} aria-label="Dismiss notification to History" title="Dismiss notification to History" onClick={()=>void execute(()=>markRead(item.id))}
+      className="group relative isolate inline-flex min-h-[44px] w-full items-center justify-center gap-2 overflow-hidden rounded-lg border border-emerald-300/65 bg-gradient-to-r from-[#0c4938] via-[#147a59] to-[#0d5848] px-4 py-2.5 text-sm font-semibold tracking-[0.02em] text-[#eaffef] shadow-[0_4px_18px_rgba(24,180,119,.24),inset_0_1px_0_rgba(255,255,255,.24)] transition-[transform,filter,box-shadow] duration-200 hover:brightness-125 hover:shadow-[0_6px_26px_rgba(24,180,119,.45)] active:scale-[0.975] active:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:opacity-40">
+       <CheckCircle2 size={19} strokeWidth={2.2} aria-hidden="true" className="shrink-0 transition-transform duration-200 group-hover:scale-110"/>
+       <span>Dismiss to History</span>
+      </button>}
 
     </div>
    </article>)}
