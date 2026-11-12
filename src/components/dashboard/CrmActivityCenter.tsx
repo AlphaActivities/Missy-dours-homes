@@ -213,7 +213,7 @@ export default function CrmActivityCenter(){
     </div>
    </article>)}
   </div>
-  {hasMore&&<div className="mt-5 flex justify-center"><button type="button" onClick={()=>void loadMore()} disabled={loadingMore}
+  {filter==='history'&&hasMore&&<div className="mt-5 flex justify-center"><button type="button" onClick={()=>void loadMore()} disabled={loadingMore}
    className="rounded-lg border border-[#c8a96e]/40 px-5 py-2.5 text-sm text-[#edce93] disabled:opacity-50">{loadingMore?'Loading older activity…':'Load older notifications'}</button></div>}
   <p className="mt-5 text-xs text-[#a99c89]">Completed requests and archived leads move to History automatically. Open a lead or conversation to record outcomes. Viewing an alert does not resolve outstanding work.</p>
  </section>;
