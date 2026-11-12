@@ -315,6 +315,7 @@ function DashboardLayoutInner() {
                     size={15}
                     style={{ color: isActive ? 'var(--ds-gold)' : 'var(--ds-text-tertiary)' }}
                   />
+                  <span className="min-w-0 truncate" style={{color:isActive?'var(--ds-text-primary)':'var(--ds-text-secondary)'}}>{label}</span>
                 </>
               )}
             </NavLink>
