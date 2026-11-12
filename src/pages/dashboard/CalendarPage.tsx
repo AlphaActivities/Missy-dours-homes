@@ -48,12 +48,19 @@ export default function CalendarPage(){
    const convs=(conversations?.data??[]) as Conversation[];
    const linkedIds=convs.map(c=>c.lead_id).filter((v):v is string=>Boolean(v));
    const ids=[...new Set([...leadIds,...linkedIds])];
-   const leads=ids.length?await supabase.from('leads').select('id,name').in('id',ids):null;
+   const leads=ids.length?await supabase.from('leads').select('id,name,status').in('id',ids):null;
    if(leads?.error)throw leads.error;
    const names=new Map((leads?.data??[]).map(l=>[l.id,l.name]));
+   const archivedLeadIds=new Set((leads?.data??[]).filter(l=>l.status==='archived').map(l=>l.id));
+   // Archiving a lead ends its active calendar work, without deleting history.
+   const activeTasks=tasks.filter(t=>{
+    const leadId=convs.find(c=>c.id===t.conversation_id)?.lead_id;
+    return !leadId||!archivedLeadIds.has(leadId);
+   });
+   const activeFollowups=active.filter(e=>!archivedLeadIds.has(e.lead_id));
    const grouped=new Map<string,{key:string;name:string;count:number;leadId:string|null}>();
    const byConversation=new Map(convs.map(c=>[c.id,c]));
-   for(const task of tasks){
+   for(const task of activeTasks){
     const conversation=byConversation.get(task.conversation_id);
     const leadId=conversation?.lead_id??null;
     const groupKey=leadId?'lead:'+leadId:'conversation:'+task.conversation_id;
@@ -62,7 +69,7 @@ export default function CalendarPage(){
     grouped.set(groupKey,{key:groupKey,leadId,name:(leadId?names.get(leadId):conversation?.visitor_name)||'Unlinked conversation',count:1});
    }
    setOutstanding([...grouped.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name)));
-   const scheduledCallbacks=tasks.filter(t=>
+   const scheduledCallbacks=activeTasks.filter(t=>
     Boolean(t.due_at)&&
     Date.parse(t.due_at)>Date.parse(t.created_at)+5000
    ).map(t=>{
@@ -73,7 +80,7 @@ export default function CalendarPage(){
      customer:(leadId?names.get(leadId):conversation?.visitor_name)||'Callback visitor',kind:'callback' as const};
    });
    const booked:Event[]=[
-    ...active.map(e=>({...e,customer:names.get(e.lead_id)||'Customer',kind:'followup' as const})),
+    ...activeFollowups.map(e=>({...e,customer:names.get(e.lead_id)||'Customer',kind:'followup' as const})),
     ...scheduledCallbacks
    ];
    setEvents(booked.filter(e=>{
