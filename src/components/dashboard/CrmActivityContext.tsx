@@ -309,8 +309,8 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
    return;
   }
   let cancelled=false;
-  // Global numeric badges are intentionally disabled; filter badges remain visible.
-  const task=badgeNavigator.clearAppBadge!();
+  // Native numeric badges mirror the unique active All cards, not summed filter categories.
+  const task=attentionCount>0?badgeNavigator.setAppBadge!(attentionCount):badgeNavigator.clearAppBadge!();
   void task.then(async()=>{
    if(!cancelled)setBadgeSync({supported:true,status:'synced',lastSyncedAt:new Date().toISOString(),lastSyncedCount:attentionCount,error:null});
    // Record the server-confirmed badge for this device to prevent
