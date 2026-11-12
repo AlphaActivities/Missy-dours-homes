@@ -35,6 +35,15 @@ export default function ConciergeSignatureEntrance() {
  // The entrance and dashboard bell share one state; never query an independent total.
  const [entranceAttention,setEntranceAttention]=useState<{count:number|null}|null>(null);
  const [greetingFinished,setGreetingFinished]=useState(false);
+ // A slow CRM inbox must never hold the cinematic entrance hostage.
+ // Keep the SAME deduplicated count as the dashboard bell; do not use the
+ // older server total, which can disagree with the visible All filter.
+ useEffect(()=>{
+  const timeout=window.setTimeout(()=>{
+   setEntranceAttention(current=>current??{count:null});
+  },2500);
+  return()=>window.clearTimeout(timeout);
+ },[]);
  useEffect(()=>{
   if(activityLoading)return;
   setEntranceAttention({count:activityError?null:attentionCount});
@@ -104,7 +113,7 @@ export default function ConciergeSignatureEntrance() {
    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(196,164,106,.13),transparent_63%)]"/>
    {/* Bell, badge and verified notification text are one premium reveal,
        triggered by greeting completion. Wobble waits another full second. */}
-   {greetingFinished&&entranceAttention!==null&&<motion.div
+   {greetingFinished&&entranceAttention?.count!=null&&entranceAttention.count>0&&<motion.div
      className="crm-entrance-notice pointer-events-none absolute inset-x-0 top-[calc(38%-244px)] max-lg:top-[calc(38%-236px)] mx-auto flex w-full flex-col items-center justify-center gap-2 px-3 text-center text-[#edd2a3]"
      initial={{opacity:0,y:10}} animate={{opacity:phase==='welcome'?1:0,y:0}}
      transition={phase==='welcome'?{duration:.48,ease:[.22,1,.36,1]}:{duration:.22,delay:0,ease:'easeOut'}}
