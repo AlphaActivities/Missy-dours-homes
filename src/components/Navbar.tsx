@@ -163,8 +163,8 @@ const Navbar: React.FC = () => {
           style={{ maxHeight: `calc(100dvh - ${headerHeight}px - 26px)` }}
         >
           <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#f5dca2]/80 to-transparent" />
-          <div className="mb-5 flex items-center gap-3">
-            <p className="text-[10px] font-semibold tracking-[.31em] uppercase text-[#d8bb88]">Explore Missy Dours</p>
+          <div className="mb-5 flex items-center justify-center">
+            <p className="text-center text-[10px] font-semibold tracking-[.31em] uppercase text-[#d8bb88]">Explore Missy Dours</p>
           </div>
           <ul className="space-y-2">
             {navItems.map((item) => (
