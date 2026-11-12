@@ -27,7 +27,7 @@ const STATUS_BORDER_COLOR: Record<LeadStatus, string> = {
   contacted: '#c4a46a',
   qualified: '#7dbfa0',
   closed:    '#7a6e62',
-  archived:  '#3a3836',
+  archived:  '#B88A58',
 };
 
 // ── Desktop Table ────────────────────────────────────────────

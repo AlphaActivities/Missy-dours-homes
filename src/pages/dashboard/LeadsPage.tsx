@@ -23,6 +23,16 @@ const FILTER_TABS: { value: FilterValue; label: string }[] = [
   { value: 'archived',  label: 'Archived' },
 ];
 
+// Match the existing lead status colors; only Archived adopts antique bronze.
+const FILTER_COLORS: Record<FilterValue, {text:string; rgb:string}> = {
+  all:       {text:'#D6B779',rgb:'214,183,121'},
+  new:       {text:'#9ec5e0',rgb:'158,197,224'},
+  contacted: {text:'#c8a96e',rgb:'200,169,110'},
+  qualified: {text:'#86c9a8',rgb:'134,201,168'},
+  closed:    {text:'#a89880',rgb:'168,152,128'},
+  archived:  {text:'#B88A58',rgb:'184,138,88'},
+};
+
 const VALID_FILTERS = new Set<FilterValue>(['all', 'new', 'contacted', 'qualified', 'closed', 'archived']);
 
 const STATUS_LABELS: Record<LeadStatus, string> = {
@@ -363,28 +373,29 @@ export default function LeadsPage() {
           {FILTER_TABS.map(tab => {
             // In search mode, no status filter is active — search covers all
             const isActive = !isSearchMode && filter === tab.value;
+            const tone = FILTER_COLORS[tab.value];
             return (
               <IosNativeTap key={tab.value} className="relative inline-flex flex-shrink-0"><button
                 onClick={() => handleFilterChange(tab.value)}
                 className={`ds-filter-tab ${isActive ? 'ds-filter-tab-active' : ''} flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${isSearchMode ? 'opacity-50' : ''}`}
                 style={{
-                  background: isActive ? 'var(--ds-gold-muted)' : 'rgba(12, 11, 10, 0.55)',
-                  color: isActive ? 'var(--ds-gold-light)' : '#f5f5f5',
+                  background: isActive ? `rgba(${tone.rgb},0.17)` : 'rgba(12,11,10,0.55)',
+                  color: tone.text,
                   boxShadow: isActive
-                    ? '0 0 0 1px rgba(196,164,106,0.55), 0 0 12px rgba(196,164,106,0.2)'
-                    : '0 0 0 1px rgba(255,255,255,0.18)',
+                    ? `0 0 0 1px rgba(${tone.rgb},0.7), 0 0 12px rgba(${tone.rgb},0.22)`
+                    : `0 0 0 1px rgba(${tone.rgb},0.38)`,
                 }}
                 onMouseEnter={e => {
                   if (!isActive) {
-                    e.currentTarget.style.color = '#ffffff';
-                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.32)';
-                    e.currentTarget.style.background = 'rgba(20,18,16,0.6)';
+                    e.currentTarget.style.color = tone.text;
+                    e.currentTarget.style.boxShadow = `0 0 0 1px rgba(${tone.rgb},0.65), 0 0 10px rgba(${tone.rgb},0.14)`;
+                    e.currentTarget.style.background = `rgba(${tone.rgb},0.09)`;
                   }
                 }}
                 onMouseLeave={e => {
                   if (!isActive) {
-                    e.currentTarget.style.color = '#f5f5f5';
-                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.18)';
+                    e.currentTarget.style.color = tone.text;
+                    e.currentTarget.style.boxShadow = `0 0 0 1px rgba(${tone.rgb},0.38)`;
                     e.currentTarget.style.background = 'rgba(12,11,10,0.55)';
                   }
                 }}

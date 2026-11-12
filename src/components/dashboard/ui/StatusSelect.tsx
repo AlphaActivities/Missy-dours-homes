@@ -8,7 +8,7 @@ const STATUS_OPTIONS: { value: LeadStatus; label: string; color: string; bg: str
   { value: 'contacted', label: 'Contacted', color: '#c8a96e', bg: 'rgba(60,44,18,0.55)',    border: 'rgba(196,164,106,0.28)' },
   { value: 'qualified', label: 'Qualified', color: '#86c9a8', bg: 'rgba(18,52,40,0.55)',    border: 'rgba(110,185,155,0.25)' },
   { value: 'closed',    label: 'Closed',    color: '#a89880', bg: 'rgba(40,36,32,0.6)',     border: 'rgba(168,152,128,0.2)'  },
-  { value: 'archived',  label: 'Archived',  color: '#5a5856', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)' },
+  { value: 'archived',  label: 'Archived',  color: '#B88A58', bg: 'rgba(184,138,88,0.12)', border: 'rgba(184,138,88,0.35)' },
 ];
 
 interface StatusSelectProps {
