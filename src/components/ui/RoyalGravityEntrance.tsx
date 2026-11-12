@@ -25,6 +25,7 @@ export default function RoyalGravityEntrance() {
     let homeTimer: number | undefined;
     let elapsed = false;
     let pastHero = false;
+    let heroDelayFinished = false;
     let started = false;
     let disposed = false;
     let overlay: HTMLDivElement | null = null;
@@ -42,7 +43,7 @@ export default function RoyalGravityEntrance() {
     };
 
     const launch = () => {
-      if (started || disposed || !elapsed || !pastHero || document.hidden) return;
+      if (started || disposed || !elapsed || !pastHero || !heroDelayFinished || document.hidden) return;
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const mobile = window.matchMedia('(max-width: 767px)').matches;
       const selector = mobile
@@ -77,8 +78,7 @@ export default function RoyalGravityEntrance() {
         ? Math.max(startX + 12, Math.min(surface.left + radius, endX - 80))
         : Math.max(startX + 12, Math.min(window.innerWidth * .22, endX - 80));
       const dropY = Math.max(radius * 1.8, floorY);
-      const travel = Math.max(0, endX - landX);
-      const degrees = Math.min(900, travel / Math.max(1, destination.width * Math.PI) * 360);
+      const degrees = Math.min(900, Math.max(0, endX - landX) / Math.max(1, destination.width * Math.PI) * 360);
 
       // Lock only for the short cinematic sequence, restoring the exact
       // scroll position and pre-existing inline styles afterward.
@@ -152,10 +152,11 @@ export default function RoyalGravityEntrance() {
       if (nowPast !== pastHero) {
         pastHero = nowPast;
         window.clearTimeout(afterHeroTimer);
-        if (pastHero) afterHeroTimer = window.setTimeout(launch, AFTER_HERO_MS);
+        heroDelayFinished = false;
+        if (pastHero) afterHeroTimer = window.setTimeout(() => { heroDelayFinished = true; launch(); }, AFTER_HERO_MS);
       }
     };
-    const markReady = () => { elapsed = true; };
+    const markReady = () => { elapsed = true; launch(); };
     homeTimer = window.setTimeout(markReady, MIN_HOME_MS);
     // Scroll is passive; no layout work runs continuously during the animation.
     window.addEventListener('scroll', check, { passive: true });
