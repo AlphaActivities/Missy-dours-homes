@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 import { LeadStatus } from './StatusBadge';
 
@@ -21,25 +22,45 @@ const VIEWPORT_PADDING = 8;
 
 export default function StatusSelect({ status, disabled = false, onChange }: StatusSelectProps) {
   const [open, setOpen] = useState(false);
-  const [alignLeft, setAlignLeft] = useState(false);
+  const [position, setPosition] = useState<{top:number;left:number;maxHeight:number}|null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const current = STATUS_OPTIONS.find(o => o.value === status)!;
 
+  const placeMenu = () => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const menuHeight = 188;
+    const below = window.innerHeight - rect.bottom - VIEWPORT_PADDING;
+    const above = rect.top - VIEWPORT_PADDING;
+    const openAbove = below < menuHeight && above > below;
+    const maxHeight = Math.max(70, openAbove ? above - 6 : below - 6);
+    setPosition({
+      top: openAbove ? Math.max(VIEWPORT_PADDING, rect.top - Math.min(menuHeight, maxHeight) - 6) : rect.bottom + 6,
+      left: Math.max(VIEWPORT_PADDING, Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - VIEWPORT_PADDING)),
+      maxHeight,
+    });
+  };
   const handleOpen = () => {
     if (disabled) return;
-    if (!open && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setAlignLeft(rect.right - MENU_WIDTH < VIEWPORT_PADDING);
-    }
+    if (!open) placeMenu();
     setOpen(v => !v);
   };
+  useLayoutEffect(() => {
+    if (!open) return;
+    placeMenu();
+    const closeOnScroll = () => setOpen(false);
+    const onResize = () => placeMenu();
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', closeOnScroll, true);
+    return () => {window.removeEventListener('resize', onResize);window.removeEventListener('scroll', closeOnScroll, true);};
+  }, [open]);
 
   // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+      if (!containerRef.current?.contains(e.target as Node) && !(e.target as Element).closest?.('[data-lead-status-menu]')) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -83,11 +104,11 @@ export default function StatusSelect({ status, disabled = false, onChange }: Sta
         />
       </button>
 
-      {/* Dropdown — inline, positioned relative to trigger */}
-      {open && (
-        <div
-          className={`absolute ${alignLeft ? 'left-0' : 'right-0'} top-full mt-1.5 min-w-[140px] rounded-xl py-1 z-50`}
-          style={{
+      {/* Portal escapes the clipped drawer; position is viewport-aware. */}
+      {open && position && createPortal(
+        <div data-lead-status-menu
+          className="fixed min-w-[140px] overflow-y-auto rounded-xl py-1 z-[100]"
+          style={{top:position.top,left:position.left,maxHeight:position.maxHeight,
             background: 'var(--ds-bg-overlay)',
             boxShadow: 'var(--ds-shadow-float)',
             border: '1px solid rgba(255,255,255,0.07)',
@@ -112,7 +133,7 @@ export default function StatusSelect({ status, disabled = false, onChange }: Sta
               )}
             </button>
           ))}
-        </div>
+        </div>, document.body
       )}
     </div>
   );
