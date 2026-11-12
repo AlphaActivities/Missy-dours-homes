@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import FloatingCallButton from './components/ui/FloatingCallButton';
 import BackToTopButton from './components/ui/BackToTopButton';
 import ConciergeWidget from './components/ui/ConciergeWidget';
+import RoyalGravityEntrance, { ROYAL_GRAVITY_SEEN_KEY } from './components/ui/RoyalGravityEntrance';
 import ListingTransitionOverlay from './components/ui/ListingTransitionOverlay';
 import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
@@ -34,6 +35,11 @@ function Layout() {
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set());
   const [conciergeOpen, setConciergeOpen] = useState(false);
   const [mobileChatOpenToken, setMobileChatOpenToken] = useState(0);
+  const [royalReady, setRoyalReady] = useState(() => {
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches || sessionStorage.getItem(ROYAL_GRAVITY_SEEN_KEY) === '1'; }
+    catch { return true; }
+  });
+  const concealRoyalLauncher = isHomePage && !royalReady && !conciergeOpen;
 
   const transitionPreview = (location.state as any)?.transitionPreview;
   const isListingDetailRoute =
@@ -132,14 +138,15 @@ function Layout() {
       <Outlet context={outletContext} />
       {!conciergeOpen && (
         <div
-          className="mobile-viewport-floating-bottom pointer-events-none fixed inset-x-6 z-[60] flex items-end justify-between md:hidden"
+          className={"mobile-viewport-floating-bottom pointer-events-none fixed inset-x-6 z-[60] flex items-end justify-between md:hidden" + (concealRoyalLauncher ? " royal-gravity-mobile-pending" : "")}
           aria-label="Mobile quick actions"
         >
           <BackToTopButton />
           <FloatingCallButton onOpenChat={() => setMobileChatOpenToken(n => n + 1)} />
         </div>
       )}
-      <ConciergeWidget onOpenChange={setConciergeOpen} mobileOpenToken={mobileChatOpenToken} />
+      <ConciergeWidget onOpenChange={setConciergeOpen} mobileOpenToken={mobileChatOpenToken} launcherConcealed={concealRoyalLauncher} />
+      {isHomePage && !royalReady && <RoyalGravityEntrance onComplete={() => setRoyalReady(true)} />}
       <ListingTransitionOverlay
         isVisible={showTransition}
         heroImage={transitionPreview?.heroImage}
