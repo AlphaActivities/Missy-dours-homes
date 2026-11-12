@@ -39,6 +39,21 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState<string|null>(null);
  const [liveAlert,setLiveAlert]=useState<CrmActivity|null>(null);
+ const [actionNotice,setActionNotice]=useState<string|null>(null);
+ const liveAlertTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const actionTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const seenRealtime=useRef(new Set<string>());
+ const showAlert=(event:CrmActivity)=>{
+  if(liveAlertTimer.current)clearTimeout(liveAlertTimer.current);
+  setLiveAlert(event);
+  liveAlertTimer.current=setTimeout(()=>setLiveAlert(null),4500);
+ };
+ const showActionNotice=(message:string)=>{
+  if(actionTimer.current)clearTimeout(actionTimer.current);
+  setActionNotice(message);
+  actionTimer.current=setTimeout(()=>setActionNotice(null),3500);
+ };
+ useEffect(()=>()=>{if(liveAlertTimer.current)clearTimeout(liveAlertTimer.current);if(actionTimer.current)clearTimeout(actionTimer.current);},[]);
  const firstLoaded=useRef(false),lastEvent=useRef<string|null>(null),inFlight=useRef(false),refreshQueuedRef=useRef(false),loadedRef=useRef<CrmActivity[]>([]);
  const PAGE_SIZE=60;
  // A notification being read does not mean the associated inquiry was handled.
@@ -197,7 +212,7 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     const actionable=newArrivals.filter(e=>!e.read_at&&!e.archived_at&&!e.lead_archived);
     const first=priority.map(category=>actionable.find(e=>e.category===category)).find(Boolean);
     if(first){
-     setLiveAlert(first);
+     if(!seenRealtime.current.has(first.id))showAlert(first);
      if(nextPrefs?.in_app_sound??prefsRef.current.in_app_sound){
       const name=('sound_'+(first.category==='opportunity'?'handoff':first.category)) as SoundPreferenceKey;
       playCrmSound((nextPrefs??prefsRef.current)[name]);
@@ -248,7 +263,19 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   if(!permitted.includes(email))return;
   void refresh();
   const channel=supabase.channel('crm-activity-'+email)
-   .on('postgres_changes',{event:'*',schema:'public',table:'crm_activity_events'},()=>{void refresh();})
+   .on('postgres_changes',{event:'*',schema:'public',table:'crm_activity_events'},payload=>{
+     // INSERT payloads can surface a foreground banner before full CRM hydration.
+     if(payload.eventType==='INSERT'&&document.visibilityState==='visible'){
+      const event=payload.new as Partial<CrmActivity>;
+      if(event.id&&event.category&&['lead','handoff','escalation','opportunity'].includes(event.category)&&
+         typeof event.title==='string'&&typeof event.summary==='string'&&typeof event.target_path==='string'&&
+         !seenRealtime.current.has(event.id)){
+       seenRealtime.current.add(event.id);
+       showAlert({...event,read_at:null,archived_at:null,lead_archived:false} as CrmActivity);
+      }
+     }
+     void refresh();
+    })
    // Status updates can change active-card visibility without a new event.
    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'ai_conversations'},()=>{void refresh();})
    .subscribe();
@@ -378,12 +405,13 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
   setPrefs(old=>({...old,[name]:value}));
  };
  const unreadCount=counts.unread;
- const dismissLiveAlert=()=>setLiveAlert(null);
+ const dismissLiveAlert=()=>{if(liveAlertTimer.current)clearTimeout(liveAlertTimer.current);setLiveAlert(null);};
  const alertTarget=liveAlert?.callback_conversation_id
   ?'/dashboard/conversations?conversation='+liveAlert.callback_conversation_id
   :liveAlert?.target_path?.startsWith('/dashboard/')?liveAlert.target_path:'/dashboard/notifications';
  return <Context.Provider value={{items,liveAlert,dismissLiveAlert,unreadCount,urgentCount:counts.urgent,todayCount:counts.today,hiddenCount:counts.hidden,hasMore,loadingMore,loadMore,attentionCount,attentionBreakdown,prefs,loading,error,refresh,syncBadgeNow,badgeSync,markRead,archive,restore,markAllRead,setPreference,setSoundPreference}}>
  {children}
+ {actionNotice&&<div role="status" className="fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[125] mx-auto max-w-sm rounded-xl border border-[#c4a369]/50 bg-[#17120e] px-5 py-3 text-center text-sm font-medium text-[#edd2a3] shadow-xl">{actionNotice}</div>}
  {liveAlert&&permitted.includes(email)&&
   <div role="alert" aria-live="assertive" data-category={liveAlert.category} data-opportunity-kind={liveAlert.opportunity_kind??undefined} className="crm-live-alert fixed left-4 right-4 top-[calc(env(safe-area-inset-top)+84px)] z-[120] mx-auto max-w-md rounded-2xl border p-4 text-[#f0dfbd] backdrop-blur-xl">
    <div className="flex items-start justify-between gap-3">
