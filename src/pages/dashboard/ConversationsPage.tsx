@@ -191,13 +191,20 @@ export default function ConversationsPage() {
   setPresenceClock(Date.now());
   const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,created_at,escalation_due_at,escalated_at,urgency,status,request_kind').in('status',['pending','claimed']).order('created_at',{ascending:false}).limit(100);
   if(tasks.error)throw tasks.error;
-  setPendingTasks(tasks.data??[]);
   const taskIds=[...new Set((tasks.data??[]).map(t=>t.conversation_id))];
   if(taskIds.length){
    const meta=await supabase.from('ai_conversations').select('id,lead_id,visitor_name').in('id',taskIds);
    if(meta.error)throw meta.error;
-   setTaskContacts(Object.fromEntries((meta.data??[]).map(c=>[c.id,{lead_id:c.lead_id,visitor_name:c.visitor_name}])));
-  }else setTaskContacts({});
+   const leadIds=[...new Set((meta.data??[]).map(c=>c.lead_id).filter((id):id is string=>Boolean(id)))];
+   const leadStatuses=leadIds.length?await supabase.from('leads').select('id,status').in('id',leadIds):null;
+   if(leadStatuses?.error)throw leadStatuses.error;
+   const archived=new Set((leadStatuses?.data??[]).filter(l=>l.status==='archived').map(l=>l.id));
+   const activeConversations=new Set((meta.data??[]).filter(c=>!c.lead_id||!archived.has(c.lead_id)).map(c=>c.id));
+   // Preserve the tasks for audit and future reactivation; do not show archived
+   // leads as active callback work in the Conversations inbox.
+   setPendingTasks((tasks.data??[]).filter(t=>activeConversations.has(t.conversation_id)));
+   setTaskContacts(Object.fromEntries((meta.data??[]).filter(c=>activeConversations.has(c.id)).map(c=>[c.id,{lead_id:c.lead_id,visitor_name:c.visitor_name}])));
+  }else {setPendingTasks([]);setTaskContacts({});}
  }catch(e){if(showLoading)setError(e instanceof Error?e.message:'Could not load conversations');}finally{if(showLoading)setLoading(false);}};
  useEffect(()=>{
   void refresh();
