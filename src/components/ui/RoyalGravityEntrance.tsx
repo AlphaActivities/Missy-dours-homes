@@ -118,9 +118,8 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
       overlay.style.height = destination.height + 'px';
       overlay.style.left = '0';
       overlay.style.top = '0';
-      overlay.innerHTML = mobile
-        ? '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 21h28v22H28l-10 8v-8z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><circle cx="47" cy="17" r="9" fill="#17130d" stroke="currentColor" stroke-width="2"/><path d="M47 12v10m-5-5h10" stroke="currentColor" stroke-width="2"/></svg>'
-        : '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M17 20h30v23H28l-11 8v-8z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>';
+      // Clone the exact existing launcher artwork so the handoff is seamless.
+      overlay.innerHTML = launcher.innerHTML;
       document.body.appendChild(overlay);
       html.classList.add('royal-gravity-active');
 
