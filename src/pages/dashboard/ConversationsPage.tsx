@@ -583,14 +583,14 @@ export default function ConversationsPage() {
     </div>}</section>
    <section ref={transcriptRef} data-focused-transcript={focused?'true':undefined} aria-label="Chat History" className={(focused?'focused-transcript-enter ':'ds-page-reveal ds-page-reveal-4 ')+'crm-transcript-frame relative isolate rounded-xl min-h-80 p-5'}>
    {active && ['waiting_human','human'].includes(active.status) && !active.lead_id && !loadingCandidates && <div className="mb-5 space-y-3 rounded-xl border border-amber-400/45 bg-amber-950/20 p-4 text-sm">
-    <strong className="text-amber-200">Contact identity check needed</strong>
-    <p className="text-[#dec9a5]">This conversation has no confirmed customer link. Confirm identity before linking a contact. Creating a new lead requires the visitor’s name, phone and contact consent.</p>
+    <strong className="text-amber-200">Connect this conversation to a customer</strong>
+    <p className="text-[#dec9a5]">Check the customer's details before linking an existing lead or creating a new one.</p>
     <div className="space-y-3">
      <div className="flex flex-wrap items-center justify-between gap-2">
       <h3 className="text-sm font-semibold text-[#efd5a5]">Possible existing contacts {visibleCandidates.length>0&&<span className="font-normal text-[#bfae93]">({visibleCandidates.length})</span>}</h3>
       <span className="rounded-full border border-amber-400/25 px-2 py-1 text-[10px] text-amber-200">Identity not verified</span>
      </div>
-     {loadingCandidates?<p role="status" className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">Checking CRM records…</p>:visibleCandidates.length===0?<p className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">{archivedCount>0?'Only archived records share this phone number. Review them only if necessary.':'No matching active contacts. Verify identity and contact details before creating a new lead.'}</p>:
+     {loadingCandidates?<p role="status" className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">Checking CRM records…</p>:visibleCandidates.length===0?<p className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-[#bdb1a1]">{archivedCount>0?'Only archived records share this phone number. Review them only if necessary.':'No matching active contacts found.'}</p>:
       <div role="group" aria-label="Potential matching CRM leads" className="space-y-2">
        {visibleCandidates.slice(0,showAllCandidates?visibleCandidates.length:4).map(lead=><button key={lead.id} type="button" aria-pressed={candidateId===lead.id}
          onClick={()=>setCandidateId(current=>current===lead.id?'':lead.id)}
@@ -604,13 +604,13 @@ export default function ConversationsPage() {
           {candidateId===lead.id&&<span className="shrink-0 text-[10px] font-medium text-[#f0ce8d]">Selected</span>}
          </button>)}
        {visibleCandidates.length>4&&<button type="button" className="min-h-11 w-full rounded-lg border border-[#c8a96e]/35 px-3 py-2 text-sm text-[#e5c78f]" onClick={()=>setShowAllCandidates(value=>!value)}>{showAllCandidates?'Show fewer matches':`Show all ${visibleCandidates.length} matches`}</button>}
-       <p className="text-[11px] leading-relaxed text-[#bca887]">A matching phone number alone does not verify identity. Confirm the person before linking.</p>
+       <p className="text-[11px] leading-relaxed text-[#bca887]">Confirm the customer's identity before linking records.</p>
       </div>}
     </div>
     {archivedCount>0&&!loadingCandidates&&<button type="button" onClick={()=>{setShowArchivedCandidates(value=>!value);setShowAllCandidates(false);setCandidateId('');}} className="w-full rounded-lg border border-[#c8a96e]/30 px-3 py-2 text-left text-xs text-[#d5b881]">{showArchivedCandidates?'Hide archived contacts':`Review ${archivedCount} archived contact${archivedCount===1?'':'s'}`}</button>}
     <div className="flex flex-wrap gap-2">
      {visibleCandidates.length>0&&<button type="button" disabled={!candidateId||linkBusy} onClick={()=>void linkReviewed(false)} className="rounded-lg bg-[#c8a96e] px-3 py-2 font-semibold text-black disabled:opacity-40">Link Confirmed Lead</button>}
-     {canCreateSeparateLead&&<button type="button" disabled={linkBusy} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create Separate Lead</button>}
+     <button type="button" disabled={linkBusy||!canCreateSeparateLead} title={!canCreateSeparateLead?'Requires customer name, phone and contact permission':undefined} onClick={()=>void linkReviewed(true)} className="rounded-lg border border-amber-400/45 px-3 py-2 text-amber-200 disabled:opacity-40">Create New Lead</button>
     </div>
    </div>}
    {!selected?<p className="text-sm opacity-60">Choose a conversation above to view its transcript.</p>:<><div ref={sessionStatusRef} className={'mb-4 rounded-xl border border-[#c8a96e]/20 bg-[#1b1711]/70 p-3 text-xs '+(focused&&statusLoading?'crm-connection-pending':'crm-connection-ready')} role="status" aria-label="Visitor session status" aria-busy={statusLoading}>
@@ -634,7 +634,7 @@ export default function ConversationsPage() {
       <div role="status" aria-label="Conversation team assignment" className="crm-assignment-panel mt-3 flex min-w-0 max-w-full items-start gap-3 rounded-xl px-3 py-3">
        {active?.assigned_to?<UserRoundPlus size={20} className="mt-0.5 shrink-0 text-[#f2d59d]" aria-hidden="true"/>:<span className="mt-0.5 shrink-0 text-xl leading-none" role="img" aria-label="Attention">⚠️</span>}
        <div className="min-w-0">
-        <p className="text-sm font-semibold leading-snug text-[#f4dbab]">{active?.assigned_to?`Assigned to ${assignedStaffName(active.assigned_to)}` :'No team member has joined yet'}</p>
+        <p className="text-sm font-semibold leading-snug text-[#f4dbab]">{active?.assigned_to?`Conversation handled by ${assignedStaffName(active.assigned_to)}` :'No team member has joined yet'}</p>
         {!active?.assigned_to&&<p className="mt-1 text-xs leading-relaxed text-[#ddc8a4]">This conversation is ready for Missy or her team to jump in and help.</p>}
        </div>
       </div>
