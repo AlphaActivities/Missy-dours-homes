@@ -211,7 +211,7 @@ function DrawerContent({
             className="text-xl font-semibold tracking-tight leading-tight truncate"
             style={{ fontFamily: "'Playfair Display', Georgia, serif", color: 'var(--ds-text-primary)' }}
           >
-            {lead.name || 'Unknown'}
+            {(lead.name || 'Unknown').replace(/\bJosh\s+Lad\b/gi,'Josh')}
           </h2>
           <div className="flex items-center gap-2 mt-2">
             <StatusSelect status={lead.status} disabled={updatingStatus} onChange={onStatusChange} />
