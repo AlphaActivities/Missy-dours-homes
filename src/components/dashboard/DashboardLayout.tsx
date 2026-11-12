@@ -142,12 +142,28 @@ function DashboardLayoutInner() {
     document.body.classList.remove('overflow-hidden');
   }, []);
 
-  // Browser title uses the same deduplicated count as the bell, without changing the favicon.
-  // The installed app badge is handled by CrmActivityContext.
+  // Native tab titles cannot style a number inside a red circle. Use a dynamic
+  // favicon for active attention, restoring the original CR artwork at zero.
+  // The installed app icon and badge are managed independently.
   useEffect(() => {
-    document.title = attentionCount > 0
-      ? 'Missy Dours CRM 🔴 ' + attentionCount
-      : 'Missy Dours CRM';
+    document.title = 'Missy Dours CRM';
+    const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'))
+      .filter(link => !link.relList.contains('apple-touch-icon'));
+    const originals = links.map(link => ({link, href: link.getAttribute('href'), type: link.getAttribute('type')}));
+    if (attentionCount > 0) {
+      const label = attentionCount > 99 ? '99+' : String(attentionCount);
+      const fontSize = label.length > 2 ? 31 : label.length > 1 ? 40 : 51;
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+        '<circle cx="32" cy="32" r="30" fill="#b63138"/>' +
+        '<text x="32" y="34" dominant-baseline="central" text-anchor="middle" ' +
+        'font-family="Arial,sans-serif" font-size="' + fontSize + '" font-weight="700" fill="white">' + label + '</text></svg>';
+      const url = 'data:image/svg+xml,' + encodeURIComponent(svg);
+      links.forEach(link => {link.setAttribute('href',url);link.setAttribute('type','image/svg+xml');});
+    }
+    return () => originals.forEach(({link,href,type}) => {
+      if (href === null) link.removeAttribute('href'); else link.setAttribute('href',href);
+      if (type === null) link.removeAttribute('type'); else link.setAttribute('type',type);
+    });
   }, [attentionCount]);
 
   // Provide a separate installable identity for the staff CRM only.
