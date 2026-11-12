@@ -73,7 +73,7 @@ export default function CommunitiesSection() {
               <article className="group relative overflow-hidden rounded-2xl bg-white shadow-[0_18px_45px_rgba(15,23,42,0.10)] border-2 border-[#C4A46A] shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-shadow duration-300 select-none">
 
                 {/* IMAGE / PLACEHOLDER */}
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div data-royal-gravity-platform="community-photo" className="relative aspect-[4/3] overflow-hidden">
                   <img
                     src={community.image}
                     alt={community.name}

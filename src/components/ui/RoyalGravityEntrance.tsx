@@ -66,11 +66,12 @@ export default function RoyalGravityEntrance({ onComplete }: { onComplete: () =>
       // The portrait, thin gold rule, cards and footer are explicitly opted in.
       // Other structural sections contribute their top edges as fallbacks.
       const candidates = Array.from(document.querySelectorAll<HTMLElement>(
-        '[data-royal-gravity-platform], #featured-listings article, #mid-tier-homes article, #new-to-homeownership article, #communities article, #testimonials article, #contact form'
+        '[data-royal-gravity-platform], main section button, main section a[href], #featured-listings article, #mid-tier-homes article, #new-to-homeownership article, #communities article, #testimonials article, #contact form'
       )).map(element => ({ element, rect: element.getBoundingClientRect() }))
         .filter(({ element, rect }) => {
           const thinAccent = element.dataset.royalGravityPlatform === 'accent';
-          const minimum = thinAccent ? radius * 2.2 : radius * 3;
+          const isButton = element.matches('button, a[href]');
+          const minimum = thinAccent ? radius * 2.2 : isButton ? radius * 2.5 : radius * 3;
           return rect.width >= minimum && rect.height >= 1 &&
             rect.top >= radius * .65 && rect.top < window.innerHeight - radius * 1.3 &&
             rect.right > radius * 2 && rect.left < window.innerWidth - radius;

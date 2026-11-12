@@ -42,6 +42,7 @@ export default function HeroSection() {
             >
               <div className="flex flex-col sm:flex-row gap-4 items-center md:items-start">
                 <button
+                  data-royal-gravity-platform="button"
                   type="button"
                   onClick={() => { trackCTA('Schedule a Consultation', 'hero'); scrollToSection('contact'); }}
                   className="inline-block bg-[#C4A46A] text-black font-medium px-7 py-3 rounded-full shadow-[0_0_20px_rgba(196,164,106,0.4)] hover:shadow-[0_0_35px_rgba(196,164,106,0.7)] transition-all duration-300 cursor-pointer transform hover:scale-110"
