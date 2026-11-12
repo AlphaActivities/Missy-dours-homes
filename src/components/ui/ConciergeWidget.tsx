@@ -714,7 +714,7 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
             <p className="font-serif text-base mb-1">Imagine the Life That Awaits.</p>
             <p className="text-xs leading-relaxed opacity-85">Questions about buying, selling, or finding your next home? I'm here to help.</p>
           </div>}
-          <button data-royal-gravity-launcher={privateQA ? undefined : 'desktop'} type="button" onClick={() => setOpen(true)} aria-label={privateQA?'Open private visitor QA chat':'Open Missy Dours concierge'} className="missy-concierge-launcher group relative isolate flex h-14 w-14 items-center justify-center rounded-full border border-[#efcf92]/75 bg-gradient-to-br from-[#3c2e19] to-[#0a0908] text-[#f4d596] shadow-[0_8px_30px_rgba(0,0,0,.55)] transition-transform duration-150 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f4d596]">
+          <button type="button" onClick={() => setOpen(true)} aria-label={privateQA?'Open private visitor QA chat':'Open Missy Dours concierge'} className="missy-concierge-launcher group relative isolate flex h-14 w-14 items-center justify-center rounded-full border border-[#efcf92]/75 bg-gradient-to-br from-[#3c2e19] to-[#0a0908] text-[#f4d596] shadow-[0_8px_30px_rgba(0,0,0,.55)] transition-transform duration-150 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f4d596]">
             <span className="missy-concierge-launcher-glow pointer-events-none absolute inset-[-5px] rounded-full" aria-hidden="true"/><MessageCircle size={25} aria-hidden="true" />
           </button>
         </div>
