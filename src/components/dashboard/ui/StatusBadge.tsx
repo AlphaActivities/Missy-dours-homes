@@ -5,7 +5,7 @@ const STYLES: Record<LeadStatus, string> = {
   contacted: 'bg-[rgba(60,44,18,0.55)] text-[#c8a96e] border-[rgba(196,164,106,0.28)]',
   qualified: 'bg-[rgba(18,52,40,0.55)] text-[#86c9a8] border-[rgba(110,185,155,0.25)]',
   closed:    'bg-[rgba(40,36,32,0.6)] text-[#a89880] border-[rgba(168,152,128,0.2)]',
-  archived:  'bg-[rgba(255,255,255,0.03)] text-[#5a5856] border-white/[0.07]',
+  archived:  'bg-[rgba(184,138,88,0.12)] text-[#B88A58] border-[rgba(184,138,88,0.35)]',
 };
 
 const LEFT_BORDER: Record<LeadStatus, string> = {
@@ -13,7 +13,7 @@ const LEFT_BORDER: Record<LeadStatus, string> = {
   contacted: 'border-l-[#c4a46a]',
   qualified: 'border-l-[#7dbfa0]',
   closed:    'border-l-[#7a6e62]',
-  archived:  'border-l-[#3a3836]',
+  archived:  'border-l-[#B88A58]',
 };
 
 const LABEL: Record<LeadStatus, string> = {
