@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import FloatingCallButton from './components/ui/FloatingCallButton';
 import BackToTopButton from './components/ui/BackToTopButton';
 import ConciergeWidget from './components/ui/ConciergeWidget';
+import RoyalGravityEntrance from './components/ui/RoyalGravityEntrance';
 import ListingTransitionOverlay from './components/ui/ListingTransitionOverlay';
 import HomePage from './pages/HomePage';
 import ListingsPage from './pages/ListingsPage';
@@ -140,6 +141,7 @@ function Layout() {
         </div>
       )}
       <ConciergeWidget onOpenChange={setConciergeOpen} mobileOpenToken={mobileChatOpenToken} />
+      <RoyalGravityEntrance />
       <ListingTransitionOverlay
         isVisible={showTransition}
         heroImage={transitionPreview?.heroImage}
