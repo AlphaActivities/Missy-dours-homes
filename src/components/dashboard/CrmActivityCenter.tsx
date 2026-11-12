@@ -150,7 +150,7 @@ export default function CrmActivityCenter(){
      aria-label={label+': '+filterCounts[key]+' notifications'}
      aria-pressed={filter===key} data-filter={key} data-count={filterCounts[key]} className="crm-activity-filter relative isolate flex h-11 w-full min-w-0 items-center justify-center overflow-hidden rounded-lg border px-1 py-1 text-center text-[10px] leading-none font-medium whitespace-nowrap transition-[background-color,box-shadow] duration-300 min-[380px]:text-[11px] sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 sm:text-xs">
      <span className="relative z-10 min-w-0 whitespace-nowrap"><span className="sm:hidden">{mobileLabel??label}{key==='history'?' ('+filterCounts[key]+')':''}</span><span className="hidden sm:inline">{label}{key==='history'?' ('+filterCounts[key]+')':''}</span></span></button>
-     {key!=='history'&&filterCounts[key]>0&&<span aria-hidden="true" data-filter-corner-badge={key} className="pointer-events-none absolute -right-1.5 -top-2 z-20 inline-flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-[#b63138] px-1 text-[10px] font-bold tabular-nums leading-none text-white shadow-[0_0_0_2px_#14110e,0_0_10px_rgba(182,49,56,.25)]">{filterCounts[key]>99?'99+':filterCounts[key]}</span>}
+     {key!=='history'&&key!=='all'&&filterCounts[key]>0&&<span aria-hidden="true" data-filter-corner-badge={key} className="pointer-events-none absolute -right-1.5 -top-2 z-20 inline-flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-[#b63138] px-1 text-[10px] font-bold tabular-nums leading-none text-white shadow-[0_0_0_2px_#14110e,0_0_10px_rgba(182,49,56,.25)]">{filterCounts[key]>99?'99+':filterCounts[key]}</span>}
     </IosNativeTap>)}
    </div>
   </div>
