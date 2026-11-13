@@ -67,7 +67,9 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
     fetchFollowups();
   }, [leadId, fetchFollowups]);
 
-  const active = followups.filter(f => f.status === 'active');
+  // Show the next actionable appointment first, including overdue work.
+  const active = followups.filter(f => f.status === 'active')
+    .sort((a,b) => Date.parse(a.due_at) - Date.parse(b.due_at));
   const history = followups.filter(f => f.status !== 'active');
 
   const handleSave = async () => {
@@ -171,7 +173,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
         <p className="text-[10px] font-medium tracking-[0.14em] uppercase" style={{ color: 'var(--ds-text-secondary)' }}>
           Next Follow-Up
         </p>
-        {active.length === 0 && !showForm && (
+        {!showForm && (
           <button
             onClick={() => setShowForm(true)}
             type="button"
@@ -186,7 +188,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
       </div>
 
       <div className="mt-2 space-y-2">
-        {/* Active follow-ups */}
+        {/* Active follow-ups, earliest due first */}
         {active.map(fu => {
           const st = getFollowupStatus(fu);
           const sc = statusColors[st];
