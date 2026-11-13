@@ -237,7 +237,12 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
       expectedNotesRef.current = nextNotes;
       setSavedNotes(updated);
       if (note.attachments.length > 0) {
-        await supabase.storage.from(BUCKET).remove(note.attachments.map(a => a.storage_path));
+        try {
+          const { error: cleanupError } = await supabase.storage.from(BUCKET).remove(note.attachments.map(a => a.storage_path));
+          if (cleanupError) throw cleanupError;
+        } catch {
+          reportError('Note deleted, but attachment cleanup failed. Contact the administrator if the files remain in storage.');
+        }
       }
     } catch (e) {
       reportError(e instanceof Error ? e.message : 'Failed to delete note.');
@@ -260,7 +265,12 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
       await onSave(leadId, nextNotes, expectedNotesRef.current);
       expectedNotesRef.current = nextNotes;
       setSavedNotes(updated);
-      await supabase.storage.from(BUCKET).remove([att.storage_path]);
+      try {
+        const { error: cleanupError } = await supabase.storage.from(BUCKET).remove([att.storage_path]);
+        if (cleanupError) throw cleanupError;
+      } catch {
+        reportError('Attachment removed from the note, but file cleanup failed. Contact the administrator if the file remains in storage.');
+      }
     } catch (e) {
       reportError(e instanceof Error ? e.message : 'Failed to remove attachment.');
     }
