@@ -155,7 +155,7 @@ const Navbar: React.FC = () => {
             : 'opacity-0 -translate-y-4 scale-[.975] blur-[3px] pointer-events-none'
         }`}
         style={{ transformOrigin: 'top center' }}
-        inert={!isMobileMenuOpen}
+        {...(!isMobileMenuOpen ? { inert: '' } : {})}
       >
         <nav
           aria-label="Mobile navigation"
