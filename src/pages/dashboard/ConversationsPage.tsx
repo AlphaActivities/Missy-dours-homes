@@ -117,6 +117,12 @@ export default function ConversationsPage() {
     else {setStaffOutcomes((data??[]) as StaffOutcome[]);setOutcomesError(null);}
     setOutcomesFor(selected);
     setOutcomesLoading(false);
+   }).catch(()=>{
+    if(cancelled)return;
+    setOutcomesError('Unable to load staff outcome history.');
+    setStaffOutcomes([]);
+    setOutcomesFor(selected);
+    setOutcomesLoading(false);
    });
   return()=>{cancelled=true;};
  },[selected,outcomesRevision]);
