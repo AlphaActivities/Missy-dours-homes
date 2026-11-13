@@ -5,6 +5,9 @@ const base=process.env.CONCIERGE_PREVIEW_URL || 'http://127.0.0.1:4173';
 const browser=await webkit.launch({headless:true});
 try {
  const context=await browser.newContext({...devices['iPhone 13']});
+ // This smoke checks the stable mobile dock after the one-time entrance.
+ // Test the first-visit entrance separately so its animation does not hide the dock.
+ await context.addInitScript(() => sessionStorage.setItem('missy_royal_gravity_entrance_v5', '1'));
  const page=await context.newPage();
  const failed=[];
  // Preview intentionally has no live database credentials; unrelated review
