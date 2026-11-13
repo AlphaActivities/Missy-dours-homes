@@ -119,7 +119,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
        }
       }
     }
-    if((conversationsResult.data?.length??0)===500 || (data?.length??0)===500 || (followupsResult.data?.length??0)===500 || (contactsResult.data?.length??0)===500)
+    if((conversationsResult.data?.length??0)===500 || (data?.length??0)===500 || (followupsResult.data?.length??0)===500 || (contactsResult.data?.length??0)===500 || (consolidationsResult.data?.length??0)===100)
       warnings.push('Some older history may require a separate export.');
     setHistoryWarning(warnings.length?warnings.join(' '):null);
     const linkedChats=conversationsResult.data??[];
