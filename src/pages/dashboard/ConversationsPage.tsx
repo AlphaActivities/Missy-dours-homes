@@ -407,6 +407,7 @@ export default function ConversationsPage() {
   // Historical archived-only callbacks can safely receive a fresh active
   // lead without forcing staff to select an unrelated archived contact.
   const loadMatches=async()=>{
+   try {
    const resolved=await supabase.rpc('crm_resolve_archived_only_callback',{p_conversation:c.id});
    if(!live)return;
    if(resolved.error){setError(resolved.error.message);setLoadingCandidates(false);return;}
@@ -433,6 +434,9 @@ export default function ConversationsPage() {
     return score(b)-score(a)||bTime-aTime||a.id.localeCompare(b.id);
    });
    setLeadCandidates(candidates);
+   } catch (cause) {
+    if(live){setError(cause instanceof Error?cause.message:'Could not load matching customer records. Please retry.');setLoadingCandidates(false);}
+   }
   };
   void loadMatches();
   return()=>{live=false;};
