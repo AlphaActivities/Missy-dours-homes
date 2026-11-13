@@ -152,7 +152,8 @@ export default function ConversationsPage() {
  const previewGeneration=useRef(0);
  const [pendingTasks,setPendingTasks]=useState<Array<{id:string;conversation_id:string;due_at:string;created_at:string;escalation_due_at:string|null;escalated_at:string|null;urgency:string;status:string;request_kind:'live_chat'|'callback'}>>([]);
  const [taskContacts,setTaskContacts]=useState<Record<string,{lead_id:string|null;visitor_name:string|null}>>({});
- const refresh=async(showLoading=true)=>{if(showLoading){setLoading(true);setError(null);}try{
+ const refreshGeneration=useRef(0);
+ const refresh=async(showLoading=true)=>{const generation=++refreshGeneration.current;if(showLoading){setLoading(true);setError(null);}try{
   let listQuery=supabase.from('ai_conversations')
    .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,contact_consent_at,visitor_expires_at',{count:'exact'});
   if(filter==='qa')listQuery=listQuery.like('title','[PRIVATE VISITOR QA] %');
@@ -168,6 +169,7 @@ export default function ConversationsPage() {
   }
   const {data,error,count}=await listQuery.order('last_message_at',{ascending:false,nullsFirst:false})
    .order('id',{ascending:false}).range(page*PAGE_SIZE,page*PAGE_SIZE+PAGE_SIZE-1);
+  if(generation!==refreshGeneration.current)return;
   if(error)throw error;
   setTotalConversations(count??0);
   setItems(previous=>{
@@ -182,6 +184,7 @@ export default function ConversationsPage() {
   if(humanIds.length){
    const work=await supabase.from('ai_concierge_tasks')
     .select('conversation_id,status').in('conversation_id',humanIds);
+   if(generation!==refreshGeneration.current)return;
    if(!work.error){
     const pending=new Set((work.data??[]).filter(t=>['pending','claimed'].includes(t.status)).map(t=>t.conversation_id));
     setLifecycleReviewIds(humanIds.filter(id=>!pending.has(id)));
@@ -194,6 +197,7 @@ export default function ConversationsPage() {
    const visitorTimes=await supabase.from('ai_conversation_messages')
     .select('conversation_id,created_at').in('conversation_id',ids)
     .eq('sender','visitor').order('created_at',{ascending:false}).limit(1000);
+   if(generation!==refreshGeneration.current)return;
    if(!visitorTimes.error){
     const latest:Record<string,string>={};
     for(const m of visitorTimes.data??[])if(!latest[m.conversation_id])latest[m.conversation_id]=m.created_at;
@@ -202,6 +206,7 @@ export default function ConversationsPage() {
   }else setVisitorSentAt({});
   // Presence is independent of the visitor token expiry or message recency.
   const presence=await supabase.from('ai_concierge_visitor_presence').select('conversation_id,last_seen_at,chat_visible').limit(200);
+  if(generation!==refreshGeneration.current)return;
   // A transient network failure must not erase the last verified status.
   if(!presence.error){
    verifiedPresenceSnapshotRef.current=true;
@@ -215,13 +220,16 @@ export default function ConversationsPage() {
   setPresenceReady(true);
   setPresenceClock(Date.now());
   const tasks=await supabase.from('ai_concierge_tasks').select('id,conversation_id,due_at,created_at,escalation_due_at,escalated_at,urgency,status,request_kind').in('status',['pending','claimed']).order('created_at',{ascending:false}).limit(100);
+  if(generation!==refreshGeneration.current)return;
   if(tasks.error)throw tasks.error;
   const taskIds=[...new Set((tasks.data??[]).map(t=>t.conversation_id))];
   if(taskIds.length){
    const meta=await supabase.from('ai_conversations').select('id,lead_id,visitor_name').in('id',taskIds);
+   if(generation!==refreshGeneration.current)return;
    if(meta.error)throw meta.error;
    const leadIds=[...new Set((meta.data??[]).map(c=>c.lead_id).filter((id):id is string=>Boolean(id)))];
    const leadStatuses=leadIds.length?await supabase.from('leads').select('id,status').in('id',leadIds):null;
+   if(generation!==refreshGeneration.current)return;
    if(leadStatuses?.error)throw leadStatuses.error;
    const archived=new Set((leadStatuses?.data??[]).filter(l=>l.status==='archived').map(l=>l.id));
    const activeConversations=new Set((meta.data??[]).filter(c=>!c.lead_id||!archived.has(c.lead_id)).map(c=>c.id));
@@ -230,14 +238,14 @@ export default function ConversationsPage() {
    setPendingTasks((tasks.data??[]).filter(t=>activeConversations.has(t.conversation_id)));
    setTaskContacts(Object.fromEntries((meta.data??[]).filter(c=>activeConversations.has(c.id)).map(c=>[c.id,{lead_id:c.lead_id,visitor_name:c.visitor_name}])));
   }else {setPendingTasks([]);setTaskContacts({});}
- }catch(e){if(showLoading)setError(e instanceof Error?e.message:'Could not load conversations');}finally{if(showLoading)setLoading(false);}};
+ }catch(e){if(generation===refreshGeneration.current&&showLoading)setError(e instanceof Error?e.message:'Could not load conversations');}finally{if(generation===refreshGeneration.current&&showLoading)setLoading(false);}};
  useEffect(()=>{
   void refresh();
   const channel=supabase.channel('staff-conversations-live')
    .on('postgres_changes',{event:'*',schema:'public',table:'ai_conversations'},()=>{void refresh(false);})
    .subscribe();
   const timer=window.setInterval(()=>void refresh(false),10000);
-  return()=>{window.clearInterval(timer);void supabase.removeChannel(channel);};
+  return()=>{refreshGeneration.current+=1;window.clearInterval(timer);void supabase.removeChannel(channel);};
  },[page,debouncedSearch,filter]);
  // Notification deep links open a focused transcript immediately at main
  // scrollTop=0. Fetch the selected record independently of the inbox so there
