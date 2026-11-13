@@ -119,7 +119,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
        }
       }
     }
-    if((conversationsResult.data?.length??0)===500 || (data?.length??0)===500 || (followupsResult.data?.length??0)===500 || (contactsResult.data?.length??0)===500)
+    if((conversationsResult.data?.length??0)===500 || (data?.length??0)===500 || (followupsResult.data?.length??0)===500 || (contactsResult.data?.length??0)===500 || (consolidationsResult.data?.length??0)===100)
       warnings.push('Some older history may require a separate export.');
     setHistoryWarning(warnings.length?warnings.join(' '):null);
     const linkedChats=conversationsResult.data??[];
@@ -263,7 +263,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-xs leading-snug" style={{ color: 'var(--ds-text-secondary)' }}>{item.description}</p>
-              {item.href&&<Link to={item.href} className="mt-1 inline-flex min-h-9 items-center text-xs font-semibold text-[#edce94] underline underline-offset-2">Open saved transcript</Link>}
+              {item.href&&<Link to={item.href} className="mt-1 inline-flex min-h-9 items-center text-xs font-semibold text-[#edce94] underline underline-offset-2" >{item.category==='crm'?'Open original lead record':item.category==='callback'?'Open callback conversation':'Open saved transcript'}</Link>}
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-[10px] whitespace-nowrap" style={{ color: 'var(--ds-text-tertiary)' }}>
                   {formatDateTime(item.timestamp)}
