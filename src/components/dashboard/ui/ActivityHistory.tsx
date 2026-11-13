@@ -49,6 +49,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
   const [available, setAvailable] = useState(true);
 
   const fetchActivities = useCallback(async () => {
+    setHistoryWarning(null);
     const [activityResult, conversationsResult, followupsResult, consolidationsResult, contactsResult] = await Promise.all([
       supabase.from('lead_activities').select('*').eq('lead_id', leadId).order('created_at', { ascending: false }).limit(500),
       supabase.from('ai_conversations').select('id,title,started_at,last_message_at,status,opportunity_kind')
@@ -138,6 +139,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
           .select('id,conversation_id,created_at,completed_at,status,request_kind,assigned_to')
           .in('conversation_id',ids.slice(offset,offset+100));
         if(result.error){warnings.push('Callback task history could not be loaded.');continue;}
+        if((result.data?.length??0)>=1000)warnings.push('Callback task history may be truncated; export for older records.');
         for(const task of result.data??[]){
           const href='/dashboard/conversations?conversation='+encodeURIComponent(task.conversation_id);
           const taskState=task.status==='completed'?'Completed':task.status==='cancelled'?'Cancelled':task.status==='claimed'?'Assigned':'Pending';
