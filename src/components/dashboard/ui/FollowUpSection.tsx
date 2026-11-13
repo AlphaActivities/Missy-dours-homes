@@ -47,7 +47,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
       .from('lead_followups')
       .select('*')
       .eq('lead_id', leadId)
-      .order('due_at', { ascending: false });
+      .order('due_at', { ascending: true });
 
     if (error) {
       if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation')) {
@@ -108,6 +108,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   };
 
   const handleComplete = async (fu: LeadFollowup) => {
+    if(actionId)return;
     setActionId(fu.id);
     const { error } = await supabase
       .from('lead_followups')
@@ -127,6 +128,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   };
 
   const handleCancel = async (fu: LeadFollowup) => {
+    if(actionId)return;
     setActionId(fu.id);
     const { error } = await supabase
       .from('lead_followups')
@@ -146,7 +148,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   };
 
   const handleReschedule = async (fu: LeadFollowup) => {
-    if(!rescheduleValue)return;
+    if(actionId||!rescheduleValue)return;
     let dueAt:string;
     try{dueAt=validateTexasOfficeSlot(rescheduleValue.slice(0,10),rescheduleValue.slice(11,16)).toISOString();}
     catch(e){showToast(e instanceof Error?e.message:'Choose a valid Dallas office time.','error');return;}
