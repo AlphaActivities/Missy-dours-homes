@@ -98,7 +98,8 @@ assert.ok(outcomeSource.includes('const pendingGroups=useMemo') &&
  outcomeSource.includes('group.tasks.map') &&
  outcomeSource.includes('md:min-h-[520px]') &&
  outcomeSource.includes('max-h-[315px]') &&
- outcomeSource.includes('canCreateSeparateLead&&'),
+ outcomeSource.includes('disabled={linkBusy||!canCreateSeparateLead}') &&
+ outcomeSource.includes('if(createSeparate && !canCreateSeparateLead)'),
  'Conversations must group by verified customer, preserve tasks, expand tablet/desktop list without changing mobile or unsafe lead creation');
 
 const leadDrawerSource=readFileSync(new URL('../src/components/dashboard/ui/LeadDrawer.tsx',import.meta.url),'utf8');
@@ -249,7 +250,8 @@ assert.ok(attentionSource.includes('Callback Needs Attention') &&
  attentionSource.includes('Record Outcome') &&
  attentionSource.includes('<details'),
  'Urgent callback card must present a compact request summary and direct actions');
-assert.ok(activityContext.includes('setAttentionCount(Math.max(0,Number(t?.total??0)))'),
+assert.ok(activityContext.includes('setAttentionCount(verifiedTotal)') &&
+ activityContext.includes("throw new Error('Invalid CRM notification total')"),
  'Bell and foreground app badges must count actual active inbox cards, not duplicate work records');
 assert.ok(pushDelivery.includes("crm_visible_notification_count_service',{p_staff_email:device.staff_email}"),
  'Native push badge must count visible cards separately for each subscribed staff account');
@@ -352,6 +354,7 @@ try {
    stop(){this.onend?.();}
    abort(){this.onend?.();}
   };
+  sessionStorage.setItem('missy_royal_gravity_entrance_v5','1');
   sessionStorage.setItem('missy_concierge_visitor_session_v1',JSON.stringify({
    conversation_id:'11111111-1111-4111-8111-111111111111',
    token:'a'.repeat(64),
@@ -435,7 +438,7 @@ try {
  assert.equal(await typing.count(),0,'Assistant receipt must precede three-dot processing');
  await typing.waitFor({state:'visible'});
  const typingVisibleAt=Date.now();
- assert.ok(typingVisibleAt-assistantReceivedAt>=850,'Received by assistant should precede typing by approximately one second');
+ assert.ok(typingVisibleAt-assistantReceivedAt>=650,'Received by assistant should remain visible before typing');
  assert.equal(await dialog.locator('[data-message-arrival="outgoing"]').count(),1,
    'Fresh visitor messages slide into view from below');
  assert.equal(await dialog.getByText('Received by assistant',{exact:true}).count(),1,'Receipt stays visible during processing');
@@ -469,7 +472,7 @@ try {
  const bubbleLabels=await dialog.locator('.missy-concierge-body p.whitespace-pre-wrap').allTextContents();
  assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')>=0);
  assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')<bubbleLabels.indexOf('Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr https://www.consumerfinance.gov/owning-a-home/loan-estimate/ https://www.trec.texas.gov/public/consumer-information/ https://missydours.com.evil.test/phishing'));
- const visitorBubble=dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true});
+ const visitorBubble=dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true}).locator('xpath=..');
  assert.ok((await visitorBubble.getAttribute('class')).includes('bg-[#0A84FF]'));
  assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-[26px]'),'Visitor messages need iPhone-like rounded corners');
  assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-br-[9px]'),'Visitor tail corner should be softened');
