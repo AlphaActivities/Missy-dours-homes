@@ -238,7 +238,8 @@ export default function ConversationsPage() {
    setPendingTasks((tasks.data??[]).filter(t=>activeConversations.has(t.conversation_id)));
    setTaskContacts(Object.fromEntries((meta.data??[]).filter(c=>activeConversations.has(c.id)).map(c=>[c.id,{lead_id:c.lead_id,visitor_name:c.visitor_name}])));
   }else {setPendingTasks([]);setTaskContacts({});}
- }catch(e){if(generation===refreshGeneration.current&&showLoading)setError(e instanceof Error?e.message:'Could not load conversations');}finally{if(generation===refreshGeneration.current&&showLoading)setLoading(false);}};
+  return true;
+ }catch(e){if(generation===refreshGeneration.current&&showLoading)setError(e instanceof Error?e.message:'Could not load conversations');return false;}finally{if(generation===refreshGeneration.current&&showLoading)setLoading(false);}};
  useEffect(()=>{
   void refresh();
   const channel=supabase.channel('staff-conversations-live')
@@ -538,7 +539,9 @@ export default function ConversationsPage() {
    });
    if(error)throw error;
    if(data!==true)throw new Error('Only the assigned team member can return this chat to AI.');
-   setOutcomeOpen(false);setHandoffNotes('');setFollowupAt('');setOutcomesRevision(n=>n+1);await refresh();
+   setOutcomeOpen(false);setHandoffNotes('');setFollowupAt('');setOutcomesRevision(n=>n+1);
+   const refreshed=await refresh();
+   if(refreshed===false)setError('Outcome recorded successfully, but the conversation list could not refresh. Please refresh the inbox.');
   }catch(e){setError(e instanceof Error?e.message:'Unable to record the outcome');}
   finally{setActionBusy(false);}
  };
