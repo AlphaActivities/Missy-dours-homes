@@ -1,6 +1,6 @@
 import TexasCallbackPicker from './TexasCallbackPicker';
 import {validateTexasOfficeSlot,texasDateTime} from '../../../lib/texasScheduling';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Calendar, CalendarPlus, Check, X, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { LeadFollowup } from '../types';
@@ -32,6 +32,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   const [followups, setFollowups] = useState<LeadFollowup[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const loadGeneration = useRef(0);
   const [showForm, setShowForm] = useState(false);
   const [dueDate, setDueDate] = useState('');
   const [dueTime, setDueTime] = useState('');
@@ -42,26 +43,31 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   const [rescheduleValue,setRescheduleValue]=useState('');
 
   const fetchFollowups = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('lead_followups')
-      .select('*')
-      .eq('lead_id', leadId)
-      .order('due_at', { ascending: true });
-
-    if (error) {
+    const generation = ++loadGeneration.current;
+    try {
+      const { data, error } = await supabase
+        .from('lead_followups')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('due_at', { ascending: true });
+      if (generation !== loadGeneration.current) return;
+      if (error) throw error;
+      setLoadError(false);
+      setFollowups((data as LeadFollowup[]) ?? []);
+    } catch {
+      if (generation !== loadGeneration.current) return;
       setLoadError(true);
       setFollowups([]);
-      setLoading(false);
-      return;
+    } finally {
+      if (generation === loadGeneration.current) setLoading(false);
     }
-    setLoadError(false);
-    setFollowups((data as LeadFollowup[]) ?? []);
-    setLoading(false);
   }, [leadId]);
 
   useEffect(() => {
     setLoading(true);
-    fetchFollowups();
+    setFollowups([]);
+    void fetchFollowups();
+    return () => { loadGeneration.current += 1; };
   }, [leadId, fetchFollowups]);
 
   // Show the next actionable appointment first, including overdue work.
