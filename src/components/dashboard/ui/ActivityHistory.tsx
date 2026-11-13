@@ -164,6 +164,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
       if(followup.completed_at)items.push({icon:<CheckCircle2 size={12}/>,color:'#7dbfa0',
         description:'Follow-up completed · '+followup.task,actor:null,timestamp:followup.completed_at});
     }
+    if (currentRequest !== requestId.current) return;
     if(warnings.length)setHistoryWarning([...new Set(warnings)].join(' '));
 
     // Always show inquiry received
