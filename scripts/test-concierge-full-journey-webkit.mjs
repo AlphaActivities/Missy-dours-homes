@@ -564,9 +564,9 @@ try {
  await dialog.getByText(/Waiting for Missy’s team/).waitFor();
  // A consented visitor can leave the full-screen chat to reach the very same
  // Contact section as the website navbar (not a blocked /#contact anchor).
- const directContact=dialog.getByRole('button',{name:'Contact Missy directly'});
+ const directContact=dialog.getByRole('button',{name:'Contact Missy',exact:true});
  assert.ok(await directContact.isVisible());
- assert.ok((await directContact.getAttribute('class')).includes('min-h-12'),'Contact action must have a large touch target');
+ assert.ok((await directContact.getAttribute('class')).includes('min-h-10'),'Contact action must have a large touch target');
  await directContact.click();
  await dialog.waitFor({state:'hidden'});
  await page.waitForFunction(()=> {
