@@ -136,6 +136,8 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
       })
     ).then(() => {
       if (!cancelled) setPreviewUrls(urls);
+    }).catch(() => {
+      if (!cancelled) setPreviewUrls({});
     });
     return () => { cancelled = true; };
   }, [draftAttachments, savedNotes]);
@@ -152,39 +154,28 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
       return;
     }
     setUploading(true);
-    const ext = ALLOWED_MIME[file.type] || 'bin';
-    const fileId = crypto.randomUUID();
-    const storagePath = `${leadId}/${fileId}.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET)
-      .upload(storagePath, file, { contentType: file.type, upsert: false });
-
-    if (uploadError) {
-      const detail = uploadError.message || uploadError.name || 'Unknown error';
-      console.error('[lead-attachments] Storage upload failed:', {
-        bucket: BUCKET,
-        path: storagePath,
-        contentType: file.type,
-        errorName: uploadError.name,
-        errorCode: (uploadError as { code?: string }).code,
-        message: uploadError.message,
-      });
-      reportError(`Upload failed: ${detail}`);
+    try {
+      const ext = ALLOWED_MIME[file.type] || 'bin';
+      const fileId = crypto.randomUUID();
+      const storagePath = `${leadId}/${fileId}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(storagePath, file, { contentType: file.type, upsert: false });
+      if (uploadError) throw uploadError;
+      const newAtt: NoteAttachment = {
+        id: fileId,
+        storage_path: storagePath,
+        original_filename: file.name,
+        mime_type: file.type,
+        file_size: file.size,
+      };
+      setDraftAttachments(prev => [...prev, newAtt]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (cause) {
+      reportError('Attachment upload failed: ' + (cause instanceof Error ? cause.message : 'Please retry.'));
+    } finally {
       setUploading(false);
-      return;
     }
-
-    const newAtt: NoteAttachment = {
-      id: fileId,
-      storage_path: storagePath,
-      original_filename: file.name,
-      mime_type: file.type,
-      file_size: file.size,
-    };
-    setDraftAttachments(prev => [...prev, newAtt]);
-    setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removeDraftAttachment = async (att: NoteAttachment) => {
