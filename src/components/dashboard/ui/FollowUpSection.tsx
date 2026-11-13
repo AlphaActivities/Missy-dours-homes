@@ -32,6 +32,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   const [followups, setFollowups] = useState<LeadFollowup[]>([]);
   const [loading, setLoading] = useState(true);
   const [available, setAvailable] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [dueDate, setDueDate] = useState('');
   const [dueTime, setDueTime] = useState('');
@@ -52,11 +53,13 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
       if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation')) {
         setAvailable(false);
       }
+      setLoadError(true);
       setFollowups([]);
       setLoading(false);
       return;
     }
     setAvailable(true);
+    setLoadError(false);
     setFollowups((data as LeadFollowup[]) ?? []);
     setLoading(false);
   }, [leadId]);
@@ -67,7 +70,9 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
     fetchFollowups();
   }, [leadId, fetchFollowups]);
 
-  const active = followups.filter(f => f.status === 'active');
+  // Show the next actionable appointment first, including overdue work.
+  const active = followups.filter(f => f.status === 'active')
+    .sort((a,b) => Date.parse(a.due_at) - Date.parse(b.due_at));
   const history = followups.filter(f => f.status !== 'active');
 
   const handleSave = async () => {
@@ -156,6 +161,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
 
   if (!available) return null;
   if (loading) return null;
+  if (loadError) return <div role="alert" className="rounded-xl border border-[#c8a96e]/40 bg-[#241d17] p-3 text-xs text-[#efd4a1]">Follow-ups could not be loaded. <button type="button" onClick={()=>{setLoading(true);void fetchFollowups();}} className="ml-2 underline underline-offset-2">Retry</button></div>;
 
   const statusColors: Record<string, { text: string; bg: string; ring: string }> = {
     overdue:   { text: '#f08080', bg: 'rgba(240,128,128,0.08)', ring: 'rgba(240,128,128,0.25)' },
@@ -171,7 +177,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
         <p className="text-[10px] font-medium tracking-[0.14em] uppercase" style={{ color: 'var(--ds-text-secondary)' }}>
           Next Follow-Up
         </p>
-        {active.length === 0 && !showForm && (
+        {!showForm && (
           <button
             onClick={() => setShowForm(true)}
             type="button"
@@ -186,7 +192,7 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
       </div>
 
       <div className="mt-2 space-y-2">
-        {/* Active follow-ups */}
+        {/* Active follow-ups, earliest due first */}
         {active.map(fu => {
           const st = getFollowupStatus(fu);
           const sc = statusColors[st];

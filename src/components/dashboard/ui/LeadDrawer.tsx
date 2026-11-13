@@ -58,19 +58,20 @@ export default function LeadDrawer({ lead, onClose, onStatusChange, onSaveNotes,
   },[isRendered,onClose]);
 
   useEffect(() => {
-    if (isRendered) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
+    if (!isRendered) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
   }, [isRendered]);
 
   const handleStatusChange = async (next: LeadStatus) => {
     if (!displayLead) return;
     setUpdatingStatus(true);
-    await onStatusChange(displayLead.id, next);
-    setUpdatingStatus(false);
+    try {
+      await onStatusChange(displayLead.id, next);
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   if (!isRendered || !displayLead) return null;
