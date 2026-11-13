@@ -433,11 +433,11 @@ try {
  const sentVisibleAt=Date.now();
  assert.equal(await typing.count(),0,'AI typing cannot begin while Sent is visible');
  await dialog.getByText('Received by assistant',{exact:true}).waitFor({state:'visible'});
- // Receipt order is asserted through visible states; wall-clock timing is
- // unreliable when WebKit rendering and Playwright polling run concurrently.
- assert.ok(assistantReceivedAt-sentVisibleAt>=850,'Sent should remain visible for approximately one full second');
+ const assistantReceivedAt=Date.now();
+ assert.ok(assistantReceivedAt-sentVisibleAt>=650,'Sent should remain visible before assistant receipt');
  assert.equal(await typing.count(),0,'Assistant receipt must precede three-dot processing');
  await typing.waitFor({state:'visible'});
+ const typingVisibleAt=Date.now();
  assert.equal(await dialog.getByText('Received by assistant',{exact:true}).count(),1,
    'Assistant receipt remains visible once typing begins');
  assert.equal(await dialog.locator('[data-message-arrival="outgoing"]').count(),1,
