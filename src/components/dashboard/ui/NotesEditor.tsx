@@ -188,8 +188,13 @@ export default function NotesEditor({ leadId, initialNotes, onSave, onError }: N
   };
 
   const removeDraftAttachment = async (att: NoteAttachment) => {
-    await supabase.storage.from(BUCKET).remove([att.storage_path]);
-    setDraftAttachments(prev => prev.filter(a => a.id !== att.id));
+    try {
+      const { error: removalError } = await supabase.storage.from(BUCKET).remove([att.storage_path]);
+      if (removalError) throw removalError;
+      setDraftAttachments(prev => prev.filter(a => a.id !== att.id));
+    } catch {
+      reportError('Could not remove the draft attachment. Please retry.');
+    }
   };
 
   const handleSave = async () => {
