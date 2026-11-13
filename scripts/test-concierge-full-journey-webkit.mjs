@@ -354,6 +354,7 @@ try {
    stop(){this.onend?.();}
    abort(){this.onend?.();}
   };
+  sessionStorage.setItem('missy_royal_gravity_entrance_v5','1');
   sessionStorage.setItem('missy_concierge_visitor_session_v1',JSON.stringify({
    conversation_id:'11111111-1111-4111-8111-111111111111',
    token:'a'.repeat(64),
