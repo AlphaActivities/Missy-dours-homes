@@ -49,8 +49,6 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
       .order('due_at', { ascending: true });
 
     if (error) {
-      if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation')) {
-      }
       setLoadError(true);
       setFollowups([]);
       setLoading(false);
@@ -63,7 +61,6 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
 
   useEffect(() => {
     setLoading(true);
-    setAvailable(true);
     fetchFollowups();
   }, [leadId, fetchFollowups]);
 
