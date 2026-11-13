@@ -472,7 +472,7 @@ try {
  const bubbleLabels=await dialog.locator('.missy-concierge-body p.whitespace-pre-wrap').allTextContents();
  assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')>=0);
  assert.ok(bubbleLabels.indexOf('¿Puede ayudarme a comprar una casa?')<bubbleLabels.indexOf('Gracias. Missy confirmará los detalles. https://missydours.com/listings/14636-southern-pines-dr https://www.consumerfinance.gov/owning-a-home/loan-estimate/ https://www.trec.texas.gov/public/consumer-information/ https://missydours.com.evil.test/phishing'));
- const visitorBubble=dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true});
+ const visitorBubble=dialog.getByText('¿Puede ayudarme a comprar una casa?',{exact:true}).locator('xpath=..');
  assert.ok((await visitorBubble.getAttribute('class')).includes('bg-[#0A84FF]'));
  assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-[26px]'),'Visitor messages need iPhone-like rounded corners');
  assert.ok((await visitorBubble.getAttribute('class')).includes('rounded-br-[9px]'),'Visitor tail corner should be softened');
