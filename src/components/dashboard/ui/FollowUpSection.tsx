@@ -81,70 +81,62 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
     try{dueAt=validateTexasOfficeSlot(dueDate,dueTime).toISOString();}
     catch(e){showToast(e instanceof Error?e.message:'Choose a valid Dallas office time.','error');return;}
     setSaving(true);
-
-    const { data: userData } = await supabase.auth.getUser();
-    const actor = userData.user?.email ?? null;
-
-    const { data, error } = await supabase
-      .from('lead_followups')
-      .insert({ lead_id: leadId, due_at: dueAt, task: task.trim() || 'Follow up', status: 'active', created_by: actor })
-      .select()
-      .single();
-
-    if (error) {
-      showToast('Failed to schedule follow-up.', 'error');
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const actor = userData.user?.email ?? null;
+      const { data, error } = await supabase
+        .from('lead_followups')
+        .insert({ lead_id: leadId, due_at: dueAt, task: task.trim() || 'Follow up', status: 'active', created_by: actor })
+        .select()
+        .single();
+      if (error) throw error;
+      setFollowups(prev => [data as LeadFollowup, ...prev]);
+      setDueDate('');
+      setDueTime('');
+      setTask('');
+      setShowForm(false);
+      showToast('Follow-up scheduled.');
+      void onActivity('followup_scheduled', `Follow-up scheduled for ${formatDueDate(dueAt)}`);
+    } catch {
+      showToast('Failed to schedule follow-up. Please retry.', 'error');
+    } finally {
       setSaving(false);
-      return;
     }
-
-    onActivity('followup_scheduled', `Follow-up scheduled for ${formatDueDate(dueAt)}`);
-    setFollowups(prev => [data as LeadFollowup, ...prev]);
-    setDueDate('');
-    setDueTime('');
-    setTask('');
-    setShowForm(false);
-    setSaving(false);
-    showToast('Follow-up scheduled.');
   };
 
   const handleComplete = async (fu: LeadFollowup) => {
     if(actionId)return;
     setActionId(fu.id);
-    const { error } = await supabase
-      .from('lead_followups')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
-      .eq('id', fu.id);
-
-    if (error) {
+    try {
+      const completedAt = new Date().toISOString();
+      const { error } = await supabase.from('lead_followups')
+        .update({ status: 'completed', completed_at: completedAt }).eq('id', fu.id);
+      if (error) throw error;
+      setFollowups(prev => prev.map(f => f.id === fu.id ? { ...f, status: 'completed', completed_at: completedAt } : f));
+      showToast('Follow-up marked complete.');
+      void onActivity('followup_completed', `Follow-up completed: ${fu.task}`);
+    } catch {
       showToast('Failed to complete follow-up.', 'error');
+    } finally {
       setActionId(null);
-      return;
     }
-
-    onActivity('followup_completed', `Follow-up completed: ${fu.task}`);
-    setFollowups(prev => prev.map(f => f.id === fu.id ? { ...f, status: 'completed', completed_at: new Date().toISOString() } : f));
-    setActionId(null);
-    showToast('Follow-up marked complete.');
   };
 
   const handleCancel = async (fu: LeadFollowup) => {
     if(actionId)return;
     setActionId(fu.id);
-    const { error } = await supabase
-      .from('lead_followups')
-      .update({ status: 'cancelled' })
-      .eq('id', fu.id);
-
-    if (error) {
+    try {
+      const { error } = await supabase.from('lead_followups')
+        .update({ status: 'cancelled' }).eq('id', fu.id);
+      if (error) throw error;
+      setFollowups(prev => prev.map(f => f.id === fu.id ? { ...f, status: 'cancelled' } : f));
+      showToast('Follow-up cancelled.');
+      void onActivity('followup_cancelled', `Follow-up cancelled: ${fu.task}`);
+    } catch {
       showToast('Failed to cancel follow-up.', 'error');
+    } finally {
       setActionId(null);
-      return;
     }
-
-    onActivity('followup_cancelled', `Follow-up cancelled: ${fu.task}`);
-    setFollowups(prev => prev.map(f => f.id === fu.id ? { ...f, status: 'cancelled' } : f));
-    setActionId(null);
-    showToast('Follow-up cancelled.');
   };
 
   const handleReschedule = async (fu: LeadFollowup) => {
@@ -153,12 +145,18 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
     try{dueAt=validateTexasOfficeSlot(rescheduleValue.slice(0,10),rescheduleValue.slice(11,16)).toISOString();}
     catch(e){showToast(e instanceof Error?e.message:'Choose a valid Dallas office time.','error');return;}
     setActionId(fu.id);
-    const {error}=await supabase.from('lead_followups').update({due_at:dueAt,status:'active'}).eq('id',fu.id);
-    if(error){showToast('Failed to reschedule.','error');setActionId(null);return;}
-    onActivity('followup_rescheduled',`Follow-up rescheduled to ${formatDueDate(dueAt)}`);
-    setFollowups(prev=>prev.map(f=>f.id===fu.id?{...f,due_at:dueAt,status:'active'}:f));
-    setRescheduleId(null);setRescheduleValue('');setActionId(null);
-    showToast('Follow-up rescheduled.');
+    try {
+      const {error}=await supabase.from('lead_followups').update({due_at:dueAt,status:'active'}).eq('id',fu.id);
+      if(error)throw error;
+      setFollowups(prev=>prev.map(f=>f.id===fu.id?{...f,due_at:dueAt,status:'active'}:f));
+      setRescheduleId(null);setRescheduleValue('');
+      showToast('Follow-up rescheduled.');
+      void onActivity('followup_rescheduled',`Follow-up rescheduled to ${formatDueDate(dueAt)}`);
+    } catch {
+      showToast('Failed to reschedule.', 'error');
+    } finally {
+      setActionId(null);
+    }
   };
 
   if (loading) return null;
