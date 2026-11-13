@@ -71,7 +71,7 @@ export default function FloatingCallButton({ onOpenChat }: { onOpenChat: () => v
       className={'relative pointer-events-auto shrink-0 transition-opacity duration-300 ease-out motion-reduce:transition-none ' +
         (arrived ? 'opacity-100' : 'pointer-events-none opacity-0')}>
       <div id="missy-mobile-contact-options" role="group" aria-label="Contact Missy"
-        aria-hidden={!expanded} inert={!expanded}
+        aria-hidden={!expanded} {...(!expanded ? { inert: '' } : {})}
         className={'absolute bottom-[calc(100%+14px)] right-0 w-[min(276px,calc(100vw-3rem))] origin-bottom-right overflow-hidden rounded-2xl border bg-gradient-to-br from-[#292118] via-[#1c1711] to-[#0f0d0b] p-2.5 backdrop-blur-xl transform-gpu transition-[opacity,transform,box-shadow,border-color,visibility] motion-reduce:transition-none ' +
           (expanded
             ? 'visible pointer-events-auto opacity-100 translate-y-0 scale-100 border-[#d8b575]/65 shadow-[0_18px_48px_rgba(0,0,0,.65),0_0_22px_rgba(204,162,91,.14),inset_0_1px_0_rgba(255,232,185,.12)] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)]'
