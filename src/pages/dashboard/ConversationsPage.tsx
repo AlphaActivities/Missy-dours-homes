@@ -12,6 +12,7 @@ type Conversation = {
   priority:'unrated'|'hot'|'warm'|'cold'; priority_reason:string|null;opportunity_kind:'buyer'|'seller'|'both'|'investor'|null;
   language_code:string; last_message_at:string|null; started_at:string; lead_id:string|null; assigned_to:string|null; visitor_name:string|null; visitor_phone:string|null; contact_consent_at:string|null; visitor_expires_at:string|null;
 };
+type StaffOutcome = {id:string;conversation_id:string;staff_email:string;disposition:'resolved'|'follow_up';notes:string;followup_at:string|null;created_at:string};
 type Attachment = {id:string;original_filename:string;mime_type:string;file_size_bytes:number;storage_path:string;created_at:string};
 type Message = {id:string; sender:'visitor'|'ai'|'human'|'system';body:string;translated_body:string|null; original_language:string|null;created_at:string;sender_actor:string|null;delivered_to_staff_at:string|null;read_by_staff_at:string|null;delivered_to_visitor_at:string|null;read_by_visitor_at:string|null;};
 // Visitor messages and AI replies may share the same database timestamp.
@@ -95,6 +96,28 @@ export default function ConversationsPage() {
  };
 
  const [messages,setMessages]=useState<Message[]>([]);
+ const [staffOutcomes,setStaffOutcomes]=useState<StaffOutcome[]>([]);
+ const [outcomesLoading,setOutcomesLoading]=useState(false);
+ const [outcomesError,setOutcomesError]=useState<string|null>(null);
+ const [outcomesExpanded,setOutcomesExpanded]=useState(false);
+ const [outcomesRevision,setOutcomesRevision]=useState(0);
+ // Each selection owns its own request; stale responses cannot expose another conversation's notes.
+ useEffect(()=>{
+  setStaffOutcomes([]);setOutcomesExpanded(false);setOutcomesError(null);
+  if(!selected){setOutcomesLoading(false);return;}
+  let cancelled=false;
+  setOutcomesLoading(true);
+  void supabase.from('ai_concierge_handoff_outcomes')
+   .select('id,conversation_id,staff_email,disposition,notes,followup_at,created_at')
+   .eq('conversation_id',selected).order('created_at',{ascending:false}).order('id',{ascending:false})
+   .then(({data,error})=>{
+    if(cancelled)return;
+    if(error){setOutcomesError('Unable to load staff outcome history.');setStaffOutcomes([]);}
+    else {setStaffOutcomes((data??[]) as StaffOutcome[]);setOutcomesError(null);}
+    setOutcomesLoading(false);
+   });
+  return()=>{cancelled=true;};
+ },[selected,outcomesRevision]);
  const [attachments,setAttachments]=useState<Attachment[]>([]);
  const [signedAttachment,setSignedAttachment]=useState<{id:string;url:string}|null>(null);
  const [attachmentBusy,setAttachmentBusy]=useState<string|null>(null);
@@ -485,7 +508,7 @@ export default function ConversationsPage() {
    });
    if(error)throw error;
    if(data!==true)throw new Error('Only the assigned team member can return this chat to AI.');
-   setOutcomeOpen(false);setHandoffNotes('');setFollowupAt('');await refresh();
+   setOutcomeOpen(false);setHandoffNotes('');setFollowupAt('');setOutcomesRevision(n=>n+1);await refresh();
   }catch(e){setError(e instanceof Error?e.message:'Unable to record the outcome');}
   finally{setActionBusy(false);}
  };
@@ -660,6 +683,18 @@ export default function ConversationsPage() {
      </label>
      <button type="submit" disabled={actionBusy||handoffNotes.trim().length<10||(handoffDisposition==='follow_up'&&!followupAt)} className="min-h-11 w-full rounded-lg bg-gradient-to-r from-[#efd8a5] via-[#d8b471] to-[#ba8d44] px-4 py-3 text-sm font-semibold text-[#1a1108] disabled:opacity-40">{actionBusy?'Saving outcome…':'Save Outcome & Return to AI'}</button>
     </form>}
+    {active&&<section aria-label="Staff Outcome History" className="mb-5 rounded-xl border border-[#c8a96e]/45 bg-[#211a12]/75 p-4 text-sm text-[#e9d7b8]">
+     <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2"><ClipboardCheck size={19} className="shrink-0 text-[#e9ca91]" aria-hidden="true"/><h3 className="font-semibold text-[#e9ca91]">Staff Outcome History</h3></div>
+      {staffOutcomes.length>1&&<button type="button" aria-expanded={outcomesExpanded} aria-controls="staff-outcome-entries" onClick={()=>setOutcomesExpanded(v=>!v)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#c8a96e]/55 px-3 py-2 text-xs font-semibold text-[#efcf97] hover:bg-[#c8a96e]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e9ca91]">{outcomesExpanded?'Show latest only':`View all ${staffOutcomes.length} outcomes`}<ChevronDown size={15} className={outcomesExpanded?'rotate-180 transition-transform':'transition-transform'} aria-hidden="true"/></button>}
+     </div>
+     {outcomesLoading?<p className="mt-3 text-xs text-[#cbbba3]" role="status">Loading outcome history…</p>:outcomesError?<div className="mt-3 flex flex-wrap items-center gap-3"><p role="alert" className="text-xs text-amber-200">{outcomesError}</p><button type="button" onClick={()=>setOutcomesRevision(n=>n+1)} className="min-h-10 rounded-lg border border-[#c8a96e]/55 px-3 text-xs text-[#efcf97]">Retry</button></div>:staffOutcomes.length===0?<p className="mt-3 text-xs text-[#cbbba3]">No staff outcomes recorded for this conversation yet.</p>:
+     <div id="staff-outcome-entries" className="mt-3 space-y-3">{(outcomesExpanded?staffOutcomes:staffOutcomes.slice(0,1)).map(outcome=><article key={outcome.id} className="min-w-0 rounded-lg border border-[#c8a96e]/30 bg-[#15120f]/75 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="font-semibold text-[#f2d59d]">{outcome.disposition==='resolved'?'Resolved, follow-up complete':'Follow-up scheduled'}</p><p className="mt-1 text-xs text-[#cbbba3]">Recorded by {assignedStaffName(outcome.staff_email)} · {time(outcome.created_at)}</p></div><span className="rounded-full border border-[#c8a96e]/40 px-2.5 py-1 text-[11px] text-[#e9ca91]">{outcome.disposition==='resolved'?'Resolved':'Follow-up'}</span></div>
+      <p className="mt-3 whitespace-pre-wrap break-words rounded-lg border border-[#c8a96e]/20 bg-[#211a12] p-3 text-sm leading-relaxed text-[#e8d6b8]">{outcome.notes}</p>
+      {outcome.followup_at&&<p className="mt-2 text-xs text-[#e9ca91]">Next follow-up: {time(outcome.followup_at)}</p>}
+     </article>)}</div>}
+    </section>}
     {loadingMessages?<p className="text-sm opacity-60">Loading messages…</p>:messages.length===0?<p className="text-sm opacity-60">No messages saved.</p>:<div className="space-y-4" role="log" aria-label="Conversation messages">{messages.map(m=>{const fromVisitor=m.sender==='visitor';const fromAi=m.sender==='ai';return <div key={m.id} className={'crm-message-row flex '+(fromVisitor?'justify-end':'justify-start')}><article className={'max-w-[88%] min-w-0 rounded-[25px] px-4 py-3 shadow-[0_5px_18px_rgba(0,0,0,.18)] '+(fromVisitor?'crm-ios-visitor-bubble rounded-br-[8px] bg-[#0A84FF] text-white':fromAi?'crm-ios-ai-bubble rounded-bl-[8px] border border-[#385e87]/40 bg-[#18385a] text-[#f0f6ff]':'crm-ios-team-bubble rounded-bl-[8px] border border-[#b6975f]/35 bg-[#342a1c] text-[#f7e4bc]')}><div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px]"><strong className={'uppercase tracking-[.08em] '+(fromVisitor?'text-[#e3efff]':fromAi?'text-[#99cdfd]':'text-[#e8c782]')}>{fromVisitor?'Visitor':fromAi?'AI Chatbot':'Missy’s Team'}</strong><time className="opacity-75" dateTime={m.created_at}>{time(m.created_at)}</time></div><p className="relative z-10 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-relaxed">{displayConversationMessage(m,active)}</p><div className={'mt-2 text-right text-[10px] '+(fromVisitor?'text-[#dcecff]':'text-[#c7d7e8]')}>{fromVisitor?(m.read_by_staff_at?'Read by team · '+new Date(m.read_by_staff_at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):m.delivered_to_staff_at?'Delivered to team':'Saved'):m.read_by_visitor_at?'Read by visitor · '+new Date(m.read_by_visitor_at).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):m.delivered_to_visitor_at?'Delivered to visitor':'Sent'}</div>{m.translated_body&&<div className="mt-3 border-t border-white/20 pt-2"><span className="text-[11px] opacity-80">{m.sender==='human'?'Staff English original':'English translation for staff'}</span><p className="mt-1 whitespace-pre-wrap break-words text-sm">{m.translated_body}</p></div>}</article></div>;})}</div>}{attachments.length>0&&<div className="mt-4 rounded-lg border border-[#c8a96e]/30 p-3" aria-label="Private conversation attachments">
      <h3 className="text-sm font-semibold text-[#e4c58b]">Private attachments</h3>
      <p className="mt-1 text-xs opacity-65">Files provided during a human-assisted conversation. Download links expire automatically.</p>
