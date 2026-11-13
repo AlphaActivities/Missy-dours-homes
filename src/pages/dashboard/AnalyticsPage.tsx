@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {Activity,BarChart3,CalendarDays,RefreshCw,ShieldCheck} from 'lucide-react';
 import {supabase} from '../../lib/supabase';
 import {IosNativeTap} from '../../components/dashboard/DashboardHaptics';
@@ -48,7 +48,9 @@ export default function AnalyticsPage(){
  const [loading,setLoading]=useState(true);
  const [message,setMessage]=useState('');
  const [issueCode,setIssueCode]=useState('');
+ const requestGeneration=useRef(0);
  const reload=useCallback(async()=>{
+  const generation=++requestGeneration.current;
   setLoading(true);setMessage('');setIssueCode('');
   try{
    const auth=await supabase.auth.getSession();
@@ -61,16 +63,17 @@ export default function AnalyticsPage(){
     signal:AbortSignal.timeout(20000)
    });
    const payload=await response.json().catch(()=>({})) as Analytics & {error?:string;code?:string;setupRequired?:boolean};
+   if(generation!==requestGeneration.current)return;
    if(!response.ok){
     setIssueCode(payload.code??'');
     const explanation=payload.error||'Could not load Google Analytics.';
     throw new Error(explanation);
    }
    setData(payload);
-  }catch(e){setData(null);setMessage(e instanceof Error?e.message:'Analytics unavailable');}
-  finally{setLoading(false);}
+  }catch(e){if(generation===requestGeneration.current){setData(null);setMessage(e instanceof Error?e.message:'Analytics unavailable');}}
+  finally{if(generation===requestGeneration.current)setLoading(false);}
  },[days]);
- useEffect(()=>{void reload();},[reload]);
+ useEffect(()=>{void reload();return()=>{requestGeneration.current+=1;};},[reload]);
  const tile=(label:string,value:number)=> <div className="rounded-xl border border-[#c8a96e]/25 bg-[#14110d]/80 p-4"><p className="text-xs text-[#bdb0a0]">{label}</p><p className="mt-2 font-serif text-3xl text-[#edcfa0] tabular-nums">{n(value)}</p></div>;
  return <main className="mx-auto max-w-5xl px-4 py-7 text-[#ecdbc2] md:px-8 md:py-9">
   <header className="mb-6 flex items-center gap-3"><BarChart3 className="shrink-0 text-[#d7b878]" size={25}/><div><h1 className="font-serif text-2xl">Website Intelligence</h1><p className="mt-1 text-sm text-[#bdb0a0]">Google Analytics 4 · Read-only website performance</p></div></header>

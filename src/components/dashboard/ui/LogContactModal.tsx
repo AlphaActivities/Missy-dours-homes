@@ -32,10 +32,10 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
   useEffect(()=>{
     const previous=document.body.style.overflow;
     document.body.style.overflow='hidden';
-    const escape=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose();};
+    const escape=(e:KeyboardEvent)=>{if(e.key==='Escape'&&!saving)onClose();};
     window.addEventListener('keydown',escape);
     return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',escape);};
-  },[onClose]);
+  },[onClose,saving]);
 
   const handleSave = async () => {
     if (saving || invalid) return;
@@ -55,7 +55,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
       <div
         className="fixed inset-0 z-[60]"
         style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
-        onClick={onClose}
+        onClick={()=>{if(!saving)onClose();}}
         aria-hidden
       />
       <div
@@ -71,6 +71,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
           </h3>
           <button
             onClick={onClose}
+            disabled={saving}
             className="p-1 rounded-lg transition-colors duration-150"
             style={{ color: 'var(--ds-text-tertiary)' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-text-primary)')}
@@ -145,6 +146,7 @@ export default function LogContactModal({ leadName, onLog, onClose, callbackPend
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[#8b714d]/30 bg-[#201913] px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <button
               onClick={onClose}
+              disabled={saving}
               className="min-h-11 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-150"
               style={{ color: 'var(--ds-text-secondary)' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--ds-text-primary)')}
