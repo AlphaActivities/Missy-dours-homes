@@ -31,7 +31,6 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
   const { showToast } = useToast();
   const [followups, setFollowups] = useState<LeadFollowup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [available, setAvailable] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [dueDate, setDueDate] = useState('');
@@ -50,15 +49,11 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
       .order('due_at', { ascending: true });
 
     if (error) {
-      if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation')) {
-        setAvailable(false);
-      }
       setLoadError(true);
       setFollowups([]);
       setLoading(false);
       return;
     }
-    setAvailable(true);
     setLoadError(false);
     setFollowups((data as LeadFollowup[]) ?? []);
     setLoading(false);
@@ -66,7 +61,6 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
 
   useEffect(() => {
     setLoading(true);
-    setAvailable(true);
     fetchFollowups();
   }, [leadId, fetchFollowups]);
 
@@ -161,7 +155,6 @@ export default function FollowUpSection({ leadId, onActivity }: FollowUpSectionP
     showToast('Follow-up rescheduled.');
   };
 
-  if (!available) return null;
   if (loading) return null;
   if (loadError) return <div role="alert" className="rounded-xl border border-[#c8a96e]/40 bg-[#241d17] p-3 text-xs text-[#efd4a1]">Follow-ups could not be loaded. <button type="button" onClick={()=>{setLoading(true);void fetchFollowups();}} className="ml-2 underline underline-offset-2">Retry</button></div>;
 
