@@ -138,6 +138,24 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
     }
     if(linkedChats.length){
       const ids=linkedChats.map(c=>c.id);
+      // Show staff-recorded return-to-AI outcomes in the linked lead's permanent timeline.
+      for(let offset=0;offset<ids.length;offset+=100){
+        const outcomeResult=await supabase.from('ai_concierge_handoff_outcomes')
+          .select('conversation_id,staff_email,disposition,notes,followup_at,created_at')
+          .in('conversation_id',ids.slice(offset,offset+100))
+          .order('created_at',{ascending:false}).limit(1000);
+        if(currentRequest!==requestId.current)return;
+        if(outcomeResult.error){warnings.push('Staff handoff outcome notes could not be loaded.');continue;}
+        if((outcomeResult.data?.length??0)===1000)warnings.push('Older handoff outcome notes may require an export.');
+        for(const outcome of outcomeResult.data??[]){
+          const href='/dashboard/conversations?conversation='+encodeURIComponent(outcome.conversation_id);
+          const followup=outcome.followup_at?' · Follow-up '+formatDateTime(outcome.followup_at):'';
+          items.push({icon:<StickyNote size={12}/>,color:'#d9bc85',category:'callback',
+            description:'Staff handoff '+(outcome.disposition==='resolved'?'resolved':'follow-up scheduled')+
+              ' · '+outcome.notes+followup,
+            actor:outcome.staff_email||null,timestamp:outcome.created_at,href});
+        }
+      }
       for(let offset=0;offset<ids.length;offset+=100){
         const result=await supabase.from('ai_concierge_tasks')
           .select('id,conversation_id,created_at,completed_at,status,request_kind,assigned_to')
