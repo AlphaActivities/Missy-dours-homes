@@ -250,7 +250,8 @@ assert.ok(attentionSource.includes('Callback Needs Attention') &&
  attentionSource.includes('Record Outcome') &&
  attentionSource.includes('<details'),
  'Urgent callback card must present a compact request summary and direct actions');
-assert.ok(activityContext.includes('setAttentionCount(Math.max(0,Number(t?.total??0)))'),
+assert.ok(activityContext.includes('setAttentionCount(verifiedTotal)') &&
+ activityContext.includes("throw new Error('Invalid CRM notification total')"),
  'Bell and foreground app badges must count actual active inbox cards, not duplicate work records');
 assert.ok(pushDelivery.includes("crm_visible_notification_count_service',{p_staff_email:device.staff_email}"),
  'Native push badge must count visible cards separately for each subscribed staff account');
