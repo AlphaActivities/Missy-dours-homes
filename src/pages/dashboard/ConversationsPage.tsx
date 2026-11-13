@@ -287,6 +287,7 @@ export default function ConversationsPage() {
   let fetchVersion=0;
   const fetchTranscript=async()=>{
    const version=++fetchVersion;
+   try {
    const {data,error}=await supabase.from('ai_conversation_messages')
     .select('id,sender,body,translated_body,original_language,created_at,sender_actor,delivered_to_staff_at,read_by_staff_at,delivered_to_visitor_at,read_by_visitor_at')
     .eq('conversation_id',selected).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(500);
@@ -312,6 +313,13 @@ export default function ConversationsPage() {
    setLoadedConversation(selected);
    const files=await supabase.from('ai_conversation_attachments').select('id,original_filename,mime_type,file_size_bytes,storage_path,created_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(50);
    if(active&&version===fetchVersion&&!files.error)setAttachments((files.data??[]) as Attachment[]);
+   } catch (cause) {
+    if(active&&version===fetchVersion){
+     setError(cause instanceof Error?cause.message:'Unable to load conversation transcript. Please retry.');
+     setLoadingMessages(false);
+     setLoadedConversation(selected);
+    }
+   }
   };
   setLoadedConversation(null);
   setLoadingMessages(true);
