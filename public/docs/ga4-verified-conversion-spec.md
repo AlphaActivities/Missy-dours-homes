@@ -3,7 +3,7 @@
 **Project:** Missy Dours CRM  
 **GA4 Measurement ID:** G-N0L41589NX  
 **Official Supabase:** ddgpsvkmrnfeufepowog  
-**Status:** Prepared for manual review and deployment. No SQL or edge function changes executed.
+**Status (verified 2026-11-13):** The production Supabase `netlify-lead-webhook` Edge Function already implements best-effort server-side GA4 `generate_lead` after a successful new CRM lead insertion. The remaining checks are whether `GA4_API_SECRET` is configured and whether GA4 actually reports and marks the event as a key event. The code below documents the original proposed implementation; it is not an outstanding deployment instruction.
 
 ---
 
@@ -40,7 +40,7 @@
 
 ---
 
-## Scope B — Production Webhook Upgrade Specification
+## Scope B — Production Webhook Implementation (verified live; historical specification follows)
 
 ### Current architecture (confirmed)
 
@@ -49,13 +49,13 @@
 3. The existing Edge Function verifies HS256 JWS, issuer, SHA-256 request-body hash, form name, submission ID, and contact fields.
 4. On successful verification, it inserts a row into `leads` with `netlify_submission_id`.
 5. Duplicate `netlify_submission_id` values are treated as already processed (idempotent insert guard).
-6. It does NOT currently send GA4 `generate_lead`.
+6. **Verified live on 2026-11-13:** the deployed handler attempts GA4 `generate_lead` after a successful new lead insert, provided it has a valid GA client ID and `GA4_API_SECRET`. Duplicate submission IDs return before the GA4 send. This is best-effort delivery, not proof of a GA4 key event.
 
-### What the webhook handler source is NOT available
+### Live webhook source was inspected
 
-The live Edge Function source is deployed in the official Supabase project but is NOT present in this codebase. The upgrade below is an **integration specification** — the authoritative handler source must be retrieved from the official project before applying changes.
+The deployed Supabase Edge Function source was retrieved and inspected on 2026-11-13. The GA4 send path is already implemented in production. The following code block is retained as the historical integration specification, **not a replacement for the deployed handler**. Do not redeploy from this snippet.
 
-### Proposed upgrade (additive only — do not replace existing logic)
+### Historical proposed upgrade (already implemented in the deployed handler)
 
 After the existing lead INSERT succeeds (and only after), add the following:
 
@@ -100,13 +100,13 @@ if (gaApiSecret && gaClientId) {
 }
 ```
 
-### Required new server-side secret
+### Server-side secret required for delivery (configuration not independently verified)
 
 | Secret name | Where to set | Purpose |
 |---|---|---|
 | `GA4_API_SECRET` | Supabase Dashboard → Edge Functions → Secrets (project ddgpsvkmrnfeufepowog) | GA4 Measurement Protocol API secret |
 
-**To create the API secret:** GA4 Admin → Data Streams → Web stream (G-N0L41589NX) → Measurement Protocol API secrets → Create.
+**Do not create or replace a secret without first checking whether one is already configured.** To create one if missing: GA4 Admin → Data Streams → Web stream (G-N0L41589NX) → Measurement Protocol API secrets → Create.
 
 ### What must NOT change in the existing handler
 
