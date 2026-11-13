@@ -52,6 +52,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
   const fetchActivities = useCallback(async () => {
     const currentRequest = ++requestId.current;
     setHistoryWarning(null);
+    try {
     const [activityResult, conversationsResult, followupsResult, consolidationsResult, contactsResult] = await Promise.all([
       supabase.from('lead_activities').select('*').eq('lead_id', leadId).order('created_at', { ascending: false }).limit(500),
       supabase.from('ai_conversations').select('id,title,started_at,last_message_at,status,opportunity_kind')
@@ -235,6 +236,13 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
     setActivities(items);
     setAvailable(true);
     setLoading(false);
+    } catch {
+      if (currentRequest !== requestId.current) return;
+      setHistoryWarning('Customer timeline could not be loaded. Please retry.');
+      setActivities([]);
+      setAvailable(true);
+      setLoading(false);
+    }
   }, [leadId, createdAt, notesJson, sourcePage]);
 
   useEffect(() => {
