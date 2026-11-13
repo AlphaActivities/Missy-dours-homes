@@ -98,7 +98,8 @@ assert.ok(outcomeSource.includes('const pendingGroups=useMemo') &&
  outcomeSource.includes('group.tasks.map') &&
  outcomeSource.includes('md:min-h-[520px]') &&
  outcomeSource.includes('max-h-[315px]') &&
- outcomeSource.includes('canCreateSeparateLead&&'),
+ outcomeSource.includes('disabled={linkBusy||!canCreateSeparateLead}') &&
+ outcomeSource.includes('if(createSeparate && !canCreateSeparateLead)'),
  'Conversations must group by verified customer, preserve tasks, expand tablet/desktop list without changing mobile or unsafe lead creation');
 
 const leadDrawerSource=readFileSync(new URL('../src/components/dashboard/ui/LeadDrawer.tsx',import.meta.url),'utf8');
