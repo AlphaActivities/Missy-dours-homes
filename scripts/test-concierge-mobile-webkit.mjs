@@ -62,6 +62,9 @@ try {
  await page.locator('body').click({position:{x:10,y:10}});
  assert.equal(await choices.count(),0,'Tapping outside should dismiss choices');
  await launcher.click();
+ // Playwright may scroll the fixed launcher into view before interaction.
+ // Capture the actual position immediately before opening the chat overlay.
+ const preChatY=await page.evaluate(()=>window.scrollY);
  await choices.getByRole('button',{name:'Message Missy Directly'}).click();
  const dialog=page.getByRole('dialog',{name:'Missy Dours private concierge'});
  await dialog.waitFor({state:'visible',timeout:8000});
@@ -94,7 +97,7 @@ try {
  }));
  assert.equal(locked.position,'fixed','Background body must be locked while chat is open');
  assert.equal(locked.htmlOverflow,'hidden','Background root must also lock overflow');
- assert.equal(locked.top,`-${originalY}px`,'Lock must preserve scroll position');
+ assert.equal(locked.top,`-${preChatY}px`,'Lock must preserve scroll position');
  assert.ok((await dialog.getByRole('button',{name:'Close',exact:true}).getAttribute('class')).includes('active:scale-90'),'Close button needs tactile pressed styling');
  const history=dialog.locator('.missy-concierge-body');
  assert.equal(await history.evaluate(el=>getComputedStyle(el).overflowY),'auto','Only chat history should scroll');
@@ -121,7 +124,7 @@ try {
  await launcher.waitFor({state:'visible'});
  assert.equal(await dialog.count(),0,'Chat must close and restore the launcher');
  assert.equal(await page.evaluate(()=>getComputedStyle(document.body).position),'static','Page scrolling must restore after closing chat');
- assert.ok(Math.abs(await page.evaluate(()=>window.scrollY)-originalY)<3,'Closing chat must restore the original page position');
+ assert.ok(Math.abs(await page.evaluate(()=>window.scrollY)-preChatY)<3,'Closing chat must restore the original page position');
  if(failed.length)throw new Error('Browser runtime errors: '+failed.join(' | '));
  console.log('PASS: iPhone WebKit chat title, greeting, logo, close feedback, locked background, preserved scroll position, and composer');
  await context.close();
