@@ -266,6 +266,7 @@ export default function ConversationsPage() {
   setSelected(requestedConversation);
   setFocusedRecordReady(false);
   const fetchRequested=async()=>{
+   try {
    const result=await supabase.from('ai_conversations')
     .select('id,title,summary,status,priority,priority_reason,opportunity_kind,language_code,last_message_at,started_at,lead_id,assigned_to,visitor_name,visitor_phone,contact_consent_at,visitor_expires_at')
     .eq('id',requestedConversation).maybeSingle();
@@ -279,6 +280,9 @@ export default function ConversationsPage() {
     ?existing.map(c=>c.id===requestedConversation?result.data as Conversation:c)
     :[result.data as Conversation,...existing]);
    setFocusedRecordReady(true);
+   } catch (cause) {
+    if(!cancelled){setError(cause instanceof Error?cause.message:'Unable to open conversation. Please retry.');setFocusedRecordReady(true);}
+   }
   };
   void fetchRequested();
   return()=>{cancelled=true;};
