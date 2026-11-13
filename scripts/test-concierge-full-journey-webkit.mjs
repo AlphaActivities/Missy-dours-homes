@@ -561,7 +561,7 @@ try {
  await phone.fill('+12025550147');
  assert.equal(await phone.inputValue(),'(202) 555-0147');
  await submit.click();
- await dialog.getByText(/Waiting for a team member/).waitFor();
+ await dialog.getByText(/Waiting for Missy’s team/).waitFor();
  // A consented visitor can leave the full-screen chat to reach the very same
  // Contact section as the website navbar (not a blocked /#contact anchor).
  const directContact=dialog.getByRole('button',{name:'Contact Missy directly'});
