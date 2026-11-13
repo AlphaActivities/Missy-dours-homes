@@ -581,7 +581,7 @@ try {
  },{timeout:10000});
  await launcher.click();
  await dialog.waitFor({state:'visible'});
- await dialog.getByText(/Waiting for a team member/).waitFor();
+ await dialog.getByText(/Waiting for Missy’s team/).waitFor();
  mode='human';
  history.push({id:'11111111-1111-4111-8111-111111111114',sender:'human',body:'Hi! This is Missy’s team. How can we help?',created_at:new Date().toISOString()});
  await dialog.getByRole('button',{name:'Close',exact:true}).click();
