@@ -97,13 +97,14 @@ export default function ConversationsPage() {
 
  const [messages,setMessages]=useState<Message[]>([]);
  const [staffOutcomes,setStaffOutcomes]=useState<StaffOutcome[]>([]);
+ const [outcomesFor,setOutcomesFor]=useState<string|null>(null);
  const [outcomesLoading,setOutcomesLoading]=useState(false);
  const [outcomesError,setOutcomesError]=useState<string|null>(null);
  const [outcomesExpanded,setOutcomesExpanded]=useState(false);
  const [outcomesRevision,setOutcomesRevision]=useState(0);
  // Each selection owns its own request; stale responses cannot expose another conversation's notes.
  useEffect(()=>{
-  setStaffOutcomes([]);setOutcomesExpanded(false);setOutcomesError(null);
+  setStaffOutcomes([]);setOutcomesFor(null);setOutcomesExpanded(false);setOutcomesError(null);
   if(!selected){setOutcomesLoading(false);return;}
   let cancelled=false;
   setOutcomesLoading(true);
@@ -114,6 +115,7 @@ export default function ConversationsPage() {
     if(cancelled)return;
     if(error){setOutcomesError('Unable to load staff outcome history.');setStaffOutcomes([]);}
     else {setStaffOutcomes((data??[]) as StaffOutcome[]);setOutcomesError(null);}
+    setOutcomesFor(selected);
     setOutcomesLoading(false);
    });
   return()=>{cancelled=true;};
@@ -688,7 +690,7 @@ export default function ConversationsPage() {
       <div className="flex min-w-0 items-center gap-2"><ClipboardCheck size={19} className="shrink-0 text-[#e9ca91]" aria-hidden="true"/><h3 className="font-semibold text-[#e9ca91]">Staff Outcome History</h3></div>
       {staffOutcomes.length>1&&<button type="button" aria-expanded={outcomesExpanded} aria-controls="staff-outcome-entries" onClick={()=>setOutcomesExpanded(v=>!v)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#c8a96e]/55 px-3 py-2 text-xs font-semibold text-[#efcf97] hover:bg-[#c8a96e]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e9ca91]">{outcomesExpanded?'Show latest only':`View all ${staffOutcomes.length} outcomes`}<ChevronDown size={15} className={outcomesExpanded?'rotate-180 transition-transform':'transition-transform'} aria-hidden="true"/></button>}
      </div>
-     {outcomesLoading?<p className="mt-3 text-xs text-[#cbbba3]" role="status">Loading outcome history…</p>:outcomesError?<div className="mt-3 flex flex-wrap items-center gap-3"><p role="alert" className="text-xs text-amber-200">{outcomesError}</p><button type="button" onClick={()=>setOutcomesRevision(n=>n+1)} className="min-h-10 rounded-lg border border-[#c8a96e]/55 px-3 text-xs text-[#efcf97]">Retry</button></div>:staffOutcomes.length===0?<p className="mt-3 text-xs text-[#cbbba3]">No staff outcomes recorded for this conversation yet.</p>:
+     {outcomesLoading||outcomesFor!==selected?<p className="mt-3 text-xs text-[#cbbba3]" role="status">Loading outcome history…</p>:outcomesError?<div className="mt-3 flex flex-wrap items-center gap-3"><p role="alert" className="text-xs text-amber-200">{outcomesError}</p><button type="button" onClick={()=>setOutcomesRevision(n=>n+1)} className="min-h-10 rounded-lg border border-[#c8a96e]/55 px-3 text-xs text-[#efcf97]">Retry</button></div>:staffOutcomes.length===0?<p className="mt-3 text-xs text-[#cbbba3]">No staff outcomes recorded for this conversation yet.</p>:
      <div id="staff-outcome-entries" className="mt-3 space-y-3">{(outcomesExpanded?staffOutcomes:staffOutcomes.slice(0,1)).map(outcome=><article key={outcome.id} className="min-w-0 rounded-lg border border-[#c8a96e]/30 bg-[#15120f]/75 p-3">
       <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="font-semibold text-[#f2d59d]">{outcome.disposition==='resolved'?'Resolved, follow-up complete':'Follow-up scheduled'}</p><p className="mt-1 text-xs text-[#cbbba3]">Recorded by {assignedStaffName(outcome.staff_email)} · {time(outcome.created_at)}</p></div><span className="rounded-full border border-[#c8a96e]/40 px-2.5 py-1 text-[11px] text-[#e9ca91]">{outcome.disposition==='resolved'?'Resolved':'Follow-up'}</span></div>
       <p className="mt-3 whitespace-pre-wrap break-words rounded-lg border border-[#c8a96e]/20 bg-[#211a12] p-3 text-sm leading-relaxed text-[#e8d6b8]">{outcome.notes}</p>
