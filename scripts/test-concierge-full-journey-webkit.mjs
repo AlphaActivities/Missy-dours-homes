@@ -580,12 +580,14 @@ try {
    return Math.abs(rect.top-offset)<140;
  },{timeout:10000});
  await launcher.click();
+ await page.getByRole('group',{name:'Contact Missy'}).getByRole('button',{name:'Message Missy Directly'}).click();
  await dialog.waitFor({state:'visible'});
  await dialog.getByText(/Waiting for Missy’s team/).waitFor();
  mode='human';
  history.push({id:'11111111-1111-4111-8111-111111111114',sender:'human',body:'Hi! This is Missy’s team. How can we help?',created_at:new Date().toISOString()});
  await dialog.getByRole('button',{name:'Close',exact:true}).click();
  await launcher.click();
+ await page.getByRole('group',{name:'Contact Missy'}).getByRole('button',{name:'Message Missy Directly'}).click();
  await dialog.getByText('A member of Missy’s team has joined this conversation.').waitFor();
  await dialog.getByText('Hi! This is Missy’s team. How can we help?').waitFor();
  assert.equal(await dialog.getByRole('status',{name:'Assistant is typing'}).count(),0,'Human messages must never show an AI typing indicator');
