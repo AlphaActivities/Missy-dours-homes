@@ -534,7 +534,8 @@ export default function ConversationsPage() {
    });
    if(error)throw error;
    if(data!==true)throw new Error('Only the assigned team member can return this chat to AI.');
-   setOutcomeOpen(false);setHandoffNotes('');setFollowupAt('');setOutcomesRevision(n=>n+1);await refresh();
+   setOutcomeOpen(false);setHandoffNotes('');setFollowupAt('');setOutcomesRevision(n=>n+1);
+   try { await refresh(); } catch { setError('Outcome recorded successfully, but the conversation list could not refresh. Please refresh the inbox.'); }
   }catch(e){setError(e instanceof Error?e.message:'Unable to record the outcome');}
   finally{setActionBusy(false);}
  };
