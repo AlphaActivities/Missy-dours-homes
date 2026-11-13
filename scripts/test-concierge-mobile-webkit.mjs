@@ -52,7 +52,14 @@ try {
   // Alignment is required only once that control becomes visible.
   const backVisible=await page.getByRole('button',{name:'Back to top',includeHidden:true}).getAttribute('aria-hidden')==='false';
   if(backVisible){
-   await page.waitForTimeout(300); // Let the 12px hidden-to-visible transition settle.
+   // WebKit can delay the transition under CI load. Wait for the actual
+   // settled geometry instead of assuming 300ms is always sufficient.
+   await page.waitForFunction(()=>{
+    const back=document.querySelector('[aria-label="Back to top"]');
+    const chat=document.querySelector('[aria-label="Chat or call Missy"]');
+    if(!back||!chat)return false;
+    return Math.abs(back.getBoundingClientRect().bottom-chat.getBoundingClientRect().bottom)<2;
+   },undefined,{timeout:3000});
    const settled=await readDock();
    assert.ok(settled.aligned<2,'Visible dock controls must remain level while scrolling');
   }

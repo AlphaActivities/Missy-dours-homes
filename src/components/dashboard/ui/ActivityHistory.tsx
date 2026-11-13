@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Calendar, FileText, CheckCircle2, Clock, StickyNote, Paperclip, Trash2, AlertCircle, MessagesSquare } from 'lucide-react';
 import { displayLeadMessage } from '../../../utils/leadMessage';
@@ -47,8 +47,10 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
   const [visibleLimit,setVisibleLimit]=useState(25);
   const [historyWarning,setHistoryWarning]=useState<string|null>(null);
   const [available, setAvailable] = useState(true);
+  const requestId = useRef(0);
 
   const fetchActivities = useCallback(async () => {
+    const currentRequest = ++requestId.current;
     setHistoryWarning(null);
     const [activityResult, conversationsResult, followupsResult, consolidationsResult, contactsResult] = await Promise.all([
       supabase.from('lead_activities').select('*').eq('lead_id', leadId).order('created_at', { ascending: false }).limit(500),
@@ -61,6 +63,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
       supabase.from('lead_contact_events').select('id,channel,notes,contacted_by,outcome,created_at,resolved_callback')
         .eq('lead_id',leadId).order('created_at',{ascending:false}).limit(500)
     ]);
+    if (currentRequest !== requestId.current) return;
     const {data,error}=activityResult;
 
     if (error) {
@@ -138,6 +141,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
         const result=await supabase.from('ai_concierge_tasks')
           .select('id,conversation_id,created_at,completed_at,status,request_kind,assigned_to')
           .in('conversation_id',ids.slice(offset,offset+100));
+        if (currentRequest !== requestId.current) return;
         if(result.error){warnings.push('Callback task history could not be loaded.');continue;}
         if((result.data?.length??0)>=1000)warnings.push('Callback task history may be truncated; export for older records.');
         for(const task of result.data??[]){
@@ -160,6 +164,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
       if(followup.completed_at)items.push({icon:<CheckCircle2 size={12}/>,color:'#7dbfa0',
         description:'Follow-up completed · '+followup.task,actor:null,timestamp:followup.completed_at});
     }
+    if (currentRequest !== requestId.current) return;
     if(warnings.length)setHistoryWarning([...new Set(warnings)].join(' '));
 
     // Always show inquiry received
@@ -226,6 +231,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
     // Sort by timestamp descending
     items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
+    if (currentRequest !== requestId.current) return;
     setActivities(items);
     setAvailable(true);
     setLoading(false);
@@ -235,7 +241,8 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
     setVisibleLimit(25);
     setLoading(true);
     setAvailable(true);
-    fetchActivities();
+    void fetchActivities();
+    return () => { requestId.current += 1; };
   }, [leadId, createdAt, notesJson, refreshKey, fetchActivities]);
 
   if (!available) return null;
