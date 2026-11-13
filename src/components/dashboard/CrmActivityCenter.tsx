@@ -51,8 +51,8 @@ const matchesFilter=(e:DisplayActivity,filter:Filter)=>{
  const inactiveOpportunity=e.category==='opportunity'&&e.callback_status!=='ai';
  const teamUpdate=e.event_key.startsWith('staff:completed:')||e.event_key.startsWith('staff:claimed:');
  const auditOnly=Boolean(e.chat_lead_audit)||historicalChat||(teamUpdate&&Boolean(e.read_at));
- if(filter==='history')return Boolean(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity||(isStaffAudit(e)&&Boolean(e.read_at)));
- if(e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity||(isStaffAudit(e)&&Boolean(e.read_at)))return false;
+ if(filter==='history')return Boolean(e.event_key.startsWith('visitor:')||e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity||(isStaffAudit(e)&&Boolean(e.read_at)));
+ if(e.event_key.startsWith('visitor:')||e.archived_at||e.lead_archived||auditOnly||inactiveOpportunity||(isStaffAudit(e)&&Boolean(e.read_at)))return false;
  if(filter==='all')return e.category!=='staff'||isStaffAudit(e);
  // Only an active, unresolved escalation belongs to Urgent. Claiming it
  // does not clear urgency; recording a future follow-up resets escalation.
