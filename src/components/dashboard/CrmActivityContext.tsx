@@ -204,7 +204,6 @@ export function CrmActivityProvider({children}:{children:ReactNode}){
     rawEvents.push(...page);
    }
    const newest=await attachLeadStatuses(rawEvents);
-   const recent=newest;
    const rawPrefs=preferences.data as Partial<NotificationPrefs>|null;
    const baseline=defaults(email);
    const nextPrefs=rawPrefs?{
