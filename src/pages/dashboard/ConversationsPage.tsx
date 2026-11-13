@@ -509,9 +509,13 @@ export default function ConversationsPage() {
    if(error)throw error;
    if(data!==true)throw new Error('You are not the assigned agent. Refresh the conversation.');
    setReply('');setTranslatedDraft(null);
-   const result=await supabase.from('ai_conversation_messages').select('id,sender,body,translated_body,original_language,created_at,sender_actor,delivered_to_staff_at,read_by_staff_at,delivered_to_visitor_at,read_by_visitor_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(500);
-   if(result.error)throw result.error;
-   setMessages(((result.data??[]) as Message[]).reverse());
+   try {
+    const result=await supabase.from('ai_conversation_messages').select('id,sender,body,translated_body,original_language,created_at,sender_actor,delivered_to_staff_at,read_by_staff_at,delivered_to_visitor_at,read_by_visitor_at').eq('conversation_id',selected).order('created_at',{ascending:false}).limit(500);
+    if(result.error)throw result.error;
+    setMessages(((result.data??[]) as Message[]).reverse());
+   } catch {
+    setError('Message sent successfully, but the transcript could not refresh. Please refresh the conversation before sending again.');
+   }
   }catch(e){setError(e instanceof Error?e.message:'Unable to send');}finally{setActionBusy(false);}
  };
  const activeRequestKind=pendingTasks.find(t=>t.conversation_id===selected)?.request_kind??'live_chat';
