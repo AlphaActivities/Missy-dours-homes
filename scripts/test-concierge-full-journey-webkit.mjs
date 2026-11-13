@@ -491,6 +491,7 @@ try {
  await resume.waitFor({state:'visible'});
  await resume.click();
  await page.evaluate(()=>window.__testRecognition.onresult?.({results:[{0:{transcript:'with a garden'},isFinal:true}]}));
+ for(let attempt=0;attempt<30 && await composer.inputValue()!=='I am looking in Dallas with a garden';attempt++) await page.waitForTimeout(100);
  assert.equal(await composer.inputValue(),'I am looking in Dallas with a garden');
  await dialog.getByRole('button',{name:'Stop dictation and keep transcribed text'}).click();
  await resume.waitFor({state:'visible'});
