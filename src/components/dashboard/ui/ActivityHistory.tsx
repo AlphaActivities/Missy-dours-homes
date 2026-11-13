@@ -49,6 +49,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
   const [available, setAvailable] = useState(true);
 
   const fetchActivities = useCallback(async () => {
+    setHistoryWarning(null);
     const [activityResult, conversationsResult, followupsResult, consolidationsResult, contactsResult] = await Promise.all([
       supabase.from('lead_activities').select('*').eq('lead_id', leadId).order('created_at', { ascending: false }).limit(500),
       supabase.from('ai_conversations').select('id,title,started_at,last_message_at,status,opportunity_kind')
@@ -63,9 +64,8 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
     const {data,error}=activityResult;
 
     if (error) {
-      if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation')) {
-        setAvailable(false);
-      }
+      setHistoryWarning('Customer timeline could not be loaded. Please retry.');
+      setAvailable(true);
       setActivities([]);
       setLoading(false);
       return;
@@ -139,11 +139,13 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
           .select('id,conversation_id,created_at,completed_at,status,request_kind,assigned_to')
           .in('conversation_id',ids.slice(offset,offset+100));
         if(result.error){warnings.push('Callback task history could not be loaded.');continue;}
+        if((result.data?.length??0)>=1000)warnings.push('Callback task history may be truncated; export for older records.');
         for(const task of result.data??[]){
           const href='/dashboard/conversations?conversation='+encodeURIComponent(task.conversation_id);
+          const taskState=task.status==='completed'?'Completed':task.status==='cancelled'?'Cancelled':task.status==='claimed'?'Assigned':'Pending';
           items.push({icon:<Phone size={12}/>,color:'#e1ae83',category:'callback',
            description:(task.request_kind==='callback'?'Callback requested':'Human assistance requested')+
-            ' · '+(task.status==='completed'?'Completed':task.status==='claimed'?'Assigned':'Pending'),
+            ' · '+taskState,
            actor:task.assigned_to,timestamp:task.created_at,href});
           if(task.completed_at)items.push({icon:<CheckCircle2 size={12}/>,color:'#7dbfa0',category:'callback',
             description:'Callback task completed',actor:task.assigned_to,timestamp:task.completed_at,href});
@@ -237,7 +239,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
   }, [leadId, createdAt, notesJson, refreshKey, fetchActivities]);
 
   if (!available) return null;
-  if (loading) return null;
+  if (loading) return <p role="status" className="mt-2 text-xs text-[#bca68b]">Loading customer timeline…</p>;
 
   return (
     <div>
@@ -247,7 +249,7 @@ export default function ActivityHistory({ leadId, createdAt, notesJson, refreshK
         </p>
       </div>
 
-      {historyWarning&&<p role="status" className="mt-2 rounded-lg border border-amber-500/30 p-2 text-xs text-amber-200">{historyWarning}</p>}
+      {historyWarning&&<div role="alert" className="mt-2 rounded-lg border border-amber-500/30 p-2 text-xs text-amber-200">{historyWarning} <button type="button" className="ml-2 underline underline-offset-2" onClick={()=>{setLoading(true);void fetchActivities();}}>Retry</button></div>}
       <p className="mt-2 text-[11px] text-[#bca68b]">Original inquiry, staff actions, follow-ups, and linked chat history. Unlinked anonymous chats are not assigned to this customer.</p>
       <div className="mt-2 space-y-0.5">
         {activities.slice(0, visibleLimit).map((item, i) => (
