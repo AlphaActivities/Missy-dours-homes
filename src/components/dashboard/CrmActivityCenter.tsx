@@ -66,7 +66,7 @@ export default function CrmActivityCenter(){
  const [working,setWorking]=useState(false);
  const [notice,setNotice]=useState('');
  const [refreshing,setRefreshing]=useState(false);
- const refreshInbox=async()=>{if(refreshing)return;setRefreshing(true);try{await refresh();}finally{setRefreshing(false);}};
+ const refreshInbox=async()=>{if(refreshing)return;setRefreshing(true);try{await refresh();}catch(e){setNotice(e instanceof Error?e.message:'Unable to refresh notifications. Please retry.');}finally{setRefreshing(false);}};
  // Preserve each task and audit event, while showing one active card per
  // verified customer. Never infer identity from a matching name or phone.
  const activeEvents=useMemo<DisplayActivity[]>(()=>{
