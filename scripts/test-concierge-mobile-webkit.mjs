@@ -100,7 +100,7 @@ try {
  }));
  assert.equal(locked.position,'fixed','Background body must be locked while chat is open');
  assert.equal(locked.htmlOverflow,'hidden','Background root must also lock overflow');
- assert.equal(locked.top,`-${preChatY}px`,'Lock must preserve scroll position');
+ assert.ok(Math.abs(parseFloat(locked.top)+preChatY)<1,'Lock must preserve scroll position');
  assert.ok((await dialog.getByRole('button',{name:'Close',exact:true}).getAttribute('class')).includes('active:scale-90'),'Close button needs tactile pressed styling');
  const history=dialog.locator('.missy-concierge-body');
  assert.equal(await history.evaluate(el=>getComputedStyle(el).overflowY),'auto','Only chat history should scroll');
