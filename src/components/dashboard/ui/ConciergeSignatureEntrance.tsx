@@ -135,8 +135,7 @@ export default function ConciergeSignatureEntrance() {
      transition={{duration:FLIGHT_MS/1000,ease:[.22,1,.36,1]}}
      onAnimationComplete={()=>{if(phase==='fly')setPhase('leave');}}
      style={{transformOrigin:'center center',willChange:'transform,border-radius'}}>
-     <motion.img src="/images/md-logo.png" alt="Missy Dours" decoding="sync" loading="eager" fetchPriority="high"
-      className="block h-full w-full object-contain" animate={{scale:phase==='welcome'?1:target.innerScale}} transition={{duration:FLIGHT_MS/1000,ease:[.22,1,.36,1]}}/>
+     {/* TEMPORARY TEST: startup logo hidden; restore by reverting this commit. */}
      {/* Single cinematic champagne-gold glint, clipped to the logo card and completed before flight. */}
      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]" aria-hidden="true">
       <span className="crm-logo-sheen absolute left-0 top-0 h-[320px] w-[112px] bg-[linear-gradient(90deg,transparent_0%,rgba(255,223,143,.12)_19%,rgba(255,246,211,.88)_48%,rgba(255,203,89,.38)_64%,transparent_100%)] mix-blend-screen"/>
