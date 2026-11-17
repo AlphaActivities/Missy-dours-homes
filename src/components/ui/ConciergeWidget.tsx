@@ -813,10 +813,17 @@ export default function ConciergeWidget({ onOpenChange, privateQA = false, mobil
             <form onSubmit={e => {e.preventDefault();if(maySend&&!listening)sendMessage();}} className="flex items-end gap-2" aria-label="Message composer">
               <div ref={attachmentMenuRef} className="relative shrink-0">
                 <button type="button" onClick={()=>setAttachmentMenuOpen(opened=>!opened)} aria-label="Attachments" aria-expanded={attachmentMenuOpen} className="flex h-11 w-11 items-center justify-center rounded-full border border-[#99856b]/45 bg-[#302920] text-[#e4cba2] transition-colors hover:bg-[#453827] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#e4c58b]"><Plus size={24}/></button>
-                {attachmentMenuOpen && <div className="absolute bottom-[calc(100%+12px)] left-0 z-30 w-[min(290px,calc(100vw-40px))] rounded-2xl border border-[#b9945d]/40 bg-[#211c19] p-3 text-[#f0e5d4] shadow-[0_18px_45px_rgba(0,0,0,.55)]" role="group" aria-label="Attachment options">
-                  <button type="button" disabled={!mayUpload} onClick={()=>{setAttachmentMenuOpen(false);fileInputRef.current?.click();}} className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"><Paperclip size={20}/> Photos or files</button>
-                  <p className="mt-2 px-2 text-xs leading-relaxed text-[#c2ae8f]">{privateQA?'Owner-only QA: test uploads are permitted here before handoff.':'For privacy, attachments become available once you connect with Missy’s team.'}</p>
-                  <p className="mt-1 px-2 text-[11px] text-[#ab987f]">JPG, PNG, WEBP or PDF, up to 10 MB</p>
+                {attachmentMenuOpen && <div className="absolute bottom-[calc(100%+12px)] left-0 z-30 w-[min(290px,calc(100vw-40px))] rounded-2xl border border-[#b9945d]/45 bg-gradient-to-br from-[#292118] via-[#211a14] to-[#15110e] p-3.5 text-[#f0e5d4] shadow-[0_18px_45px_rgba(0,0,0,.55),inset_0_1px_0_rgba(255,232,185,.08)] backdrop-blur-xl" role="group" aria-label="Attachment options">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#b9945d]/40 bg-[#c8a56c]/10 text-[#e5c68c]"><Paperclip size={18} aria-hidden="true"/></span>
+                    <p className="text-[13px] font-semibold tracking-[.015em] text-[#f2ddb7]">Share Photos &amp; Documents</p>
+                  </div>
+                  {mayUpload ? (
+                    <button type="button" onClick={()=>{setAttachmentMenuOpen(false);fileInputRef.current?.click();}} className="mt-3 flex min-h-10 w-full items-center justify-center rounded-xl border border-[#d5b47b]/55 bg-[#c5a16a] px-3 py-2 text-[13px] font-semibold text-[#17110b] transition-[filter,transform] duration-150 hover:brightness-110 active:scale-[.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5d89a]">Choose a file</button>
+                  ) : (
+                    <p className="mt-2.5 text-xs leading-relaxed text-[#cdb896]">Available when Missy’s team joins the conversation.</p>
+                  )}
+                  <p className="mt-2 text-[11px] leading-snug text-[#a99679]">JPG, PNG, WEBP or PDF · Up to 10 MB</p>
                 </div>}
                 <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" aria-label="Choose a photo or document" className="sr-only" disabled={!mayUpload} onChange={e=>{const file=e.target.files?.[0];if(file)void uploadAttachment(file);e.target.value='';}}/>
               </div>
