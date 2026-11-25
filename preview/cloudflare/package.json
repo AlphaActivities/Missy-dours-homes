@@ -1,0 +1,12 @@
+{
+  "name": "private-dashboard-preview",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd ../.. && npm ci && npm run build"
+  },
+  "dependencies": {
+    "jose": "6.2.18",
+    "wrangler": "4.168.0"
+  }
+}
