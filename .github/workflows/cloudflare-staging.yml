@@ -27,8 +27,8 @@ jobs:
       - run: npm ci
       - name: Build with verified Missy database configuration
         env:
-          VITE_MISSY_SUPABASE_URL: ${{ secrets.VITE_MISSY_SUPABASE_URL || vars.VITE_MISSY_SUPABASE_URL }}
-          VITE_MISSY_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY || vars.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_MISSY_SUPABASE_URL: https://ddgpsvkmrnfeufepowog.supabase.co
+          VITE_MISSY_SUPABASE_PUBLISHABLE_KEY: sb_publishable_h7T4Vm89yQF9q1zAoSiZZQ_JZ-fUXD4
         run: |
           node -e 'const u=process.env.VITE_MISSY_SUPABASE_URL; const k=process.env.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY; if(u?.replace(/\/$/,"")!=="https://ddgpsvkmrnfeufepowog.supabase.co" || !k || !(k.startsWith("sb_publishable_") || k.split(".").length===3)) throw Error("Missing or invalid Missy staging database configuration"); if(k.split(".").length===3){const p=JSON.parse(Buffer.from(k.split(".")[1],"base64url")); if(p.ref!=="ddgpsvkmrnfeufepowog" || p.role!=="anon") throw Error("Incorrect Missy database key");}'
           npm run build
