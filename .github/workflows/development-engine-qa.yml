@@ -1,0 +1,41 @@
+name: Development Engine QA
+on:
+  push:
+    branches: [qa/development-engine]
+permissions:
+  contents: read
+concurrency:
+  group: development-engine-qa
+  cancel-in-progress: true
+jobs:
+  qa:
+    if: github.ref == 'refs/heads/qa/development-engine'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      CI: 'true'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser tools
+        run: |
+          mkdir -p "$RUNNER_TEMP/engine-results"
+          echo "QA_OUT=$RUNNER_TEMP/engine-results" >> "$GITHUB_ENV"
+          npm install --prefix "$RUNNER_TEMP/engine-tools" --no-audit --no-fund --no-save playwright@1.56.1
+          "$RUNNER_TEMP/engine-tools/node_modules/.bin/playwright" install --with-deps chromium
+          echo "QA_PLAYWRIGHT=$RUNNER_TEMP/engine-tools/node_modules/playwright" >> "$GITHUB_ENV"
+      - name: Build, validate, and test
+        run: node scripts/development-engine-qa.mjs
+      - name: Upload sanitized QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: development-engine-qa-${{ github.run_id }}
+          path: ${{ runner.temp }}/engine-results/
+          retention-days: 3
+          if-no-files-found: ignore
