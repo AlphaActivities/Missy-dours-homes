@@ -29,8 +29,10 @@ jobs:
         env:
           VITE_MISSY_SUPABASE_URL: https://ddgpsvkmrnfeufepowog.supabase.co
           VITE_MISSY_SUPABASE_PUBLISHABLE_KEY: sb_publishable_h7T4Vm89yQF9q1zAoSiZZQ_JZ-fUXD4
+          VITE_MISSY_VAPID_PUBLIC_KEY: BAgsIz_UaO6TtUK5pqV118-R_hOEHtbyu7jZKDMHg5sqVEHf_T90L1Z0BFI3LVEI9lX0lXGdJ_af4LeVLHEOxjU
         run: |
           node -e 'const u=process.env.VITE_MISSY_SUPABASE_URL; const k=process.env.VITE_MISSY_SUPABASE_PUBLISHABLE_KEY; if(u?.replace(/\/$/,"")!=="https://ddgpsvkmrnfeufepowog.supabase.co" || !k || !(k.startsWith("sb_publishable_") || k.split(".").length===3)) throw Error("Missing or invalid Missy staging database configuration"); if(k.split(".").length===3){const p=JSON.parse(Buffer.from(k.split(".")[1],"base64url")); if(p.ref!=="ddgpsvkmrnfeufepowog" || p.role!=="anon") throw Error("Incorrect Missy database key");}'
+          node -e 'const k=process.env.VITE_MISSY_VAPID_PUBLIC_KEY; if(!k || !/^B[A-Za-z0-9_-]{86}$/.test(k)) throw Error("Missing or invalid Missy public VAPID key")'
           npm run build
       - name: Validate staging target
         run: |
