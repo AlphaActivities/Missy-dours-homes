@@ -61,11 +61,23 @@ if (built) {
     command('npx', ['--no-install', 'wrangler', 'deploy', '--dry-run', '--config', 'wrangler.json'], staging)
   })
   await check('dependency security inventory', () => {
-    const audit = spawnSync('npm', ['audit', '--json', '--audit-level=high'], { encoding: 'utf8', timeout: 80_000, maxBuffer: 8 * 1024 * 1024 })
-    const counts = JSON.parse(audit.stdout ?? '').metadata?.vulnerabilities
-    assert(counts, 'Audit unavailable')
-    const countsOnly = Object.fromEntries(['info', 'low', 'moderate', 'high', 'critical'].map(key => [key, Number(counts[key] ?? 0)]))
-    return { advisoryCounts: countsOnly, needsReview: countsOnly.high + countsOnly.critical > 0 }
+    const inventories = []
+    for (const [scope, cwd, omit] of [['root-all', process.cwd(), false], ['root-production', process.cwd(), true], ['staging-all', staging, false], ['staging-production', staging, true]]) {
+      const audit = spawnSync('npm', ['audit', '--json', '--audit-level=high', ...(omit ? ['--omit=dev'] : [])], { cwd, encoding: 'utf8', timeout: 80_000, maxBuffer: 8 * 1024 * 1024 })
+      const report = JSON.parse(audit.stdout ?? '')
+      assert(!audit.error && report.metadata?.vulnerabilities && report.vulnerabilities && !report.error, 'Audit unavailable')
+      const counts = report.metadata.vulnerabilities
+      const advisoryCounts = Object.fromEntries(['info', 'low', 'moderate', 'high', 'critical'].map(key => [key, Number(counts[key] ?? 0)]))
+      const advisories = Object.entries(report.vulnerabilities).map(([name, item]) => ({
+        name, severity: item.severity, direct: item.isDirect, range: item.range,
+        via: item.via.map(v => typeof v === 'string' ? v : { source: v.source, name: v.name, severity: v.severity, range: v.range, url: /^https:\/\/github\.com\/advisories\/GHSA-[a-z0-9-]+$/i.test(v.url ?? '') ? v.url : undefined }),
+        fix: typeof item.fixAvailable === 'object' ? { name: item.fixAvailable.name, version: item.fixAvailable.version, isSemVerMajor: item.fixAvailable.isSemVerMajor } : item.fixAvailable
+      }))
+      const inventory = { scope, advisoryCounts, advisories }
+      inventories.push(inventory)
+      console.log('Security inventory', JSON.stringify(inventory))
+    }
+    return { advisoryCounts: inventories[0].advisoryCounts, inventories, needsReview: inventories.some(i => i.advisoryCounts.high + i.advisoryCounts.critical > 0) }
   })
   await check('Chromium responsive smoke', browserSmoke)
 } else {
