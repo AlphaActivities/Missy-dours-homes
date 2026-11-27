@@ -49,6 +49,23 @@ const workerSafe = await check('staging target guard', async () => {
   assert.equal(spec.keep_vars, true)
 })
 
+const request = JSON.parse(await readFile(resolve('.github/development-engine/request.json'), 'utf8'))
+assert(['complete-qa', 'dependency-repair-preview'].includes(request.profile), 'Unsupported QA profile')
+if (request.profile === 'dependency-repair-preview') {
+  const repaired = workerSafe && await check('compatible dependency repair preview', async () => {
+    const repair = spawnSync('npm', ['audit', 'fix', '--package-lock-only', '--ignore-scripts', '--no-fund', '--json'], { encoding: 'utf8', timeout: 180_000, maxBuffer: 12 * 1024 * 1024 })
+    assert(!repair.error && [0, 1].includes(repair.status), 'Repair unavailable')
+    const report = JSON.parse(repair.stdout ?? '')
+    assert(!report.error && report.audit?.metadata?.vulnerabilities, 'Repair report unavailable')
+    await writeFile(resolve(output, 'candidate-package.json'), await readFile(resolve('package.json'), 'utf8'))
+    await writeFile(resolve(output, 'candidate-package-lock.json'), await readFile(resolve('package-lock.json'), 'utf8'))
+    return { persistedToRepository: false, forcedMajorUpgrade: false, remaining: report.audit.metadata.vulnerabilities }
+  })
+  if (!repaired) {
+    await writeFile(resolve(output, 'summary.json'), JSON.stringify(result, null, 2))
+    process.exit(1)
+  }
+}
 const acquired = await check('locked staging dependencies', () => { command('npm', ['ci', '--no-audit', '--no-fund'], staging) })
 const built = acquired && workerSafe && await check('staging build and archive preparation', () => { command('npm', ['run', 'build'], staging) })
 if (built) {
