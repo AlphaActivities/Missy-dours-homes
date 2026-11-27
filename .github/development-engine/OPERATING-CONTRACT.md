@@ -13,3 +13,13 @@ Inspect current branch and blob SHA. Make the smallest authorized change. Use [s
 Use Work Chat only when connector capabilities prevent required execution or interactive configuration. Do not paste credentials into chat, logs or artifacts. If a credential was exposed, request separate rotation authorization.
 ## Acceptance
 All applicable checks must pass; unresolved advisories, untested authenticated flows and physical-device checks must be explicitly recorded. No production release is implied by QA success.
+
+## Isolated browser onboarding
+Use a reserved .invalid identity and a synthetic record factory. Test the sign in form against an explicit in-memory Auth response and assert fixture authorization on CRM API requests. Never put a hosted identity or password into this workflow.
+Map only the app's actual read and write endpoints and assert every expected mutation and reload. The runner serves loopback assets only, blocks service workers and WebSockets and sends other browser traffic to a closed proxy. All fixture requests are fulfilled by the harness. Missy's approval list is substituted on the loopback response only. It never changes app source or a deployment artifact.
+Check navigation, edits, save and reload at 390, 820 and 1440. Identify archive and restore as applicable or give the feature-specific reason. Physical push and real identity provider verification require a separate controlled environment.
+
+## Monitoring and evidence
+Use get_qa_run to find the exact run and compare its commit SHA against qa/development-engine. Open summary.json in the run's sanitized artifact. Confirm every applicable check and all three authenticated fixture rows, rather than relying on the green job badge.
+Review root and staging security inventories separately, noting critical, high and production findings. A dependency repair preview produces candidate manifest and lockfile artifacts for review only. Test compatible upgrades in isolation and keep changes on QA until release approval.
+Use get_staging_status to compare the expected staging workflow and its HTTP response. A Cloudflare Access redirect shows that the protected route responded. Track hosted sign in, device and integration acceptance separately. Record branch, commit, run ID, result and remaining owner decisions before closing a task. If output is stale, locate the exact run by commit before initiating another QA run.

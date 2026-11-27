@@ -1,4 +1,4 @@
 {
-  "request": "compatible-repair-preview-20261127",
-  "profile": "dependency-repair-preview"
+  "request": "authenticated-crm-fixture-20261127",
+  "profile": "complete-qa"
 }

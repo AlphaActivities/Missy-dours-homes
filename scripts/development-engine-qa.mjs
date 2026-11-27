@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { authenticatedFixture, fixtureEmail } from './authenticated-crm-fixture.mjs'
 import { spawnSync } from 'node:child_process'
 import { createServer } from 'node:http'
 import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
@@ -18,7 +19,7 @@ assert(config, 'Unsupported repository')
 const staging = resolve('preview/cloudflare')
 const output = resolve(process.env.QA_OUT ?? 'qa-results')
 await mkdir(output, { recursive: true })
-const result = { repository: repo, commit: process.env.GITHUB_SHA ?? null, worker: config.worker, profile: 'local build and signed-out browser', checks: [], browser: [] }
+const result = { repository: repo, commit: process.env.GITHUB_SHA ?? null, worker: config.worker, profile: 'isolated local build and synthetic browser', checks: [], browser: [], authenticatedBrowser: [] }
 
 async function check(name, operation) {
   try {
@@ -35,7 +36,13 @@ async function check(name, operation) {
 }
 
 function command(bin, args, cwd = process.cwd()) {
-  const run = spawnSync(bin, args, { cwd, encoding: 'utf8', maxBuffer: 12 * 1024 * 1024, timeout: 420_000 })
+  const run = spawnSync(bin, args, { cwd, env: {
+    ...process.env,
+    ...(repo === 'Missy-dours-homes' ? {
+      VITE_MISSY_SUPABASE_URL: 'https://crm-qa.invalid',
+      VITE_MISSY_SUPABASE_ANON_KEY: 'synthetic-browser-only'
+    } : {})
+  }, encoding: 'utf8', maxBuffer: 12 * 1024 * 1024, timeout: 420_000 })
   if (run.status !== 0) {
     throw Object.assign(new Error('QA command failed'), { qaCode: run.error?.code ?? 'nonzero_exit' })
   }
@@ -97,8 +104,9 @@ if (built) {
     return { advisoryCounts: inventories[0].advisoryCounts, inventories, needsReview: inventories.some(i => i.advisoryCounts.high + i.advisoryCounts.critical > 0) }
   })
   await check('Chromium responsive smoke', browserSmoke)
+  await check('Authenticated CRM fixture workflows', () => browserSmoke(true))
 } else {
-  for (const name of ['TypeScript', 'repository regression tests', 'Worker bundle dry run', 'dependency security inventory', 'Chromium responsive smoke']) {
+  for (const name of ['TypeScript', 'repository regression tests', 'Worker bundle dry run', 'dependency security inventory', 'Chromium responsive smoke', 'Authenticated CRM fixture workflows']) {
     result.checks.push({ name, status: 'skipped', reason: 'staging build unavailable' })
   }
 }
@@ -108,7 +116,8 @@ result.acceptance = {
   checksPassed: result.checks.filter(item => item.status === 'passed').length,
   checksFailed: result.checks.filter(item => item.status !== 'passed').length,
   securityReviewRequired: result.checks.some(item => item.needsReview === true),
-  authenticatedBrowserVerified: false,
+  authenticatedBrowserVerified: result.authenticatedBrowser.length === 3 && result.authenticatedBrowser.every(item => item.status === 'passed'),
+  liveHostedAuthenticationVerified: false,
   productionDeploymentAuthorized: false,
   releaseReady: false
 }
@@ -118,22 +127,27 @@ const summary = result.checks.map(item => '* ' + item.name + ' — ' + item.stat
 if (process.env.GITHUB_STEP_SUMMARY) await writeFile(process.env.GITHUB_STEP_SUMMARY, '## Development Engine QA\n\n' + summary + '\n', { flag: 'a' })
 if (result.checks.some(item => item.status !== 'passed')) process.exitCode = 1
 
-async function browserSmoke() {
+async function browserSmoke(authenticated = false) {
   const spec = JSON.parse(await readFile(resolve(staging, 'wrangler.json'), 'utf8'))
   const assets = config.embedded ? (await import(pathToFileURL(resolve(staging, 'baseline/worker/assets.mjs')))).assets : null
   const directory = assets ? null : await realpath(resolve(staging, spec.assets.directory))
   const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.mjs': 'text/javascript', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.ico': 'image/x-icon' }
-  const allowedPaths = new Set([config.page, config.fallback, '/admin/', '/admin', '/admin/index.html', '/admin/login/', '/dashboard/login'].filter(Boolean))
+  const fixtureRoutes = ['/admin/leads/', '/admin/leads', '/dashboard/leads', '/admin/queue', '/admin/history']
+  const fixtureApproval = config.fallback
+    ? (await readFile('src/contexts/AuthContext.tsx', 'utf8')).match(/const APPROVED_EMAILS = \[([\s\S]*?)\];/)?.[1].match(/'([^']+)'/g)?.map(entry => entry.slice(1, -1))
+    : null
+  if (config.fallback) assert(fixtureApproval?.length, 'QA identity map unavailable')
+  const allowedPaths = new Set([...fixtureRoutes, config.page, config.fallback, '/admin/', '/admin', '/admin/index.html', '/admin/login/', '/dashboard/login'].filter(Boolean))
   const server = createServer(async (request, response) => {
     try {
       const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname)
-      if (pathname.startsWith('/api/') || (!extname(pathname) && !allowedPaths.has(pathname))) {
+      if (request.method !== 'GET' || pathname.startsWith('/api/') || (!extname(pathname) && !allowedPaths.has(pathname) && !(assets && /^\/admin\/leads\/[a-f0-9-]+$/.test(pathname)))) {
         response.writeHead(404).end()
         return
       }
-      const candidate = pathname.endsWith('/') ? pathname + 'index.html' : pathname
+      const candidate = pathname.endsWith('/') ? pathname + 'index.html' : pathname === '/admin/leads' ? pathname + '/index.html' : pathname
       if (assets) {
-        const entry = assets[pathname] ?? assets[candidate] ?? (allowedPaths.has(pathname) ? assets['/admin/index.html'] : null)
+        const entry = assets[pathname] ?? assets[candidate] ?? (pathname.startsWith('/admin/') ? assets['/admin/index.html'] : null)
         if (!entry) return void response.writeHead(404).end()
         response.writeHead(200, { 'content-type': entry[0] }).end(Buffer.from(entry[1], 'base64'))
         return
@@ -141,7 +155,13 @@ async function browserSmoke() {
       const target = allowedPaths.has(pathname) && config.fallback ? config.fallback : candidate
       const file = await realpath(resolve(directory, '.' + target))
       if (!file.startsWith(directory + sep)) return void response.writeHead(404).end()
-      response.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream' }).end(await readFile(file))
+      let data = await readFile(file)
+      if (fixtureApproval && request.headers['x-engine-fixture'] === '1' && extname(file) === '.js') {
+        // Replace the approval list in the loopback response only. The build on disk remains unchanged.
+        const original = JSON.stringify(fixtureApproval)
+        data = data.toString('utf8').replace(original, JSON.stringify([fixtureEmail]))
+      }
+      response.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream' }).end(data)
     } catch {
       response.writeHead(404).end()
     }
@@ -154,7 +174,23 @@ async function browserSmoke() {
     const customChromium = process.env.QA_CHROMIUM
       ? (await import(pathToFileURL(process.env.QA_CHROMIUM))).default
       : null
-    browser = await chromium.launch(customChromium ? { executablePath: await customChromium.executablePath(), args: customChromium.args } : {})
+    browser = await chromium.launch({
+      executablePath: customChromium ? await customChromium.executablePath() : undefined,
+      args: [...(customChromium?.args ?? []).filter(arg => arg !== '--disable-web-security'), '--proxy-server=http://127.0.0.1:1', '--disable-quic']
+    })
+    if (authenticated) {
+      for (const width of [390, 820, 1440]) {
+        try {
+          const evidence = await authenticatedFixture(browser, origin, repo, config.page, width, process.env.QA_LOCAL_DEBUG === '1')
+          result.authenticatedBrowser.push({ ...evidence, status: 'passed' })
+        } catch (error) {
+          if (process.env.QA_LOCAL_DEBUG === '1') console.error(error.message)
+          result.authenticatedBrowser.push({ width, status: 'failed' })
+        }
+      }
+      assert(result.authenticatedBrowser.every(item => item.status === 'passed'))
+      return
+    }
     for (const width of [390, 820, 1440]) {
       const metrics = { width, status: 'failed', consoleErrors: 0, pageErrors: 0, localNetworkErrors: 0, blockingNetworkErrors: 0, failedResourceTypes: {}, externalRequestsBlocked: 0 }
       result.browser.push(metrics)
