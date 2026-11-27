@@ -103,6 +103,16 @@ if (built) {
   }
 }
 
+result.acceptance = {
+  profile: request.profile,
+  checksPassed: result.checks.filter(item => item.status === 'passed').length,
+  checksFailed: result.checks.filter(item => item.status !== 'passed').length,
+  securityReviewRequired: result.checks.some(item => item.needsReview === true),
+  authenticatedBrowserVerified: false,
+  productionDeploymentAuthorized: false,
+  releaseReady: false
+}
+console.log('Engine acceptance', JSON.stringify(result.acceptance))
 await writeFile(resolve(output, 'summary.json'), JSON.stringify(result, null, 2) + '\n')
 const summary = result.checks.map(item => '* ' + item.name + ' — ' + item.status + (item.needsReview ? ' (security advisories require review)' : '')).join('\n')
 if (process.env.GITHUB_STEP_SUMMARY) await writeFile(process.env.GITHUB_STEP_SUMMARY, '## Development Engine QA\n\n' + summary + '\n', { flag: 'a' })
