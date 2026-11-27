@@ -1,1 +1,4 @@
-{"request":"initial-verification","profile":"complete-qa"}
+{
+  "request": "compatible-repair-preview-20261127",
+  "profile": "dependency-repair-preview"
+}
