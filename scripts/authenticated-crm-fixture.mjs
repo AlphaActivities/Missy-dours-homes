@@ -26,7 +26,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
   const notes = []
   const save = () => storage?.save({
     status: lead.status,
-    archived: lead.archived || lead.status === 'archived',
+    archived: lead.status === 'archived',
     followUp: lead.follow_up_at,
     privateNotes: lead.notes,
     events: [...notes],
