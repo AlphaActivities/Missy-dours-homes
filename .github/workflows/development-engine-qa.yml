@@ -66,6 +66,16 @@ jobs:
           assert.equal(saved.title,'Synthetic edited'); assert.equal(saved.archived,true);
           await db(filter,'PATCH',{archived:false});
           [saved]=await db(filter); assert.equal(saved.archived,false);
+          await db(filter,'PATCH',{status:'quoted'});
+          [saved]=await db(filter); assert.equal(saved.status,'quoted');
+          for(const other of ['mike','juan','missy','darcy'].filter(x=>x!=='missy')) {
+            const h={...headers,'Accept-Profile':'qa_'+other,'Content-Profile':'qa_'+other};
+            const read=await request(endpoint,{headers:h});
+            assert.ok(read.ok); assert.deepEqual(await read.json(),[]);
+            const write=await request(endpoint,{method:'POST',headers:h,body:JSON.stringify({title:'Denied isolation probe'})});
+            assert.equal(write.status,403);
+          }
+          console.log('Status transition and three cross-client isolation checks passed');
           console.log('Isolated authentication, create, edit, reload, archive and restore passed');
           JS
       - name: Upload sanitized QA evidence
