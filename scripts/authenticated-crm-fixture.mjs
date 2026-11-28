@@ -28,7 +28,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
   let stage = 'login_form'
   const actions = []
   const blocked = []
-  const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: 'block', reducedMotion: 'reduce', timezoneId: 'UTC' })
+  const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: 'block', reducedMotion: 'reduce', timezoneId: 'UTC', locale: 'en-US' })
   try {
     if (debug) console.error('Authenticated fixture viewport', width)
     await context.routeWebSocket('**/*', socket => socket.close())
@@ -250,10 +250,10 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
             && response.request().postDataJSON()?.notes?.includes(note), { timeout: 9_000 }),
           button(dialog, 'Save note').press('Enter')
         ])
-        await wait(dialog.getByText(note, { exact: true }))
+        await wait(dialog.getByText(note, { exact: true }).first())
         await page.reload()
         await open()
-        await wait(dialog.getByText(note, { exact: true }))
+        await wait(dialog.getByText(note, { exact: true }).first())
         stage = 'change_status'
         await pickStatus('Contacted')
         await page.reload()
