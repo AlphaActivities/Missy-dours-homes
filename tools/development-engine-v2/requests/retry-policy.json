@@ -1,0 +1,6 @@
+{
+  "client": "missy",
+  "kind": "set-development-retry-limit",
+  "base": "04c097e188833f8efd9820158994fcdf0609d4a3c4f66d3fa9c49f3ed803bf7d",
+  "maximumAttempts": 3
+}

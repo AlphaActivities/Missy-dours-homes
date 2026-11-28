@@ -1,0 +1,93 @@
+name: V2 client development code acceptance
+on:
+  push:
+    branches: [dev/development-engine-v2]
+    paths: [tools/development-engine-v2/requests/retry-policy.json]
+permissions: {}
+concurrency:
+  group: development-engine-v2-client-execution
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'AlphaActivities/Missy-dours-homes' && github.ref == 'refs/heads/dev/development-engine-v2'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: read
+    outputs:
+      candidate: ${{ steps.prepare.outputs.candidate }}
+      request: ${{ steps.prepare.outputs.request }}
+      base: ${{ steps.prepare.outputs.base }}
+      recovered: ${{ steps.prepare.outputs.recovered }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify assignment policy and exact candidate
+        id: prepare
+        run: |
+          set -eu
+          dir=tools/development-engine-v2
+          request=$dir/requests/retry-policy.json
+          target=$dir/development-retry-policy.mjs
+          candidate=$RUNNER_TEMP/v2-retry-policy.mjs
+          ref=refs/heads/dev/development-engine-v2-code-results
+          existing=$(git ls-remote origin "$ref")
+          if [ -n "$existing" ]; then
+            git fetch --no-tags origin "$ref"
+            base=$(git rev-parse FETCH_HEAD)
+          else
+            base=$GITHUB_SHA
+          fi
+          request_hash=$(sha256sum "$request" | cut -d' ' -f1)
+          report="$dir/reports/$request_hash.json"
+          if git cat-file -e "$base:$report" 2>/dev/null; then
+            previous=$(git show "$base:$report" | jq -er --arg hash "$request_hash" 'select(.request == $hash and .status == "verified") | .candidate')
+            published=$(git show "$base:$target" | sha256sum | cut -d' ' -f1)
+            [ "$published" = "$previous" ]
+            echo "Previously verified result recovered at $base"
+            echo 'recovered=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo 'recovered=false' >> "$GITHUB_OUTPUT"
+          git show "$base:$target" > "$RUNNER_TEMP/v2-baseline.md"
+          node "$dir/prepare-retry-policy.mjs" "$request" "$candidate" "$RUNNER_TEMP/v2-baseline.md"
+          node "$dir/verify-retry-policy.mjs" "$request" "$candidate" "$RUNNER_TEMP/v2-baseline.md"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "candidate=$(sha256sum "$candidate" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "request=$(sha256sum "$request" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+  publish:
+    needs: verify
+    if: needs.verify.outputs.recovered == 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild candidate without a write credential
+        env:
+          VERIFIED_BASE: ${{ needs.verify.outputs.base }}
+        run: |
+          set -eu
+          [[ "$VERIFIED_BASE" =~ ^[a-f0-9]{40}$ ]]
+          if [ "$VERIFIED_BASE" != "$GITHUB_SHA" ]; then
+            git fetch --no-tags origin "$VERIFIED_BASE"
+          fi
+          dir=tools/development-engine-v2
+          git show "$VERIFIED_BASE:$dir/development-retry-policy.mjs" > "$RUNNER_TEMP/v2-baseline.md"
+          node "$dir/prepare-retry-policy.mjs" "$dir/requests/retry-policy.json" "$RUNNER_TEMP/v2-retry-policy.mjs" "$RUNNER_TEMP/v2-baseline.md"
+      - name: Publish and read back the verified result
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_HASH: ${{ needs.verify.outputs.candidate }}
+          REQUEST_HASH: ${{ needs.verify.outputs.request }}
+        run: bash tools/development-engine-v2/publish-retry-policy.sh
