@@ -31,6 +31,43 @@ jobs:
           echo "QA_PLAYWRIGHT=$RUNNER_TEMP/engine-tools/node_modules/playwright" >> "$GITHUB_ENV"
       - name: Build, validate, and test
         run: node scripts/development-engine-qa.mjs
+      - name: Verify isolated Supabase authentication and persistence
+        env:
+          QA_EMAIL: ${{ secrets.QA_EMAIL }}
+          QA_PASSWORD: ${{ secrets.QA_PASSWORD }}
+          QA_SUPABASE_URL: ${{ secrets.QA_SUPABASE_URL }}
+          QA_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.QA_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const e = process.env;
+          const base = 'https://zkmpjxqalntloinlaxmh.supabase.co';
+          if (e.QA_SUPABASE_URL !== base || e.QA_EMAIL !== 'qa.missy@example.invalid' || !e.QA_PASSWORD || !e.QA_SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_')) throw Error('QA configuration rejected');
+          const key = e.QA_SUPABASE_PUBLISHABLE_KEY;
+          async function request(path, options={}) {
+            return fetch(base+path,{...options,redirect:'error',signal:AbortSignal.timeout(20000),headers:{apikey:key,'Content-Type':'application/json',...options.headers}});
+          }
+          const login = await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:e.QA_EMAIL,password:e.QA_PASSWORD})});
+          if (!login.ok) throw Error('QA login HTTP '+login.status);
+          const session = await login.json();
+          if (session.user?.email !== e.QA_EMAIL || !session.access_token) throw Error('QA identity mismatch');
+          const headers = {Authorization:'Bearer '+session.access_token,'Accept-Profile':'qa_missy','Content-Profile':'qa_missy',Prefer:'return=representation'};
+          const endpoint='/rest/v1/persistence_fixture';
+          async function db(path,method='GET',body) {
+            const res=await request(endpoint+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body)});
+            if(!res.ok) throw Error('QA database HTTP '+res.status);
+            return res.json();
+          }
+          const [row]=await db('', 'POST',{title:'Synthetic QA '+e.GITHUB_RUN_ID});
+          assert.equal(row.owner_id,session.user.id);
+          const filter='?id=eq.'+encodeURIComponent(row.id);
+          await db(filter,'PATCH',{title:'Synthetic edited',status:'new',archived:true});
+          let [saved]=await db(filter);
+          assert.equal(saved.title,'Synthetic edited'); assert.equal(saved.archived,true);
+          await db(filter,'PATCH',{archived:false});
+          [saved]=await db(filter); assert.equal(saved.archived,false);
+          console.log('Isolated authentication, create, edit, reload, archive and restore passed');
+          JS
       - name: Upload sanitized QA evidence
         if: always()
         uses: actions/upload-artifact@v4
