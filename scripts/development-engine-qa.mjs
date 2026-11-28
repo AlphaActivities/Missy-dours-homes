@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { hostedFixtureStore } from './hosted-fixture-store.mjs'
 import { authenticatedFixture, fixtureEmail } from './authenticated-crm-fixture.mjs'
 import { spawnSync } from 'node:child_process'
 import { createServer } from 'node:http'
@@ -49,6 +50,14 @@ function command(bin, args, cwd = process.cwd()) {
   return run.stdout
 }
 
+if (process.argv.includes('--hosted-browser')) {
+  assert.equal(process.env.GITHUB_REF, 'refs/heads/qa/development-engine')
+  const passed = await check('Browser actions persist in isolated Supabase', () => browserSmoke(true, true))
+  await writeFile(resolve(output, 'hosted-browser.json'), JSON.stringify({
+    commit: result.commit, passed, applicationApi: 'fixture adapter', browser: result.authenticatedBrowser
+  }, null, 2) + '\n')
+  if (!passed) process.exitCode = 1
+} else {
 const workerSafe = await check('staging target guard', async () => {
   const spec = JSON.parse(await readFile(resolve(staging, 'wrangler.json'), 'utf8'))
   assert.equal(spec.name, config.worker)
@@ -127,7 +136,9 @@ const summary = result.checks.map(item => '* ' + item.name + ' — ' + item.stat
 if (process.env.GITHUB_STEP_SUMMARY) await writeFile(process.env.GITHUB_STEP_SUMMARY, '## Development Engine QA\n\n' + summary + '\n', { flag: 'a' })
 if (result.checks.some(item => item.status !== 'passed')) process.exitCode = 1
 
-async function browserSmoke(authenticated = false) {
+}
+
+async function browserSmoke(authenticated = false, hosted = false) {
   const spec = JSON.parse(await readFile(resolve(staging, 'wrangler.json'), 'utf8'))
   const assets = config.embedded ? (await import(pathToFileURL(resolve(staging, 'baseline/worker/assets.mjs')))).assets : null
   const directory = assets ? null : await realpath(resolve(staging, spec.assets.directory))
@@ -181,7 +192,7 @@ async function browserSmoke(authenticated = false) {
     if (authenticated) {
       for (const width of [390, 820, 1440]) {
         try {
-          const evidence = await authenticatedFixture(browser, origin, repo, config.page, width, process.env.QA_LOCAL_DEBUG === '1')
+          const evidence = await authenticatedFixture(browser, origin, repo, config.page, width, !hosted && process.env.QA_LOCAL_DEBUG === '1', hosted ? hostedFixtureStore('missy', width) : undefined)
           result.authenticatedBrowser.push({ ...evidence, status: 'passed' })
         } catch (error) {
           if (process.env.QA_LOCAL_DEBUG === '1') console.error(error.message)

@@ -12,7 +12,7 @@ const profile = { id: actorId, auth_user_id: actorId, user_id: actorId, display_
 const token = ['{"alg":"HS256","typ":"JWT"}', JSON.stringify({ sub: actorId, exp: 2147483647, role: 'authenticated' })].map(value => Buffer.from(value).toString('base64url')).join('.') + '.fixture'
 const auth = { access_token: token, refresh_token: 'synthetic-refresh', expires_in: 3600, token_type: 'bearer', user }
 
-export async function authenticatedFixture(browser, origin, client, initialPage, width, debug) {
+export async function authenticatedFixture(browser, origin, client, initialPage, width, debug, storage) {
   const mike = client === 'aksarbenlocksmiths'
   const juan = client === 'Rodents-Extermination'
   const darcy = client === 'Pulse-of-divinity'
@@ -24,6 +24,25 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
     conversation: [], interest: 'Artwork', inquiry_type: 'general', archived_at: null
   }
   const notes = []
+  const save = () => storage?.save({
+    status: lead.status,
+    archived: lead.archived || lead.status === 'archived',
+    followUp: lead.follow_up_at,
+    privateNotes: lead.notes,
+    events: [...notes],
+    version: lead.version
+  })
+  async function hydrate() {
+    if (!storage) return
+    const row = await storage.read()
+    lead.status = row.status
+    lead.archived = row.archived
+    lead.archived_at = row.archived ? timestamp : null
+    lead.follow_up_at = row.followUp ?? null
+    lead.notes = row.privateNotes ?? ''
+    lead.version = row.version ?? 1
+    notes.splice(0, notes.length, ...(row.events ?? []))
+  }
   let authenticated = false
   let stage = 'login_form'
   const actions = []
@@ -32,7 +51,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
   try {
     if (debug) console.error('Authenticated fixture viewport', width)
     await context.routeWebSocket('**/*', socket => socket.close())
-    await context.route('**/*', async route => {
+    const handleRoute = async route => {
       const req = route.request()
       const url = new URL(req.url())
       const path = url.pathname
@@ -60,6 +79,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
       if ((mike && endpoint === 'login') || path === '/auth/v1/token') {
         const input = req.postDataJSON()
         if (method !== 'POST' || input.email !== fixtureEmail || input.password !== fixturePassword) return json({ error: 'fixture identity rejected' }, 401)
+        await storage?.login(lead.status)
         authenticated = true
         actions.push('login')
         return json(mike ? { role: 'staff' } : auth)
@@ -74,7 +94,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
         if (get && endpoint === 'attention') return json({ attention: 0 })
         if (get && endpoint === 'notifications') return json({ attention: 0, active: [], history: [] })
         if (path === '/api/crm/leads/' + recordId) {
-          if (get) return json({ lead, events: notes })
+          if (get) { await hydrate(); return json({ lead, events: notes }) }
           if (method === 'POST') {
             const input = req.postDataJSON()
             if (input.action === 'booked') { lead.status = 'booked'; actions.push('status') }
@@ -83,6 +103,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
               actions.push('edit')
             }
             lead.version++
+            await save()
             return json(lead)
           }
         }
@@ -94,10 +115,11 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
       if (get && ['get-me', 'admins'].includes(endpoint)) return json(profile)
       if (get && endpoint === 'dashboard-summary') return json({ summary: {}, recent: [], attention: [], upcoming: [] })
       if (get && endpoint === 'list-leads') {
+        await hydrate()
         const rows = lead.archived === (url.searchParams.get('scope') === 'archived') ? [lead] : []
         return json({ leads: rows, total: rows.length, page: 1, page_size: 25, total_pages: 1 })
       }
-      if (get && endpoint === 'get-lead' && url.searchParams.get('id') === recordId) return json(lead)
+      if (get && endpoint === 'get-lead' && url.searchParams.get('id') === recordId) { await hydrate(); return json(lead) }
       if (path === '/functions/v1/update-lead' && method === 'POST') {
         const input = req.postDataJSON()
         if (input.id !== recordId) return json({}, 404)
@@ -108,10 +130,12 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
           actions.push(input.archived ? 'archive' : 'restore')
         }
         if (input.follow_up_at) { lead.follow_up_at = input.follow_up_at; actions.push('edit') }
+        await save()
         return json(lead)
       }
       if (endpoint === 'leads') {
         if (get || method === 'HEAD') {
+          await hydrate()
           const status = url.searchParams.get('status')
           const rows = !status || (status.startsWith('eq.') && lead.status === status.slice(3)) || (status.startsWith('neq.') && lead.status !== status.slice(4)) ? [lead] : []
           const single = req.headers().accept?.includes('vnd.pgrst.object')
@@ -131,6 +155,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
             actions.push('edit')
           }
           if (input.follow_up_at) { lead.follow_up_at = input.follow_up_at; actions.push('edit') }
+          await save()
           if (url.searchParams.has('select')) return json([lead], 200, { 'content-range': '0-0/1' })
           return route.fulfill({ status: 204, headers: { 'content-range': '*/1', 'access-control-allow-origin': origin, 'access-control-expose-headers': 'content-range' } })
         }
@@ -141,6 +166,15 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
       }
       if (get || (method === 'POST' && ['/rest/v1/rpc/crm_activity_totals', '/rest/v1/rpc/crm_review_phone_lead_candidates'].includes(path))) return json([])
       return blockedRequest()
+    }
+    let pending = Promise.resolve()
+    let routeFailed = false
+    await context.route('**/*', route => {
+      pending = pending.then(() => handleRoute(route)).catch(async () => {
+        routeFailed = true
+        await route.abort().catch(() => {})
+      })
+      return pending
     })
 
     const page = await context.newPage()
@@ -227,14 +261,18 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
         const archive = button(page, 'Archive')
         if (await archive.isVisible()) await archive.click()
         else await select(/^Archived?$/)
-        await page.getByRole('dialog', { name: 'Archive confirmation' }).getByRole('button', { name: /^Archive( Lead)?$/ }).click()
+        const archiveResponse = value => page.waitForResponse(response => response.ok()
+          && response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/update-lead')
+          && response.request().postDataJSON()?.archived === value, { timeout: 15_000 })
+        await Promise.all([archiveResponse(true), page.getByRole('dialog', { name: 'Archive confirmation' })
+          .getByRole('button', { name: /^Archive( Lead)?$/ }).click()])
         await page.reload()
         await page.getByRole('tab', { name: /^Archived/ }).click()
         await open()
         assert.match(await status.innerText(), /Archived/)
         const restore = button(page, 'Restore')
-        if (await restore.isVisible()) await restore.click()
-        else await select('Restore')
+        const restoreVisible = await restore.isVisible()
+        await Promise.all([archiveResponse(false), restoreVisible ? restore.click() : select('Restore')])
       } else {
         const dialog = page.getByRole('dialog', { name: 'Lead: ' + name })
         const pickStatus = async label => {
@@ -279,7 +317,10 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
     for (const action of ['login', 'edit', 'status', ...(mike ? [] : ['archive', 'restore'])]) assert(actions.includes(action), 'Fixture action missing: ' + action)
     assert.deepEqual(blocked, [], 'A write outside the fixture allowlist was blocked')
     assert.deepEqual(pageErrors, [], 'CRM browser runtime raised an exception')
-    return { width, identity: 'synthetic', login: true, navigation: true, editing: true, savedAfterReload: true, statusChange: true, archiveRestore: mike ? 'not_applicable_history_is_read_only' : true }
+    assert(!routeFailed, 'Fixture request failed')
+    const hosted = storage?.evidence()
+    if (hosted) assert(hosted.writes >= (mike ? 1 : 3) && hosted.independentReads > hosted.writes)
+    return { hosted, width, identity: 'synthetic', login: true, navigation: true, editing: true, savedAfterReload: true, statusChange: true, archiveRestore: mike ? 'not_applicable_history_is_read_only' : true }
   } catch (error) {
     if (debug && context.pages()[0]) console.error((await context.pages()[0].locator('body').ariaSnapshot()).slice(-4200))
     throw Object.assign(error, { qaStage: stage })
