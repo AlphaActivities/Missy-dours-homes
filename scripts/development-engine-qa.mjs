@@ -169,8 +169,11 @@ async function browserSmoke(authenticated = false, hosted = false) {
       let data = await readFile(file)
       if (fixtureApproval && request.headers['x-engine-fixture'] === '1' && extname(file) === '.js') {
         // Replace the approval list in the loopback response only. The build on disk remains unchanged.
-        const original = JSON.stringify(fixtureApproval)
-        data = data.toString('utf8').replace(original, JSON.stringify([fixtureEmail])).replaceAll('https://crm-qa.invalid', origin)
+        const code = data.toString('utf8')
+        const serialized = ['"', "'", String.fromCharCode(96)].map(quote =>
+          '[' + fixtureApproval.map(email => quote + email + quote).join(',') + ']')
+        const original = serialized.find(candidate => code.includes(candidate))
+        data = (original ? code.replace(original, JSON.stringify([fixtureEmail])) : code).replaceAll('https://crm-qa.invalid', origin)
       }
       response.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream' }).end(data)
     } catch {
