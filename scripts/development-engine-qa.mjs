@@ -159,7 +159,7 @@ async function browserSmoke(authenticated = false) {
       if (fixtureApproval && request.headers['x-engine-fixture'] === '1' && extname(file) === '.js') {
         // Replace the approval list in the loopback response only. The build on disk remains unchanged.
         const original = JSON.stringify(fixtureApproval)
-        data = data.toString('utf8').replace(original, JSON.stringify([fixtureEmail]))
+        data = data.toString('utf8').replace(original, JSON.stringify([fixtureEmail])).replaceAll('https://crm-qa.invalid', origin)
       }
       response.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream' }).end(data)
     } catch {
@@ -185,7 +185,8 @@ async function browserSmoke(authenticated = false) {
           result.authenticatedBrowser.push({ ...evidence, status: 'passed' })
         } catch (error) {
           if (process.env.QA_LOCAL_DEBUG === '1') console.error(error.message)
-          result.authenticatedBrowser.push({ width, status: 'failed' })
+          result.authenticatedBrowser.push({ width, status: 'failed', stage: error.qaStage ?? 'setup' })
+          console.log('Authenticated fixture failed', width, error.qaStage ?? 'setup')
         }
       }
       assert(result.authenticatedBrowser.every(item => item.status === 'passed'))

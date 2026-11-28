@@ -25,6 +25,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
   }
   const notes = []
   let authenticated = false
+  let stage = 'login_form'
   const actions = []
   const blocked = []
   const context = await browser.newContext({ viewport: { width, height: 900 }, serviceWorkers: 'block', reducedMotion: 'reduce', timezoneId: 'UTC' })
@@ -43,15 +44,15 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
         if (!get && !['HEAD', 'OPTIONS'].includes(method)) blocked.push(method)
         return route.fulfill({ status: 204 })
       }
-      if (url.origin === origin && get && !path.startsWith('/api/')) {
+      const fixtureApi = url.origin === origin && ['/auth/v1/', '/rest/v1/'].some(prefix => path.startsWith(prefix))
+      if (url.origin === origin && get && !path.startsWith('/api/') && !fixtureApi) {
         return route.continue({ headers: { ...req.headers(), 'x-engine-fixture': '1' } })
       }
       const fixtureHosts = {
         'Rodents-Extermination': 'nlqsvzbtbspflyozrvds.supabase.co',
-        'Pulse-of-divinity': 'fxxrkwitncaraotvkyte.supabase.co',
-        'Missy-dours-homes': 'crm-qa.invalid'
+        'Pulse-of-divinity': 'fxxrkwitncaraotvkyte.supabase.co'
       }
-      const supabase = url.hostname === fixtureHosts[client]
+      const supabase = fixtureApi || url.hostname === fixtureHosts[client]
       if (!(url.origin === origin && path.startsWith('/api/crm/') && mike) && !supabase) return blockedRequest()
       if (method === 'OPTIONS') return json({}, 200, { 'access-control-allow-methods': 'GET, POST, PATCH, OPTIONS' })
       const endpoint = path.split('/').at(-1)
@@ -150,6 +151,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
     await page.locator('input[type=email]').fill(fixtureEmail)
     await page.locator('input[type=password]').fill(fixturePassword)
     await page.getByRole('button', { name: /^(sign in|log in)$/i }).click()
+    stage = 'authenticate'
     if (debug) page.on('console', message => { if (message.type() === 'error') console.error(message.text().slice(0, 240)) })
     const wait = locator => locator.waitFor({ state: 'visible' })
     const button = (root, label) => root.getByRole('button', { name: label, exact: true })
@@ -177,6 +179,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
       await wait(page.locator('dd').filter({ hasText: /^booked$/ }))
     } else {
       await page.locator('input[type=password]').waitFor({ state: 'hidden' })
+      stage = 'navigate_leads'
       const listing = juan || darcy ? '/admin/leads/' : '/dashboard/leads'
       if (darcy) {
         await button(page, 'View All Leads').click()
@@ -240,6 +243,7 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
           await savePatch(page.getByRole('option', { name: label, exact: true }), 'status', label.toLowerCase())
           await wait(button(dialog, label))
         }
+        stage = 'save_note'
         await dialog.getByPlaceholder('Add a private note…').fill(note)
         await Promise.all([
           page.waitForResponse(response => response.ok() && response.request().method() === 'PATCH'
@@ -250,30 +254,35 @@ export async function authenticatedFixture(browser, origin, client, initialPage,
         await page.reload()
         await open()
         await wait(dialog.getByText(note, { exact: true }))
+        stage = 'change_status'
         await pickStatus('Contacted')
         await page.reload()
         await open()
         await wait(button(dialog, 'Contacted'))
+        stage = 'archive_lead'
         await pickStatus('Archived')
         await page.reload()
         await button(page, 'Archived').click()
         await open()
         await wait(button(dialog, 'Archived'))
+        stage = 'restore_lead'
         await pickStatus('Contacted')
       }
+      stage = 'reload_restored_lead'
       await page.reload()
       if (darcy) await page.getByRole('tab', { name: 'All Active', exact: true }).click()
       else await button(page, 'All').click()
       await open()
       assert.equal(lead.archived || lead.status === 'archived', false)
     }
+    stage = 'verify_fixture_isolation'
     for (const action of ['login', 'edit', 'status', ...(mike ? [] : ['archive', 'restore'])]) assert(actions.includes(action), 'Fixture action missing: ' + action)
     assert.deepEqual(blocked, [], 'A write outside the fixture allowlist was blocked')
     assert.deepEqual(pageErrors, [], 'CRM browser runtime raised an exception')
     return { width, identity: 'synthetic', login: true, navigation: true, editing: true, savedAfterReload: true, statusChange: true, archiveRestore: mike ? 'not_applicable_history_is_read_only' : true }
   } catch (error) {
     if (debug && context.pages()[0]) console.error((await context.pages()[0].locator('body').ariaSnapshot()).slice(-4200))
-    throw error
+    throw Object.assign(error, { qaStage: stage })
   } finally {
     await context.close()
   }
